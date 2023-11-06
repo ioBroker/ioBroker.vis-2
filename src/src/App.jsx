@@ -1001,7 +1001,6 @@ class App extends Runtime {
         // save changes after 1 second
         this.savingTimer && clearTimeout(this.savingTimer);
         this.savingTimer = setTimeout(async () => {
-            console.log('save');
             this.savingTimer = null;
 
             // remove all special structures
