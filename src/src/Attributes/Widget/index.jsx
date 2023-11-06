@@ -1111,8 +1111,7 @@ class Widget extends Component {
     changeBinding(isStyle, attr) {
         const project = JSON.parse(JSON.stringify(this.props.project));
         const type = isStyle ? 'style' : 'data';
-        for (let i = 0; i < this.props.selectedWidgets.length; i++) {
-            const wid = this.props.selectedWidgets[i];
+        for (const wid of this.props.selectedWidgets) {
             const widget = project[this.props.selectedView].widgets[wid];
             if (widget[type].bindings.includes(attr)) {
                 widget[type].bindings.splice(widget[type].bindings.indexOf(attr), 1);
@@ -1210,7 +1209,7 @@ class Widget extends Component {
                                 title={I18n.t('Deactivate binding and use field as standard input')}
                             >
                                 <LinkOff
-                                    onClick={() => this.props.editMode && this.changeBinding(group.isStye, field.name)}
+                                    onClick={() => this.props.editMode && this.changeBinding(group.isStyle, field.name)}
                                     className={this.props.classes.bindIcon}
                                     style={disabled ? { cursor: 'default' } : null}
                                 />
@@ -1222,7 +1221,7 @@ class Widget extends Component {
                                 <LinkIcon
                                     className={this.props.classes.bindIcon}
                                     style={disabled ? { cursor: 'default' } : null}
-                                    onClick={() => this.props.editMode && this.changeBinding(group.isStye, field.name)}
+                                    onClick={() => this.props.editMode && this.changeBinding(group.isStyle, field.name)}
                                 />
                             </span>) : null}
                         {group.isStyle ?
