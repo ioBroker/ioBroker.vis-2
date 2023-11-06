@@ -81,7 +81,7 @@ const styles = theme => ({
     },
     colorize: {
         display: 'none',
-        position: 'absolute',
+        float: 'right',
         right: 0,
         cursor: 'pointer',
         opacity: 0.3,
@@ -1204,23 +1204,6 @@ class Widget extends Component {
                                     alt={field.name}
                                 />
                             </div> : null}
-                        {group.isStyle ?
-                            <ColorizeIcon
-                                fontSize="small"
-                                className={this.props.classes.colorize}
-                                onClick={() => this.props.cssClone(field.name, newValue => {
-                                    if (newValue !== null && newValue !== undefined) {
-                                        const project = JSON.parse(JSON.stringify(this.props.project));
-                                        this.props.selectedWidgets.forEach(wid => {
-                                            if (project[this.props.selectedView].widgets[wid]) {
-                                                project[this.props.selectedView].widgets[wid].style = project[this.props.selectedView].widgets[wid].style || {};
-                                                project[this.props.selectedView].widgets[wid].style[field.name] = newValue;
-                                            }
-                                        });
-                                        this.props.changeProject(project);
-                                    }
-                                })}
-                            /> : null}
                         {field.type !== 'custom' || field.label ? (isBoundField ?
                             <span
                                 className={this.props.classes.bindIconSpan}
@@ -1242,6 +1225,24 @@ class Widget extends Component {
                                     onClick={() => this.props.editMode && this.changeBinding(group.isStye, field.name)}
                                 />
                             </span>) : null}
+                        {group.isStyle ?
+                            <ColorizeIcon
+                                fontSize="small"
+                                className={this.props.classes.colorize}
+                                onClick={() => this.props.cssClone(field.name, newValue => {
+                                    if (newValue !== null && newValue !== undefined) {
+                                        const project = JSON.parse(JSON.stringify(this.props.project));
+                                        this.props.selectedWidgets.forEach(wid => {
+                                            if (project[this.props.selectedView].widgets[wid]) {
+                                                project[this.props.selectedView].widgets[wid].style = project[this.props.selectedView].widgets[wid].style || {};
+                                                project[this.props.selectedView].widgets[wid].style[field.name] = newValue;
+                                            }
+                                        });
+                                        this.props.changeProject(project);
+                                    }
+                                })}
+                            />
+                            : null}
                         {field.tooltip ? <InfoIcon className={this.props.classes.infoIcon} /> : null}
                     </td>
                     <td className={this.props.classes.fieldContent}>
