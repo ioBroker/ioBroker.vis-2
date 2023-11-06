@@ -230,6 +230,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ## Changelog
 ### **WORK IN PROGRESS**
 * (foxriver76) fixed issues with binding editor on style attributes
+* (foxriver76) improved performance due to optimizations on auto save
 
 ### 2.3.5 (2023-11-03)
 * (foxriver76) update adapter-react to have enhanced image support in file selector
