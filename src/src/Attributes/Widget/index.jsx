@@ -68,7 +68,7 @@ const styles = theme => ({
         height: 24,
     },
     fieldTitle: {
-        width: 140,
+        width: 190,
         fontSize: '80%',
         position: 'relative',
         lineHeight: '21px',
