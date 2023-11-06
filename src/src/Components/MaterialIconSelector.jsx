@@ -140,7 +140,6 @@ class MaterialIconSelector extends Component {
     }
 
     applyFilter(filter) {
-        console.log('filter');
         let timeout = 200;
         if (filter === true) {
             timeout = 0;
@@ -173,8 +172,6 @@ class MaterialIconSelector extends Component {
                     .filter(icon => !icon.unsupported_families || !icon.unsupported_families.includes(this.state.iconType))
                     .map(icon => icon.name);
             }
-
-            console.log(filtered);
 
             this.setState({
                 filtered,
@@ -268,7 +265,6 @@ class MaterialIconSelector extends Component {
                         >
                             {ICON_TYPES.map(type => <FormControlLabel
                                 onClick={async () => {
-                                    console.log('click');
                                     window.localStorage.setItem('vis.icon.type', type);
                                     const newState = { iconType: type };
                                     if (type !== 'upload') {
