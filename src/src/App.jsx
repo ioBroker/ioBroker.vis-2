@@ -622,8 +622,8 @@ class App extends Runtime {
             if (this.state.widgetsClipboard.type === 'copy' && this.state.selectedView === this.state.widgetsClipboard.view) {
                 const boundingRect = App.getWidgetRelativeRect(clipboardWidgetId);
                 newWidget.style = this.pxToPercent(newWidget.style, {
-                    left: `${boundingRect.left + 10}px`,
-                    top: `${boundingRect.top + 10}px`,
+                    left: `${(boundingRect?.left ?? 0) + 10}px`,
+                    top: `${(boundingRect?.top ?? 0) + 10}px`,
                 });
             }
             const newKey = this.getNewWidgetId();
