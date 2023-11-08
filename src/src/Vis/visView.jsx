@@ -1541,9 +1541,14 @@ class VisView extends React.Component {
                     }));
 
                 if (listRelativeWidgetsOrder.length) {
+                    let columnIndex = 0;
                     listRelativeWidgetsOrder.forEach((id, index) => {
-                        const column = columns <= 1 ? 0 : index % columns;
-                        const w = VisView.getOneWidget(index, this.props.context.views[view].widgets[id], {
+                        const widget = this.props.context.views[view].widgets[id];
+                        // if newLine, start from the beginning
+                        if (widget.style.newLine) {
+                            columnIndex = 0;
+                        }
+                        const w = VisView.getOneWidget(index, widget, {
                             // custom attributes
                             context: this.props.context,
                             editMode: this.props.editMode, // relative widget cannot be multi-view
@@ -1553,7 +1558,7 @@ class VisView extends React.Component {
                             moveAllowed,
                             ignoreMouseEvents: this.ignoreMouseEvents,
                             onIgnoreMouseEvents: this.onIgnoreMouseEvents,
-                            refParent: this.props.selectedGroup ? this.refRelativeView : this.refRelativeColumnsView[column],
+                            refParent: this.props.selectedGroup ? this.refRelativeView : this.refRelativeColumnsView[columnIndex],
                             askView: this.askView,
                             relativeWidgetOrder: this.props.selectedGroup ? relativeWidgetOrder : listRelativeWidgetsOrder,
                             selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.props.selectedWidgets,
@@ -1562,7 +1567,11 @@ class VisView extends React.Component {
                             customSettings: this.props.customSettings,
                             viewsActiveFilter: this.props.viewsActiveFilter,
                         });
-                        wColumns[column].push(w);
+                        wColumns[columnIndex].push(w);
+                        columnIndex++;
+                        if (columnIndex >= columns) {
+                            columnIndex = 0;
+                        }
                     });
 
                     if (this.props.selectedGroup) {
