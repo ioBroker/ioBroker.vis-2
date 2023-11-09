@@ -20,7 +20,7 @@ import {
     CardContent,
 } from '@mui/material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
 // eslint-disable-next-line import/no-cycle
 import VisBaseWidget from './visBaseWidget';
@@ -274,6 +274,7 @@ class VisRxWidget extends VisBaseWidget {
                 this.props.context.views[item.view].widgets[this.props.id],
                 newState.rxData,
                 newState.values,
+                this.props.context.moment,
             );
 
             if (item.type === 'data') {
@@ -548,6 +549,270 @@ class VisRxWidget extends VisBaseWidget {
             viewsActiveFilter: this.props.viewsActiveFilter,
             customSettings: this.props.customSettings,
         });
+    }
+
+    isSignalVisible(index, val) {
+        const oid = this.state.rxData[`signals-oid-${index}`];
+
+        if (oid) {
+            if (val === undefined || val === null) {
+                val = this.state.values[`${oid}.val`];
+            }
+
+            const condition = this.state.rxData[`signals-cond-${index}`];
+            let value = this.state.rxData[`signals-val-${index}`];
+
+            if (val === undefined || val === null) {
+                return condition === 'not exist';
+            }
+
+            if (!condition || value === undefined || value === null) {
+                return condition === 'not exist';
+            }
+
+            if (val === 'null' && condition !== 'exist' && condition !== 'not exist') {
+                return false;
+            }
+
+            const t = typeof val;
+            if (t === 'boolean' || val === 'false' || val === 'true') {
+                value = value === 'true' || value === true || value === 1 || value === '1';
+            } else if (t === 'number') {
+                value = parseFloat(value);
+            } else if (t === 'object') {
+                val = JSON.stringify(val);
+            }
+
+            switch (condition) {
+                case '==':
+                    value = value.toString();
+                    val = val.toString();
+                    if (val === '1') val = 'true';
+                    if (value === '1') value = 'true';
+                    if (val === '0') val = 'false';
+                    if (value === '0') value = 'false';
+                    return value === val;
+                case '!=':
+                    value = value.toString();
+                    val = val.toString();
+                    if (val === '1') val = 'true';
+                    if (value === '1') value = 'true';
+                    if (val === '0') val = 'false';
+                    if (value === '0') value = 'false';
+                    return value !== val;
+                case '>=':
+                    return val >= value;
+                case '<=':
+                    return val <= value;
+                case '>':
+                    return val > value;
+                case '<':
+                    return val < value;
+                case 'consist':
+                    value = value.toString();
+                    val = val.toString();
+                    return val.toString().includes(value);
+                case 'not consist':
+                    value = value.toString();
+                    val = val.toString();
+                    return !val.toString().includes(value);
+                case 'exist':
+                    return value !== 'null';
+                case 'not exist':
+                    return value === 'null';
+                default:
+                    console.log(`Unknown signals condition for ${this.props.id}: ${condition}`);
+                    return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    static text2style(textStyle, style) {
+        if (textStyle) {
+            style = style || {};
+            const parts = textStyle.split(';');
+            parts.forEach(part => {
+                const [attr, value] = part.split(':');
+                if (attr && value) {
+                    // convert attr into camelCase notation
+                    const attrParts = attr.trim().split('-');
+                    for (let p = 1; p < attrParts.length; p++) {
+                        attrParts[p] = attrParts[p][0].toUpperCase() + attrParts[p].substring(1);
+                    }
+
+                    style[attrParts.join('')] = value.trim();
+                }
+            });
+        }
+        return style;
+    }
+
+    renderSignal(index) {
+        const oid = this.state.rxData[`signals-oid-${index}`];
+        if (!oid) {
+            return null;
+        }
+        if (this.props.editMode && this.state.rxData[`signals-hide-edit-${index}`]) {
+            return null;
+        }
+
+        // check value
+        if (this.props.editMode || this.isSignalVisible(index)) {
+            let icon = this.state.rxData[`signals-smallIcon-${index}`];
+            let color;
+            if (icon) {
+                color = this.state.rxData[`signals-color-${index}`];
+            } else {
+                icon = this.state.rxData[`signals-icon-${index}`];
+            }
+            const style = {
+                color,
+                position: 'absolute',
+                top: `${parseInt(this.state.rxData[`signals-vert-${index}`], 10) || 0}%`,
+                left: `${parseInt(this.state.rxData[`signals-horz-${index}`], 10) || 0}%`,
+                zIndex: 10,
+                textAlign: 'center',
+            };
+            if (icon) {
+                const imageStyle = {
+                    width: parseFloat(this.state.rxData[`signals-icon-size-${index}`]) || 32,
+                    height: 'auto',
+                };
+                icon = <Icon src={icon} style={imageStyle} className="vis-signal-icon" />;
+            }
+            VisRxWidget.text2style(this.state.rxData[`signals-icon-style-${index}`], style);
+            let text = this.state.rxData[`signals-text-${index}`];
+            if (text) {
+                const textStyle = {
+                    color: this.state.rxData[`signals-color-${index}`],
+                };
+                VisRxWidget.text2style(this.state.rxData[`signals-text-style-${index}`], textStyle);
+                text = <div
+                    className="vis-signal-text"
+                    style={textStyle}
+                >
+                    {this.state.rxData[`signals-text-${index}`]}
+                </div>;
+            } else {
+                text = null;
+            }
+
+            // class name only to address the icon by user's CSS
+            return <div style={style} className={this.state.rxData[`signals-blink-${index}`] ? 'vis-signals-blink' : null}>
+                {icon}
+                {text}
+            </div>;
+        }
+        return null;
+    }
+
+    renderLastChange(widgetStyle) {
+        // show last change
+        const border = parseInt(this.state.rxData['lc-border-radius'], 10) || 0;
+        const style = {
+            backgroundColor: 'rgba(182, 182, 182, 0.6)',
+            fontFamily: 'Tahoma',
+            position: 'absolute',
+            zIndex: 0,
+            borderRadius: this.state.rxData['lc-position-horz'] === 'left' ?
+                `${border}px 0 0 ${border}px` :
+                (this.state.rxData['lc-position-horz'] === 'right' ? `0 ${border}px ${border}px 0` : border),
+            whiteSpace: 'nowrap',
+        };
+        const fontSize = this.state.rxData['lc-font-size'];
+        if (fontSize) {
+            if (fontSize.match(/\D/)) {
+                style.fontSize = this.state.rxData['lc-font-size'];
+            } else {
+                style.fontSize = parseFloat(this.state.rxData['lc-font-size']);
+            }
+        }
+        if (this.state.rxData['lc-font-style']) {
+            style.fontStyle = this.state.rxData['lc-font-style'];
+        }
+        if (this.state.rxData['lc-font-family']) {
+            style.fontFamily = this.state.rxData['lc-font-family'];
+        }
+        if (this.state.rxData['lc-bkg-color']) {
+            style.backgroundColor = this.state.rxData['lc-bkg-color'];
+        }
+        if (this.state.rxData['lc-color']) {
+            style.color = this.state.rxData['lc-color'];
+        }
+        if (this.state.rxData['lc-border-width']) {
+            style.borderWidth = parseInt(this.state.rxData['lc-border-width'], 10) || 0;
+        }
+        if (this.state.rxData['lc-border-style']) {
+            style.borderStyle = this.state.rxData['lc-border-style'];
+        }
+        if (this.state.rxData['lc-border-color']) {
+            style.borderColor = this.state.rxData['lc-border-color'];
+        }
+        const padding = parseInt(this.state.rxData['lc-padding'], 10);
+        if (padding) {
+            style.padding = padding;
+        } else {
+            style.paddingTop = 3;
+            style.paddingBottom = 3;
+        }
+        if (this.state.rxData['lc-zindex']) {
+            style.zIndex = this.state.rxData['lc-zindex'];
+        }
+        if (this.state.rxData['lc-position-vert'] === 'top') {
+            style.top = parseInt(this.state.rxData['lc-offset-vert'], 10);
+        } else if (this.state.rxData['lc-position-vert'] === 'bottom') {
+            style.bottom = parseInt(this.state.rxData['lc-offset-vert'], 10);
+        } else if (this.state.rxData['lc-position-vert'] === 'middle') {
+            style.top = `calc(50% + ${parseInt(this.state.rxData['lc-offset-vert'], 10) - 10}px)`;
+        }
+        const offset = parseFloat(this.state.rxData['lc-offset-horz']) || 0;
+        if (this.state.rxData['lc-position-horz'] === 'left') {
+            style.right = `calc(100% - ${offset}px)`;
+            if (!padding) {
+                style.paddingRight = 10;
+                style.paddingLeft = 10;
+            }
+        } else if (this.state.rxData['lc-position-horz'] === 'right') {
+            style.left = `calc(100% + ${offset}px)`;
+            if (!padding) {
+                style.paddingRight = 10;
+                style.paddingLeft = 10;
+            }
+        } else if (this.state.rxData['lc-position-horz'] === 'middle') {
+            style.left = `calc(50% + ${offset}px)`;
+        }
+
+        const divLastChange = window.document.createElement('div');
+        // `<div class="vis-last-change" data-type="${data['lc-type']}" data-format="${data['lc-format']}" data-interval="${data['lc-is-interval']}">${this.binds.basic.formatDate(this.states.attr(`${data['lc-oid']}.${data['lc-type'] === 'last-change' ? 'lc' : 'ts'}`), data['lc-format'], data['lc-is-interval'], data['lc-is-moment'])}</div>`
+        divLastChange.className = '';
+
+        widgetStyle.overflow = 'visible';
+        return <div
+            className="vis-last-change" // just to have a possibility to address it in user's CSS
+            style={style}
+        >
+            {this.formatDate(
+                this.state.values[`${this.state.rxData['lc-oid']}.${this.state.rxData['lc-type'] === 'last-change' ? 'lc' : 'ts'}`],
+                this.state.rxData['lc-format'],
+                this.state.rxData['lc-is-interval'],
+                this.state.rxData['lc-is-moment'],
+                true,
+            )}
+        </div>;
+    }
+
+    renderSignals() {
+        const count = parseInt(this.state.rxData?.['signals-count'], 10) || 0;
+        if (!count) {
+            return null;
+        }
+        const result = [];
+        for (let i = 0; i < count; i++) {
+            result.push(this.renderSignal(i));
+        }
+        return result;
     }
 
     render() {
