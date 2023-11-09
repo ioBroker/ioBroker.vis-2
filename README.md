@@ -229,6 +229,12 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (foxriver76) allow to use real html in HTML prepend and HTML append (basic string widget)
+* (foxriver76) fixed problem while editing groups
+* (foxriver76) do not automatically format button text as uppercase
+* (foxriver76) do not automatically show page names as uppercase
+
 ### 2.4.0 (2023-11-08)
 * (foxriver76) fixed issues with icon selector filter when changing category
 * (foxriver76) fixed problem, that only first widget is pasted
