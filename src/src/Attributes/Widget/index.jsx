@@ -663,7 +663,6 @@ class Widget extends Component {
             });
         } else {
             fields = selectedWidgetsFields[0];
-            console.log(widgets[this.props.selectedWidgets[0]].data.bindings);
 
             widgets[this.props.selectedWidgets[0]].data.bindings?.forEach(attr => !bindFields.includes(`data_${attr}`) && bindFields.push(`data_${attr}`));
             widgets[this.props.selectedWidgets[0]].style.bindings?.forEach(attr => !bindFields.includes(`style_${attr}`) && bindFields.push(`style_${attr}`));
