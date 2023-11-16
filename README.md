@@ -233,6 +233,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 * (bluefox) Showed "file too large" message by icon upload
 * (bluefox) Made navigation bar for view as an own group
 * (foxriver76) sorted views alphabetically
+* (foxriver76) respect uppercase/lowercase in projects toolbar
 
 ### 2.6.0 (2023-11-13)
 * (foxriver76) implemented select/unselect all buttons
