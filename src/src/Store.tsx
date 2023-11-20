@@ -63,5 +63,3 @@ const reducer = createReducer(
 export const store = configureStore({
     reducer,
 });
-
-store.dispatch(updateProject);
