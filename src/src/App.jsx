@@ -32,7 +32,7 @@ import {
     Message as MessageDialog,
     SelectFile as SelectFileDialog, Icon,
 } from '@iobroker/adapter-react-v5';
-import { store, updateProject } from './Store';
+import { recalculateFields, store, updateProject } from './Store';
 
 import Attributes from './Attributes';
 import Palette from './Palette';
@@ -1153,6 +1153,8 @@ class App extends Runtime {
                 alignValues: [],
             });
         }
+
+        store.dispatch(recalculateFields(true));
     };
 
     toggleCode = () => {
