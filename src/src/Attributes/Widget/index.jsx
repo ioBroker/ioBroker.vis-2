@@ -551,7 +551,7 @@ class Widget extends Component {
 
     static buildDataImage(project, selectedView, selectedWidgets) {
         const result = {};
-        (selectedWidgets || []).sort().forEach(wid => result[wid] = project[selectedView].widgets[wid]);
+        ([...selectedWidgets] || []).sort().forEach(wid => result[wid] = project[selectedView].widgets[wid]);
         return JSON.stringify(result);
     }
 
