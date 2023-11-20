@@ -1652,7 +1652,6 @@ class App extends Runtime {
                 classes={{}}
                 selectedView={this.state.selectedView}
                 userGroups={this.state.userGroups}
-                project={store.getState().visProject}
                 changeProject={this.changeProject}
                 openedViews={store.getState().visProject.___settings.openedViews}
                 projectName={this.state.projectName}

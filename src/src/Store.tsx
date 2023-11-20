@@ -34,10 +34,12 @@ interface Project {
 export const updateProject = createAction<Project>('project/update');
 export const updateView = createAction<{viewId: string, data: View}>('view/update');
 export const updateWidget = createAction<{viewId: string, widgetId: string, data: Widget}>('widget/update');
+export const recalculateFields = createAction<boolean>('attributes/recalculate');
 
 const reducer = createReducer(
     {
         visProject: {} as Project,
+        recalculateFields: false,
     },
     builder => {
         builder
@@ -51,6 +53,9 @@ const reducer = createReducer(
             .addCase(updateWidget, (state, action) => {
                 const { viewId, widgetId, data } = action.payload;
                 state.visProject[viewId].widgets[widgetId] = data;
+            })
+            .addCase(recalculateFields, (state, action) => {
+                state.recalculateFields = action.payload;
             });
     },
 );
