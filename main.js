@@ -827,7 +827,7 @@ async function buildHtmlPages(forceBuild) {
         try {
             await uploadAdapter();
         } catch (e) {
-            this.log.error(`Could not upload adapter: ${e.message}`)
+            adapter.log.error(`Could not upload adapter: ${e.message}`)
         }
 
         // terminate promise
