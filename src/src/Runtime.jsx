@@ -443,6 +443,8 @@ class Runtime extends GenericApp {
         }
 
         if (!file || file === '{}') {
+            this.setState({ showProjectsDialog: true });
+
             // read if show projects dialog allowed
             const obj = await this.socket.getObject(`system.adapter.${this.adapterName}.${this.instance}`);
             if (this.state.runtime && obj.native.doNotShowProjectDialog) {
