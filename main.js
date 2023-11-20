@@ -824,7 +824,11 @@ async function buildHtmlPages(forceBuild) {
     }
 
     if (configChanged || widgetsChanged || filesChanged || uploadedIndexHtml !== indexHtml || forceBuild) {
-        await uploadAdapter();
+        try {
+            await uploadAdapter();
+        } catch (e) {
+            this.log.error(`Could not upload adapter: ${e.message}`)
+        }
 
         // terminate promise
         if (stoppingPromise) {
