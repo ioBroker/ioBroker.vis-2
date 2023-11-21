@@ -154,8 +154,6 @@ export default class BasicBar extends VisRxWidget {
             style = { ...style, backgroundColor: this.state.rxData.color };
         }
 
-        console.log(style);
-
         return <div className="vis-widget-body">
             <div data-oid={this.state.rxData.oid} className="vis-widget-body" style={style}>
             </div>
