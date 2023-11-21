@@ -11,6 +11,9 @@ interface BasicBarProps {
 }
 
 export default class BasicBar extends VisRxWidget {
+    /**
+     * Returns the widget info which is rendered in the edit mode
+     */
     static getWidgetInfo() {
         return {
             id: 'tplValueFloatBar',
@@ -70,14 +73,24 @@ export default class BasicBar extends VisRxWidget {
         };
     }
 
+    /**
+     * Enables calling widget info on the class instance itself
+     */
     // eslint-disable-next-line class-methods-use-this
     getWidgetInfo() {
         return BasicBar.getWidgetInfo();
     }
 
+    /**
+     * Calculate width or height of the bar w.r.t. to the border
+     *
+     * @param css the border css attribute
+     * @param multiplier number of borders, normally 2
+     */
+    // eslint-disable-next-line class-methods-use-this
     extractWidth(css: string, multiplier: number): number | string | undefined {
         // extract from "2px solid #aabbcc" => 2px
-        const m = css.match(/([0-9])+(px|em)?/);
+        const m = css.match(/([0-9]+)(px|em)?/);
         if (m) {
             if (m[1] && m[2]) {
                 return parseInt(m[1], 10) * (multiplier || 1) + m[2];
@@ -88,6 +101,9 @@ export default class BasicBar extends VisRxWidget {
         return undefined;
     }
 
+    /**
+     * Calculate length of the bar
+     */
     getCalc(): string {
         const min = (this.state.rxData.min || this.state.rxData.min === 0) ? parseFloat(this.state.rxData.min) : 0;
         const max = (this.state.rxData.max || this.state.rxData.max === 0) ? parseFloat(this.state.rxData.max) : 100;
@@ -96,6 +112,11 @@ export default class BasicBar extends VisRxWidget {
         return (this.state.rxData.border) ? (`calc(${Math.round(val * 100)}% - ${this.extractWidth(this.state.rxData.border, 2)})`) : (`${Math.round(val * 100)}%`);
     }
 
+    /**
+     * Renders the widget
+     *
+     * @param props props passed to the parent classes render method
+     */
     renderWidgetBody(props: BasicBarProps): React.JSX.Element {
         super.renderWidgetBody(props);
 
