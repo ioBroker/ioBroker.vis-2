@@ -9,12 +9,22 @@ export interface ProjectSettings {
     statesDebounceTime: number;
 }
 
-export interface Widget {
+interface SingleWidget  {
     data: Record<string, unknown>;
     style: Record<string, unknown>;
     tpl: string;
     widgetSet: string;
 }
+
+interface Group extends SingleWidget {
+    tpl: '_tplGroup';
+    data: {
+        members: string[];
+        [other: string]: unknown
+    }
+}
+
+export type Widget = SingleWidget | Group;
 
 export interface View {
     activeWidgets: string[];
@@ -29,6 +39,15 @@ export interface View {
  *
  * @param widget widget to check
  */
-export function isGroup(widget: Widget): boolean {
+export function isGroup(widget: Widget): widget is Group {
     return widget.tpl === '_tplGroup';
+}
+
+/**
+ * Stringify-parse copy with type inference
+ *
+ * @param object The object which should be cloned
+ */
+export function deepClone<T extends Record<string, unknown>>(object: T): T {
+    return JSON.parse(JSON.stringify(object));
 }

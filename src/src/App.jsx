@@ -32,7 +32,7 @@ import {
     Message as MessageDialog,
     SelectFile as SelectFileDialog, Icon,
 } from '@iobroker/adapter-react-v5';
-import { isGroup } from './Utils/utils';
+import { isGroup, deepClone } from './Utils/utils';
 import { recalculateFields, store, updateProject } from './Store';
 
 import Attributes from './Attributes';
@@ -684,6 +684,20 @@ class App extends Runtime {
             });
 
             const newKey = isGroup(newWidget) ? this.getNewGroupId(store.getState().visProject) : this.getNewWidgetId(store.getState().visProject);
+
+            if (isGroup(newWidget)) {
+                // copy all members
+                for (let i = 0; i < newWidget.data.members.length; i++) {
+                    const wid = newWidget.data.members[i];
+                    const newMember = deepClone(widgets[wid]);
+
+                    const newMemberId = this.getNewWidgetId(store.getState().visProject, i);
+                    widgets[newMemberId] = newMember;
+
+                    newWidget.data.members[i] = newMemberId;
+                }
+            }
+
             widgets[newKey] = newWidget;
             newKeys.push(newKey);
         });
