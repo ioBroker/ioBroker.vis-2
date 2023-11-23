@@ -56,7 +56,7 @@ export function isGroup(widget: Widget): widget is Group {
  *
  * @param object The object which should be cloned
  */
-export function deepClone<T extends Record<string, unknown>>(object: T): T {
+export function deepClone<T extends Record<string, any>>(object: T): T {
     return JSON.parse(JSON.stringify(object));
 }
 
@@ -108,4 +108,36 @@ export function getNewGroupId(project: Project, offset = 0): string {
     const newKey = getNewWidgetIdNumber(true, project, offset);
 
     return `g${newKey.toString().padStart(6, '0')}`;
+}
+
+interface CopyGroupOptions {
+    /** The group which should be copied */
+    group: Group;
+    /** The widgets key, value object to copy the group to */
+    widgets: Record<string, Widget>;
+    /** The offset to use, if multiple groups are copied without saving */
+    offset?: number
+}
+
+/**
+ * Copy a group and all the members into the given widgets key, value object
+ *
+ * @param options group, widgets and offset information
+ */
+export function copyGroup(options: CopyGroupOptions) {
+    const  { widgets, group, offset } = options;
+    const newKey = getNewGroupId(store.getState().visProject, offset ?? 0);
+
+    // copy all members
+    for (let i = 0; i < group.data.members.length; i++) {
+        const wid = group.data.members[i];
+        const newMember = deepClone(widgets[wid]);
+
+        const newMemberId = getNewWidgetId(store.getState().visProject, i);
+        widgets[newMemberId] = newMember;
+
+        group.data.members[i] = newMemberId;
+    }
+
+    widgets[newKey] = group;
 }

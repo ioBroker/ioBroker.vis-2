@@ -33,7 +33,7 @@ import {
     SelectFile as SelectFileDialog, Icon,
 } from '@iobroker/adapter-react-v5';
 import {
-    isGroup, deepClone, getNewWidgetId, getNewGroupId,
+    isGroup, deepClone, getNewWidgetId, getNewGroupId, copyGroup,
 } from './Utils/utils';
 import { recalculateFields, store, updateProject } from './Store';
 
@@ -602,6 +602,7 @@ class App extends Runtime {
             let newKey;
 
             if (isGroup(newWidget)) {
+                copyGroup({ group: newWidget, widgets, offset: groupOffset });
                 newKey = getNewGroupId(store.getState().visProject, groupOffset);
                 groupOffset++;
             } else {
@@ -631,23 +632,13 @@ class App extends Runtime {
                 top: boundingRect.top + 10,
             });
 
-            const newKey = isGroup(newWidget) ? getNewGroupId(store.getState().visProject) : getNewWidgetId(store.getState().visProject);
-
             if (isGroup(newWidget)) {
-                // copy all members
-                for (let i = 0; i < newWidget.data.members.length; i++) {
-                    const wid = newWidget.data.members[i];
-                    const newMember = deepClone(widgets[wid]);
-
-                    const newMemberId = getNewWidgetId(store.getState().visProject, i);
-                    widgets[newMemberId] = newMember;
-
-                    newWidget.data.members[i] = newMemberId;
-                }
+                copyGroup({ group: newWidget, widgets });
+            } else {
+                const newKey = getNewWidgetId(store.getState().visProject);
+                widgets[newKey] = newWidget;
+                newKeys.push(newKey);
             }
-
-            widgets[newKey] = newWidget;
-            newKeys.push(newKey);
         });
         this.setSelectedWidgets([]);
         await this.changeProject(project);
