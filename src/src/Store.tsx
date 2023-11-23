@@ -1,11 +1,6 @@
 import { createReducer, configureStore, createAction } from '@reduxjs/toolkit';
-import type { View, Widget, ProjectSettings } from '@/Utils/utils';
+import type { View, Widget, Project } from '@/Utils/utils';
 
-interface Project {
-    // @ts-expect-error this type has bad code-style, we should refactor the views in a views: Record<string, View> attribute
-    ___settings: ProjectSettings;
-    [view: string]: View;
-}
 export const updateProject = createAction<Project>('project/update');
 export const updateView = createAction<{viewId: string, data: View}>('view/update');
 export const updateWidget = createAction<{viewId: string, widgetId: string, data: Widget}>('widget/update');

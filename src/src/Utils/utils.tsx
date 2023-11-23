@@ -1,3 +1,5 @@
+import { store } from '@/Store';
+
 export interface ProjectSettings {
     darkReloadScreen: boolean;
     destroyViewsAfter: number;
@@ -34,6 +36,12 @@ export interface View {
     widgets: Record<string, Widget>;
 }
 
+export interface Project {
+    // @ts-expect-error this type has bad code-style, we should refactor the views in a views: Record<string, View> attribute
+    ___settings: ProjectSettings;
+    [view: string]: View;
+}
+
 /**
  * Check if passed Widget is a group
  *
@@ -50,4 +58,54 @@ export function isGroup(widget: Widget): widget is Group {
  */
 export function deepClone<T extends Record<string, unknown>>(object: T): T {
     return JSON.parse(JSON.stringify(object));
+}
+
+/**
+ * Get next widgetId as a number
+ *
+ * @param isWidgetGroup if it is a group of widgets
+ * @param project current project
+ * @param offset offset if multiple widgets are created and not yet in project
+ */
+function getNewWidgetIdNumber(isWidgetGroup: boolean, project: Project, offset = 0): number  {
+    const widgets: string[] = [];
+    project = project || store.getState().visProject;
+    Object.keys(project).forEach(view =>
+        project[view].widgets && Object.keys(project[view].widgets).forEach(widget =>
+            widgets.push(widget)));
+    let newKey = 1;
+    widgets.forEach(name => {
+        const matches = isWidgetGroup ? name.match(/^g([0-9]+)$/) : name.match(/^w([0-9]+)$/);
+        if (matches) {
+            const num = parseInt(matches[1], 10);
+            if (num >= newKey) {
+                newKey = num + 1;
+            }
+        }
+    });
+
+    return newKey + offset;
+}
+
+/**
+ * Get new widget id from the project
+ * @param project project to determine next widget id for
+ * @param offset offset, if multiple widgets are created and not yet in the project
+ * @return {string}
+ */
+export function getNewWidgetId(project: Project, offset = 0): string {
+    const newKey = getNewWidgetIdNumber(false, project, offset);
+
+    return `w${(newKey).toString().padStart(6, '0')}`;
+}
+
+/**
+ * Get new group id from the project
+ * @param project project to determine next group id for
+ * @param offset offset, if multiple groups are created and not yet in the project
+ */
+export function getNewGroupId(project: Project, offset = 0): string {
+    const newKey = getNewWidgetIdNumber(true, project, offset);
+
+    return `g${newKey.toString().padStart(6, '0')}`;
 }
