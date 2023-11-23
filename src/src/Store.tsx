@@ -1,30 +1,5 @@
 import { createReducer, configureStore, createAction } from '@reduxjs/toolkit';
-
-interface ProjectSettings {
-    darkReloadScreen: boolean;
-    destroyViewsAfter: number;
-    folders: {id: string, name: string, parentId: string}[];
-    openedViews: string[];
-    reconnectInterval: number;
-    reloadOnEdit: boolean;
-    reloadOnSleep: number;
-    statesDebounceTime: number;
-}
-
-interface Widget {
-    data: Record<string, unknown>;
-    style: Record<string, unknown>;
-    tpl: string;
-    widgetSet: string;
-}
-
-interface View {
-    activeWidgets: string[];
-    filterList: string[];
-    rerender: boolean;
-    settings: Record<string, unknown>;
-    widgets: Record<string, Widget>;
-}
+import type { View, Widget, ProjectSettings } from '@/Utils/utils';
 
 interface Project {
     // @ts-expect-error this type has bad code-style, we should refactor the views in a views: Record<string, View> attribute

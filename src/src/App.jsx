@@ -32,6 +32,7 @@ import {
     Message as MessageDialog,
     SelectFile as SelectFileDialog, Icon,
 } from '@iobroker/adapter-react-v5';
+import { isGroup } from './Utils/utils';
 import { recalculateFields, store, updateProject } from './Store';
 
 import Attributes from './Attributes';
@@ -371,12 +372,12 @@ class App extends Runtime {
     /**
      * Get next widgetId as a number
      *
-     * @param isGroup if it is a group of widgets
+     * @param isWidgetGroup if it is a group of widgets
      * @param project current project
      * @param offset offset if multiple widgets are created and not yet in project
      * @return {number}
      */
-    getNewWidgetIdNumber = (isGroup, project, offset = 0) => {
+    getNewWidgetIdNumber = (isWidgetGroup, project, offset = 0) => {
         const widgets = [];
         project = project || store.getState().visProject;
         Object.keys(project).forEach(view =>
@@ -384,7 +385,7 @@ class App extends Runtime {
                 widgets.push(widget)));
         let newKey = 1;
         widgets.forEach(name => {
-            const matches = isGroup ? name.match(/^g([0-9]+)$/) : name.match(/^w([0-9]+)$/);
+            const matches = isWidgetGroup ? name.match(/^g([0-9]+)$/) : name.match(/^w([0-9]+)$/);
             if (matches) {
                 const num = parseInt(matches[1], 10);
                 if (num >= newKey) {
@@ -425,7 +426,7 @@ class App extends Runtime {
     addWidget = async (widgetType, x, y, data, style) => {
         const project = JSON.parse(JSON.stringify(store.getState().visProject));
         const widgets = project[this.state.selectedView].widgets;
-        const newKey = this.getNewWidgetId();
+        const newKey = this.getNewWidgetId(store.getState().visProject);
         widgets[newKey] = {
             tpl: widgetType,
             data: {
@@ -652,7 +653,7 @@ class App extends Runtime {
             }
             let newKey;
 
-            if (newWidget.tpl === '_tplGroup') {
+            if (isGroup(newWidget)) {
                 newKey = this.getNewGroupId(store.getState().visProject, groupOffset);
                 groupOffset++;
             } else {
@@ -681,7 +682,8 @@ class App extends Runtime {
                 left: boundingRect.left + 10,
                 top: boundingRect.top + 10,
             });
-            const newKey = this.getNewWidgetId();
+
+            const newKey = isGroup(newWidget) ? this.getNewGroupId(store.getState().visProject) : this.getNewWidgetId(store.getState().visProject);
             widgets[newKey] = newWidget;
             newKeys.push(newKey);
         });
