@@ -16,17 +16,20 @@ interface SingleWidget  {
     style: Record<string, unknown>;
     tpl: string;
     widgetSet: string;
+    /** The id of the group, if the widget is grouped */
+    groupid?: string;
 }
 
-interface Group extends SingleWidget {
+interface GroupWidget extends SingleWidget {
     tpl: '_tplGroup';
     data: {
+        /** Widget IDs of the members */
         members: string[];
         [other: string]: unknown
     }
 }
 
-export type Widget = SingleWidget | Group;
+export type Widget = SingleWidget | GroupWidget;
 
 export interface View {
     activeWidgets: string[];
@@ -47,7 +50,7 @@ export interface Project {
  *
  * @param widget widget to check
  */
-export function isGroup(widget: Widget): widget is Group {
+export function isGroup(widget: Widget): widget is GroupWidget {
     return widget.tpl === '_tplGroup';
 }
 
@@ -112,7 +115,7 @@ export function getNewGroupId(project: Project, offset = 0): string {
 
 interface CopyGroupOptions {
     /** The group which should be copied */
-    group: Group;
+    group: GroupWidget;
     /** The widgets key, value object to copy the group to */
     widgets: Record<string, Widget>;
     /** The offset to use, if multiple groups are copied without saving */
@@ -133,6 +136,7 @@ export function copyGroup(options: CopyGroupOptions) {
         const wid = group.data.members[i];
         const newMember = deepClone(widgets[wid]);
 
+        newMember.groupid = newKey;
         const newMemberId = getNewWidgetId(store.getState().visProject, i);
         widgets[newMemberId] = newMember;
 
