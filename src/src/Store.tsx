@@ -1,5 +1,5 @@
 import { createReducer, configureStore, createAction } from '@reduxjs/toolkit';
-import type { View, Widget, Project } from '@/Utils/utils';
+import type { View, Widget, Project } from '@/types';
 
 export const updateProject = createAction<Project>('project/update');
 export const updateView = createAction<{viewId: string, data: View}>('view/update');
