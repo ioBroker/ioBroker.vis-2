@@ -1,4 +1,3 @@
-import type { CSSProperties } from '@mui/styles';
 import { store } from '@/Store';
 import { GroupWidget, Widget, Project } from '@/types';
 
@@ -101,18 +100,4 @@ export function copyGroup(options: CopyGroupOptions) {
     }
 
     widgets[newKey] = group;
-}
-
-/**
- * Adds an overflow visible attribute if no specific overflow is present
- * else it deletes the general overflow, so the specific one can take effect
- *
- * @param style the style to modify
- */
-export function calculateOverflow(style: CSSProperties): void {
-    if (!style.overflowX && !style.overflowY) {
-        style.overflow = 'visible';
-    } else if (style.overflow) {
-        delete style.overflow;
-    }
 }

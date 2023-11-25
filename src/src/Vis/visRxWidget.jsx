@@ -25,7 +25,7 @@ import { I18n, Icon } from '@iobroker/adapter-react-v5';
 // eslint-disable-next-line import/no-cycle
 import VisBaseWidget from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget } from './visUtils';
-import { calculateOverflow } from '../Utils/utils';
+import { calculateOverflow } from './utils';
 
 const POSSIBLE_MUI_STYLES = [
     'background-color',
