@@ -34,7 +34,7 @@ import {
 
 // eslint-disable-next-line import/no-cycle
 import VisOrderMenu from './visOrderMenu';
-import { calculateOverflow } from '@/Utils/utils';
+import { calculateOverflow } from '../Utils/utils';
 
 class VisBaseWidget extends React.Component {
     static FORBIDDEN_CHARS = /[^._\-/ :!#$%&()+=@^{}|~]+/g; // from https://github.com/ioBroker/ioBroker.js-controller/blob/master/packages/common/lib/common/tools.js

@@ -13,7 +13,7 @@
  * (Free for non-commercial use).
  */
 import { I18n } from '@iobroker/adapter-react-v5';
-import { store, updateWidget } from '@/Store';
+import { store, updateWidget } from '../Store';
 
 function replaceGroupAttr(inputStr, groupAttrList) {
     let newString = inputStr;

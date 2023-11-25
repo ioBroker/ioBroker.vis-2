@@ -21,7 +21,7 @@ import {
     getUsedObjectIDsInWidget,
 } from './visUtils';
 import VisBaseWidget from './visBaseWidget';
-import { calculateOverflow } from '@/Utils/utils';
+import { calculateOverflow } from '../Utils/utils';
 
 const analyzeDraggableResizable = (el, result, widgetStyle) => {
     result = result || {};
