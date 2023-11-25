@@ -25,6 +25,7 @@ import { I18n, Icon } from '@iobroker/adapter-react-v5';
 // eslint-disable-next-line import/no-cycle
 import VisBaseWidget from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget } from './visUtils';
+import { calculateOverflow } from '@/Utils/utils';
 
 const POSSIBLE_MUI_STYLES = [
     'background-color',
@@ -787,11 +788,7 @@ class VisRxWidget extends VisBaseWidget {
         // `<div class="vis-last-change" data-type="${data['lc-type']}" data-format="${data['lc-format']}" data-interval="${data['lc-is-interval']}">${this.binds.basic.formatDate(this.states.attr(`${data['lc-oid']}.${data['lc-type'] === 'last-change' ? 'lc' : 'ts'}`), data['lc-format'], data['lc-is-interval'], data['lc-is-moment'])}</div>`
         divLastChange.className = '';
 
-        if (!widgetStyle.overflowX && !widgetStyle.overflowY) {
-            widgetStyle.overflow = 'visible';
-        } else if (widgetStyle.overflow) {
-            delete widgetStyle.overflow;
-        }
+        calculateOverflow(widgetStyle);
 
         return <div
             className="vis-last-change" // just to have a possibility to address it in user's CSS
