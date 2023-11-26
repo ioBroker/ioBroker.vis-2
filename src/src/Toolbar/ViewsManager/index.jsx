@@ -126,8 +126,6 @@ const ViewsManager = props => {
             .filter(folder => (parentId ? folder.parentId === parentId : !folder.parentId))
             .sort((folder1, folder2) => folder1.name.toLowerCase().localeCompare(folder2.name.toLowerCase()));
 
-        console.log(folders);
-
         return folders.map((folder, key) => <div key={key}>
             <div className={props.classes.folderContainer}>
                 <Folder
