@@ -335,7 +335,6 @@ class App extends Runtime {
     };
 
     setWidgetsLoadingProgress = (step, total) => {
-        // console.log('setWidgetsLoadingProgress', step, total);
         this.setState({ loadingProgress: { step, total } });
     };
 
@@ -549,7 +548,6 @@ class App extends Runtime {
             }
         });
 
-        console.log(groupMembers);
         await this.setStateAsync({
             widgetsClipboard: {
                 type,
@@ -1157,8 +1155,6 @@ class App extends Runtime {
     };
 
     registerCallback = (name, view, cb) => {
-        // console.log(`${!cb ? 'Unr' : 'R'}egister handler for ${view}: ${name}`);
-
         if (cb) {
             this.visEngineHandlers[view] = this.visEngineHandlers[view] || {};
             this.visEngineHandlers[view][name] = cb;
@@ -1174,7 +1170,7 @@ class App extends Runtime {
         if (this.visEngineHandlers[this.state.selectedView] && this.visEngineHandlers[this.state.selectedView].onPxToPercent) {
             return this.visEngineHandlers[this.state.selectedView].onPxToPercent(wids, attr, cb);
         }
-        // cb && cb(wids, attr, null); // cancel selection
+
         return null;
     };
 
