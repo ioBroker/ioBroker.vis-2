@@ -103,7 +103,6 @@ export function pasteGroup(options: CopyGroupOptions) {
     }
 
     widgets[newGroupId] = group;
-    console.log(widgets);
 }
 
 /**
