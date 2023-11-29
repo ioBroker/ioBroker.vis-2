@@ -27,12 +27,12 @@ const WidgetImportDialog = props => {
         const project = JSON.parse(JSON.stringify(visProject));
         const widgets = JSON.parse(data);
         const newWidgets = {};
-        const groupOffset = 0;
-        const widgetOffset = 0;
+        let groupOffset = 0;
+        let widgetOffset = 0;
 
         for (const widget of widgets) {
             if (isGroup(widget)) {
-                const newKey = getNewGroupId(visProject, groupOffset);
+                const newKey = getNewGroupId(visProject, groupOffset++);
                 newWidgets[newKey] = widget;
                 // find all widgets that belong to this group and change groupid
                 let w;
@@ -43,7 +43,7 @@ const WidgetImportDialog = props => {
                     }
                 } while (w);
             } else {
-                const newKey = getNewWidgetId(visProject, widgetOffset);
+                const newKey = getNewWidgetId(visProject, widgetOffset++);
                 newWidgets[newKey] = widget;
                 if (widget.grouped && newWidgets[widget.groupid] && newWidgets[widget.groupid].data && newWidgets[widget.groupid].data.members) {
                     // find group
