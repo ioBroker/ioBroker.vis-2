@@ -232,6 +232,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ### **WORK IN PROGRESS**
 * (foxriver76) fixed reactivity in custom components
 * (foxriver76) after creating a group it is now pre-selected
+* (foxriver76) fields are now updated when moved via keyboard
 
 ### 2.9.1 (2023-11-28)
 * (foxriver76) recalculate fields after moving widgets
