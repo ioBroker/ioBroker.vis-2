@@ -223,8 +223,6 @@ class VisNavigation extends React.Component {
                     view,
                 };
 
-                console.log(viewSettings.navigationOrder);
-
                 items.push(item);
 
                 if (item.icon?.startsWith('_PRJ_NAME/')) {
@@ -234,8 +232,6 @@ class VisNavigation extends React.Component {
         });
 
         items.sort((prevItem, nextItem) => (prevItem.order === nextItem.order ? 0 : prevItem.order < nextItem.order ? -1 : 1));
-
-        console.log(items);
 
         if (settings.navigationOrientation === 'horizontal') {
             return <div
