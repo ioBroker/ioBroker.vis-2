@@ -22,10 +22,11 @@ import {
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
 // eslint-disable-next-line import/no-cycle
-import { RxWidgetInfo, RxWidgetProps } from '@/types';
+import { RxWidgetInfo } from '@/types';
+import { deepClone } from '@/Utils/utils';
 import VisBaseWidget from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget } from './visUtils';
-import { calculateOverflow, isVarFinite } from './utils';
+import { calculateOverflow } from './utils';
 
 const POSSIBLE_MUI_STYLES = [
     'background-color',
@@ -107,7 +108,12 @@ interface VisRxWidgetState extends VisBaseWidgetState {
     values: Record<string, any>;
 }
 
-class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<string, any> = Record<string, never>> extends VisBaseWidget {
+/** TODO: this overload can be removed as soon as VisBaseWidget is written correctly in TS */
+interface VisRxWidget<TRxData extends Record<string, any>, TState extends Record<string, any> = Record<string, never>> extends VisBaseWidget {
+   state: VisRxWidgetState & TState & { rxData: TRxData };
+}
+
+class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
     static POSSIBLE_MUI_STYLES = POSSIBLE_MUI_STYLES;
 
     private linkContext: {
@@ -128,9 +134,6 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<str
     private readonly visDynamicResizable: any;
 
     private newState?: Partial<VisRxWidgetState & { rxData: TRxData }> | null;
-
-    // TODO just needed until visVaseWidget is tsx
-    state: VisRxWidgetState & TState &{ rxData: TRxData };
 
     private wrappedContent?: boolean;
 
@@ -189,7 +192,6 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<str
         }
 
         this.state = {
-            // @ts-expect-error already assigned from super class wait for port
             ...this.state,
             resizable: options.resizable === undefined ? (options.visResizable === undefined ? true : options.visResizable) : options.resizable,
             draggable: options.visDraggable === undefined ? true : options.visDraggable,
@@ -273,7 +275,7 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<str
 
     onStateChanged(id?: string | null, state?: typeof this.state | null, doNotApplyState?: boolean) {
         this.newState = this.newState || {
-            values: JSON.parse(JSON.stringify(this.state.values || {})),
+            values: deepClone(this.state.values || {}),
             rxData: { ...this.state.data },
             rxStyle: { ...this.state.style },
             editMode: this.props.editMode,
