@@ -232,3 +232,15 @@ export interface RxWidgetProps extends RxRenderWidgetProps {
     selectedWidgets: string[],
     viewsActiveFilter: Record<string, string[]>
 }
+
+type AttributeType = 'id' | 'number' | 'image' | 'checkbox';
+type AttributeTypeToDataType<TType extends AttributeType> = TType extends 'checkbox' ? boolean : TType extends 'number' ? number :
+    string;
+
+/** Infer the RxData from VisAttrs */
+type GetRxDataFromVisAttrs<T extends Record<string, any>> = {
+    [K in T['visAttrs'][number]['fields'][number] as K['name']]: AttributeTypeToDataType<K['type']>
+}
+
+/** Infers the RxData from a given Widget */
+type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }> =  GetRxDataFromVisAttrs<ReturnType<(T['getWidgetInfo'])>>

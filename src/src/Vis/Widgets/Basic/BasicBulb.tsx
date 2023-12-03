@@ -1,8 +1,10 @@
 import React from 'react';
 // eslint-disable-next-line import/no-cycle
 import VisRxWidget from '@/Vis/visRxWidget';
-import { RxRenderWidgetProps } from '@/types';
+import { GetRxDataFromWidget, RxRenderWidgetProps } from '@/types';
 import { NOTHING_SELECTED } from '@/Vis/utils';
+
+type RxData = GetRxDataFromWidget<typeof BasicBulb>
 
 export default class BasicBulb extends VisRxWidget {
     /**
@@ -78,7 +80,7 @@ export default class BasicBulb extends VisRxWidget {
                     },
                 ],
             }],
-        };
+        } as const;
     }
 
     /**
@@ -220,7 +222,7 @@ export default class BasicBulb extends VisRxWidget {
         let src;
 
         if (isOff) {
-            src = this.state.rxData.icon_off || 'img/bulb_off.png';
+            src = (this.state.rxData as RxData).icon_off || 'img/bulb_off.png';
         } else {
             src = this.state.rxData.icon_on || 'img/bulb_on.png';
         }
