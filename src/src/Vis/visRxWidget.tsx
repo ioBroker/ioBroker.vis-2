@@ -107,7 +107,7 @@ interface VisRxWidgetState extends VisBaseWidgetState {
     values: Record<string, any>;
 }
 
-class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
+class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<string, any> = Record<string, never>> extends VisBaseWidget {
     static POSSIBLE_MUI_STYLES = POSSIBLE_MUI_STYLES;
 
     private linkContext: {
@@ -127,10 +127,10 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
 
     private readonly visDynamicResizable: any;
 
-    private newState?: Partial<VisRxWidgetState & { rxData: TRxData }> | null;
+    private newState?: Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null;
 
     // TODO just needed until visVaseWidget is tsx
-    state: VisRxWidgetState & { rxData: TRxData };
+    state: VisRxWidgetState & TState &{ rxData: TRxData };
 
     private wrappedContent?: boolean;
 

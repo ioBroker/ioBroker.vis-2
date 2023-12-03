@@ -1,11 +1,11 @@
 import React from 'react';
 
-import { RxRenderWidgetProps } from '@/types';
+import { GetRxDataFromWidget, RxRenderWidgetProps } from '@/types';
+import VisRxWidget from '@/Vis/visRxWidget';
 
-// eslint-disable-next-line import/no-cycle
-import VisRxWidget from '../../visRxWidget';
+type RxData = GetRxDataFromWidget<typeof BasicBar>
 
-export default class BasicBar extends VisRxWidget {
+export default class BasicBar extends VisRxWidget<RxData> {
     /**
      * Returns the widget info which is rendered in the edit mode
      */
@@ -65,7 +65,7 @@ export default class BasicBar extends VisRxWidget {
                 width: 200,
                 height: 130,
             },
-        };
+        } as const;
     }
 
     /**
@@ -100,8 +100,8 @@ export default class BasicBar extends VisRxWidget {
      * Calculate the length of the bar
      */
     getCalc(): string {
-        const min = (this.state.rxData.min || this.state.rxData.min === 0) ? parseFloat(this.state.rxData.min) : 0;
-        const max = (this.state.rxData.max || this.state.rxData.max === 0) ? parseFloat(this.state.rxData.max) : 100;
+        const min = (this.state.rxData.min || this.state.rxData.min === 0) ? Number(this.state.rxData.min) : 0;
+        const max = (this.state.rxData.max || this.state.rxData.max === 0) ? Number(this.state.rxData.max) : 100;
         let val = parseFloat(this.state.values[`${this.state.rxData.oid}.val`]) || 0;
         val = (val - min) / (max - min);
         return (this.state.rxData.border) ? (`calc(${Math.round(val * 100)}% - ${this.extractWidth(this.state.rxData.border, 2)})`) : (`${Math.round(val * 100)}%`);
