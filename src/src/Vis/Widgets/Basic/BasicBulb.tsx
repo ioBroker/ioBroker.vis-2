@@ -6,7 +6,7 @@ import { NOTHING_SELECTED } from '@/Vis/utils';
 
 type RxData = GetRxDataFromWidget<typeof BasicBulb>
 
-export default class BasicBulb extends VisRxWidget {
+export default class BasicBulb extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
@@ -95,7 +95,7 @@ export default class BasicBulb extends VisRxWidget {
 
         const { oidTrue, urlTrue, oid } = this.state.rxData;
         let {
-            min, urlFalse, oidFalse, max, oidTrueVal, oidFalseVal,
+            min, urlFalse, oidFalse, max, oidTrueValue, oidFalseValue,
         } = this.state.rxData;
 
         if (oidTrue || urlTrue) {
@@ -118,19 +118,19 @@ export default class BasicBulb extends VisRxWidget {
 
             if (oidTrue) {
                 if (val) {
-                    if (oidTrueVal === undefined || oidTrueVal === null) oidTrueVal = max;
-                    if (oidTrueVal === 'false') oidTrueVal = false;
-                    if (oidTrueVal === 'true')  oidTrueVal = true;
-                    const f = parseFloat(oidTrueVal);
-                    if (f.toString() === oidTrueVal) oidTrueVal = f;
-                    this.props.context.setValue(oidTrue, oidTrueVal);
+                    if (oidTrueValue === undefined || oidTrueValue === null) oidTrueValue = max;
+                    if (oidTrueValue === 'false') oidTrueValue = false;
+                    if (oidTrueValue === 'true')  oidTrueValue = true;
+                    const f = parseFloat(oidTrueValue);
+                    if (f.toString() === oidTrueValue) oidTrueValue = f;
+                    this.props.context.setValue(oidTrue, oidTrueValue);
                 } else {
-                    if (oidFalseVal === undefined || oidFalseVal === null) oidFalseVal = min;
-                    if (oidFalseVal === 'false') oidFalseVal = false;
-                    if (oidFalseVal === 'true')  oidFalseVal = true;
-                    const f = parseFloat(oidFalseVal);
-                    if (f.toString() === oidFalseVal) oidFalseVal = f;
-                    this.props.context.setValue(oidFalse, oidFalseVal);
+                    if (oidFalseValue === undefined || oidFalseValue === null) oidFalseValue = min;
+                    if (oidFalseValue === 'false') oidFalseValue = false;
+                    if (oidFalseValue === 'true')  oidFalseValue = true;
+                    const f = parseFloat(oidFalseValue);
+                    if (f.toString() === oidFalseValue) oidFalseValue = f;
+                    this.props.context.setValue(oidFalse, oidFalseValue);
                 }
             }
 
@@ -222,7 +222,7 @@ export default class BasicBulb extends VisRxWidget {
         let src;
 
         if (isOff) {
-            src = (this.state.rxData as RxData).icon_off || 'img/bulb_off.png';
+            src = this.state.rxData.icon_off || 'img/bulb_off.png';
         } else {
             src = this.state.rxData.icon_on || 'img/bulb_on.png';
         }

@@ -1068,6 +1068,12 @@ class VisBaseWidget extends React.Component {
         }
     }
 
+    /**
+     * Render the widget body
+     *
+     * @param props
+     * @return {Element | void}
+     */
     // eslint-disable-next-line class-methods-use-this,no-unused-vars
     renderWidgetBody(props) {
         // Default render method. Normally it should be overwritten
