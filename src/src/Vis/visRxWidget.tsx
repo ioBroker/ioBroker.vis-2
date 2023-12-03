@@ -21,9 +21,8 @@ import {
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
-// eslint-disable-next-line import/no-cycle
 import { RxWidgetInfo } from '@/types';
-import { deepClone } from '@/Utils/utils';
+// eslint-disable-next-line import/no-cycle
 import VisBaseWidget from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget } from './visUtils';
 import { calculateOverflow } from './utils';
@@ -275,7 +274,7 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
 
     onStateChanged(id?: string | null, state?: typeof this.state | null, doNotApplyState?: boolean) {
         this.newState = this.newState || {
-            values: deepClone(this.state.values || {}),
+            values: JSON.parse(JSON.stringify(this.state.values || {})),
             rxData: { ...this.state.data },
             rxStyle: { ...this.state.style },
             editMode: this.props.editMode,

@@ -75,11 +75,11 @@ interface CopyGroupOptions {
     /** The widgets key, value object to copy the group to */
     widgets: Record<string, Widget>;
     /** The group member widgets stored in the clipboard to paste from */
-    groupMembers: Record<string, Widget>,
+    groupMembers: Record<string, Widget>;
     /** The offset to use, if multiple groups are copied without saving */
-    offset?: number
+    offset?: number;
     /** The project to calculate new widget ids from */
-    project: Project
+    project: Project;
 }
 
 /**
