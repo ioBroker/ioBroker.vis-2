@@ -127,7 +127,7 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<str
 
     private readonly visDynamicResizable: any;
 
-    private newState?: Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null;
+    private newState?: Partial<VisRxWidgetState & { rxData: TRxData }> | null;
 
     // TODO just needed until visVaseWidget is tsx
     state: VisRxWidgetState & TState &{ rxData: TRxData };
@@ -310,7 +310,6 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<str
             if (this.newState.rxData['visibility-groups-action'] === 'disabled') {
                 this.newState.disabled = true;
             } else {
-                // newState.rxData['visibility-groups-action'] === 'hide'
                 this.newState.visible = false;
             }
         }

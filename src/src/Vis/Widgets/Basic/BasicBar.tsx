@@ -60,7 +60,6 @@ export default class BasicBar extends VisRxWidget<RxData> {
                     },
                 ],
             }],
-            // visWidgetLabel: 'value_string',  // Label of widget
             visDefaultStyle: {
                 width: 200,
                 height: 130,
