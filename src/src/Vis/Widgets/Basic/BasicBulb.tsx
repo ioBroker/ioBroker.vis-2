@@ -2,7 +2,7 @@ import React from 'react';
 // eslint-disable-next-line import/no-cycle
 import VisRxWidget from '@/Vis/visRxWidget';
 import { GetRxDataFromWidget, RxRenderWidgetProps } from '@/types';
-import { NOTHING_SELECTED } from '@/Vis/utils';
+import { NOTHING_SELECTED } from '@/Utils/utils';
 
 type RxData = GetRxDataFromWidget<typeof BasicBulb>
 
