@@ -540,7 +540,7 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
         </MyCard>;
     }
 
-    renderWidgetBody(props: RxWidgetProps) {
+    renderWidgetBody(props: any) {
         props.id = this.props.id;
 
         props.className = `vis-widget${this.state.rxData.class ? ` ${this.state.rxData.class}` : ''}`;
@@ -557,7 +557,7 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
                         /(-\w)/g,
                         text => text[1].toUpperCase(),
                     );
-                    // @ts-expect-error fix later
+
                     props.style[attr] = value;
                 }
             }
