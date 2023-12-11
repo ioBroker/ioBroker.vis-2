@@ -404,50 +404,53 @@ class BulkEditor extends React.Component {
         />;
     }
 
+    /**
+     * Called when Bulkd Editor data is submitted
+     */
+    onEnter() {
+        const values = [...this.state.values];
+
+        if (this.state.editDialog.add) {
+            const index = values.length;
+            values[index] = this.state.editDialog.value;
+
+            const texts = [...this.state.texts];
+            const icons = [...this.state.icons];
+            const images = [...this.state.images];
+            const colors = [...this.state.colors];
+            const activeColors = [...this.state.activeColors];
+            const tooltips = [...this.state.tooltips];
+            texts[index] = texts[index] || '';
+            icons[index] = icons[index] || '';
+            images[index] = images[index] || '';
+            colors[index] = colors[index] || '';
+            activeColors[index] = activeColors[index] || '';
+            tooltips[index] = tooltips[index] || '';
+
+            this.setState({
+                values,
+                texts,
+                icons,
+                images,
+                colors,
+                activeColors,
+                tooltips,
+                editDialog: null,
+            });
+        } else {
+            values[this.state.editDialog.index] = this.state.editDialog.value;
+            this.setState({
+                values,
+                editDialog: null,
+            });
+        }
+    }
+
     renderEditDialog() {
         if (!this.state.editDialog) {
             return null;
         }
         const isUnique = !this.state.values.map(v => v.trim()).includes(this.state.editDialog.value);
-
-        const onEnter = () => {
-            const values = [...this.state.values];
-
-            if (this.state.editDialog.add) {
-                const index = values.length;
-                values[index] = this.state.editDialog.value;
-
-                const texts = [...this.state.texts];
-                const icons = [...this.state.icons];
-                const images = [...this.state.images];
-                const colors = [...this.state.colors];
-                const activeColors = [...this.state.activeColors];
-                const tooltips = [...this.state.tooltips];
-                texts[index] = texts[index] || '';
-                icons[index] = icons[index] || '';
-                images[index] = images[index] || '';
-                colors[index] = colors[index] || '';
-                activeColors[index] = activeColors[index] || '';
-                tooltips[index] = tooltips[index] || '';
-
-                this.setState({
-                    values,
-                    texts,
-                    icons,
-                    images,
-                    colors,
-                    activeColors,
-                    tooltips,
-                    editDialog: null,
-                });
-            } else {
-                values[this.state.editDialog.index] = this.state.editDialog.value;
-                this.setState({
-                    values,
-                    editDialog: null,
-                });
-            }
-        };
 
         return <Dialog
             key="editDialog"
@@ -458,7 +461,7 @@ class BulkEditor extends React.Component {
             <DialogTitle>{this.state.editDialog.add ? I18n.t('jqui_Add new value') : I18n.t('Edit')}</DialogTitle>
             <DialogContent>
                 <TextField
-                    onKeyDown={e => e.keyCode === 13 && isUnique && this.state.editDialog.value && onEnter()}
+                    onKeyDown={e => e.keyCode === 13 && isUnique && this.state.editDialog.value && this.onEnter()}
                     fullWidth
                     autoFocus
                     variant="standard"
