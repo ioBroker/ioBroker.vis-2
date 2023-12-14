@@ -1290,10 +1290,7 @@ class Widget extends Component {
                                     isDifferent={this.state.isDifferent[field.name]}
                                     project={store.getState().visProject}
                                     socket={this.props.socket}
-                                    changeProject={project => {
-                                        this.props.changeProject(project);
-                                        // this.setState({ widget: project[this.props.selectedView].widgets[this.props.selectedWidgets[0]] });
-                                    }}
+                                    changeProject={this.props.changeProject}
                                 />
                                 : <WidgetField
                                     widgetType={this.state.widgetType}
@@ -1307,10 +1304,6 @@ class Widget extends Component {
                                     index={group.index}
                                     isDifferent={this.state.isDifferent[field.name]}
                                     {...this.props}
-                                    changeProject={project => {
-                                        this.props.changeProject(project);
-                                        // this.setState({ widget: project[this.props.selectedView].widgets[this.props.selectedWidgets[0]] });
-                                    }}
                                 />}
                         </div>
                     </td>
