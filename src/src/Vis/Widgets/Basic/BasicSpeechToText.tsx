@@ -452,7 +452,7 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                             src={this.state.image}
                         />
                     </td>
-                    <td className="mic-text" style={{ width: 100 }}>
+                    <td className="mic-text" style={{ width: '100%' }}>
                         <div
                             style={{ display: this.state.rxData.noText ? 'none' : undefined }}
                             /* eslint-disable-next-line react/no-danger */
