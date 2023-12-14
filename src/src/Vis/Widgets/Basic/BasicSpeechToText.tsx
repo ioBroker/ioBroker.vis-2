@@ -220,8 +220,8 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                 this.recognition.stop();
                 this.recognition = null;
                 this.setState({ text: I18n.t('basic_speech2text_info_start'), image: this.state.rxData.imageInactive });
-                return;
             }
+            return;
         }
 
         // eslint-disable-next-line new-cap
