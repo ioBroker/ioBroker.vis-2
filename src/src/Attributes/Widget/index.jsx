@@ -32,6 +32,7 @@ import { getWidgetTypes, parseAttributes } from '../../Vis/visWidgetsCatalog';
 import WidgetCSS from './WidgetCSS';
 import WidgetJS from './WidgetJS';
 import WidgetBindingField from './WidgetBindingField';
+import { deepClone } from '../../Utils/utils';
 
 const ICONS = {
     'group.fixed': <FilterAltIcon fontSize="small" />,
@@ -1259,7 +1260,7 @@ class Widget extends Component {
                                 className={this.props.classes.colorize}
                                 onClick={() => this.props.cssClone(field.name, newValue => {
                                     if (newValue !== null && newValue !== undefined) {
-                                        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+                                        const project = deepClone(store.getState().visProject);
                                         this.props.selectedWidgets.forEach(wid => {
                                             if (project[this.props.selectedView].widgets[wid]) {
                                                 project[this.props.selectedView].widgets[wid].style = project[this.props.selectedView].widgets[wid].style || {};
@@ -1289,7 +1290,10 @@ class Widget extends Component {
                                     isDifferent={this.state.isDifferent[field.name]}
                                     project={store.getState().visProject}
                                     socket={this.props.socket}
-                                    changeProject={this.changeProject}
+                                    changeProject={project => {
+                                        this.props.changeProject(project);
+                                        // this.setState({ widget: project[this.props.selectedView].widgets[this.props.selectedWidgets[0]] });
+                                    }}
                                 />
                                 : <WidgetField
                                     widgetType={this.state.widgetType}
@@ -1303,7 +1307,10 @@ class Widget extends Component {
                                     index={group.index}
                                     isDifferent={this.state.isDifferent[field.name]}
                                     {...this.props}
-                                    changeProject={this.changeProject}
+                                    changeProject={project => {
+                                        this.props.changeProject(project);
+                                        // this.setState({ widget: project[this.props.selectedView].widgets[this.props.selectedWidgets[0]] });
+                                    }}
                                 />}
                         </div>
                     </td>

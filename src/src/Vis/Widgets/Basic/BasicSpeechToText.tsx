@@ -80,9 +80,9 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                         type: 'select',
                         default: 'single',
                         options: [
-                            { value: 'single', label: 'single' },
-                            { value: 'startstop', label: 'startstop' },
-                            { value: 'continuous', label: 'continuous' },
+                            { value: 'single', label: 'basic_speech2text_single' },
+                            { value: 'startstop', label: 'basic_speech2text_start_stop' },
+                            { value: 'continuous', label: 'basic_speech2text_continuous' },
                         ],
                     },
                     {
@@ -90,9 +90,9 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                         type: 'select',
                         options: [
                             { value: '', label: '' },
-                            { value: 'en-US', label: 'en-US' },
+                            { value: 'en-US', label: 'basic_speech2text_en_us' },
                             { value: 'de', label: 'de' },
-                            { value: 'ru-RU', label: 'ru-RU' },
+                            { value: 'ru-RU', label: 'basic_speech2text_ru_ru' },
                         ],
                     },
                     {
@@ -101,36 +101,43 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                 ],
             },
             {
-                name: 'group.image',
+                name: 'image',
+                label: 'Image',
                 fields: [
                     {
                         name: 'noImage',
                         type: 'checkbox',
+                        label: 'basic_speech2text_no_image',
                     },
                     {
                         name: 'imageInactive',
                         default: 'widgets/basic/img/micInactive.svg',
                         type: 'image',
+                        label: 'basic_speech2text_image_inactive',
                     },
                     {
                         name: 'imageActive',
                         default: 'widgets/basic/img/micActive.svg',
                         type: 'image',
+                        label: 'basic_speech2text_image_active',
                     },
                     {
                         name: 'imageStarted',
                         default: 'widgets/basic/img/micStarted.svg',
                         type: 'image',
+                        label: 'basic_speech2text_started',
                     },
                     {
                         name: 'imageDetected',
                         default: 'widgets/basic/img/micDetected.svg',
                         type: 'image',
+                        label: 'basic_speech2text_detected',
                     },
                     {
                         name: 'imageSent',
                         default: 'widgets/basic/img/micSent.svg',
                         type: 'image',
+                        label: 'basic_speech2text_sent',
                     },
                     {
                         name: 'imageHeightPx',
@@ -139,6 +146,7 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                         min: 0,
                         max: 200,
                         step: 1,
+                        label: 'basic_speech2text_height',
                     },
                     {
                         name: 'imageWidthPx',
@@ -147,29 +155,37 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                         min: 0,
                         max: 200,
                         step: 1,
+                        label: 'basic_speech2text_width',
                     },
                 ],
             },
             {
-                name: 'group.text',
+                name: 'text',
+                label: 'Text',
                 fields: [
                     {
                         name: 'noText',
                         type: 'checkbox',
+                        label: 'basic_speech2text_no_text',
                     },
                     {
                         name: 'noResults',
                         type: 'checkbox',
+                        label: 'basic_speech2text_no_results',
                     },
                     {
                         name: 'keyWordColor',
                         type: 'color',
                         default: '#FFB051',
+                        label: 'basic_speech2text_key_word_color',
+                        tooltip: 'basic_speech2text_key_word_color_tooltip',
                     },
                     {
                         name: 'textSentColor',
                         type: 'color',
                         default: '#7E88D3',
+                        label: 'basic_speech2text_text_sent_color',
+                        tooltip: 'basic_speech2text_text_sent_color_tooltip',
                     }],
             }],
             visDefaultStyle: {
@@ -189,7 +205,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
         let found = false;
 
         if (words) {
-            found = false;
             const wwords = text.toLowerCase().split(' ');
             for (let w = 0; w < words.length; w++) {
                 const pos = wwords.indexOf(words[w]);
@@ -283,7 +298,7 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                     this.setState({
                         image: this.state.rxData.imageInactive,
                     });
-                    if (this.recognition.continuous) {
+                    if (this.state.rxData.speechMode === 'continuous') {
                         this.setState({
                             result: '',
                             text: I18n.t('basic_speech2text_info_speak_now'),
@@ -322,21 +337,19 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
 
             this.setState({ text: '' });
             let text = finalTranscript || interimTranscript;
-            const found = this.findKeyWord(text);
+            const foundKeyword = this.findKeyWord(text);
 
             if (!originalColor) {
                 originalColor = this.state.resultColor;
             }
 
-            if (found) {
-                // @ts-expect-error cleanup getKeyword
-                text = found;
+            if (foundKeyword) {
+                text = typeof foundKeyword === 'string' ? foundKeyword : text;
                 if (this.state.image === this.state.rxData.imageStarted) {
                     this.setState({
                         image: this.state.rxData.imageDetected,
                     });
                 }
-                // _data.$result.addClass('mic-keyword-found');
                 if (this.state.rxData.keyWordColor) {
                     this.setState({
                         resultColor: this.state.rxData.keyWordColor,
@@ -349,7 +362,7 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
             if (finalTranscript) {
                 if (timer) clearTimeout(timer);
 
-                if (found) {
+                if (foundKeyword) {
                     this.setState({
                         image: this.state.rxData.imageSent,
                     });
@@ -380,8 +393,8 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                     this.recognition.stop();
                     this.recognition = null;
 
-                    const found = this.findKeyWord(lastText);
-                    if (found) {
+                    const hasKeyword = !!this.findKeyWord(lastText);
+                    if (hasKeyword) {
                         this.setState({
                             image: this.state.rxData.imageSent,
                         });
@@ -434,24 +447,22 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                 <tr>
                     <td style={{ display: this.state.rxData.noImage ? 'none' : undefined }}>
                         <img
-                            className="mic-image"
+                            alt="mic"
                             style={{ height: `${this.state.rxData.imageHeightPx}px`, width: `${this.state.rxData.imageWidthPx}px` }}
                             src={this.state.image}
                         />
                     </td>
                     <td className="mic-text" style={{ width: 100 }}>
                         <div
-                            className="mic-info-text"
                             style={{ display: this.state.rxData.noText ? 'none' : undefined }}
-                        >
-                            {this.state.text}
-                        </div>
+                            /* eslint-disable-next-line react/no-danger */
+                            dangerouslySetInnerHTML={{ __html:  this.state.text }}
+                        />
                         <div
-                            className="mic-results"
                             style={{ display: this.state.rxData.noResults ? 'none' : undefined, color: this.state.resultColor }}
-                        >
-                            {this.state.result}
-                        </div>
+                            /* eslint-disable-next-line react/no-danger */
+                            dangerouslySetInnerHTML={{ __html:  this.state.result }}
+                        />
                     </td>
                 </tr>
             </table>
