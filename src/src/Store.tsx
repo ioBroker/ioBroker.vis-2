@@ -34,16 +34,18 @@ const reducer = createReducer(
     },
 );
 
-const selectProject = (state: typeof initialState) => state.visProject;
+type StoreState = typeof initialState
+
+const selectProject = (state: StoreState) => state.visProject;
 
 export const selectView = createSelector([
     selectProject,
-    (_project: Project, viewName: string) => viewName,
+    (_state: StoreState, viewName: string) => viewName,
 ], (project, view) => project[view]);
 
 export const selectWidget = createSelector([
     selectView,
-    (_project: Project, _viewName: string, wid: string) => wid,
+    (_state: StoreState, _viewName: string, wid: string) => wid,
 ], (view, wid) => view.widgets[wid]);
 
 export const store = configureStore({
