@@ -45,6 +45,7 @@ import {
 import { theme, background } from './ViewData';
 import MaterialIconSelector from '../Components/MaterialIconSelector';
 import { store } from '../Store';
+import { deepClone } from '../Utils/utils';
 
 const styles = _theme => ({
     backgroundClass: {
@@ -164,6 +165,17 @@ const resolution = [
     { value: '1920x1080', label: 'Full HD - Landscape' },
 ];
 
+/**
+ *
+ * @param item
+ * @param backgroundClass
+ * @return {JSX.Element}
+ */
+const renderPreview = (item, backgroundClass) => <>
+    <span className={`${backgroundClass} ${item.value}`} />
+    {I18n.t(item.label)}
+</>;
+
 const checkFunction = (funcText, settings) => {
     try {
         let _func;
@@ -213,6 +225,8 @@ const View = props => {
     if (!store.getState().visProject || !store.getState().visProject[props.selectedView]) {
         return null;
     }
+
+    console.log(props.classes.backgroundClass);
 
     const [triggerAllOpened, setTriggerAllOpened] = useState(0);
     const [triggerAllClosed, setTriggerAllClosed] = useState(0);
@@ -328,14 +342,10 @@ const View = props => {
                     type: 'select',
                     options: background,
                     field: 'background_class',
-                    // eslint-disable-next-line react/no-unstable-nested-components
-                    itemModify: item => <>
-                        <span className={`${props.classes.backgroundClassSquare} ${item.value}`} />
-                        {I18n.t(item.name)}
-                    </>,
+                    itemModify: item => renderPreview(item, props.classes.backgroundClassSquare),
                     renderValue: value => <div className={props.classes.backgroundClass}>
                         <span className={`${props.classes.backgroundClassSquare} ${value}`} />
-                        {I18n.t(background.find(item => item.value === value).name)}
+                        {I18n.t(background.find(item => item.value === value).label)}
                     </div>,
                     hidden: '!!data["bg-image"]',
                 },
@@ -926,7 +936,7 @@ const View = props => {
                                 }
 
                                 const change = changeValue => {
-                                    const project = JSON.parse(JSON.stringify(store.getState().visProject));
+                                    const project = deepClone(store.getState().visProject);
                                     if (field.notStyle) {
                                         project[props.selectedView].settings[field.field] = changeValue;
                                     } else {
