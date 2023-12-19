@@ -165,17 +165,6 @@ const resolution = [
     { value: '1920x1080', label: 'Full HD - Landscape' },
 ];
 
-/**
- *
- * @param item
- * @param backgroundClass
- * @return {JSX.Element}
- */
-const renderPreview = (item, backgroundClass) => <>
-    <span className={`${backgroundClass} ${item.value}`} />
-    {I18n.t(item.label)}
-</>;
-
 const checkFunction = (funcText, settings) => {
     try {
         let _func;
@@ -225,8 +214,6 @@ const View = props => {
     if (!store.getState().visProject || !store.getState().visProject[props.selectedView]) {
         return null;
     }
-
-    console.log(props.classes.backgroundClass);
 
     const [triggerAllOpened, setTriggerAllOpened] = useState(0);
     const [triggerAllClosed, setTriggerAllClosed] = useState(0);
@@ -342,7 +329,11 @@ const View = props => {
                     type: 'select',
                     options: background,
                     field: 'background_class',
-                    itemModify: item => renderPreview(item, props.classes.backgroundClassSquare),
+                    // eslint-disable-next-line react/no-unstable-nested-components
+                    itemModify: item => <>
+                        <span className={`${props.classes.backgroundClass} ${item.value}`} />
+                        {I18n.t(item.label)}
+                    </>,
                     renderValue: value => <div className={props.classes.backgroundClass}>
                         <span className={`${props.classes.backgroundClassSquare} ${value}`} />
                         {I18n.t(background.find(item => item.value === value).label)}
@@ -745,7 +736,7 @@ const View = props => {
                 },
             ],
         },
-    ]), [resolutionSelect, `${view.settings.sizex}x${view.settings.sizey}`]);
+    ]), [resolutionSelect, `${view.settings.sizex}x${view.settings.sizey}`, props.classes.backgroundClass, props.classes.backgroundClassSquare]);
 
     const [accordionOpen, setAccordionOpen] = useState(
         window.localStorage.getItem('attributesView')
