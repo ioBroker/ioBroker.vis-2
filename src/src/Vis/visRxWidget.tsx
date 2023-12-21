@@ -296,7 +296,6 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
         Object.keys(this.linkContext.bindings).forEach(_id => this.applyBinding(_id, this.newState));
 
         this.newState.visible = this.checkVisibility(id, this.newState);
-        console.log(this.newState?.visible);
 
         // @ts-expect-error fix later
         const userGroups = this.newState.rxData['visibility-groups'];
