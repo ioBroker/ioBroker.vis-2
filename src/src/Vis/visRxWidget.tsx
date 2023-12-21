@@ -109,6 +109,8 @@ interface VisRxWidgetStateValues {
     [from: `${string}.from`]: string;
     /** State timestamp */
     [timestamp: `${string}.ts`]: number;
+    /** State last change */
+    [timestamp: `${string}.lc`]: number;
 }
 
 interface VisRxWidgetState extends VisBaseWidgetState {
