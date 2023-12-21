@@ -102,9 +102,18 @@ interface VisBaseWidgetState {
     disabled: boolean;
 }
 
+interface VisRxWidgetStateValues {
+    /** State value */
+    [values: `${string}.val`]: any;
+    /** State from */
+    [from: `${string}.from`]: string;
+    /** State timestamp */
+    [timestamp: `${string}.ts`]: number;
+}
+
 interface VisRxWidgetState extends VisBaseWidgetState {
     rxData: RxData;
-    values: Record<string, any>;
+    values: VisRxWidgetStateValues;
 }
 
 /** TODO: this overload can be removed as soon as VisBaseWidget is written correctly in TS */
