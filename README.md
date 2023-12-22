@@ -232,10 +232,11 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ### **WORK IN PROGRESS**
 * (foxriver76) fixed issue that every state update is used for visibility calculation
 * (bluefox) migrated jQui select, jQui Radio steps widgets to react
+* (bluefox) All jQui widgets were migrated to react
  
 ### 2.9.8 (2023-12-21)
-* (foxriver76) fixed bug that no labels are shown for background
-* (foxriver76) prevent short flashing of widgets with visibility condition at page load
+* (foxriver76) fixed bug that no labels are shown for a background
+* (foxriver76) prevent short flashing of widgets with visibility condition at a page load
 * (foxriver76) fixed issue on theme switch
 
 ### 2.9.7 (2023-12-19)
