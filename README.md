@@ -230,6 +230,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (foxriver76) fixed issue that every state update is used for visibility calculation
 * (bluefox) migrated jQui select, jQui Radio steps widgets to react
  
 ### 2.9.8 (2023-12-21)
