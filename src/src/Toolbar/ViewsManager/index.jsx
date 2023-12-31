@@ -124,7 +124,6 @@ const ViewsManager = props => {
             }
         }
 
-        console.log(project);
         viewObject.name = view;
         props.changeProject(project);
     };
