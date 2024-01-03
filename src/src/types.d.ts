@@ -16,6 +16,8 @@ export interface ProjectSettings {
 }
 
 interface SingleWidget  {
+    /** Internal wid */
+    _id?: string;
     data: Record<string, unknown>;
     style: Record<string, unknown>;
     tpl: string;

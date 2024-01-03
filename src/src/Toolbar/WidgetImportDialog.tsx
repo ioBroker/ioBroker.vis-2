@@ -1,5 +1,4 @@
-import PropTypes from 'prop-types';
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import {
     Button, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -10,13 +9,22 @@ import { Close as CloseIcon, ImportExport } from '@mui/icons-material';
 import { I18n } from '@iobroker/adapter-react-v5';
 import {
     isGroup, getNewGroupId, getNewWidgetId, deepClone,
-} from '../Utils/utils';
+} from '@/Utils/utils';
 
-import { useFocus } from '../Utils';
+import { useFocus } from '@/Utils';
+import { store } from '@/Store';
+import { GroupWidget, Project, Widget } from '@/types';
 import CustomAceEditor from '../Components/CustomAceEditor';
-import { store } from '../Store';
 
-const WidgetImportDialog = props => {
+interface WidgetImportDialogProps {
+    changeProject: (project: Project) => void;
+    onClose:() => void;
+    themeType: string;
+    selectedView: string;
+    selectedGroup: string;
+}
+
+const WidgetImportDialog = (props: WidgetImportDialogProps) => {
     const [data, setData] = useState('');
     const [error, setError] = useState(false);
 
@@ -27,8 +35,8 @@ const WidgetImportDialog = props => {
     const importWidgets = () => {
         const { visProject } = store.getState();
         const project = deepClone(visProject);
-        const widgets = JSON.parse(data);
-        const newWidgets = {};
+        const widgets: Widget[] = JSON.parse(data);
+        const newWidgets: Record<string, Widget> = {};
         let groupOffset = 0;
         let widgetOffset = 0;
 
@@ -47,11 +55,11 @@ const WidgetImportDialog = props => {
             } else {
                 const newKey = getNewWidgetId(visProject, widgetOffset++);
                 newWidgets[newKey] = widget;
-                if (widget.grouped && newWidgets[widget.groupid]?.data?.members) {
+                if (widget.grouped && widget.groupid && newWidgets[widget.groupid]?.data?.members) {
                     // find group
-                    const pos = newWidgets[widget.groupid].data.members.indexOf(widget._id);
+                    const pos = (newWidgets[widget.groupid] as GroupWidget).data.members.indexOf(widget._id as string);
                     if (pos !== -1) {
-                        newWidgets[widget.groupid].data.members[pos] = newKey;
+                        (newWidgets[widget.groupid] as GroupWidget).data.members[pos] = newKey;
                     }
                 }
             }
@@ -78,20 +86,7 @@ const WidgetImportDialog = props => {
         maxWidth="lg"
     >
         <DialogTitle>{I18n.t('Import widgets')}</DialogTitle>
-        <DialogContent
-            onKeyUp={e => {
-                if (props.action) {
-                    if (!props.actionDisabled && !props.keyboardDisabled) {
-                        if (e.keyCode === 13) {
-                            props.action();
-                            if (!props.actionNoClose) {
-                                props.onClose();
-                            }
-                        }
-                    }
-                }
-            }}
-        >
+        <DialogContent>
             <CustomAceEditor
                 type="json"
                 error={error}
@@ -128,6 +123,7 @@ const WidgetImportDialog = props => {
             </Button>
             <Button
                 variant="contained"
+                // @ts-expect-error works like that
                 color="grey"
                 onClick={props.onClose}
                 startIcon={<CloseIcon />}
@@ -136,13 +132,5 @@ const WidgetImportDialog = props => {
             </Button>
         </DialogActions>
     </Dialog>;
-};
-
-WidgetImportDialog.propTypes = {
-    changeProject: PropTypes.func,
-    onClose: PropTypes.func,
-    themeType: PropTypes.string,
-    selectedView: PropTypes.string,
-    selectedGroup: PropTypes.string,
 };
 export default WidgetImportDialog;
