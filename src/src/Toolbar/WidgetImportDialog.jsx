@@ -8,7 +8,9 @@ import {
 import { Close as CloseIcon, ImportExport } from '@mui/icons-material';
 
 import { I18n } from '@iobroker/adapter-react-v5';
-import { isGroup, getNewGroupId, getNewWidgetId } from '../Utils/utils';
+import {
+    isGroup, getNewGroupId, getNewWidgetId, deepClone,
+} from '../Utils/utils';
 
 import { useFocus } from '../Utils';
 import CustomAceEditor from '../Components/CustomAceEditor';
@@ -24,7 +26,7 @@ const WidgetImportDialog = props => {
 
     const importWidgets = () => {
         const { visProject } = store.getState();
-        const project = JSON.parse(JSON.stringify(visProject));
+        const project = deepClone(visProject);
         const widgets = JSON.parse(data);
         const newWidgets = {};
         let groupOffset = 0;
@@ -45,7 +47,7 @@ const WidgetImportDialog = props => {
             } else {
                 const newKey = getNewWidgetId(visProject, widgetOffset++);
                 newWidgets[newKey] = widget;
-                if (widget.grouped && newWidgets[widget.groupid] && newWidgets[widget.groupid].data && newWidgets[widget.groupid].data.members) {
+                if (widget.grouped && newWidgets[widget.groupid]?.data?.members) {
                     // find group
                     const pos = newWidgets[widget.groupid].data.members.indexOf(widget._id);
                     if (pos !== -1) {
@@ -55,7 +57,14 @@ const WidgetImportDialog = props => {
             }
         }
 
-        Object.keys(newWidgets).forEach(wid => delete newWidgets[wid]._id);
+        Object.keys(newWidgets).forEach(wid => {
+            delete newWidgets[wid]._id;
+
+            if (!isGroup(newWidgets[wid]) && props.selectedGroup !== undefined) {
+                newWidgets[wid].grouped = true;
+                newWidgets[wid].groupid = props.selectedGroup;
+            }
+        });
 
         project[props.selectedView].widgets = { ...project[props.selectedView].widgets, ...newWidgets };
 
@@ -134,5 +143,6 @@ WidgetImportDialog.propTypes = {
     onClose: PropTypes.func,
     themeType: PropTypes.string,
     selectedView: PropTypes.string,
+    selectedGroup: PropTypes.string,
 };
 export default WidgetImportDialog;

@@ -528,7 +528,7 @@ class App extends Runtime {
         const widgets = {};
         const groupMembers = {};
         const project = deepClone(store.getState().visProject);
-        const { visProject } = store.getState();
+        const { visProject } = deepClone(store.getState());
 
         this.state.selectedWidgets.forEach(selectedWidget => {
             widgets[selectedWidget] = visProject[this.state.selectedView].widgets[selectedWidget];
@@ -540,10 +540,32 @@ class App extends Runtime {
                 }
             }
 
-            if (type === 'cut' && project[this.state.selectedView]) {
-                delete project[this.state.selectedView].widgets[selectedWidget];
+            if (project[this.state.selectedView]) {
+                const widget = project[this.state.selectedView].widgets[selectedWidget];
+
+                if (widget.groupid) {
+                    delete widgets[selectedWidget].groupid;
+                    delete widgets[selectedWidget].grouped;
+                    delete widget._id;
+                }
+
+                if (type === 'cut') {
+                    if (widget.groupid) {
+                        const group = project[this.state.selectedView].widgets[widget.groupid];
+
+                        const pos = group.data.members.indexOf(selectedWidget);
+
+                        if (pos !== -1) {
+                            group.data.members.splice(pos, 1);
+                        }
+                    }
+
+                    delete project[this.state.selectedView].widgets[selectedWidget];
+                }
             }
         });
+
+        console.log(widgets);
 
         await this.setStateAsync({
             widgetsClipboard: {
@@ -562,7 +584,7 @@ class App extends Runtime {
     };
 
     pasteWidgets = async () => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
 
         const newKeys = [];
@@ -570,7 +592,7 @@ class App extends Runtime {
         let groupOffset = 0;
 
         for (const clipboardWidgetId of Object.keys(this.state.widgetsClipboard.widgets)) {
-            const newWidget = JSON.parse(JSON.stringify(this.state.widgetsClipboard.widgets[clipboardWidgetId]));
+            const newWidget = deepClone(this.state.widgetsClipboard.widgets[clipboardWidgetId]);
             if (this.state.widgetsClipboard.type === 'copy' && this.state.selectedView === this.state.widgetsClipboard.view) {
                 const boundingRect = App.getWidgetRelativeRect(clipboardWidgetId);
                 newWidget.style = this.pxToPercent(newWidget.style, {
@@ -591,7 +613,13 @@ class App extends Runtime {
                 widgetOffset++;
             }
 
+            if (!isGroup(newWidget) && this.state.selectedGroup) {
+                newWidget.grouped = true;
+                newWidget.groupid = this.state.selectedGroup;
+            }
+
             widgets[newKey] = newWidget;
+            console.log(newWidget);
             newKeys.push(newKey);
         }
 

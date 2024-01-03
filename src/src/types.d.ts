@@ -22,6 +22,8 @@ interface SingleWidget  {
     widgetSet: string;
     /** The id of the group, if the widget is grouped */
     groupid?: string;
+    /** If the widget is grouped */
+    grouped?: boolean;
 }
 
 interface GroupWidget extends SingleWidget {
