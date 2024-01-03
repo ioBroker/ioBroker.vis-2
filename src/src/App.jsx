@@ -657,7 +657,7 @@ class App extends Runtime {
     };
 
     alignWidgets = type => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
         const newCoordinates = {
             left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0,
@@ -818,7 +818,7 @@ class App extends Runtime {
     };
 
     orderWidgets = type => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
         let minZ = 0;
         let maxZ = 0;
@@ -979,7 +979,7 @@ class App extends Runtime {
         this.historyTimer = setTimeout(() => {
             this.historyTimer = null;
 
-            let history = JSON.parse(JSON.stringify(this.state.history));
+            let history = deepClone(this.state.history);
             let historyCursor = this.state.historyCursor;
             if (historyCursor !== history.length - 1) {
                 history = history.slice(0, historyCursor + 1);
@@ -1118,7 +1118,7 @@ class App extends Runtime {
     };
 
     onWidgetsChanged = (changedData, view, viewSettings) => {
-        this.tempProject = this.tempProject || JSON.parse(JSON.stringify(store.getState().visProject));
+        this.tempProject = this.tempProject || deepClone(store.getState().visProject);
         changedData && changedData.forEach(item => {
             if (item.style) {
                 const currentStyle = this.tempProject[item.view].widgets[item.wid].style;
@@ -1244,7 +1244,7 @@ class App extends Runtime {
 
     installWidget = async (widgetId, id) => {
         if (window.VisMarketplace?.api) {
-            const project = JSON.parse(JSON.stringify(store.getState().visProject));
+            const project = deepClone(store.getState().visProject);
             const marketplaceWidget = await window.VisMarketplace.api.apiGetWidgetRevision(widgetId, id);
             if (!project.___settings.marketplace) {
                 project.___settings.marketplace = [];
@@ -1260,7 +1260,7 @@ class App extends Runtime {
     };
 
     uninstallWidget = async widget => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widgetIndex = project.___settings.marketplace.findIndex(item => item.id === widget);
         if (widgetIndex !== -1) {
             project.___settings.marketplace.splice(widgetIndex, 1);
@@ -1273,7 +1273,7 @@ class App extends Runtime {
 
         widgets.forEach(_widget => {
             if (_widget.isRoot) {
-                _widget.marketplace = JSON.parse(JSON.stringify(store.getState().visProject.___settings.marketplace.find(item => item.id === id)));
+                _widget.marketplace = deepClone(store.getState().visProject.___settings.marketplace.find(item => item.id === id));
             }
             if (isGroup(_widget)) {
                 let newKey = getNewGroupId(store.getState().visProject);
@@ -1317,17 +1317,17 @@ class App extends Runtime {
     };
 
     addMarketplaceWidget = async (id, x, y, widgetId, oldData, oldStyle) => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
-        const widgets = JSON.parse(JSON.stringify(store.getState().visProject.___settings.marketplace.find(item => item.id === id).widget));
+        const project = deepClone(store.getState().visProject);
+        const widgets = deepClone(store.getState().visProject.___settings.marketplace.find(item => item.id === id).widget);
         this.importMarketplaceWidget(project, this.state.selectedView, widgets, id, x, y, widgetId, oldData, oldStyle);
         await this.changeProject(project);
     };
 
     updateWidget = async id => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widget = project[this.state.selectedView].widgets[id];
         if (widget && widget.marketplace) {
-            const marketplace = JSON.parse(JSON.stringify(store.getState().visProject.___settings.marketplace.find(item => item.widget_id === widget.marketplace.widget_id)));
+            const marketplace = deepClone(store.getState().visProject.___settings.marketplace.find(item => item.widget_id === widget.marketplace.widget_id));
             await this.deleteWidgetsAction();
             await this.addMarketplaceWidget(marketplace.id, null, null, id, widget.data, widget.style);
         }
@@ -1478,7 +1478,7 @@ class App extends Runtime {
                     <IconButton
                         size="small"
                         onClick={() => {
-                            const project = JSON.parse(JSON.stringify(store.getState().visProject));
+                            const project = deepClone(store.getState().visProject);
                             project.___settings.openedViews = [this.state.selectedView];
                             this.changeProject(project, true);
                         }}
