@@ -71,6 +71,7 @@ const WidgetImportDialog = (props: WidgetImportDialogProps) => {
             if (!isGroup(newWidgets[wid]) && props.selectedGroup !== undefined) {
                 newWidgets[wid].grouped = true;
                 newWidgets[wid].groupid = props.selectedGroup;
+                (project[props.selectedView].widgets[props.selectedGroup] as GroupWidget).data.members.push(wid);
             }
         });
 

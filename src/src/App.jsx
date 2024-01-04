@@ -34,7 +34,7 @@ import {
 } from '@iobroker/adapter-react-v5';
 import { recalculateFields, store, updateProject } from './Store';
 import {
-    isGroup, getNewWidgetId, getNewGroupId, pasteGroup, unsyncMultipleWidgets, deepClone,
+    isGroup, getNewWidgetId, getNewGroupId, pasteGroup, unsyncMultipleWidgets, deepClone, pasteSingleWidget,
 } from './Utils/utils';
 
 import Attributes from './Attributes';
@@ -603,23 +603,18 @@ class App extends Runtime {
             let newKey;
 
             if (isGroup(newWidget)) {
-                pasteGroup({
+                newKey = pasteGroup({
                     group: newWidget, widgets, offset: groupOffset, groupMembers: this.state.widgetsClipboard.groupMembers, project: store.getState().visProject,
                 });
-                newKey = getNewGroupId(store.getState().visProject, groupOffset);
+
                 groupOffset++;
             } else {
-                newKey = getNewWidgetId(store.getState().visProject, widgetOffset);
+                newKey = pasteSingleWidget({
+                    widget: newWidget, offset: widgetOffset, project: store.getState().visProject, selectedGroup: this.state.selectedGroup, widgets,
+                });
                 widgetOffset++;
             }
 
-            if (!isGroup(newWidget) && this.state.selectedGroup) {
-                newWidget.grouped = true;
-                newWidget.groupid = this.state.selectedGroup;
-            }
-
-            widgets[newKey] = newWidget;
-            console.log(newWidget);
             newKeys.push(newKey);
         }
 
@@ -629,12 +624,12 @@ class App extends Runtime {
     };
 
     cloneWidgets = async () => {
-        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
 
         const newKeys = [];
         this.state.selectedWidgets.forEach(selectedWidget => {
-            const newWidget = JSON.parse(JSON.stringify(widgets[selectedWidget]));
+            const newWidget = deepClone(widgets[selectedWidget]);
             const boundingRect = App.getWidgetRelativeRect(selectedWidget);
             newWidget.style = this.pxToPercent(newWidget.style, {
                 left: boundingRect.left + 10,
@@ -646,8 +641,10 @@ class App extends Runtime {
                     group: newWidget, widgets, groupMembers: widgets, project: store.getState().visProject,
                 });
             } else {
-                const newKey = getNewWidgetId(store.getState().visProject);
-                widgets[newKey] = newWidget;
+                const newKey = pasteSingleWidget({
+                    widget: newWidget, project: store.getState().visProject, selectedGroup: this.state.selectedGroup, widgets,
+                });
+
                 newKeys.push(newKey);
             }
         });
