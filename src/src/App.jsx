@@ -565,8 +565,6 @@ class App extends Runtime {
             }
         });
 
-        console.log(widgets);
-
         await this.setStateAsync({
             widgetsClipboard: {
                 type,
