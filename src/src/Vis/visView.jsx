@@ -26,7 +26,7 @@ import { addClass, parseDimension } from './visUtils';
 import VisNavigation from './visNavigation';
 import { isVarFinite } from '../Utils/utils';
 import VisWidgetsCatalog from './visWidgetsCatalog';
-import { recalculateFields, store } from '../Store';
+import { recalculateFields, selectView, store } from '../Store';
 
 const generateClassNameEngine = createGenerateClassName({
     productionPrefix: 'vis',
@@ -590,14 +590,14 @@ class VisView extends React.Component {
 
         const viewRect = this.refView.current.getBoundingClientRect();
 
-        Object.keys(this.widgetsRefs).forEach(wid => {
-            const widgets = store.getState().visProject[this.props.view].widgets;
+        for (const wid of Object.keys(this.widgetsRefs)) {
+            const { widgets } = selectView(store.getState(), this.props.view);
             if (!this.props.selectedWidgets.includes(wid) &&
                 widgets[wid] &&
                 (!widgets[wid].grouped || this.props.selectedGroup)
             ) {
                 if (!this.widgetsRefs[wid].refService.current) {
-                    console.error('CHECK WHY!!!');
+                    console.error(`CHECK WHY!!! ${wid} has no refService.current`);
                 } else {
                     const boundingRect = this.widgetsRefs[wid].refService.current.getBoundingClientRect();
                     horizontals.push(Math.round(boundingRect.top));
@@ -606,12 +606,12 @@ class VisView extends React.Component {
                     verticals.push(Math.round(boundingRect.right));
                 }
             }
-        });
+        }
 
         const selectedHorizontals = [];
         const selectedVerticals = [];
         this.props.selectedWidgets.forEach(wid => {
-            const widgets = store.getState().visProject[this.props.view].widgets;
+            const { widgets } = selectView(store.getState(), this.props.view);
             // check if not in group
             if (widgets[wid] && (!widgets[wid].grouped || this.props.selectedGroup)) {
                 const boundingRect = this.widgetsRefs[wid].refService.current.getBoundingClientRect();
