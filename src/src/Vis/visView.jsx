@@ -428,7 +428,7 @@ class VisView extends React.Component {
             return;
         }
 
-        if (true || !isRelative) {
+        if (!isRelative) {
             this.refView.current.addEventListener('mousemove', this.onMouseWidgetMove);
             window.document.addEventListener('mouseup', this.onMouseWidgetUp);
 
