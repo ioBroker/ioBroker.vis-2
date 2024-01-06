@@ -1461,12 +1461,14 @@ class VisView extends React.Component {
 
                 if (listRelativeWidgetsOrder.length) {
                     let columnIndex = 0;
+
                     listRelativeWidgetsOrder.forEach((id, index) => {
                         const widget = store.getState().visProject[view].widgets[id];
                         // if newLine, start from the beginning
                         if (widget.style.newLine) {
                             columnIndex = 0;
                         }
+
                         const w = VisView.getOneWidget(index, widget, {
                             // custom attributes
                             context: this.props.context,
