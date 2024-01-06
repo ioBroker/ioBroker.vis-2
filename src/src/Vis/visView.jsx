@@ -594,6 +594,7 @@ class VisView extends React.Component {
             const { widgets } = selectView(store.getState(), this.props.view);
             if (!this.props.selectedWidgets.includes(wid) &&
                 widgets[wid] &&
+                ((this.props.selectedGroup && widgets[this.props.selectedGroup].data.members.includes(wid)) || !this.props.selectedGroup) &&
                 (!widgets[wid].grouped || this.props.selectedGroup)
             ) {
                 if (!this.widgetsRefs[wid].refService.current) {
@@ -610,7 +611,7 @@ class VisView extends React.Component {
 
         const selectedHorizontals = [];
         const selectedVerticals = [];
-        this.props.selectedWidgets.forEach(wid => {
+        for (const wid of this.props.selectedWidgets) {
             const { widgets } = selectView(store.getState(), this.props.view);
             // check if not in group
             if (widgets[wid] && (!widgets[wid].grouped || this.props.selectedGroup)) {
@@ -620,7 +621,8 @@ class VisView extends React.Component {
                 selectedVerticals.push(Math.round(boundingRect.left));
                 selectedVerticals.push(Math.round(boundingRect.right));
             }
-        });
+        }
+
         horizontals.forEach(horizontal => selectedHorizontals.forEach(selectedHorizontal => {
             if (Math.abs(horizontal - selectedHorizontal) <= 0.3) {
                 rulers.push({ type: 'horizontal', value: horizontal - viewRect.top });
