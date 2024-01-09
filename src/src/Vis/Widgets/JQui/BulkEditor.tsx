@@ -394,9 +394,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                     // @ts-expect-error this is fine
                     color="grey"
                     startIcon={<Close />}
-                    onClick={() => {
-                        this.setState({ dialogDelete: null });
-                    }}
+                    onClick={() => this.setState({ dialogDelete: null })}
                 >
                     {I18n.t('Cancel')}
                 </Button>
