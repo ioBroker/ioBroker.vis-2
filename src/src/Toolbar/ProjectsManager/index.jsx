@@ -67,7 +67,7 @@ const ProjectsManage = props => {
     const [dialogName, setDialogName] = useState('');
     const [dialogProject, setDialogProject] = useState(null);
     const [showExportDialog, setShowExportDialog] = useState(null);
-    const [showPermissionsDialog, setShowPermissionsDialog] = useState(null);
+    const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
     const [working, setWorking] = useState(false);
 
@@ -131,31 +131,6 @@ const ProjectsManage = props => {
             }
         });
     };
-
-    const permissionsDialog = <Menu
-        onClose={() => setShowExportDialog(false)}
-        open={!!showExportDialog}
-        anchorEl={anchorEl}
-    >
-        <MenuItem
-            onClick={async () => {
-                setAnchorEl(null);
-                setShowExportDialog(null);
-                await exportProject(showExportDialog);
-            }}
-        >
-            {I18n.t('normal')}
-        </MenuItem>
-        <MenuItem
-            onClick={async () => {
-                setAnchorEl(null);
-                setShowExportDialog(null);
-                await exportProject(showExportDialog, true);
-            }}
-        >
-            {I18n.t('anonymize')}
-        </MenuItem>
-    </Menu>;
 
     const exportDialog = <Menu
         onClose={() => setShowExportDialog(false)}
@@ -270,14 +245,8 @@ const ProjectsManage = props => {
             classes={{}}
         /> : null}
         {showPermissionsDialog ? <PermissionsDialog
-            dialog={dialog}
-            dialogProject={dialogProject}
-            dialogName={dialogName}
-            setDialog={setDialog}
-            setDialogProject={setDialogProject}
-            setDialogName={setDialogName}
-            {...props}
-            classes={{}}
+            socket={props.socket}
+            onClose={() => setShowPermissionsDialog(false)}
         /> : null}
         {importDialog ? <ImportProjectDialog
             projects={props.projects}
