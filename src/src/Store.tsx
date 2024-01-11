@@ -43,7 +43,7 @@ const reducer = createReducer(
 
 type StoreState = typeof initialState
 
-const selectProject = (state: StoreState) => state.visProject;
+export const selectProject = (state: StoreState) => state.visProject;
 
 export const selectView = createSelector([
     selectProject,

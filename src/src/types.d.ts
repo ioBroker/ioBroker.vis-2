@@ -3,7 +3,7 @@ import type { Connection } from '@iobroker/adapter-react-v5';
 
 export type Timer = ReturnType<typeof setTimeout>;
 
-interface Permissions {
+export interface Permissions {
     /** Accessible in Runtime */
     read: boolean;
     /** Accessible in Editor */

@@ -3,7 +3,12 @@ import React from 'react';
 import {
     Check as SaveIcon,
 } from '@mui/icons-material';
-import type { Connection } from '@iobroker/adapter-react-v5';
+import {
+    Checkbox,
+} from '@mui/material';
+import { type Connection, I18n } from '@iobroker/adapter-react-v5';
+import type { Permissions } from '@/types';
+import { store } from '@/Store';
 import IODialog from '../../Components/IODialog';
 
 interface PermissionsDialogProps {
@@ -16,6 +21,8 @@ interface PermissionsDialogProps {
 interface PermissionsDialogState {
     /** Contains all existing users */
     users: string[];
+    /** Permissions for each user for the current project */
+    projectPermissions: Map<string, Permissions>;
 }
 
 export default class PermissionsDialog extends React.Component<PermissionsDialogProps, PermissionsDialogState> {
@@ -24,6 +31,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
 
         this.state = {
             users: [],
+            projectPermissions: new Map(),
         };
     }
 
@@ -32,15 +40,27 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
      */
     async componentDidMount(): Promise<void> {
         const userView: Record<string, ioBroker.UserObject> = await this.props.socket.getObjectViewSystem('user', 'system.user.', 'system.user.\u9999');
-        this.setState({ users: Object.keys(userView) });
+        const { visProject } = store.getState();
+        const projectPermissions = new Map<string, Permissions>();
+
+        for (const user of Object.keys(userView)) {
+            projectPermissions.set(user, visProject.___settings.permissions?.[user] ?? { read: true, write: true });
+        }
+
+        this.setState({ users: Object.keys(userView), projectPermissions });
+    }
+
+    /**
+     * On save temporary values are set to the store
+     */
+    onSave(): void {
+        // TODO: call changeProject with the modified project
     }
 
     /**
      * Render the actual component
      */
     render(): React.JSX.Element {
-        console.info(`Existing users: ${this.state.users.join(', ')}`);
-
         return <IODialog
             title="Permissions"
             open={!0}
@@ -52,6 +72,31 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             actionDisabled={false}
             closeDisabled={false}
         >
+            {this.state.users.map(user => <div>
+                {`${user}:`}
+                <Checkbox
+                    checked={this.state.projectPermissions.get(user)?.read}
+                    onClick={() => {
+                        const newState = this.state;
+                        const currVal = this.state.projectPermissions.get(user);
+
+                        newState.projectPermissions.set(user, { read: !currVal?.read, write: !!currVal?.write });
+                        this.setState(newState);
+                    }}
+                />
+                {I18n.t('Read')}
+                <Checkbox
+                    checked={this.state.projectPermissions.get(user)?.write}
+                    onClick={() => {
+                        const newState = this.state;
+                        const currVal = this.state.projectPermissions.get(user);
+
+                        newState.projectPermissions.set(user, { read: !!currVal?.read, write: !currVal?.write });
+                        this.setState(newState);
+                    }}
+                />
+                {I18n.t('Write')}
+            </div>)}
         </IODialog>;
     }
 }
