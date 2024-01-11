@@ -782,7 +782,7 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
                     width: parseFloat(this.state.rxData[`signals-icon-size-${index}`]) || 32,
                     height: 'auto',
                 };
-                icon = <Icon src={icon} style={imageStyle} className="vis-signal-icon" key={Math.random() * 100_000} />;
+                icon = <Icon src={icon} style={imageStyle} className="vis-signal-icon" />;
             }
             VisRxWidget.text2style(this.state.rxData[`signals-icon-style-${index}`], style);
             let text = this.state.rxData[`signals-text-${index}`];
