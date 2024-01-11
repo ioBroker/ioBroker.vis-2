@@ -10,6 +10,7 @@ import {
     Edit as EditIcon,
     Delete as DeleteIcon,
     FileCopy as IconDocument,
+    Person as PermissionsIcon,
 } from '@mui/icons-material';
 import { BiImport, BiExport } from 'react-icons/bi';
 
@@ -18,6 +19,7 @@ import { I18n, Utils } from '@iobroker/adapter-react-v5';
 import IODialog from '../../Components/IODialog';
 import ImportProjectDialog, { getLiveHost } from './ImportProjectDialog';
 import ProjectDialog from './ProjectDialog';
+import PermissionsDialog from './PermissionsDialog';
 
 const styles = theme => ({
     projectBlock: {
@@ -65,6 +67,7 @@ const ProjectsManage = props => {
     const [dialogName, setDialogName] = useState('');
     const [dialogProject, setDialogProject] = useState(null);
     const [showExportDialog, setShowExportDialog] = useState(null);
+    const [showPermissionsDialog, setShowPermissionsDialog] = useState(null);
     const [anchorEl, setAnchorEl] = useState(null);
     const [working, setWorking] = useState(false);
 
@@ -129,6 +132,31 @@ const ProjectsManage = props => {
         });
     };
 
+    const permissionsDialog = <Menu
+        onClose={() => setShowExportDialog(false)}
+        open={!!showExportDialog}
+        anchorEl={anchorEl}
+    >
+        <MenuItem
+            onClick={async () => {
+                setAnchorEl(null);
+                setShowExportDialog(null);
+                await exportProject(showExportDialog);
+            }}
+        >
+            {I18n.t('normal')}
+        </MenuItem>
+        <MenuItem
+            onClick={async () => {
+                setAnchorEl(null);
+                setShowExportDialog(null);
+                await exportProject(showExportDialog, true);
+            }}
+        >
+            {I18n.t('anonymize')}
+        </MenuItem>
+    </Menu>;
+
     const exportDialog = <Menu
         onClose={() => setShowExportDialog(false)}
         open={!!showExportDialog}
@@ -185,6 +213,18 @@ const ProjectsManage = props => {
                     {projectName}
                 </Button>
                 <span className={props.classes.viewManageButtonActions}>
+                    <Tooltip title={I18n.t('Permissions')} classes={{ popper: props.classes.tooltip }}>
+                        {working === projectName ? <CircularProgress size={22} /> :
+                            <IconButton
+                                onClick={event => {
+                                    setAnchorEl(event.currentTarget);
+                                    setShowPermissionsDialog(projectName);
+                                }}
+                                size="small"
+                            >
+                                <PermissionsIcon fontSize="20" />
+                            </IconButton>}
+                    </Tooltip>
                     <Tooltip title={I18n.t('Export')} classes={{ popper: props.classes.tooltip }}>
                         {working === projectName ? <CircularProgress size={22} /> :
                             <IconButton
@@ -220,6 +260,16 @@ const ProjectsManage = props => {
         </div>
         {exportDialog}
         {dialog ? <ProjectDialog
+            dialog={dialog}
+            dialogProject={dialogProject}
+            dialogName={dialogName}
+            setDialog={setDialog}
+            setDialogProject={setDialogProject}
+            setDialogName={setDialogName}
+            {...props}
+            classes={{}}
+        /> : null}
+        {showPermissionsDialog ? <PermissionsDialog
             dialog={dialog}
             dialogProject={dialogProject}
             dialogName={dialogName}
