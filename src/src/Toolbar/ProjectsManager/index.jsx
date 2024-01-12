@@ -246,6 +246,7 @@ const ProjectsManage = props => {
         /> : null}
         {showPermissionsDialog ? <PermissionsDialog
             socket={props.socket}
+            changeProject={props.changeProject}
             onClose={() => setShowPermissionsDialog(false)}
         /> : null}
         {importDialog ? <ImportProjectDialog

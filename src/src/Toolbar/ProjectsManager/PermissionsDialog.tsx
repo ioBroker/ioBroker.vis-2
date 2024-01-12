@@ -7,13 +7,16 @@ import {
     Checkbox,
 } from '@mui/material';
 import { type Connection, I18n } from '@iobroker/adapter-react-v5';
-import type { Permissions } from '@/types';
+import { Permissions, Project } from '@/types';
 import { store } from '@/Store';
+import { deepClone } from '@/Utils/utils';
 import IODialog from '../../Components/IODialog';
 
 interface PermissionsDialogProps {
     /** Function called when dialog is closed */
     onClose: () => void;
+    /** Modify the active project */
+    changeProject: (project: Project) => void;
     /** The socket connection */
     socket: Connection;
 }
@@ -26,6 +29,9 @@ interface PermissionsDialogState {
 }
 
 export default class PermissionsDialog extends React.Component<PermissionsDialogProps, PermissionsDialogState> {
+    /** Admin user cannot be disabled */
+    private readonly ADMIN_USER = 'admin';
+
     constructor(props: PermissionsDialogProps) {
         super(props);
 
@@ -48,13 +54,25 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
         }
 
         this.setState({ users: Object.keys(userView), projectPermissions });
+        console.log(store.getState().visProject.___settings.permissions);
     }
 
     /**
      * On save temporary values are set to the store
      */
     onSave(): void {
-        // TODO: call changeProject with the modified project
+        const project = deepClone(store.getState().visProject);
+
+        if (project.___settings.permissions === undefined) {
+            project.___settings.permissions = {};
+        }
+
+        for (const [user, permissions] of this.state.projectPermissions) {
+            project.___settings.permissions[user] = permissions;
+        }
+
+        this.props.changeProject(project);
+        this.props.onClose();
     }
 
     /**
@@ -66,36 +84,40 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             open={!0}
             onClose={() => this.props.onClose()}
             actionNoClose
-            action={() => undefined}
+            action={() => this.onSave()}
             actionTitle="Save"
             ActionIcon={SaveIcon}
             actionDisabled={false}
             closeDisabled={false}
         >
-            {this.state.users.map(user => <div>
-                {`${user}:`}
-                <Checkbox
-                    checked={this.state.projectPermissions.get(user)?.read}
-                    onClick={() => {
-                        const newState = this.state;
-                        const currVal = this.state.projectPermissions.get(user);
+            {this.state.users.map(user => <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'inline' }}>{`${user}:`}</div>
+                <div>
+                    <Checkbox
+                        disabled={user === this.ADMIN_USER}
+                        checked={this.state.projectPermissions.get(user)?.read}
+                        onClick={() => {
+                            const newState = this.state;
+                            const currVal = this.state.projectPermissions.get(user);
 
-                        newState.projectPermissions.set(user, { read: !currVal?.read, write: !!currVal?.write });
-                        this.setState(newState);
-                    }}
-                />
-                {I18n.t('Read')}
-                <Checkbox
-                    checked={this.state.projectPermissions.get(user)?.write}
-                    onClick={() => {
-                        const newState = this.state;
-                        const currVal = this.state.projectPermissions.get(user);
+                            newState.projectPermissions.set(user, { read: !currVal?.read, write: !!currVal?.write });
+                            this.setState(newState);
+                        }}
+                    />
+                    {I18n.t('Read')}
+                    <Checkbox
+                        disabled={user === this.ADMIN_USER}
+                        checked={this.state.projectPermissions.get(user)?.write}
+                        onClick={() => {
+                            const newState = this.state;
+                            const currVal = this.state.projectPermissions.get(user);
 
-                        newState.projectPermissions.set(user, { read: !!currVal?.read, write: !currVal?.write });
-                        this.setState(newState);
-                    }}
-                />
-                {I18n.t('Write')}
+                            newState.projectPermissions.set(user, { read: !!currVal?.read, write: !currVal?.write });
+                            this.setState(newState);
+                        }}
+                    />
+                    {I18n.t('Write')}
+                </div>
             </div>)}
         </IODialog>;
     }
