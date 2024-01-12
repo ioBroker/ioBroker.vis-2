@@ -35,7 +35,7 @@ import {
 } from './Vis/visUtils';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
-import { store, updateProject } from './Store';
+import { store, updateActiveUser, updateProject } from './Store';
 
 const generateClassName = createGenerateClassName({
     productionPrefix: 'vis-r',
@@ -633,7 +633,11 @@ class Runtime extends GenericApp {
         }
 
         const userName = await this.socket.getCurrentUser(); // just name, like "admin"
+
         const currentUser = await this.socket.getObject(`system.user.${userName || 'admin'}`);
+
+        store.dispatch(updateActiveUser(currentUser.common.name));
+
         const groups = await this.socket.getGroups();
         const userGroups = {};
         groups.forEach(group => userGroups[group._id] = group);

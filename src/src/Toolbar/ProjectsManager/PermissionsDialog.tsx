@@ -2,6 +2,7 @@ import React from 'react';
 
 import {
     Check as SaveIcon,
+    Info as InfoIcon,
 } from '@mui/icons-material';
 import {
     Checkbox,
@@ -54,7 +55,6 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
         }
 
         this.setState({ users: Object.keys(userView), projectPermissions });
-        console.log(store.getState().visProject.___settings.permissions);
     }
 
     /**
@@ -68,6 +68,10 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
         }
 
         for (const [user, permissions] of this.state.projectPermissions) {
+            if (user === this.ADMIN_USER) {
+                continue;
+            }
+
             project.___settings.permissions[user] = permissions;
         }
 
@@ -76,9 +80,32 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
     }
 
     /**
+     * Render the info dialog
+     */
+    renderInfoDialog(): React.JSX.Element {
+        return <div style={{
+            display: 'inline-flex', alignItems: 'center', border: '1px solid', borderRadius: '5px', padding: '2px',
+        }}
+        >
+            <InfoIcon />
+            <div style={{ margin: '6px', fontSize: '12px' }}>
+                <p style={{ margin: 0 }}>
+                    {I18n.t('Only the admin user can change permissions')}
+                    <br />
+                    {I18n.t('Read = Runtime access')}
+                    <br />
+                    {I18n.t('Write = Edit mode access')}
+                </p>
+            </div>
+        </div>;
+    }
+
+    /**
      * Render the actual component
      */
     render(): React.JSX.Element {
+        const { activeUser } = store.getState();
+
         return <IODialog
             title="Permissions"
             open={!0}
@@ -90,11 +117,15 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             actionDisabled={false}
             closeDisabled={false}
         >
-            {this.state.users.map(user => <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {this.renderInfoDialog()}
+            {this.state.users.map(user => <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                key={user}
+            >
                 <div style={{ display: 'inline' }}>{`${user}:`}</div>
                 <div>
                     <Checkbox
-                        disabled={user === this.ADMIN_USER}
+                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
                         checked={this.state.projectPermissions.get(user)?.read}
                         onClick={() => {
                             const newState = this.state;
@@ -106,7 +137,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
                     />
                     {I18n.t('Read')}
                     <Checkbox
-                        disabled={user === this.ADMIN_USER}
+                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
                         checked={this.state.projectPermissions.get(user)?.write}
                         onClick={() => {
                             const newState = this.state;
