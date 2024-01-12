@@ -247,7 +247,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ## Todo
 <!--
     Placeholder for the next version (at the beginning of the line):
-    
+    ### **WORK IN PROGRESS**
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
