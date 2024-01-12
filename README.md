@@ -212,6 +212,8 @@ In the project management dialog, you can configure `read` and `write` permissio
 The `read` flag means, that the project is accessible for this user in the Runtime. 
 The `write` flag means, that the project is accessible for this user in the Edit Mode.
 
+When a new user is created via ioBroker Admin adapter, it will have both permissions by default.
+
 ## Settings
 ### Reload if sleep longer than
 There is a rule that after some disconnection period, the whole VIS page will be reloaded to synchronize the project.
