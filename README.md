@@ -250,7 +250,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.9.16 (2024-01-11)
 * (foxriver76) use the correct fallback values for widget signals determination
 * (foxriver76) dedicated permission system on project level introduced
 
