@@ -10,7 +10,7 @@ import {
 import { type Connection, I18n } from '@iobroker/adapter-react-v5';
 import { Permissions, Project } from '@/types';
 import { store } from '@/Store';
-import { deepClone } from '@/Utils/utils';
+import { deepClone, DEFAULT_PERMISSIONS } from '@/Utils/utils';
 import IODialog from '../../Components/IODialog';
 
 interface PermissionsDialogProps {
@@ -51,7 +51,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
         const projectPermissions = new Map<string, Permissions>();
 
         for (const user of Object.keys(userView)) {
-            projectPermissions.set(user, visProject.___settings.permissions?.[user] ?? { read: true, write: true });
+            projectPermissions.set(user, visProject.___settings.permissions?.[user] ?? DEFAULT_PERMISSIONS);
         }
 
         this.setState({ users: Object.keys(userView), projectPermissions });
