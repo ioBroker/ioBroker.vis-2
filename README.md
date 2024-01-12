@@ -247,12 +247,14 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ## Todo
 <!--
     Placeholder for the next version (at the beginning of the line):
-    ### **WORK IN PROGRESS**
+    
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (foxriver76) dedicated permission system on project level introduced
+
 ### 2.9.16 (2024-01-11)
 * (foxriver76) use the correct fallback values for widget signals determination
-* (foxriver76) dedicated permission system on project level introduced
 
 ### 2.9.15 (2024-01-09)
 * (foxriver76) fixed issue with BulkEditor
