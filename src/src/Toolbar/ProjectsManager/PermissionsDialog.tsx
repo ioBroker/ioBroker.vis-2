@@ -7,6 +7,13 @@ import {
 import {
     Checkbox,
 } from '@mui/material';
+import Card from '@mui/material/Card';
+import CardHeader from '@mui/material/CardHeader';
+import IconButton from '@mui/material/IconButton';
+import CardContent from '@mui/material/CardContent';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Collapse from '@mui/material/Collapse';
 import { type Connection, I18n } from '@iobroker/adapter-react-v5';
 import { Permissions, Project } from '@/types';
 import { store } from '@/Store';
@@ -27,6 +34,8 @@ interface PermissionsDialogState {
     users: string[];
     /** Permissions for each user for the current project */
     projectPermissions: Map<string, Permissions>;
+    /** Id for each card and open status */
+    cardOpen: Record<string, boolean>;
 }
 
 export default class PermissionsDialog extends React.Component<PermissionsDialogProps, PermissionsDialogState> {
@@ -39,6 +48,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
         this.state = {
             users: [],
             projectPermissions: new Map(),
+            cardOpen: {},
         };
     }
 
@@ -104,7 +114,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
      * Render the actual component
      */
     render(): React.JSX.Element {
-        const { activeUser } = store.getState();
+        const { activeUser, visProject } = store.getState();
 
         return <IODialog
             title="Permissions"
@@ -118,38 +128,73 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             closeDisabled={false}
         >
             {this.renderInfoDialog()}
-            {this.state.users.map(user => <div
-                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                key={user}
-            >
-                <div style={{ display: 'inline' }}>{`${user}:`}</div>
-                <div>
-                    <Checkbox
-                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
-                        checked={this.state.projectPermissions.get(user)?.read}
-                        onClick={() => {
-                            const newState = this.state;
-                            const currVal = this.state.projectPermissions.get(user);
+            {this.state.users.map(user =>
+                <Card sx={{ border: '1px solid rgba(211,211,211,0.6)' }}>
+                    <CardHeader
+                        title={user}
+                        titleTypographyProps={{ fontWeight: 'bold', fontSize: 12 }}
+                        action={<div
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            key={user}
+                        >
+                            <div>
+                                <Checkbox
+                                    disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
+                                    checked={this.state.projectPermissions.get(user)?.read}
+                                    onClick={() => {
+                                        const newState = this.state;
+                                        const currVal = this.state.projectPermissions.get(user);
 
-                            newState.projectPermissions.set(user, { read: !currVal?.read, write: !!currVal?.write });
-                            this.setState(newState);
-                        }}
-                    />
-                    {I18n.t('Read')}
-                    <Checkbox
-                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
-                        checked={this.state.projectPermissions.get(user)?.write}
-                        onClick={() => {
-                            const newState = this.state;
-                            const currVal = this.state.projectPermissions.get(user);
+                                        newState.projectPermissions.set(user, {
+                                            read: !currVal?.read,
+                                            write: !!currVal?.write,
+                                        });
+                                        this.setState(newState);
+                                    }}
+                                />
+                                {I18n.t('Read')}
+                                <Checkbox
+                                    disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
+                                    checked={this.state.projectPermissions.get(user)?.write}
+                                    onClick={() => {
+                                        const newState = this.state;
+                                        const currVal = this.state.projectPermissions.get(user);
 
-                            newState.projectPermissions.set(user, { read: !!currVal?.read, write: !currVal?.write });
-                            this.setState(newState);
-                        }}
-                    />
-                    {I18n.t('Write')}
-                </div>
-            </div>)}
+                                        newState.projectPermissions.set(user, {
+                                            read: !!currVal?.read,
+                                            write: !currVal?.write,
+                                        });
+                                        this.setState(newState);
+                                    }}
+                                />
+                                {I18n.t('Write')}
+
+                                <IconButton
+                                    onClick={() => {
+                                        this.setState({
+                                            cardOpen: {
+                                                ...this.state.cardOpen,
+                                                [user]: !this.state.cardOpen[user],
+                                            },
+                                        });
+                                    }}
+                                    aria-label="expand"
+                                    size="small"
+                                >
+                                    {this.state.cardOpen[user] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                </IconButton>
+                            </div>
+                        </div>}
+                    >
+                    </CardHeader>
+                    <Collapse
+                        in={this.state.cardOpen[user]}
+                    >
+                        <CardContent>
+                            {Object.keys(visProject).map(view => (view === '___settings' ? null : <p>{view}</p>))}
+                        </CardContent>
+                    </Collapse>
+                </Card>)}
         </IODialog>;
     }
 }
