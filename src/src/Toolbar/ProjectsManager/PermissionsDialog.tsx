@@ -238,7 +238,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
                                 }}
                                 >
                                     <Checkbox
-                                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
+                                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER || !this.state.projectPermissions.get(user)?.read}
                                         checked={this.state.viewPermissions[view]?.get(user)?.read}
                                         onClick={() => {
                                             const newState = this.state;
@@ -253,7 +253,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
                                     />
                                     {I18n.t('Read')}
                                     <Checkbox
-                                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER}
+                                        disabled={user === this.ADMIN_USER || activeUser !== this.ADMIN_USER || !this.state.projectPermissions.get(user)?.write}
                                         checked={this.state.viewPermissions[view]?.get(user)?.write}
                                         onClick={() => {
                                             const newState = this.state;
