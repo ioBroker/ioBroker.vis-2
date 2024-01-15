@@ -142,7 +142,7 @@ const ViewsManager = props => {
                 setImportDialog={setImportDialog}
                 {...props}
                 classes={{}}
-                hasPermissions={name === 'default' && hasViewAccess({
+                hasPermissions={hasViewAccess({
                     view: name, user: activeUser, project: visProject, editMode: props.editMode,
                 })}
             />
