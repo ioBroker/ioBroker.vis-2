@@ -49,6 +49,7 @@ class VisBaseWidget extends React.Component {
 
         const widget = props.context.views[props.view].widgets[props.id];
         this.refService = React.createRef();
+        /** @type {'left' | 'right' | 'top' | 'bottom' | 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right' | boolean} */
         this.resize = false;
         this.widDiv = null;
         const multiViewWidget = props.id.includes('_');
@@ -654,8 +655,8 @@ class VisBaseWidget extends React.Component {
                     wid: this.props.id,
                     view: this.props.view,
                     style: {
-                        top: this.state.style.top,
-                        left: this.state.style.left,
+                        top: this.refService.current.style.top,
+                        left: this.refService.current.style.left,
                         width: this.refService.current.style.width,
                         height: this.refService.current.style.height,
                     },
