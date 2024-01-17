@@ -14,7 +14,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import {
     Anchor as AnchorIcon,
@@ -24,34 +23,139 @@ import {
     KeyboardReturn,
 } from '@mui/icons-material';
 
-import { I18n, Utils } from '@iobroker/adapter-react-v5';
+import { type Connection, I18n, Utils } from '@iobroker/adapter-react-v5';
 
 import { calculateOverflow, deepClone, isVarFinite } from '@/Utils/utils';
+import { AnyWidgetId, View, Widget } from '@/types';
 import {
     addClass,
     removeClass,
     replaceGroupAttr,
 } from './visUtils';
 
-// eslint-disable-next-line import/no-cycle
 import VisOrderMenu from './visOrderMenu';
 
-class VisBaseWidget extends React.Component {
+interface Context {
+    views: Record<string, View>;
+    widgetHint: unknown;
+    adapterName: string;
+    instance: string;
+    projectName: string;
+    setSelectedWidgets: (widgetIds: string[], multiview?: string) => void;
+    setSelectedGroup: (groupId: string) => void;
+    onWidgetsChanged: (...props: any[]) => void;
+    lang: ioBroker.Languages;
+    userGroups: Record<string, any>;
+    allWidgets: Record<string, Widget>;
+    /** Moment js */
+    moment: any;
+    dateFormat: string;
+    runtime: boolean;
+    themeType: string;
+    showWidgetNames: boolean;
+    VisView: any;
+    user: string;
+    formatUtils: any;
+    socket: Connection;
+    systemConfig: Record<string, any>;
+}
+
+export interface VisBaseWidgetProps {
+    /** Widget ID */
+    id: AnyWidgetId;
+    /** If edit mode */
+    editMode: boolean;
+    /** If runtime */
+    runtime: boolean;
+    /** View where widget is on */
+    view: string;
+    /** If it is positioned relative */
+    isRelative: boolean;
+    /** Currently selected widgets */
+    selectedWidgets: AnyWidgetId[];
+    /** Relative order of widgets */
+    relativeWidgetOrder: AnyWidgetId[];
+    /** If moving of widget is allowed */
+    moveAllowed: boolean;
+    /** Currently selected group */
+    selectedGroup: string;
+    /** Additional context */
+    context: Context;
+    /** TPL type */
+    tpl: string;
+    /** Some filter TODO */
+    viewsActiveFilter: Record<string, unknown>;
+    /** Function to register the widget */
+    askView: (method: 'register' | 'unregister' | 'getRef', props: Record<string, any>) => any;
+    onIgnoreMouseEvents: (bool: boolean) => void;
+    onWidgetsChanged: (...props: any[]) => void;
+    mouseDownOnView: (...props: any[]) => void;
+    refParent: React.RefObject<any>;
+    customSettings: any;
+}
+
+type Resize = 'left' | 'right' | 'top' | 'bottom' | 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right' | boolean
+
+// TODO specify
+interface VisBaseWidgetState {
+    [other: string]: any;
+}
+
+interface Movement {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+    order?: any;
+}
+
+class VisBaseWidget extends React.Component<VisBaseWidgetProps, VisBaseWidgetState> {
     static FORBIDDEN_CHARS = /[^._\-/ :!#$%&()+=@^{}|~]+/g; // from https://github.com/ioBroker/ioBroker.js-controller/blob/master/packages/common/lib/common/tools.js
 
     /** We do not store the SVG Element in the state because it is cyclic */
-    relativeMoveMenu;
+    relativeMoveMenu?: EventTarget & SVGSVGElement;
 
-    constructor(props) {
+    /** if currently resizing */
+    resize: Resize = false;
+
+    readonly uuid = `${Date.now()}.${Math.round(Math.random() * 1_000_000)}`;
+
+    refService = React.createRef<HTMLDivElement>() as any;
+
+    widDiv: null | HTMLDivElement = null;
+
+    readonly onCommandBound: typeof this.onCommand;
+
+    onResize: unknown;
+
+    updateInterval?: ReturnType<typeof setTimeout>;
+
+    pressTimeout?: ReturnType<typeof setTimeout>;
+
+    shadowDiv: any;
+
+    stealCursor?: string;
+
+    beforeIncludeColor?: string;
+
+    lastClick?: number;
+
+    movement?: Movement;
+
+    protected resizeLocked?: boolean;
+
+    visDynamicResizable: any;
+
+    isCanWidget?: boolean;
+
+    renderLastChange?: (style: unknown) => any;
+
+    renderSignals?: () => any;
+
+    constructor(props: VisBaseWidgetProps) {
         super(props);
 
-        this.uuid = `${Date.now()}.${Math.round(Math.random() * 1_000_000)}`;
-
         const widget = props.context.views[props.view].widgets[props.id];
-        this.refService = React.createRef();
-        /** @type {'left' | 'right' | 'top' | 'bottom' | 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right' | boolean} */
-        this.resize = false;
-        this.widDiv = null;
         const multiViewWidget = props.id.includes('_');
 
         const selected = !multiViewWidget && props.editMode && props.selectedWidgets?.includes(props.id);
@@ -78,13 +182,13 @@ class VisBaseWidget extends React.Component {
                 props.view,
                 props.editMode,
             ),
-            gap: style.position === 'relative' ? (isVarFinite(props.context.views[props.view].settings.rowGap) ? parseFloat(props.context.views[props.view].settings.rowGap) : 0) : 0,
+            gap: style.position === 'relative' ? (isVarFinite(props.context.views[props.view].settings?.rowGap as string) ? parseFloat(props.context.views[props.view].settings?.rowGap as string) : 0) : 0,
         };
 
         this.onCommandBound = this.onCommand.bind(this);
     }
 
-    static replacePRJ_NAME(data, style, props) {
+    static replacePRJ_NAME(data: Record<string, any>, style: Record<string, any>, props: VisBaseWidgetProps) {
         const context = props.context;
         if (data) {
             delete data._originalData;
@@ -125,10 +229,10 @@ class VisBaseWidget extends React.Component {
 
     componentWillUnmount() {
         this.updateInterval && clearInterval(this.updateInterval);
-        this.updateInterval = null;
+        this.updateInterval = undefined;
 
         this.pressTimeout && clearTimeout(this.pressTimeout);
-        this.pressTimeout = null;
+        this.pressTimeout = undefined;
 
         // delete service ref from view only in edit mode
         this.props.askView && this.props.askView('unregister', { id: this.props.id, uuid: this.uuid });
@@ -139,9 +243,9 @@ class VisBaseWidget extends React.Component {
     }
 
     // this method may be not in form onCommand = command => {}, as it can be overloaded
-    onCommand(command) {
+    onCommand(command: string): boolean {
         if (command === 'includePossible') {
-            const overlay = this.refService.current?.querySelector('.vis-editmode-overlay');
+            const overlay = this.refService.current?.querySelector('.vis-editmode-overlay') as HTMLDivElement;
             if (overlay && this.beforeIncludeColor === undefined) {
                 this.beforeIncludeColor = overlay.style.backgroundColor;
                 overlay.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
@@ -150,7 +254,7 @@ class VisBaseWidget extends React.Component {
         }
         if (command === 'includePossibleNOT') {
             if (this.beforeIncludeColor !== undefined) {
-                const overlay = this.refService.current?.querySelector('.vis-editmode-overlay');
+                const overlay = this.refService.current?.querySelector('.vis-editmode-overlay') as HTMLDivElement;
                 overlay && (overlay.style.backgroundColor = this.beforeIncludeColor);
                 this.beforeIncludeColor = undefined;
             }
@@ -158,10 +262,10 @@ class VisBaseWidget extends React.Component {
         }
 
         if (command === 'startStealMode') {
-            this.stealCursor = this.refService.current.style.cursor || 'nocursor';
+            this.stealCursor = this.refService.current?.style.cursor || 'nocursor';
             this.refService.current.style.cursor = 'crosshair';
             this.refService.current.className = addClass(this.refService.current.className, 'vis-editmode-steal-style');
-            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer');
+            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
             resizers?.forEach(item => item.style.display = 'none');
             return true;
         }
@@ -170,9 +274,9 @@ class VisBaseWidget extends React.Component {
             if (this.stealCursor !== 'nocursor') {
                 this.refService.current.style.cursor = this.stealCursor;
             }
-            this.stealCursor = null;
+            this.stealCursor = undefined;
             this.refService.current.className = removeClass(this.refService.current.className, 'vis-editmode-steal-style');
-            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer');
+            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
             resizers?.forEach(item => item.style.display = '');
             return true;
         }
@@ -194,7 +298,7 @@ class VisBaseWidget extends React.Component {
         }
 
         if (command === 'stopMove' || command === 'stopResize') {
-            const overlay = this.refService.current?.querySelector('.vis-editmode-overlay');
+            const overlay = this.refService.current?.querySelector('.vis-editmode-overlay') as HTMLDivElement;
             if (overlay) {
                 if (this.beforeIncludeColor !== undefined) {
                     overlay.style.backgroundColor = this.beforeIncludeColor;
@@ -209,7 +313,7 @@ class VisBaseWidget extends React.Component {
             }
 
             // show resizers again
-            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer');
+            const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
             resizers?.forEach(item => item.style.display = 'block');
 
             if (command === 'stopResize') {
@@ -221,12 +325,12 @@ class VisBaseWidget extends React.Component {
         return false;
     }
 
-    static getDerivedStateFromProps(props, state) {
+    static getDerivedStateFromProps(props: VisBaseWidgetProps, state: VisBaseWidgetState) {
         const context = props.context;
-        let newState = null; // No change to state by default
+        let newState: VisBaseWidgetState | null = null; // No change to state by default
         let widget = context.views[props.view].widgets[props.id];
         const gap = widget.style.position === 'relative' ?
-            (isVarFinite(context.views[props.view].settings.rowGap) ? parseFloat(context.views[props.view].settings.rowGap) : 0) : 0;
+            (isVarFinite(context.views[props.view].settings?.rowGap as string) ? parseFloat(context.views[props.view].settings?.rowGap as string) : 0) : 0;
         let copied = false;
 
         if (widget.groupid) {
@@ -238,8 +342,8 @@ class VisBaseWidget extends React.Component {
                 .filter(attr => attr);
 
             if (names.length && widget.data) {
-                Object.keys(widget.data).forEach(attr => {
-                    if (typeof widget.data[attr] === 'string' && names.find(a => widget.data[attr].includes(a))) {
+                for (const [attr, val] of Object.entries(widget.data)) {
+                    if (typeof val === 'string' && names.find(a => val.includes(a as string))) {
                         const result = replaceGroupAttr(widget.data[attr], parentWidgetData);
                         if (result.doesMatch) {
                             // create a copy as we will substitute the values
@@ -250,7 +354,7 @@ class VisBaseWidget extends React.Component {
                             widget.data[attr] = result.newString || '';
                         }
                     }
-                });
+                }
             }
         }
 
@@ -339,7 +443,7 @@ class VisBaseWidget extends React.Component {
         return newState;
     }
 
-    static removeFromArray(items, IDs, view, widget) {
+    static removeFromArray(items: Record<string, any>, IDs: string[], view: string, widget: string) {
         items && Object.keys(items).forEach(id => {
             if (!IDs || IDs.includes(id)) {
                 for (let i = items[id].length - 1; i >= 0; i--) {
@@ -352,10 +456,9 @@ class VisBaseWidget extends React.Component {
         });
     }
 
-    static parseStyle(style, isRxStyle) {
-        const result = {};
-        // style is a string
-        // "height: 10; width: 20"
+    static parseStyle(style: string, isRxStyle: boolean) {
+        const result: Record<string, unknown> = {};
+        // style is like "height: 10; width: 20"
         (style || '').split(';').forEach(part => {
             part = part.trim();
             if (part) {
@@ -371,6 +474,7 @@ class VisBaseWidget extends React.Component {
                         } else {
                             const f = parseFloat(value);
                             if (value === f.toString()) {
+                                // @ts-expect-error fix later
                                 value = f;
                             }
                         }
@@ -390,7 +494,7 @@ class VisBaseWidget extends React.Component {
         return result;
     }
 
-    onMouseDown(e) {
+    onMouseDown(e: React.MouseEvent) {
         e.stopPropagation();
         if (this.stealCursor && !this.state.multiViewWidget) {
             e.stopPropagation();
@@ -401,7 +505,7 @@ class VisBaseWidget extends React.Component {
             return;
         }
 
-        if (Date.now() - this.lastClick < 250) {
+        if (this.lastClick !== undefined && Date.now() - this.lastClick < 250) {
             console.log('AAA');
         }
 
@@ -439,7 +543,7 @@ class VisBaseWidget extends React.Component {
         } else if (this.props.moveAllowed && this.state.draggable !== false) {
             if (!this.props.isRelative) {
                 // User can drag only objects of the same type
-                this.props.mouseDownOnView(e, this.props.id, this.props.isRelative, false, Date.now() - this.lastClick < 300);
+                this.props.mouseDownOnView(e, this.props.id, this.props.isRelative, false, this.lastClick !== undefined && Date.now() - this.lastClick < 300);
             } else if (this.lastClick && Date.now() - this.lastClick < 250) {
                 // if double-click on a group
                 if (this.props.selectedWidgets.length === 1 &&
@@ -457,6 +561,12 @@ class VisBaseWidget extends React.Component {
             this.shadowDiv.remove();
             this.shadowDiv = null;
         }
+
+        if (!this.movement) {
+            console.error('Unknown issue, movement is falsy');
+            return;
+        }
+
         this.shadowDiv = window.document.createElement('div');
         this.shadowDiv.setAttribute('id', `${this.props.id}_shadow`);
         this.shadowDiv.className = 'vis-editmode-widget-shadow';
@@ -466,7 +576,7 @@ class VisBaseWidget extends React.Component {
             this.shadowDiv.style.borderRadius = this.refService.current.style.borderRadius;
         }
 
-        let parentDiv = this.props.refParent;
+        let parentDiv: any = this.props.refParent;
         if (Object.prototype.hasOwnProperty.call(parentDiv, 'current')) {
             parentDiv = parentDiv.current;
         }
@@ -495,15 +605,18 @@ class VisBaseWidget extends React.Component {
         return this.state.resizable;
     }
 
-    onMove = (x, y, save, calculateRelativeWidgetPosition) => {
+    onMove = (x: number, y: number, save: boolean, calculateRelativeWidgetPosition: (...props: any[]) => void) => {
         if (this.state.multiViewWidget || !this.state.editMode) {
             return;
         }
+
+        const movement = this.movement as Movement;
 
         if (this.resize) {
             if (this.isResizable() === false) {
                 return;
             }
+
             if (x === undefined) {
                 // start of resizing
                 const rect = (this.widDiv || this.refService.current).getBoundingClientRect();
@@ -514,29 +627,31 @@ class VisBaseWidget extends React.Component {
                     width: rect.width,
                     height: rect.height,
                 };
-                const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer');
+                const resizers = this.refService.current?.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
                 resizers.forEach(item => {
+                    // @ts-expect-error check this
                     item._storedOpacity = item.style.opacity;
+                    // @ts-expect-error check this
                     item.style.opacity = 0.3;
                 });
             } else if (this.resize === 'top') {
-                this.refService.current.style.top = `${this.movement.top + y}px`;
-                this.refService.current.style.height = `${this.movement.height - y}px`;
+                this.refService.current.style.top = `${movement.top + y}px`;
+                this.refService.current.style.height = `${movement.height - y}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.width = this.refService.current.style.height;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.top = `${this.movement.top + y}px`;
-                    this.widDiv.style.height = `${this.movement.height - y}px`;
+                    this.widDiv.style.top = `${movement.top + y}px`;
+                    this.widDiv.style.height = `${movement.height - y}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.width = this.widDiv.style.height;
                     }
                 }
             } else if (this.resize === 'bottom') {
-                this.refService.current.style.height = `${this.movement.height + y}px`;
-                this.widDiv && (this.widDiv.style.height = `${this.movement.height + y}px`);
+                this.refService.current.style.height = `${movement.height + y}px`;
+                this.widDiv && (this.widDiv.style.height = `${movement.height + y}px`);
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.width = this.refService.current.style.height;
@@ -546,23 +661,23 @@ class VisBaseWidget extends React.Component {
                     this.widDiv.style.width = this.widDiv.style.height;
                 }
             } else if (this.resize === 'left') {
-                this.refService.current.style.left = `${this.movement.left + x}px`;
-                this.refService.current.style.width = `${this.movement.width - x}px`;
+                this.refService.current.style.left = `${movement.left + x}px`;
+                this.refService.current.style.width = `${movement.width - x}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.left = `${this.movement.left + x}px`;
-                    this.widDiv.style.width = `${this.movement.width - x}px`;
+                    this.widDiv.style.left = `${movement.left + x}px`;
+                    this.widDiv.style.width = `${movement.width - x}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.height = this.widDiv.style.width;
                     }
                 }
             } else if (this.resize === 'right') {
-                this.refService.current.style.width = `${this.movement.width + x}px`;
-                this.widDiv && (this.widDiv.style.width = `${this.movement.width + x}px`);
+                this.refService.current.style.width = `${movement.width + x}px`;
+                this.widDiv && (this.widDiv.style.width = `${movement.width + x}px`);
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
@@ -572,68 +687,68 @@ class VisBaseWidget extends React.Component {
                     this.widDiv.style.height = this.widDiv.style.width;
                 }
             } else if (this.resize === 'top-left') {
-                this.refService.current.style.top = `${this.movement.top + y}px`;
-                this.refService.current.style.left = `${this.movement.left + x}px`;
-                this.refService.current.style.height = `${this.movement.height - y}px`;
-                this.refService.current.style.width = `${this.movement.width - x}px`;
+                this.refService.current.style.top = `${movement.top + y}px`;
+                this.refService.current.style.left = `${movement.left + x}px`;
+                this.refService.current.style.height = `${movement.height - y}px`;
+                this.refService.current.style.width = `${movement.width - x}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.top = `${this.movement.top + y}px`;
-                    this.widDiv.style.left = `${this.movement.left + x}px`;
-                    this.widDiv.style.height = `${this.movement.height - y}px`;
-                    this.widDiv.style.width = `${this.movement.width - x}px`;
+                    this.widDiv.style.top = `${movement.top + y}px`;
+                    this.widDiv.style.left = `${movement.left + x}px`;
+                    this.widDiv.style.height = `${movement.height - y}px`;
+                    this.widDiv.style.width = `${movement.width - x}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.height = this.widDiv.style.width;
                     }
                 }
             } else if (this.resize === 'top-right') {
-                this.refService.current.style.top = `${this.movement.top + y}px`;
-                this.refService.current.style.height = `${this.movement.height - y}px`;
-                this.refService.current.style.width = `${this.movement.width + x}px`;
+                this.refService.current.style.top = `${movement.top + y}px`;
+                this.refService.current.style.height = `${movement.height - y}px`;
+                this.refService.current.style.width = `${movement.width + x}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.top = `${this.movement.top + y}px`;
-                    this.widDiv.style.height = `${this.movement.height - y}px`;
-                    this.widDiv.style.width = `${this.movement.width + x}px`;
+                    this.widDiv.style.top = `${movement.top + y}px`;
+                    this.widDiv.style.height = `${movement.height - y}px`;
+                    this.widDiv.style.width = `${movement.width + x}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.height = this.widDiv.style.width;
                     }
                 }
             } else if (this.resize === 'bottom-left') {
-                this.refService.current.style.left = `${this.movement.left + x}px`;
-                this.refService.current.style.height = `${this.movement.height + y}px`;
-                this.refService.current.style.width = `${this.movement.width - x}px`;
+                this.refService.current.style.left = `${movement.left + x}px`;
+                this.refService.current.style.height = `${movement.height + y}px`;
+                this.refService.current.style.width = `${movement.width - x}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.left = `${this.movement.left + x}px`;
-                    this.widDiv.style.height = `${this.movement.height + y}px`;
-                    this.widDiv.style.width = `${this.movement.width - x}px`;
+                    this.widDiv.style.left = `${movement.left + x}px`;
+                    this.widDiv.style.height = `${movement.height + y}px`;
+                    this.widDiv.style.width = `${movement.width - x}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.height = this.widDiv.style.width;
                     }
                 }
             } else { // bottom-right
-                this.refService.current.style.height = `${this.movement.height + y}px`;
-                this.refService.current.style.width = `${this.movement.width + x}px`;
+                this.refService.current.style.height = `${movement.height + y}px`;
+                this.refService.current.style.width = `${movement.width + x}px`;
                 if (this.resizeLocked) {
                     // noinspection JSSuspiciousNameCombination
                     this.refService.current.style.height = this.refService.current.style.width;
                 }
                 if (this.widDiv) {
-                    this.widDiv.style.height = `${this.movement.height + y}px`;
-                    this.widDiv.style.width = `${this.movement.width + x}px`;
+                    this.widDiv.style.height = `${movement.height + y}px`;
+                    this.widDiv.style.width = `${movement.width + x}px`;
                     if (this.resizeLocked) {
                         // noinspection JSSuspiciousNameCombination
                         this.widDiv.style.height = this.widDiv.style.width;
@@ -643,7 +758,7 @@ class VisBaseWidget extends React.Component {
 
             // end of resize
             if (save) {
-                const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer');
+                const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer') as NodeListOf<any>;
                 resizers.forEach(item => {
                     if (item._storedOpacity !== undefined) {
                         item.style.opacity = item._storedOpacity;
@@ -662,7 +777,7 @@ class VisBaseWidget extends React.Component {
                     },
                 }]);
 
-                this.movement = null;
+                this.movement = undefined;
             }
         } else if (x === undefined) {
             if (this.state.draggable === false) {
@@ -670,6 +785,7 @@ class VisBaseWidget extends React.Component {
             }
 
             // initiate movement
+            // @ts-expect-error check later
             this.movement = {
                 top: this.refService.current.offsetTop,
                 left: this.refService.current.offsetLeft,
@@ -677,7 +793,7 @@ class VisBaseWidget extends React.Component {
             };
 
             // hide resizers
-            const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer');
+            const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
             resizers.forEach(item => item.style.display = 'none');
 
             if (this.props.isRelative) {
@@ -696,7 +812,9 @@ class VisBaseWidget extends React.Component {
                 this.widDiv.style.left = left;
                 this.widDiv.style.top = top;
 
+                // @ts-expect-error check later
                 if (this.widDiv._customHandlers && this.widDiv._customHandlers.onMove) {
+                    // @ts-expect-error check later
                     this.widDiv._customHandlers.onMove(this.widDiv, this.props.id);
                 }
             }
@@ -709,18 +827,20 @@ class VisBaseWidget extends React.Component {
             // End of movement
             if (save) {
                 // show resizers
-                const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer');
+                const resizers = this.refService.current.querySelectorAll('.vis-editmode-resizer') as NodeListOf<HTMLDivElement>;
                 resizers.forEach(item => item.style.display = 'block');
 
                 if (this.props.isRelative) {
-                    let parentDiv = this.props.refParent;
+                    let parentDiv: any = this.props.refParent;
                     if (Object.prototype.hasOwnProperty.call(parentDiv, 'current')) {
                         parentDiv = parentDiv.current;
                     }
                     // create shadow widget
                     if (this.widDiv) {
                         this.widDiv.style.position = 'relative';
+                        // @ts-expect-error check later
                         this.widDiv.style.top = 0;
+                        // @ts-expect-error check later
                         this.widDiv.style.left = 0;
                         parentDiv.insertBefore(this.widDiv, this.shadowDiv);
                         this.refService.current.style.top = `${this.widDiv.offsetTop}px`;
@@ -753,12 +873,12 @@ class VisBaseWidget extends React.Component {
                     }]);
                 }
 
-                this.movement = null;
+                this.movement = undefined;
             }
         }
     };
 
-    onTempSelect = selected => {
+    onTempSelect = (selected: any) => {
         const ref = this.refService.current?.querySelector('.vis-editmode-overlay');
         if (!ref) {
             return;
@@ -782,13 +902,13 @@ class VisBaseWidget extends React.Component {
         }
     };
 
-    onResizeStart(e, type) {
+    onResizeStart(e: React.MouseEvent, type: Resize) {
         e.stopPropagation();
         this.resize = type;
         this.props.mouseDownOnView(e, this.props.id, this.props.isRelative, true);
     }
 
-    getResizeHandlers(selected, widget) {
+    getResizeHandlers(selected: any, widget: any) {
         if (!this.state.editMode || !selected || this.props.selectedWidgets?.length !== 1) {
             return null;
         }
@@ -919,24 +1039,28 @@ class VisBaseWidget extends React.Component {
         };
 
         return Object.keys(handlers).map(key => {
+            // @ts-expect-error check later
             if (!controllable[key]) {
                 if (key.includes('-')) {
                     return null;
                 }
+                // @ts-expect-error check later
                 handlers[key].cursor = 'default';
             }
 
             return <div
                 key={key}
                 className="vis-editmode-resizer"
+                // @ts-expect-error check later
                 style={Object.assign(handlers[key], style)}
+                // @ts-expect-error check later
                 onMouseDown={handlers[key].opacity === RESIZERS_OPACITY ? e => this.onResizeStart(e, key) : undefined}
             />;
         });
     }
 
     // eslint-disable-next-line react/no-unused-class-component-methods
-    isUserMemberOfGroup(user, userGroups) {
+    isUserMemberOfGroup(user: string, userGroups: string[]) {
         if (!userGroups) {
             return true;
         }
@@ -950,7 +1074,7 @@ class VisBaseWidget extends React.Component {
         });
     }
 
-    static isWidgetFilteredOutStatic(viewsActiveFilter, widgetData, view, editMode) {
+    static isWidgetFilteredOutStatic(viewsActiveFilter: any, widgetData: any, view: string, editMode: boolean): boolean {
         if (!viewsActiveFilter) {
             console.warn(`viewsActiveFilter is not defined in ${view}, data: ${JSON.stringify(widgetData)}`);
             return false;
@@ -981,7 +1105,7 @@ class VisBaseWidget extends React.Component {
     }
 
     // eslint-disable-next-line react/no-unused-class-component-methods
-    isWidgetFilteredOut(widgetData) {
+    isWidgetFilteredOut(widgetData: any) {
         return VisBaseWidget.isWidgetFilteredOutStatic(
             this.props.viewsActiveFilter,
             widgetData,
@@ -991,7 +1115,7 @@ class VisBaseWidget extends React.Component {
     }
 
     // eslint-disable-next-line react/no-unused-class-component-methods
-    static isWidgetHidden(widgetData, states, id) {
+    static isWidgetHidden(widgetData: any, states: any, id: string) {
         const oid = widgetData['visibility-oid'];
         const condition = widgetData['visibility-cond'];
 
@@ -1076,11 +1200,10 @@ class VisBaseWidget extends React.Component {
     /**
      * Render the widget body
      *
-     * @param props
-     * @return {Element | void}
+     * @param _props
      */
     // eslint-disable-next-line class-methods-use-this,no-unused-vars
-    renderWidgetBody(props) {
+    renderWidgetBody(_props: VisBaseWidgetProps): React.JSX.Element | void {
         // Default render method. Normally it should be overwritten
         return <div
             style={{
@@ -1097,7 +1220,7 @@ class VisBaseWidget extends React.Component {
     }
 
     // eslint-disable-next-line react/no-unused-class-component-methods
-    changeOrder(e, dir) {
+    changeOrder(e: React.MouseEvent, dir: number) {
         e.stopPropagation();
         e.preventDefault();
         if (this.state.multiViewWidget || !this.state.editMode) {
@@ -1125,7 +1248,7 @@ class VisBaseWidget extends React.Component {
         this.props.context.onWidgetsChanged(null, this.props.view, { order });
     }
 
-    static formatValue(value, decimals, _format) {
+    static formatValue(value: any, decimals: any, _format: any) {
         if (typeof decimals !== 'number') {
             decimals = 2;
             _format = decimals;
@@ -1137,7 +1260,7 @@ class VisBaseWidget extends React.Component {
         return Number.isNaN(value) ? '' : value.toFixed(decimals || 0).replace(format[0], format[1]).replace(/\B(?=(\d{3})+(?!\d))/g, format[0]);
     }
 
-    formatIntervalHelper(value, type) {
+    formatIntervalHelper(value: any, type: any) {
         let singular;
         let plural;
         let special24;
@@ -1224,7 +1347,7 @@ class VisBaseWidget extends React.Component {
         return `${value} ${plural}`;
     }
 
-    formatInterval(timestamp, isMomentJs) {
+    formatInterval(timestamp: number, isMomentJs: boolean) {
         if (isMomentJs) {
             // init moment
             return this.props.context.moment(new Date(timestamp)).fromNow();
@@ -1345,7 +1468,7 @@ class VisBaseWidget extends React.Component {
     }
 
     // eslint-disable-next-line react/no-unused-class-component-methods
-    formatDate(dateObj, format, interval, isMomentJs, forRx) {
+    formatDate(dateObj: any, format: any, interval: any, isMomentJs: boolean, forRx: any) {
         if (typeof format === 'boolean') {
             interval = format;
             format = 'auto';
@@ -1491,7 +1614,7 @@ class VisBaseWidget extends React.Component {
         return format;
     }
 
-    onToggleRelative(e) {
+    onToggleRelative(e: React.MouseEvent) {
         e.stopPropagation();
         e.preventDefault();
 
@@ -1509,7 +1632,7 @@ class VisBaseWidget extends React.Component {
         }]);
     }
 
-    onToggleWidth(e) {
+    onToggleWidth(e: React.MouseEvent) {
         e.stopPropagation();
         e.preventDefault();
         const widget = this.props.context.views[this.props.view].widgets[this.props.id];
@@ -1525,7 +1648,7 @@ class VisBaseWidget extends React.Component {
         }]);
     }
 
-    onToggleLineBreak(e) {
+    onToggleLineBreak(e: React.MouseEvent) {
         e.stopPropagation();
         e.preventDefault();
 
@@ -1538,7 +1661,7 @@ class VisBaseWidget extends React.Component {
         }]);
     }
 
-    static correctStylePxValue(value) {
+    static correctStylePxValue(value: any) {
         if (typeof value === 'string') {
             // eslint-disable-next-line no-restricted-properties
             if (isVarFinite(value)) {
@@ -1561,7 +1684,7 @@ class VisBaseWidget extends React.Component {
             view={this.props.view}
             views={this.props.context.views}
             themeType={this.props.context.themeType}
-            onClose={order => {
+            onClose={(order: any) => {
                 this.props.onIgnoreMouseEvents(false);
                 this.setState({ showRelativeMoveMenu: false });
                 order && this.props.context.onWidgetsChanged(null, this.props.view, { order });
@@ -1576,7 +1699,7 @@ class VisBaseWidget extends React.Component {
             return null;
         }
 
-        const style = {
+        const style: Record<string, any> = {
             boxSizing: 'border-box',
         };
         const selected = !this.state.multiViewWidget && this.state.editMode && this.props.selectedWidgets?.includes(this.props.id);
@@ -1665,11 +1788,11 @@ class VisBaseWidget extends React.Component {
             }
         }
 
-        if (this.props.isRelative && isVarFinite(this.props.context.views[this.props.view].settings.rowGap)) {
-            style.marginBottom = parseFloat(this.props.context.views[this.props.view].settings.rowGap);
+        if (this.props.isRelative && isVarFinite(this.props.context.views[this.props.view].settings?.rowGap as string)) {
+            style.marginBottom = parseFloat(this.props.context.views[this.props.view].settings?.rowGap as string);
         }
 
-        const rxWidget = this.renderWidgetBody(props);
+        const rxWidget = this.renderWidgetBody(props as any);
 
         if (doNotTakeWidth) {
             delete style.width;
@@ -1727,6 +1850,7 @@ class VisBaseWidget extends React.Component {
             this.props.context.showWidgetNames !== false
         ) {
             // show widget name on widget body
+            // @ts-expect-error add to types
             const widgetNameBottom = !widget.usedInWidget && (this.refService.current?.offsetTop === 0 || (this.refService.current?.offsetTop && this.refService.current?.offsetTop < 15));
 
             // come again when the ref is filled
@@ -1736,12 +1860,13 @@ class VisBaseWidget extends React.Component {
 
             const [multiView, multiId] = this.state.multiViewWidget ? this.props.id.split('_') : [null, null];
 
+            // @ts-expect-error add to types
             const resizable = !widget.usedInWidget && this.isResizable();
 
             widgetName = <div
                 title={this.state.multiViewWidget ?
                     I18n.t('Jump to widget by double click') :
-                    (this.props.tpl === '_tplGroup' ? I18n.t('Switch to group edit mode by double click') : null)}
+                    (this.props.tpl === '_tplGroup' ? I18n.t('Switch to group edit mode by double click') : undefined)}
                 className={Utils.clsx(
                     'vis-editmode-widget-name',
                     selected && 'vis-editmode-widget-name-selected',
@@ -1750,15 +1875,24 @@ class VisBaseWidget extends React.Component {
                     this.props.isRelative && resizable && 'vis-editmode-widget-name-long',
                 )}
             >
+                {/**
+                 // @ts-expect-error check later */}
                 <span>{this.state.multiViewWidget ? I18n.t('%s from %s', multiId, multiView) : (widget.data?.name || this.props.id)}</span>
+                {/**
+                 // @ts-expect-error add to types */}
                 {this.state.multiViewWidget || widget.usedInWidget ? null :
                     <AnchorIcon onMouseDown={e => this.onToggleRelative(e)} className={Utils.clsx('vis-anchor', this.props.isRelative ? 'vis-anchor-enabled' : 'vis-anchor-disabled')} />}
+                {/**
+                 // @ts-expect-error add to types */}
                 {this.state.multiViewWidget || !this.props.isRelative || !resizable || widget.usedInWidget ? null :
                     <ExpandIcon onMouseDown={e => this.onToggleWidth(e)} className={Utils.clsx('vis-expand', widget.style.width === '100%' ? 'vis-expand-enabled' : 'vis-expand-disabled')} />}
+                {/**
+                 // @ts-expect-error add to types */}
                 {this.state.multiViewWidget || !this.props.isRelative || widget.usedInWidget ? null :
                     <KeyboardReturn onMouseDown={e => this.onToggleLineBreak(e)} className={Utils.clsx('vis-new-line', widget.style.newLine ? 'vis-new-line-enabled' : 'vis-new-line-disabled')} />}
             </div>;
 
+            // @ts-expect-error add to types
             if (this.props.isRelative && !this.state.multiViewWidget && !widget.usedInWidget) {
                 const pos = this.props.relativeWidgetOrder.indexOf(this.props.id);
                 const showUp = !!pos;
@@ -1793,7 +1927,7 @@ class VisBaseWidget extends React.Component {
                                         this.props.onIgnoreMouseEvents(true);
                                         this.relativeMoveMenu = target;
                                         this.setState({ showRelativeMoveMenu: true });
-                                        this.pressTimeout = null;
+                                        this.pressTimeout = undefined;
                                     }, 300, e.currentTarget);
                                 }}
                                 onMouseUp={e => this.changeOrder(e, -1)}
@@ -1813,7 +1947,7 @@ class VisBaseWidget extends React.Component {
                                         this.props.onIgnoreMouseEvents(true);
                                         this.relativeMoveMenu = target;
                                         this.setState({ showRelativeMoveMenu: true });
-                                        this.pressTimeout = null;
+                                        this.pressTimeout = undefined;
                                     }, 300, e.currentTarget);
                                 }}
                                 onMouseUp={e => this.changeOrder(e, 1)}
@@ -1835,6 +1969,7 @@ class VisBaseWidget extends React.Component {
 
         const overlay =
             !this.state.hideHelper &&                        // if the helper not hidden
+            // @ts-expect-error add to types
             !widget.usedInWidget &&                          // not used in another widget, that has own overlay
             this.state.editMode &&                           // if edit mode
             !widget.data.locked &&                           // if not locked
@@ -1842,7 +1977,7 @@ class VisBaseWidget extends React.Component {
             (this.props.selectedGroup !== this.props.id) ?   // and it does not the edited group itself
                 <div
                     className={classNames.join(' ')}
-                    onMouseDown={e => this.props.context.setSelectedWidgets && this.onMouseDown(e)}
+                    onMouseDown={e => !!this.props.context.setSelectedWidgets && this.onMouseDown(e)}
                 /> : null;
 
         let groupInstructions = null;
@@ -1892,19 +2027,5 @@ class VisBaseWidget extends React.Component {
         </div>;
     }
 }
-
-VisBaseWidget.propTypes = {
-    id: PropTypes.string.isRequired,
-    editMode: PropTypes.bool.isRequired,
-    view: PropTypes.string.isRequired,
-    isRelative: PropTypes.bool,
-    selectedWidgets: PropTypes.array,
-    relativeWidgetOrder: PropTypes.array,
-    moveAllowed: PropTypes.bool,
-    selectedGroup: PropTypes.string,
-    context: PropTypes.object.isRequired,
-    tpl: PropTypes.string.isRequired,
-    viewsActiveFilter: PropTypes.object.isRequired,
-};
 
 export default VisBaseWidget;
