@@ -236,10 +236,15 @@ interface CheckViewAccessOptions extends CheckAccessOptions{
     view: string;
 }
 
+interface CheckWidgetAccessOptions extends CheckViewAccessOptions {
+    /** Widget ID */
+    wid: AnyWidgetId;
+}
+
 /**
  * Check if the user has access to the view in given mode
  *
- * @param options project, user and mode information
+ * @param options project, view, user and mode information
  */
 export function hasViewAccess(options: CheckViewAccessOptions): boolean {
     const {
@@ -247,6 +252,25 @@ export function hasViewAccess(options: CheckViewAccessOptions): boolean {
     } = options;
 
     const permissions = project[view]?.settings?.permissions?.[user] ?? DEFAULT_PERMISSIONS;
+
+    if (editMode && permissions.write) {
+        return true;
+    }
+
+    return !editMode && permissions.read;
+}
+
+/**
+ * Check if the user has access to the widget in given mode
+ *
+ * @param options project, view, widget, user and mode information
+ */
+export function hasWidgetAccess(options: CheckWidgetAccessOptions): boolean {
+    const {
+        project, user, editMode, view, wid,
+    } = options;
+
+    const permissions = project[view]?.widgets[wid]?.permissions?.[user] ?? DEFAULT_PERMISSIONS;
 
     if (editMode && permissions.write) {
         return true;
