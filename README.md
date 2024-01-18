@@ -221,6 +221,10 @@ When one of the access rights is not granted on project level, it does not have 
 
 Note, that whenever you try to access a view, where the current user has no permission for, the user will see the project selection panel instead.
 
+### Widget
+If the user has no `read` permissions, the widget will not be rendered in the runtime. If user has no `write` permissions, the widget
+will not be rendered in edit mode.
+
 ## Settings
 ### Reload if sleep longer than
 There is a rule that after some disconnection period, the whole VIS page will be reloaded to synchronize the project.
