@@ -259,6 +259,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ## Changelog
 ### **WORK IN PROGRESS**
 * (foxriver76) increased timeout for project import
+* (foxriver76) added permissions on widget level
 
 ### 2.9.19 (2024-01-17)
 * (foxriver76) fixed issue when resizing widget from the left side
