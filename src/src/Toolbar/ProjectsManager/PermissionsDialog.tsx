@@ -171,10 +171,10 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
      */
     renderInfoDialog(): React.JSX.Element {
         return <div style={{
-            display: 'inline-flex', alignItems: 'center', border: '1px solid', borderRadius: '5px', padding: '2px',
+            display: 'inline-flex', alignItems: 'center', border: '1px solid', borderRadius: '5px', width: '100%',
         }}
         >
-            <InfoIcon />
+            <InfoIcon sx={{ margin: '4px' }} />
             <div style={{ margin: '6px', fontSize: '12px' }}>
                 <p style={{ margin: 0 }}>
                     {I18n.t('Only the admin user can change permissions')}
@@ -323,7 +323,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
                 sx={{ borderTop: '1px solid rgba(211,211,211,0.6)' }}
             >
                 <CardContent>
-                    {Object.entries(visProject[view].widgets).map(([wid, widget]) => this.renderWidgetPermissions({ ...options, wid: wid as AnyWidgetId, widget }))}
+                    {this.state.cardOpen[viewId] ? Object.entries(visProject[view].widgets).map(([wid, widget]) => this.renderWidgetPermissions({ ...options, wid: wid as AnyWidgetId, widget })) : null}
                 </CardContent>
             </Collapse>
         </Card>;
@@ -345,6 +345,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             ActionIcon={SaveIcon}
             actionDisabled={false}
             closeDisabled={false}
+            minWidth="600px"
         >
             {this.renderInfoDialog()}
             {this.state.users.map(user =>
@@ -411,9 +412,9 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
                         sx={{ borderTop: '1px solid rgba(211,211,211,0.6)' }}
                     >
                         <CardContent>
-                            {Object.keys(visProject).map(view => (view === '___settings' ? null : this.renderViewPermissions({
+                            {this.state.cardOpen[user] ? Object.keys(visProject).map(view => (view === '___settings' ? null : this.renderViewPermissions({
                                 visProject, view, user, activeUser,
-                            })))}
+                            }))) : null}
                         </CardContent>
                     </Collapse>
                 </Card>)}
