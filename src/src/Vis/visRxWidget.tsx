@@ -324,13 +324,11 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
         }
 
         if (userGroups?.length && !this.isUserMemberOfGroup(this.props.context.user, userGroups)) {
-            console.log(`${this.props.context.user} not in group`);
             // @ts-expect-error fix later
             if (this.newState.rxData['visibility-groups-action'] === 'disabled') {
                 this.newState.disabled = true;
             } else {
                 this.newState.visible = false;
-                console.log('not visible');
             }
         }
 
