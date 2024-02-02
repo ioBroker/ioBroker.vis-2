@@ -1233,7 +1233,7 @@ class VisView extends React.Component {
                     setTimeout(() => {
                         this.updateViewWidth();
                         resolve();
-                    }, 300);
+                    }, 400);
                 });
             }}
         >
