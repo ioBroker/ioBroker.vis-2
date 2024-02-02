@@ -289,7 +289,9 @@ class VisNavigation extends React.Component {
                             disablePadding
                             className={Utils.clsx(this.props.classes.menuItem, this.props.activeView === item.view && this.props.classes.selectedMenu)}
                             onClick={async () => {
-                                await this.hideNavigationMenu();
+                                if (settings.navigationHideOnSelection) {
+                                    await this.hideNavigationMenu();
+                                }
                                 await this.props.context.changeView(item.view);
                             }}
                         >
