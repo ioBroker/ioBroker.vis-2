@@ -80,6 +80,9 @@ class Runtime extends GenericApp {
 
         super(props, extendedProps);
 
+        // for projects starting with numbers, adapter-react extracts wrong instance number, as we have no instance in url explicitly
+        this.instance = window.visAdapterInstance ?? this.instance;
+
         // do not control this state
         this.socket.setStateToIgnore('nothing_selected');
 
