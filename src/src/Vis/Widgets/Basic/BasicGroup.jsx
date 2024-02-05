@@ -207,7 +207,6 @@ class BasicGroup extends VisRxWidget {
                     relativeWidgetOrder: groupWidgets,
                     viewsActiveFilter: this.props.viewsActiveFilter,
                     customSettings: this.props.customSettings,
-                    ignoreMouseEvents: false,
                 });
             });
         }

@@ -861,7 +861,7 @@ class App extends Runtime {
 
             },
         };
-        const groupId = getNewGroupId();
+        const groupId = getNewGroupId(project);
         let left = 0;
         let top = 0;
         let right = 0;
