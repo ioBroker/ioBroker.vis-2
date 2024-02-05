@@ -266,6 +266,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ### **WORK IN PROGRESS**
 * (foxriver76) fixed multiple problems with nested groups
 * (foxriver76) allow to select widgets in group via click (previously only dropdown worked)
+* (foxriver76) fixed issue, that Basic Image 8 is not configurable for 0 value
 
 ### 2.9.28 (2024-02-03)
 * (foxriver76) correctly determine the vis instance in all cases
