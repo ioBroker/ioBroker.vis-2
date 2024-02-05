@@ -497,7 +497,6 @@ export const parseAttributes = (widgetParams, widgetIndex, commonGroups, commonF
         const fields = deepClone(widgetParams);
         let groupIndex = fields.findIndex(group => typeof group.indexFrom === 'number');
 
-        console.log(groupIndex);
         while (groupIndex > -1) {
             const group = fields[groupIndex];
             group.singleName = group.name;
