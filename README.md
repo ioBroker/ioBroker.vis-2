@@ -265,6 +265,7 @@ E.g., if it was used in a menu and the menu is red, the circle would be red.
 ## Changelog
 ### **WORK IN PROGRESS**
 * (foxriver76) fixed multiple problems with nested groups
+* (foxriver76) also made group/ungroup commands working in group view
 * (foxriver76) allow to select widgets in group via click (previously only dropdown worked)
 * (foxriver76) fixed issue, that Basic Image 8 is not configurable for 0 value
 
