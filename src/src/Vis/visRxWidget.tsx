@@ -795,8 +795,6 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
                 icon = this.state.rxData[`signals-icon-${index}`];
             }
 
-            console.log(this.props.id);
-            console.log(icon);
             const style = {
                 color,
                 position: 'absolute',
@@ -951,8 +949,6 @@ class VisRxWidget<TRxData extends Record<string, any>> extends VisBaseWidget {
             result.push(this.renderSignal(i));
         }
 
-        console.log(this.props.id);
-        console.log(result);
         return result;
     }
 

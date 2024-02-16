@@ -109,6 +109,9 @@ interface Movement {
     order?: any;
 }
 
+/**
+ * Methods which should be optionally implemented by inherited classes
+ */
 interface VisBaseWidget {
     renderSignals(): React.ReactNode;
     renderLastChange(style: unknown): React.ReactNode;
