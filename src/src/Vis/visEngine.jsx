@@ -1932,8 +1932,6 @@ ${this.scripts}
      * @param {string} styles the actual styles to insert
      */
     static applyUserStyles(id, styles) {
-        console.log(id);
-        console.log(styles);
         let styleEl = window.document.getElementById(id);
         if (styleEl) {
             styleEl.innerHTML = styles;
