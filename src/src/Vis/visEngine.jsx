@@ -1932,6 +1932,8 @@ ${this.scripts}
      * @param {string} styles the actual styles to insert
      */
     static applyUserStyles(id, styles) {
+        console.log(id);
+        console.log(styles);
         let styleEl = window.document.getElementById(id);
         if (styleEl) {
             styleEl.innerHTML = styles;
@@ -1980,7 +1982,7 @@ ${this.scripts}
                 readFile(this.props.socket, `${this.props.adapterName}.${this.props.instance}`, `${this.props.projectName}/vis-user.css`)
                     .then(file => {
                         this.visUserCssLoaded = file || true;
-                        VisEngine.applyUserStyles('vis_user', file?.data || '');
+                        VisEngine.applyUserStyles('vis_user', file || '');
                     })
                     .catch(e => console.warn(`User CSS "${this.props.projectName}/vis-user.css" not found: ${e}`));
             }
