@@ -19,6 +19,7 @@ import { withStyles } from '@mui/styles';
 
 import { TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 import 'dayjs/locale/de';
 import 'dayjs/locale/en';
 import 'dayjs/locale/ru';
@@ -91,6 +92,11 @@ class JQuiInputDateTime extends VisRxWidget {
                             type: 'checkbox',
                         },
                         {
+                            name: 'asDate',
+                            label: 'jqui_asDate',
+                            type: 'checkbox',
+                        },
+                        {
                             name: 'stepMinute',
                             label: 'jqui_stepMinute',
                             type: 'select',
@@ -125,19 +131,27 @@ class JQuiInputDateTime extends VisRxWidget {
     renderWidgetBody(props) {
         super.renderWidgetBody(props);
 
+        const val = this.state.values[`${this.state.rxData.oid}.val`];
+        const asDate = this.state.rxData.asDate;
+
         return <div
             className="vis-widget-body"
             onClick={this.state.rxData.html ? () => this.onClick() : undefined}
         >
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={this.props.context.lang}>
                 <TimePicker
-                    value={this.state.values[`${this.state.rxData.oid}.val`] || ''}
+                    value={val && !asDate ? dayjs(val, 'HH:mm') : dayjs(val)}
                     ampm={this.state.rxData.ampm || false}
                     minutesStep={parseInt(this.state.rxData.stepMinute, 10) || 1}
                     label={this.state.rxData.widgetTitle || null}
                     formatDensity={this.state.rxData.wideFormat ? 'spacious' : 'dense'}
+                    format="HH:mm"
                     autoFocus={this.state.rxData.autoFocus || false}
-                    onChange={newValue => this.props.context.setValue(this.state.rxData.oid, newValue)}
+                    onChange={value => {
+                        value = !asDate ? value.format('HH:mm') : value.toDate();
+
+                        this.props.context.setValue(this.state.rxData.oid, value);
+                    }}
                     slotProps={{
                         textField: {
                             variant: this.state.rxData.variant || 'standard',
