@@ -14,7 +14,6 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import { withStyles } from '@mui/styles';
 
 import { TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -33,6 +32,8 @@ import 'dayjs/locale/pt';
 import 'dayjs/locale/nl';
 
 // eslint-disable-next-line import/no-cycle
+import { GetRxDataFromWidget, RxRenderWidgetProps } from '@/types';
+import type { TextFieldVariants } from '@mui/material';
 import VisRxWidget from '../../visRxWidget';
 
 const styles = {
@@ -44,7 +45,9 @@ const styles = {
     },
 };
 
-class JQuiInputDateTime extends VisRxWidget {
+type RxData = GetRxDataFromWidget<typeof JQuiInputDateTime>
+
+class JQuiInputDateTime extends VisRxWidget<RxData> {
     static getWidgetInfo() {
         return {
             id: 'tplJquiInputDatetime',
@@ -120,7 +123,7 @@ class JQuiInputDateTime extends VisRxWidget {
                 width: 250,
                 height: 56,
             },
-        };
+        } as const;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -128,7 +131,7 @@ class JQuiInputDateTime extends VisRxWidget {
         return JQuiInputDateTime.getWidgetInfo();
     }
 
-    renderWidgetBody(props) {
+    renderWidgetBody(props: RxRenderWidgetProps) {
         super.renderWidgetBody(props);
 
         const val = this.state.values[`${this.state.rxData.oid}.val`];
@@ -136,7 +139,6 @@ class JQuiInputDateTime extends VisRxWidget {
 
         return <div
             className="vis-widget-body"
-            onClick={this.state.rxData.html ? () => this.onClick() : undefined}
         >
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={this.props.context.lang}>
                 <TimePicker
@@ -144,18 +146,21 @@ class JQuiInputDateTime extends VisRxWidget {
                     ampm={this.state.rxData.ampm || false}
                     minutesStep={parseInt(this.state.rxData.stepMinute, 10) || 1}
                     label={this.state.rxData.widgetTitle || null}
-                    formatDensity={this.state.rxData.wideFormat ? 'spacious' : 'dense'}
+                    formatDensity="dense"
                     format="HH:mm"
                     autoFocus={this.state.rxData.autoFocus || false}
                     onChange={value => {
-                        value = !asDate ? value.format('HH:mm') : value.toDate();
+                        if (!value) {
+                            return;
+                        }
 
-                        this.props.context.setValue(this.state.rxData.oid, value);
+                        const res = !asDate ? value.format('HH:mm') : value.toDate();
+
+                        this.props.context.setValue(this.state.rxData.oid, res);
                     }}
                     slotProps={{
                         textField: {
-                            variant: this.state.rxData.variant || 'standard',
-                            size: this.state.rxData.small ? 'small' : undefined,
+                            variant: this.state.rxData.variant as TextFieldVariants || 'standard',
                             style: {
                                 width: '100%',
                                 height: '100%',
@@ -171,13 +176,5 @@ class JQuiInputDateTime extends VisRxWidget {
         </div>;
     }
 }
-
-JQuiInputDateTime.propTypes = {
-    id: PropTypes.string.isRequired,
-    context: PropTypes.object.isRequired,
-    view: PropTypes.string.isRequired,
-    editMode: PropTypes.bool.isRequired,
-    tpl: PropTypes.string.isRequired,
-};
 
 export default withStyles(styles)(JQuiInputDateTime);
