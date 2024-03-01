@@ -138,7 +138,7 @@ class WidgetBindingField extends Component {
         // read all states
         const stateOids = [];
         oids.forEach(oid => {
-            if (oid.visOid.startsWith('widgetOid.')) {
+            if (oid.systemOid === 'widgetOid') {
                 const newOid = this.props.widget.data.oid;
                 oid.visOid = oid.visOid.replace(/^widgetOid\./g, `${newOid}.`);
                 oid.systemOid = newOid;
@@ -741,7 +741,7 @@ class WidgetBindingField extends Component {
                         })}
                         helperText={<span>
                             <span style={{ opacity: 0.6, marginRight: 4 }}>
-                                {I18n.t('Calculate value')}
+                                {I18n.t('Calculate values')}
                                 :
                             </span>
                             {this.state.calculatedEditValue}
