@@ -134,9 +134,24 @@ class WidgetBindingField extends Component {
         if (!oids) {
             return value;
         }
+
         // read all states
         const stateOids = [];
         oids.forEach(oid => {
+            if (oid.visOid.startsWith('widgetOid.')) {
+                const newOid = this.props.widget.data.oid;
+                oid.visOid = oid.visOid.replace(/^widgetOid\./g, `${newOid}.`);
+                oid.systemOid = newOid;
+                oid.token = oid.token.replace(/:widgetOid;/g, `:${newOid};`);
+                oid.format = oid.format.replace(/:widgetOid;/g, `:${newOid};`);
+                for (const operation of oid.operations) {
+                    for (const arg of operation.arg) {
+                        arg.visOid = arg.visOid.replace(/^widgetOid\./g, `${newOid}.`);
+                        arg.systemOid = newOid;
+                    }
+                }
+            }
+
             const parts = oid.visOid.split('.');
             if (parts[parts.length - 1] === 'val' || parts[parts.length - 1] === 'ts' || parts[parts.length - 1] === 'lc' || parts[parts.length - 1] === 'ack') {
                 parts.pop();
