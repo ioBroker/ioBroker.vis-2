@@ -116,7 +116,7 @@ interface VisRxWidgetState extends VisBaseWidgetState {
     disabled?: boolean;
 }
 
-class VisRxWidget<TRxData extends Record<string, any>, TState extends Record<string, any> = Record<string, never>> extends VisBaseWidget<VisRxWidgetState & TState & { rxData: TRxData }> {
+class VisRxWidget<TRxData extends Record<string, any>, TState extends VisRxWidgetState = VisRxWidgetState> extends VisBaseWidget<VisRxWidgetState & TState & { rxData: TRxData }> {
     static POSSIBLE_MUI_STYLES = POSSIBLE_MUI_STYLES;
 
     static i18nPrefix: string | undefined;
