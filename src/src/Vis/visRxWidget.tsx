@@ -23,7 +23,7 @@ import { Connection, I18n, Icon } from '@iobroker/adapter-react-v5';
 
 import {
     Project, AnyWidgetId, RxWidgetInfo,
-    WidgetData, VisRxWidgetStateValues,
+    WidgetData, VisRxWidgetStateValues, RxWidgetInfoAttributes,
 } from '@/types';
 import { deepClone, calculateOverflow } from '@/Utils/utils';
 // eslint-disable-next-line import/no-cycle
@@ -112,7 +112,7 @@ export interface CustomWidgetProperties {
 export interface VisRxWidgetState extends VisBaseWidgetState {
     rxData: RxData;
     values: VisRxWidgetStateValues;
-    visible?: boolean;
+    visible: boolean;
     disabled?: boolean;
 }
 
@@ -155,7 +155,7 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Partial<Vi
     constructor(props: VisRxWidgetProps) {
         super(props);
 
-        const options = this.getWidgetInfo();
+        const options: RxWidgetInfo = this.getWidgetInfo() as RxWidgetInfo;
 
         const widgetAttrInfo: Record<string, any> = {};
         // collect all attributes (only types)
@@ -191,9 +191,12 @@ class VisRxWidget<TRxData extends Record<string, any>, TState extends Partial<Vi
 
         // find in fields visResizable name
         // if resizable exists, take the resizable from data
-        this.visDynamicResizable = VisRxWidget.findField(options, 'visResizable');
-        if (this.visDynamicResizable) {
-            this.visDynamicResizable = { default: this.visDynamicResizable.default !== undefined ? this.visDynamicResizable.default : true, desiredSize: this.visDynamicResizable.desiredSize };
+        const visResizable = VisRxWidget.findField(options, 'visResizable');
+        if (visResizable) {
+            this.visDynamicResizable = {
+                default: visResizable.default !== undefined ? visResizable.default : true,
+                desiredSize: visResizable.desiredSize,
+            };
         } else {
             this.visDynamicResizable = null;
         }
