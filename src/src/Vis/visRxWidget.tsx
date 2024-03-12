@@ -109,7 +109,7 @@ export interface CustomWidgetProperties {
     selectedWidget: AnyWidgetId;
 }
 
-interface VisRxWidgetState extends VisBaseWidgetState {
+export interface VisRxWidgetState extends VisBaseWidgetState {
     rxData: RxData;
     values: VisRxWidgetStateValues;
     visible?: boolean;

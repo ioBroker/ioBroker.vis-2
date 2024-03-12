@@ -613,4 +613,4 @@ type GetRxDataFromVisAttrs<T extends Record<string, any>> = {
 }
 
 /** Infers the RxData from a given Widget */
-type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }> =  GetRxDataFromVisAttrs<ReturnType<(T['getWidgetInfo'])>>
+type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }> = GetRxDataFromVisAttrs<ReturnType<(T['getWidgetInfo'])>>
