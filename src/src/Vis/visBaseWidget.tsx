@@ -154,7 +154,7 @@ interface VisBaseWidget {
     renderLastChange(style: unknown): React.ReactNode;
 }
 
-class VisBaseWidget<TState extends VisBaseWidgetState = VisBaseWidgetState> extends React.Component<VisBaseWidgetProps, TState & VisBaseWidgetState> {
+class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetState> extends React.Component<VisBaseWidgetProps, TState & VisBaseWidgetState> {
     static FORBIDDEN_CHARS = /[^._\-/ :!#$%&()+=@^{}|~]+/g; // from https://github.com/ioBroker/ioBroker.js-controller/blob/master/packages/common/lib/common/tools.js
 
     /** We do not store the SVG Element in the state because it is cyclic */
