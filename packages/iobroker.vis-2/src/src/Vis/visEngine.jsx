@@ -474,6 +474,8 @@ class VisEngine extends React.Component {
                 return false;
             },
             setValue: this.setValue,
+            subscribe: this.subscribe,
+            unsubscribe: this.unsubscribe,
             changeView: (viewDiv, view, hideOptions, showOptions, sync, cb) => {
                 if (typeof view === 'object') {
                     cb = sync;
@@ -1133,6 +1135,11 @@ class VisEngine extends React.Component {
                 }
                 this.props.socket.setState(id, val)
                     .then(() => cb && cb())
+                    .catch(error => cb && cb(error));
+            },
+            sendTo: (instance, command, data, cb) => {
+                this.props.socket.sendTo(instance, command, data)
+                    .then(result => cb && cb(result))
                     .catch(error => cb && cb(error));
             },
             setReloadTimeout: () => {
