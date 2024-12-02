@@ -281,7 +281,8 @@ export type RxWidgetInfoAttributesFieldID = {
     readonly noInit?: boolean;
     /** Do not subscribe on changes of the object */
     readonly noSubscribe?: boolean;
-    /** Filter of objects (not JSON string, it is an object), like:
+    /**
+     * Filter of objects (not JSON string, it is an object), like:
      - `{common: {custom: true}}` - show only objects with some custom settings
      - `{common: {custom: 'sql.0'}}` - show only objects with sql.0 custom settings (only of the specific instance)
      - `{common: {custom: '_dataSources'}}` - show only objects of adapters `influxdb' or 'sql' or 'history'
