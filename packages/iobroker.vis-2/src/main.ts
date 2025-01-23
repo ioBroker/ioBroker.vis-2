@@ -2,7 +2,7 @@
  *
  *      iobroker vis-2 Adapter
  *
- *      Copyright (c) 2021-2024, bluefox
+ *      Copyright (c) 2021-2025, bluefox
  *
  *      CC-NC-BY 4.0 License
  *

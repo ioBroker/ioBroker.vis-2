@@ -148,7 +148,7 @@ export function syncWidgetSets(
         console.log(
             `Check ${enabledList[d].path.replace(/\\/g, '/').split('/').pop()}... ${_changed ? 'COPIED.' : 'no changes.'}`,
         );
-        v2[enabledList[d].name] = !!enabledList[d].pack.common.visWidgets;
+        v2[enabledList[d].name.replace('iobroker.', '').replace('ioBroker.', '')] = !!enabledList[d].pack.common.visWidgets;
     }
 
     const widgetSets: { name: string; depends?: string | string[]; always?: boolean; v2: boolean }[] = [];
@@ -179,9 +179,9 @@ export function syncWidgetSets(
                     widgetSetsDependencies[name] ||
                     typeof widgetSetsDependencies[name] === 'string'
                 ) {
-                    widgetSets.push({ name, depends: widgetSetsDependencies[name], v2: v2[name] });
+                    widgetSets.push({ name, depends: widgetSetsDependencies[name], v2: false });
                 } else {
-                    widgetSets.push({ name, v2: v2[name] });
+                    widgetSets.push({ name, v2: false });
                 }
             } else if (found?.pack?.native?.always) {
                 widgetSets.push({ name, always: true, v2: v2[name] });
