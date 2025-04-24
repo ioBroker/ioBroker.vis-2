@@ -47,7 +47,7 @@ export interface VisRxWidgetState extends VisBaseWidgetState {
 
 export declare const POSSIBLE_MUI_STYLES: string[];
 
-declare class VisRxWidget<
+export declare class VisRxWidget<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
 > extends VisBaseWidget<
@@ -153,4 +153,5 @@ declare class VisRxWidget<
      */
     getWidgetInfo(): Readonly<RxWidgetInfo>;
 }
+
 export default VisRxWidget;

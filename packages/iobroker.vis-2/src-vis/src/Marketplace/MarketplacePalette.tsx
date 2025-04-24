@@ -9,15 +9,13 @@ interface MarketplacePaletteProps {
 }
 
 const MarketplacePalette = (props: MarketplacePaletteProps): React.JSX.Element => (
-    <div>
-        <Button
-            variant="contained"
-            color="primary"
-            onClick={() => props.setMarketplaceDialog({})}
-        >
-            {I18n.t('Open widgeteria')}
-        </Button>
-    </div>
+    <Button
+        variant="contained"
+        color="primary"
+        onClick={() => props.setMarketplaceDialog({})}
+    >
+        {I18n.t('Open widgeteria')}
+    </Button>
 );
 
 export default MarketplacePalette;

@@ -30,9 +30,9 @@ import type {
     RxWidgetInfoAttributesFieldText,
 } from '@iobroker/types-vis-2';
 
-import VisView from '@/Vis/visView';
+import { getOneWidget } from '../../visViewUtils';
 
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 
 type RxData = {
     [key: string]: string | boolean | number;
@@ -47,7 +47,7 @@ interface RxWidgetInfoGroupReadWrite extends RxWidgetInfoGroup {
     fields: RxWidgetInfoAttributesField[];
 }
 
-class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
+class BasicGroup extends window.visRxWidget<RxData, BasicGroupState> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: '_tplGroup',
@@ -164,7 +164,6 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
         return groupFields;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         // render dynamical attributes
         const info: RxWidgetInfo = BasicGroup.getWidgetInfo();
@@ -226,7 +225,7 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
                         _widget.style.position === 'sticky');
 
                 // use the same container for relative and absolute widgets (props.refService)
-                return VisView.getOneWidget(index, _widget, {
+                return getOneWidget(index, _widget, {
                     selectedGroup: this.props.selectedGroup,
                     selectedWidgets: this.props.selectedWidgets,
                     context: this.props.context,

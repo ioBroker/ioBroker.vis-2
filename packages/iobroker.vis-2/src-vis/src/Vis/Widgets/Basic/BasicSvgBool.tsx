@@ -16,9 +16,7 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
 
-// eslint-disable-next-line no-use-before-define
 type RxData = {
     oid: string;
     no_control: boolean;
@@ -27,7 +25,7 @@ type RxData = {
     svg_opacity: number;
 };
 
-class BasicSvgBool extends VisRxWidget<RxData> {
+class BasicSvgBool extends window.visRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplValueBoolCtrlSvg',
@@ -138,7 +136,6 @@ class BasicSvgBool extends VisRxWidget<RxData> {
                     height: '100%',
                     opacity: opacity,
                 }}
-                // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: svg }}
             />
         );

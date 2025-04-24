@@ -21,7 +21,7 @@ import { KeyboardReturn } from '@mui/icons-material';
 
 import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
 
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -50,7 +50,7 @@ interface JQuiInputState extends VisRxWidgetState {
     input: string;
 }
 
-class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputState> extends VisRxWidget<P, S> {
+class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputState> extends window.visRxWidget<P, S> {
     private focused: boolean = false;
     private readonly inputRef: React.RefObject<HTMLInputElement>;
     private jQueryDone: boolean = false;
@@ -202,7 +202,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
         widgetInfo: RxWidgetInfo,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
+        return window.visRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     async componentDidMount(): Promise<void> {
@@ -250,10 +250,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
 
     async setValue(value: string): Promise<void> {
         if (this.object?._id !== this.state.rxData.oid) {
-            this.object = (await this.props.context.socket.getObject(this.state.rxData.oid)) as
-                | ioBroker.StateObject
-                | null
-                | undefined;
+            this.object = await this.props.context.socket.getObject(this.state.rxData.oid);
             if (!this.object) {
                 return;
             }

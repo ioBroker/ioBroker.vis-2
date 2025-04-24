@@ -36,7 +36,7 @@ import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
 import VisBaseWidget from '@/Vis/visBaseWidget';
 import { deepClone } from '@/Utils/utils';
 
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 import BulkEditor from './BulkEditor';
 import type {
     RxRenderWidgetProps,
@@ -95,7 +95,7 @@ interface JQuiStateState extends VisRxWidgetState {
     object: ioBroker.StateObject | null | false;
 }
 
-class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateState> extends VisRxWidget<P, S> {
+class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateState> extends window.visRxWidget<P, S> {
     private controlTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor(props: VisBaseWidgetProps) {
@@ -453,7 +453,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         widgetInfo: RxWidgetInfo,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
+        return window.visRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -732,7 +732,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach(attr => {
             const value = rxData[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value !== null && value !== undefined && window.visRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
                 attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 (buttonStyle as unknown as Record<string, string>)[attr] = value;
             }

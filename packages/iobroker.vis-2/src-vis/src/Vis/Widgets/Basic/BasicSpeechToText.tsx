@@ -4,7 +4,6 @@ import type * as SpeechRecognition from 'dom-speech-recognition';
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
-import VisRxWidget from '@/Vis/visRxWidget';
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import type { VisBaseWidgetState } from '@/Vis/visBaseWidget';
 
@@ -38,7 +37,7 @@ interface BasicSpeechToTextState extends VisBaseWidgetState {
     resultColor: string;
 }
 
-export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechToTextState> {
+export default class BasicSpeechToText extends window.visRxWidget<RxData, BasicSpeechToTextState> {
     /** Speech recognition instance if available */
     private recognition: SpeechRecognition;
 
@@ -259,7 +258,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
             return;
         }
 
-        // eslint-disable-next-line new-cap
         this.recognition = new window.webkitSpeechRecognition();
         this.recognition.continuous =
             this.state.rxData.speechMode === 'continuous' || this.state.rxData.speechMode === 'startstop';
@@ -492,7 +490,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                             >
                                 <div
                                     style={{ display: this.state.rxData.noText ? 'none' : undefined }}
-                                    /* eslint-disable-next-line react/no-danger */
                                     dangerouslySetInnerHTML={{ __html: this.state.text }}
                                 />
                                 <div
@@ -500,7 +497,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
                                         display: this.state.rxData.noResults ? 'none' : undefined,
                                         color: this.state.resultColor,
                                     }}
-                                    /* eslint-disable-next-line react/no-danger */
                                     dangerouslySetInnerHTML={{ __html: this.state.result }}
                                 />
                             </td>

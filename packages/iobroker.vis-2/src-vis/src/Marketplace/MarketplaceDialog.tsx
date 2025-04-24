@@ -74,7 +74,11 @@ const MarketplaceDialog = (props: MarketplaceDialogProps): React.JSX.Element => 
             open={!0}
             fullScreen
             onClose={props.onClose}
-            PaperProps={{ color: 'primary' }}
+            sx={{
+                '& .MuiPaper-root': {
+                    color: 'primary',
+                },
+            }}
         >
             <DialogTitle>
                 {props.addPage ? I18n.t('Add new or update existing widget') : I18n.t('Browse the widgeteria')}

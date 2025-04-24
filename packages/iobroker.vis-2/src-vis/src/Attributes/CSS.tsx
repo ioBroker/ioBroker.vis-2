@@ -10,6 +10,7 @@ import {
     DialogActions,
     IconButton,
     CircularProgress,
+    LinearProgress,
 } from '@mui/material';
 
 import { HelpOutline, Check as CheckIcon } from '@mui/icons-material';
@@ -17,7 +18,7 @@ import { HelpOutline, Check as CheckIcon } from '@mui/icons-material';
 import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 
 import { readFile } from '@/Vis/visUtils';
-import { CustomAceEditor } from '@/Components/CustomAceEditor';
+import { CustomEditor } from '@/Components/CustomEditor';
 
 interface CSSProps {
     projectName: string;
@@ -34,6 +35,7 @@ const CSS = (props: CSSProps): React.JSX.Element => {
 
     const [localCss, setLocalCss] = useState('');
     const [globalCss, setGlobalCss] = useState('');
+    const [loaded, setLoaded] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
 
     const [localCssTimer, setLocalCssTimer] = useState(null);
@@ -83,6 +85,7 @@ const CSS = (props: CSSProps): React.JSX.Element => {
             if (window.localStorage.getItem('CSS.type')) {
                 setType(window.localStorage.getItem('CSS.type') as 'global' | 'local');
             }
+            setLoaded(true);
         };
 
         load().catch(e => console.error('Error loading CSS: ', e));
@@ -145,16 +148,20 @@ const CSS = (props: CSSProps): React.JSX.Element => {
                 </IconButton>
                 {globalCssTimer || localCssTimer ? <CircularProgress size={20} /> : null}
             </div>
-            <CustomAceEditor
-                type="css"
-                themeType={props.themeType}
-                readOnly={!props.editMode}
-                value={value}
-                onChange={newValue => save(newValue, type)}
-                width="100%"
-                focus
-                height="calc(100% - 34px)"
-            />
+            {loaded ? (
+                <CustomEditor
+                    key={type}
+                    type="css"
+                    themeType={props.themeType}
+                    readOnly={!props.editMode}
+                    value={value}
+                    onChange={newValue => save(newValue, type)}
+                    width="100%"
+                    height="calc(100% - 34px)"
+                />
+            ) : (
+                <LinearProgress />
+            )}
         </>
     );
 };

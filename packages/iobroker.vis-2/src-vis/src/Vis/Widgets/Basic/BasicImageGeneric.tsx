@@ -2,7 +2,6 @@ import React from 'react';
 
 import { Icon } from '@iobroker/adapter-react-v5';
 import type { RxRenderWidgetProps, VisBaseWidgetProps, WidgetData } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 
 export interface RxDataBasicImageGeneric extends WidgetData {
     stretch: boolean;
@@ -13,7 +12,7 @@ export interface RxDataBasicImageGeneric extends WidgetData {
     allowUserInteractions: boolean;
 }
 
-export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneric> extends VisRxWidget<T> {
+export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneric> extends window.visRxWidget<T> {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     private readonly imageRef: React.RefObject<HTMLImageElement>;

@@ -19,7 +19,7 @@ import { FormControl, FormLabel, Slider, Stack, LinearProgress } from '@mui/mate
 
 import { Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
 
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -65,7 +65,10 @@ interface JQuiSliderState extends VisRxWidgetState {
     valueMax: number | null;
 }
 
-class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSliderState> extends VisRxWidget<P, S> {
+class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSliderState> extends window.visRxWidget<
+    P,
+    S
+> {
     private controlTimeout: ReturnType<typeof setTimeout> | null = null;
     private lastChanged = 0;
 
@@ -325,7 +328,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         widgetInfo: RxWidgetInfo,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
+        return window.visRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     // eslint-disable-next-line class-methods-use-this

@@ -16,6 +16,7 @@ declare global {
         disableDataReporting?: boolean;
         sentryDSN?: string;
         visConfigLoaded?: Promise<void>;
+        visRxWidgetLoaded?: Promise<void | typeof VisRxWidget>;
     }
 }
 
@@ -23,7 +24,9 @@ window.adapterName = 'vis-2';
 
 console.log(`iobroker.${window.adapterName}@${packageJson.version}`);
 
-void import('./Vis/visRxWidget').then(_VisRxWidget => (window.visRxWidget = _VisRxWidget.default));
+window.visRxWidgetLoaded = import('./Vis/visRxWidget').then(
+    _VisRxWidget => (window.visRxWidget = _VisRxWidget.default),
+);
 
 function modifyClasses(className: string, addClass?: string, removeClass?: string): string {
     const classes = (className || '')
@@ -78,7 +81,7 @@ function build(): void {
 }
 
 // wait till all scrips are loaded
-void window.visConfigLoaded.then(() => {
+void Promise.all([window.visConfigLoaded, window.visRxWidgetLoaded]).then(() => {
     if (!window.disableDataReporting) {
         window.sentryDSN = 'https://db8b6e837c71447a876069559a00a742@sentry.iobroker.net/232';
     }

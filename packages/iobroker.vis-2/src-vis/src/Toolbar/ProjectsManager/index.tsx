@@ -266,11 +266,11 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
                                         <CircularProgress size={22} />
                                     ) : (
                                         <IconButton
-                                            onClick={event => {
+                                            onClick={async (event: React.MouseEvent): Promise<void> => {
                                                 setAnchorEl(event.currentTarget);
                                                 // TODO ensure correct project is opened
                                                 if (props.projectName !== projectName) {
-                                                    props.loadProject(projectName);
+                                                    await props.loadProject(projectName);
                                                 }
                                                 setShowPermissionsDialog(!!projectName);
                                             }}

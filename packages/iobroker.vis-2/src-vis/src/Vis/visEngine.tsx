@@ -63,13 +63,13 @@ import type {
 } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
 import { deepClone } from '@/Utils/utils';
-// eslint-disable-next-line no-unused-vars
+// jQuery is required
 import type JQuery from 'jquery';
 import './visWords';
 import VisView from './visView';
 import VisFormatUtils from './visFormatUtils';
 import { getUrlParameter, extractBinding, readFile } from './visUtils';
-import VisWidgetsCatalog from './visWidgetsCatalog';
+import { buildPath, getCurrentPath } from './visPath';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
     if (!text) {
@@ -282,7 +282,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
     // eslint-disable-next-line react/no-unused-class-component-methods
     _authRunning: boolean;
 
-    // eslint-disable-next-line no-use-before-define
     conn: ReturnType<VisEngine['createConnection']>;
 
     visContext: VisContext;
@@ -437,33 +436,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
         this.props.onFontsUpdate && this.props.onFontsUpdate(this.fontNames);
     }
 
-    static getCurrentPath(): { view: string; path: string[] } {
-        const path = window.location.hash
-            .replace(/^#/, '')
-            .split('/')
-            .map(p => decodeURIComponent(p));
-        return {
-            view: path.shift(),
-            path,
-        };
-    }
-
-    static buildPath(view: string, path: string | string[]): string {
-        if (path && typeof path === 'string') {
-            if (path.includes('/')) {
-                path = path.split('/');
-            } else {
-                path = [path];
-            }
-        }
-
-        if (path && typeof path === 'object' && path.length) {
-            return `#${encodeURIComponent(view)}/${path.map(p => encodeURIComponent(p)).join('/')}`;
-        }
-
-        return `#${encodeURIComponent(view)}`;
-    }
-
     setTimeInterval = (timeInterval: string): void => {
         this.setState({ timeInterval });
         window.localStorage.setItem('timeInterval', JSON.stringify(timeInterval));
@@ -499,7 +471,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
 
     componentDidMount(): void {
         // modify jquery dialog to add it to view (originally dialog was added to body) (because of styles)
-        // eslint-disable-next-line func-names
         (window.$ as any).ui.dialog.prototype._appendTo = function () {
             const wid = this.options.wid;
             const views = store.getState().visProject;
@@ -671,7 +642,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
                 const refViews = this.refViews;
                 Object.keys(refViews).forEach(view => refViews[view].onCommand('updateContainers'));
             },
-            // eslint-disable-next-line no-shadow
             renderView: (
                 viewDiv,
                 view: string | boolean,
@@ -737,7 +707,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
             setValue: this.setValue,
             subscribe: this.subscribe,
             unsubscribe: this.unsubscribe,
-            // eslint-disable-next-line no-shadow
             changeView: (
                 viewDiv,
                 view,
@@ -747,7 +716,6 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
                 cb,
             ) => {
                 if (typeof view === 'object') {
-                    // eslint-disable-next-line no-shadow
                     cb = sync as (viewDiv: string, view: string) => void;
                     sync = showOptions;
                     hideOptions = showOptions;
@@ -770,11 +738,11 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
                 cb && cb(viewDiv, view);
             },
             getCurrentPath() {
-                return VisEngine.getCurrentPath();
+                return getCurrentPath();
             },
             navigateInView(path) {
-                const currentPath = VisEngine.getCurrentPath();
-                const newHash = VisEngine.buildPath(currentPath.view, path);
+                const currentPath = getCurrentPath();
+                const newHash = buildPath(currentPath.view, path);
                 if (window.location.hash !== newHash) {
                     window.location.hash = newHash;
                 }
@@ -1905,7 +1873,8 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
             await VisEngine.setInnerHTML(
                 div,
                 text,
-                this.props.runtime && (VisWidgetsCatalog.getUsedWidgetSets(store.getState().visProject) as string[]),
+                this.props.runtime &&
+                    (window.VisWidgetsCatalog.getUsedWidgetSets(store.getState().visProject) as string[]),
             );
 
             this.props.onLoaded && this.props.onLoaded();
@@ -2400,7 +2369,7 @@ ${this.scripts}
         if (this.props.editMode) {
             window.alert(I18n.t('Ignored in edit mode'));
         } else {
-            window.location.hash = VisEngine.buildPath(view, subView);
+            window.location.hash = buildPath(view, subView);
         }
     };
 
@@ -2430,16 +2399,14 @@ ${this.scripts}
 
         if (this.lastChangedView !== this.props.activeView && !this.props.editMode) {
             this.lastChangedView = this.props.activeView;
-            window.vis.conn.sendCommand(
+            void window.vis.conn.sendCommand(
                 window.vis.instance,
                 'changedView',
                 this.props.projectName ? `${this.props.projectName}/${this.props.activeView}` : this.props.activeView,
             );
 
             // inform the legacy widgets
-            if (window.jQuery) {
-                (window as any).jQuery(window).trigger('viewChanged', this.props.activeView);
-            }
+            (window as any).jQuery?.(window).trigger('viewChanged', this.props.activeView);
         }
 
         this.visContext = {

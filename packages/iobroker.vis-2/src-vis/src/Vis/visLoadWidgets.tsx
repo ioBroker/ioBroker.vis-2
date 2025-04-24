@@ -12,17 +12,17 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
-import type { VisRxWidgetState } from '@/Vis/visRxWidget';
-// eslint-disable-next-line no-duplicate-imports
-import type VisRxWidget from '@/Vis/visRxWidget';
-import type { Branded } from '@iobroker/types-vis-2';
 import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
+
+import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import type { Branded } from '@iobroker/types-vis-2';
+
+import type { VisRxWidget, VisRxWidgetState } from './visRxWidget';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
 
-interface VisRxWidgetWithInfo<
+export interface VisRxWidgetWithInfo<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
 > extends VisRxWidget<TRxData, TState> {
@@ -31,6 +31,7 @@ interface VisRxWidgetWithInfo<
     url: string;
     i18nPrefix?: string;
 }
+
 interface WidgetSetStruct {
     __initialized: boolean;
     get: (module: string) => Promise<() => { default: VisRxWidgetWithInfo<any> }>;
@@ -44,9 +45,7 @@ declare global {
     }
 }
 
-function registerWidgetsLoadIndicator(cb: (process: number, max: number) => void): void {
-    window.__widgetsLoadIndicator = cb;
-}
+window.__widgetsLoadIndicator = null;
 
 interface VisLoadComponentContext {
     visWidgetsCollection: ioBroker.VisWidget;
@@ -95,8 +94,7 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
                         } else {
                             console.error(`Cannot load widget ${context.dynamicWidgetInstance._id}. No default found`);
                         }
-                        window.__widgetsLoadIndicator &&
-                            window.__widgetsLoadIndicator(context.countRef.count, context.countRef.max);
+                        window.__widgetsLoadIndicator?.(context.countRef.count, context.countRef.max);
                     }
                 })
                 .catch((e: any) => {
@@ -205,8 +203,7 @@ function getRemoteWidgets(
                                             .then(json => {
                                                 countRef.count++;
                                                 I18n.extendTranslations(json, lang);
-                                                window.__widgetsLoadIndicator &&
-                                                    window.__widgetsLoadIndicator(countRef.count, promises.length);
+                                                window.__widgetsLoadIndicator?.(countRef.count, promises.length);
                                             })
                                             .catch(error => {
                                                 if (lang !== 'en') {
@@ -216,11 +213,10 @@ function getRemoteWidgets(
                                                         .then(json => {
                                                             countRef.count++;
                                                             I18n.extendTranslations(json, lang);
-                                                            window.__widgetsLoadIndicator &&
-                                                                window.__widgetsLoadIndicator(
-                                                                    countRef.count,
-                                                                    promises.length,
-                                                                );
+                                                            window.__widgetsLoadIndicator?.(
+                                                                countRef.count,
+                                                                promises.length,
+                                                            );
                                                         })
                                                         .catch(_error =>
                                                             console.log(
@@ -249,8 +245,7 @@ function getRemoteWidgets(
                                                 i18nPrefix = translations.default.prefix;
 
                                                 I18n.extendTranslations(translations.default);
-                                                window.__widgetsLoadIndicator &&
-                                                    window.__widgetsLoadIndicator(countRef.count, promises.length);
+                                                window.__widgetsLoadIndicator?.(countRef.count, promises.length);
                                             })
                                             .catch((error: string) =>
                                                 console.log(`Cannot load i18n "${collection.name}": ${error}`),
@@ -307,4 +302,4 @@ function getRemoteWidgets(
         .catch(e => console.error('Cannot read instances', e));
 }
 
-export { getRemoteWidgets, registerWidgetsLoadIndicator };
+export { getRemoteWidgets };

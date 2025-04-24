@@ -63,19 +63,16 @@ const allObjects = async (socket: LegacyConnection): Promise<Record<string, ioBr
     const folders = await socket.getObjectViewSystem('folder', '', '\u9999');
     const enums = await socket.getObjectViewSystem('enum', '', '\u9999');
 
-    return (
-        Object.values(states)
-            .concat(Object.values(channels))
-            .concat(Object.values(devices))
-            .concat(Object.values(folders))
-            .concat(Object.values(enums))
-            // eslint-disable-next-line
-            .reduce((obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj), {})
-    );
+    return Object.values(states)
+        .concat(Object.values(channels))
+        .concat(Object.values(devices))
+        .concat(Object.values(folders))
+        .concat(Object.values(enums))
+        .reduce((obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj), {});
 };
 
 function getObjectIcon(obj: ioBroker.Object, id: string, imagePrefix?: string): string {
-    imagePrefix = imagePrefix || '.'; // http://localhost:8081';
+    imagePrefix ||= '.'; // http://localhost:8081';
     let src = '';
     const common = obj?.common;
 
@@ -91,7 +88,7 @@ function getObjectIcon(obj: ioBroker.Object, id: string, imagePrefix?: string): 
                         } else {
                             src = `${imagePrefix}/adapter/${common.name}/${cIcon}`;
                         }
-                    } else if (id && id.startsWith('system.adapter.')) {
+                    } else if (id?.startsWith('system.adapter.')) {
                         instance = id.split('.', 3);
                         if (cIcon[0] === '/') {
                             instance[2] += cIcon;
@@ -172,16 +169,14 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
         }
         const members = (devicesObject[id].common as ioBroker.EnumCommon).members;
 
-        if (members && members.length) {
-            members.forEach((member: string) => {
-                // if an object really exists
-                if (devicesObject[member]) {
-                    if (!list.includes(member)) {
-                        list.push(member);
-                    }
+        members?.forEach((member: string) => {
+            // if an object really exists
+            if (devicesObject[member]) {
+                if (!list.includes(member)) {
+                    list.push(member);
                 }
-            });
-        }
+            }
+        });
     });
 
     const options: DetectOptions = {
@@ -288,9 +283,8 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
     });
 
     // find names and icons for devices
-    for (const k in result) {
-        for (const k2 in result[k].devices) {
-            const deviceObj = result[k].devices[k2];
+    result.forEach(k => {
+        k.devices.forEach(deviceObj => {
             if (deviceObj.type === 'state' || deviceObj.type === 'channel') {
                 const idArray = deviceObj._id.split('.');
                 idArray.pop();
@@ -312,7 +306,7 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                         );
                     }
                     idArray.pop();
-                    // read device
+                    // read a device
                     const grandParentObject = devicesObject[idArray.join('.')];
                     if (grandParentObject?.type === 'device' && grandParentObject.common?.icon) {
                         deviceObj.common.name = grandParentObject.common.name || deviceObj.common.name;
@@ -335,8 +329,8 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
             } else {
                 deviceObj.common.icon = getObjectIcon(deviceObj as ioBroker.Object, deviceObj._id, '../..');
             }
-        }
-    }
+        });
+    });
 
     return result;
 };

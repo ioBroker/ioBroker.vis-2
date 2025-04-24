@@ -4,7 +4,7 @@ import { Button, Dialog, DialogActions, DialogContent, IconButton, TextareaAutos
 import { Check, Close, Delete } from '@mui/icons-material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, VisBaseWidgetProps } from '@iobroker/types-vis-2';
-import VisRxWidget, { type VisRxWidgetState } from '@/Vis/visRxWidget';
+import { type VisRxWidgetState } from '@/Vis/visRxWidget';
 
 type RxData = {
     oid: string;
@@ -20,7 +20,7 @@ interface BasicNoteState extends VisRxWidgetState {
     text: string;
 }
 
-export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
+export default class BasicNote extends window.visRxWidget<RxData, BasicNoteState> {
     constructor(props: VisBaseWidgetProps) {
         super(props);
         Object.assign(this.state, {

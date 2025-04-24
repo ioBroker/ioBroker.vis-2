@@ -233,8 +233,10 @@ class Palette extends Component<PaletteProps, PaletteState> {
                         const updates: MarketplaceWidgetRevision[] = [];
                         const deleted = [];
                         if (store.getState().visProject?.___settings?.marketplace && window.VisMarketplace?.api) {
-                            for (const i in store.getState().visProject.___settings.marketplace) {
-                                const widget = store.getState().visProject.___settings.marketplace[i];
+                            const keys: string[] = Object.keys(store.getState().visProject.___settings.marketplace);
+                            for (const key of keys) {
+                                const widget =
+                                    store.getState().visProject.___settings.marketplace[key as any as number];
                                 try {
                                     const data = await window.VisMarketplace.api.apiGetWidget(widget.widget_id);
                                     if (data.version !== widget.version) {

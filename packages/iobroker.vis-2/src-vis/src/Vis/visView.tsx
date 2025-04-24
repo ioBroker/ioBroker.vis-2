@@ -23,9 +23,7 @@ import createTheme from '@/theme';
 import type {
     AnyWidgetId,
     GroupWidgetId,
-    Widget,
     ViewSettings,
-    VisContext,
     WidgetStyle,
     VisViewProps,
     SingleWidget,
@@ -37,11 +35,9 @@ import { hasWidgetAccess, isVarFinite } from '@/Utils/utils';
 import { recalculateFields, selectView, store } from '@/Store';
 import type { Property } from 'csstype';
 
-import VisBaseWidget from './visBaseWidget';
-import VisCanWidget from './visCanWidget';
 import { addClass, parseDimension } from './visUtils';
+import { getOneWidget } from './visViewUtils';
 import VisNavigation from './visNavigation';
-import VisWidgetsCatalog from './visWidgetsCatalog';
 
 const MAX_COLUMNS = 8;
 
@@ -72,34 +68,6 @@ interface VisViewMovement {
 
 interface ViewElement extends HTMLDivElement {
     _originalParent?: HTMLElement;
-}
-
-interface CreateWidgetOptions {
-    context: VisContext;
-    editMode: boolean;
-    id: AnyWidgetId;
-    isRelative: boolean;
-    mouseDownOnView:
-        | null
-        | ((
-              e: React.MouseEvent,
-              wid: AnyWidgetId,
-              isRelative: boolean,
-              isResize?: boolean,
-              isDoubleClick?: boolean,
-          ) => void);
-    moveAllowed: boolean;
-    ignoreMouseEvents?: boolean | undefined;
-    onIgnoreMouseEvents?: (ignore: boolean) => void;
-    refParent: React.RefObject<HTMLElement>;
-    askView: (command: AskViewCommand, props?: WidgetReference) => any;
-    relativeWidgetOrder: AnyWidgetId[];
-    selectedGroup: GroupWidgetId;
-    selectedWidgets: AnyWidgetId[];
-    view: string;
-    viewsActiveFilter: Record<string, string[]>;
-    customSettings: Record<string, any> | undefined;
-    index?: number;
 }
 
 interface VisViewState {
@@ -159,7 +127,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     constructor(props: VisViewProps) {
         super(props);
-        this.promiseToCollect = VisWidgetsCatalog.collectRxInformation(
+        this.promiseToCollect = window.VisWidgetsCatalog.collectRxInformation(
             props.context.socket,
             store.getState().visProject,
             props.context.changeProject,
@@ -1229,27 +1197,6 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         );
     }
 
-    static getOneWidget(index: number, widget: Widget, options: CreateWidgetOptions): React.JSX.Element | null {
-        if (!VisWidgetsCatalog.rxWidgets) {
-            return null;
-        }
-        // context, id, isRelative, refParent, askView, mouseDownOnView, view,
-        // relativeWidgetOrder, moveAllowed, editMode, multiView, ignoreMouseEvents, selectedGroup
-        // viewsActiveFilter, customSettings, onIgnoreMouseEvents
-        const WidgetEl =
-            VisWidgetsCatalog.rxWidgets[widget.tpl] ||
-            (VisWidgetsCatalog.allWidgetsList?.includes(widget.tpl) ? VisCanWidget : VisBaseWidget);
-
-        return (
-            // @ts-expect-error fix later
-            <WidgetEl
-                key={`${index}_${options.id}`}
-                tpl={widget.tpl}
-                {...options}
-            />
-        );
-    }
-
     async loadJqueryTheme(jQueryTheme: string): Promise<void> {
         if (VisView.themeCache[jQueryTheme] && this.props.view) {
             let data = VisView.themeCache[jQueryTheme];
@@ -1846,7 +1793,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 const view = this.props.view;
 
                 rxAbsoluteWidgets = listAbsoluteWidgetsOrder.map((id, index) =>
-                    VisView.getOneWidget(index, contextView.widgets[id], {
+                    getOneWidget(index, contextView.widgets[id], {
                         context: this.props.context,
                         editMode: this.props.editMode,
                         id,
@@ -1876,7 +1823,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             columnIndex = 0;
                         }
 
-                        const w = VisView.getOneWidget(index, widget, {
+                        const w = getOneWidget(index, widget, {
                             // custom attributes
                             context: this.props.context,
                             editMode: this.props.editMode, // relative widget cannot be multi-view
@@ -1930,7 +1877,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
                 // render group widget apart
                 if (this.props.selectedGroup) {
-                    rxGroupWidget = VisView.getOneWidget(0, contextView.widgets[this.props.selectedGroup], {
+                    rxGroupWidget = getOneWidget(0, contextView.widgets[this.props.selectedGroup], {
                         context: this.props.context,
                         editMode: this.props.editMode,
                         id: this.props.selectedGroup,
@@ -2058,28 +2005,22 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 backgroundStyle.backgroundColor = settings['bg-color'];
             }
             if (settings['bg-position-x']) {
-                // eslint-disable-next-line no-restricted-properties
                 backgroundStyle.backgroundPositionX = isVarFinite(settings['bg-position-x'])
                     ? `${settings['bg-position-x']}px`
                     : settings['bg-position-x'];
             }
             if (settings['bg-position-y']) {
-                // eslint-disable-next-line no-restricted-properties
                 backgroundStyle.backgroundPositionY = isVarFinite(settings['bg-position-y'])
                     ? `${settings['bg-position-y']}px`
                     : settings['bg-position-y'];
             }
             if (settings['bg-width'] && settings['bg-height']) {
-                // eslint-disable-next-line no-restricted-properties
                 const w = isVarFinite(settings['bg-width']) ? `${settings['bg-width']}px` : settings['bg-width'];
-                // eslint-disable-next-line no-restricted-properties
                 const h = isVarFinite(settings['bg-height']) ? `${settings['bg-height']}px` : settings['bg-height'];
                 backgroundStyle.backgroundSize = `${w} ${h}`;
             } else if (settings['bg-width']) {
-                // eslint-disable-next-line no-restricted-properties
                 backgroundStyle.backgroundSize = `${isVarFinite(settings['bg-width']) ? `${settings['bg-width']}px` : settings['bg-width']} auto`;
             } else if (settings['bg-height']) {
-                // eslint-disable-next-line no-restricted-properties
                 const w = isVarFinite(settings['bg-height']) ? `${settings['bg-height']}px` : settings['bg-height'];
                 backgroundStyle.backgroundSize = `auto ${w}`;
             }

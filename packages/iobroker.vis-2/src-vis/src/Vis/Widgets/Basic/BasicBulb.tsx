@@ -1,5 +1,4 @@
 import React from 'react';
-import VisRxWidget from '@/Vis/visRxWidget';
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import { NOTHING_SELECTED } from '@/Utils/utils';
 
@@ -18,7 +17,7 @@ type RxData = {
     oidFalseValue?: string;
 };
 
-export default class BasicBulb extends VisRxWidget<RxData> {
+export default class BasicBulb extends window.visRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */

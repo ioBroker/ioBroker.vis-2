@@ -16,13 +16,12 @@
 import React from 'react';
 
 import type { GetRxDataFromWidget, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
+
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
 
-// eslint-disable-next-line no-use-before-define
 type RxData = GetRxDataFromWidget<typeof BasicHtml>;
 
-class BasicHtml extends VisRxWidget<RxData> {
+class BasicHtml extends window.visRxWidget<RxData> {
     interval: ReturnType<typeof setInterval> | null = null;
 
     static getWidgetInfo(): RxWidgetInfo {

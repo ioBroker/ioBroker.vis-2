@@ -10,8 +10,6 @@ import type {
     RxWidgetInfo,
 } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
-// eslint-disable-next-line no-duplicate-imports
-import VisRxWidget from '@/Vis/visRxWidget';
 
 declare global {
     interface Window {
@@ -26,10 +24,9 @@ interface BasicScreenResolutionState extends VisRxWidgetState {
     essentialData?: string;
 }
 
-// eslint-disable-next-line no-use-before-define
 type RxData = GetRxDataFromWidget<typeof BasicScreenResolution>;
 
-export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScreenResolutionState> {
+export default class BasicScreenResolution extends window.visRxWidget<RxData, BasicScreenResolutionState> {
     private essentialData: string;
 
     constructor(props: RxWidgetProps) {

@@ -18,7 +18,6 @@ import React, { type CSSProperties } from 'react';
 import { I18n } from '@iobroker/adapter-react-v5';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, RxWidgetInfoGroup, WidgetData } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
 
 interface RxData extends WidgetData {
     oid: string;
@@ -26,7 +25,7 @@ interface RxData extends WidgetData {
     [key: `contains_view_${number}`]: string;
 }
 
-class BasicViewInWidget8 extends VisRxWidget<RxData> {
+class BasicViewInWidget8 extends window.visRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplStatefulContainerView8',

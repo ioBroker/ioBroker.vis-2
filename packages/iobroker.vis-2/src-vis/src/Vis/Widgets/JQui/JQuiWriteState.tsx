@@ -29,7 +29,7 @@ import type {
 
 import VisBaseWidget from '@/Vis/visBaseWidget';
 
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 
 type RxData = {
     oid: string;
@@ -62,7 +62,7 @@ interface JQuiWriteStateState extends VisRxWidgetState {
 class JQuiWriteState<
     P extends RxData = RxData,
     S extends JQuiWriteStateState = JQuiWriteStateState,
-> extends VisRxWidget<P, S> {
+> extends window.visRxWidget<P, S> {
     private iterateInterval: ReturnType<typeof setInterval> | null = null;
 
     private iterateTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -97,7 +97,9 @@ class JQuiWriteState<
                                 socket: LegacyConnection,
                             ): Promise<void> => {
                                 if (data.oid && data.oid !== 'nothing_selected') {
-                                    const obj = (await socket.getObject(data.oid)) as ioBroker.StateObject;
+                                    const obj: ioBroker.StateObject | null | undefined = await socket.getObject(
+                                        data.oid,
+                                    );
                                     let changed = false;
                                     if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
                                         if (data.min !== obj.common.min) {
@@ -292,7 +294,7 @@ class JQuiWriteState<
         widgetInfo: RxWidgetInfo,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
+        return window.visRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -472,7 +474,7 @@ class JQuiWriteState<
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string>)[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value !== null && value !== undefined && window.visRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
                 attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 (buttonStyle as Record<string, number | string>)[attr] = value;
             }

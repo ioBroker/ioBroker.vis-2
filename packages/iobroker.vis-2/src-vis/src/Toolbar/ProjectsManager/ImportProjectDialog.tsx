@@ -119,9 +119,11 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
             text={I18n.t('Open it?', projectName)}
             ok={I18n.t('Open')}
             cancel={I18n.t('Ignore')}
-            onClose={isYes => {
+            onClose={async (isYes: boolean): Promise<void> => {
                 setAskOpenProject(false);
-                isYes && props.loadProject(projectName);
+                if (isYes) {
+                    await props.loadProject(projectName);
+                }
                 props.onClose(isYes, projectName);
             }}
         />

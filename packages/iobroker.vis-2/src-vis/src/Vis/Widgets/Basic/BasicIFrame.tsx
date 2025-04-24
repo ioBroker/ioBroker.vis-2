@@ -1,7 +1,6 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, VisBaseWidgetProps } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 
 type RxData = {
     src: string;
@@ -15,7 +14,7 @@ type RxData = {
     seamless: boolean;
 };
 
-export default class BasicIFrame extends VisRxWidget<RxData> {
+export default class BasicIFrame extends window.visRxWidget<RxData> {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
     private readonly frameRef: React.RefObject<HTMLIFrameElement>;

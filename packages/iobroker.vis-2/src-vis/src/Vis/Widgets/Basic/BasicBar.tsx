@@ -1,7 +1,6 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 
 type RxData = {
     oid: string;
@@ -14,7 +13,7 @@ type RxData = {
     reverse?: boolean;
 };
 
-export default class BasicBar extends VisRxWidget<RxData> {
+export default class BasicBar extends window.visRxWidget<RxData> {
     /**
      * Returns the widget info which is rendered in the edit mode
      */

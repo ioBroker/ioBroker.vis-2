@@ -15,7 +15,6 @@ const unzipper = require('unzipper');
 
 function clean() {
     deleteFoldersRecursive(`${__dirname}/www`);
-    deleteFoldersRecursive(`${__dirname}/../../www`);
     deleteFoldersRecursive(`${__dirname}/runtime`, ['node_modules', 'package-lock.json']);
 }
 
@@ -101,7 +100,6 @@ export default FiltersEditorDialog;
     delete pack.devDependencies['ace-builds'];
     delete pack.devDependencies['iobroker.type-detector'];
     delete pack.devDependencies['mui-nested-menu'];
-    delete pack.devDependencies['react-ace'];
     delete pack.devDependencies['react-dnd'];
     delete pack.devDependencies['react-dnd-html5-backend'];
     delete pack.devDependencies['react-dnd-preview'];
@@ -272,31 +270,6 @@ function syncFiles(target, dest) {
 }
 
 function buildEditor() {
-    // copy ace files into src-vis/public/lib/js/ace
-    const ace = `${__dirname}/src-vis/node_modules/ace-builds/src-min-noconflict/`;
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/worker-html.js`, `${ace}worker-html.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/mode-html.js`, `${ace}mode-html.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/snippets/html.js`, `${ace}snippets/html.js`);
-
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/worker-css.js`, `${ace}worker-css.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/mode-css.js`, `${ace}mode-css.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/snippets/css.js`, `${ace}snippets/css.js`);
-
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/mode-json.js`, `${ace}mode-json.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/worker-json.js`, `${ace}worker-json.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/snippets/json.js`, `${ace}snippets/json.js`);
-
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/mode-javascript.js`, `${ace}mode-javascript.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/worker-javascript.js`, `${ace}worker-javascript.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/snippets/javascript.js`, `${ace}snippets/javascript.js`);
-
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/ext-language_tools.js`, `${ace}ext-language_tools.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/ext-searchbox.js`, `${ace}ext-searchbox.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/theme-clouds_midnight.js`, `${ace}theme-clouds_midnight.js`);
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/theme-chrome.js`, `${ace}theme-chrome.js`);
-
-    syncFiles(`${__dirname}/src-vis/public/lib/js/ace/ace.js`, `${ace}ace.js`);
-
     // synchronise i18n: copy all new words from runtime into src
     const langsRuntime = {
         en: require('./src-vis/src/i18nRuntime/en.json'),
@@ -398,11 +371,6 @@ function patchEditor() {
         unlinkSync(`${__dirname}/www/marketplaceConfig.sample.js`);
     }
 
-    copyFolder(`${__dirname}/www`, `${__dirname}/../../www`);
-    writeFileSync(`${__dirname}/../../io-package.json`, readFileSync(`${__dirname}/io-package.json`).toString());
-    writeFileSync(`${__dirname}/../../main.js`, readFileSync(`${__dirname}/build-backend/main.js`).toString());
-    copyFolder(`${__dirname}/build-backend/lib`, `${__dirname}/../../lib`);
-
     let readme = readFileSync(`${__dirname}/../../README.md`).toString('utf8');
     readme = readme.replaceAll('packages/iobroker.vis-2/', '');
     writeFileSync(`${__dirname}/README.md`, readme);
@@ -438,6 +406,27 @@ if (process.argv.includes('--runtime-0-clean')) {
     patchEditor();
 } else if (process.argv.includes('--copy-backend')) {
     copyBackend();
+} else if (process.argv.includes('--build-editor')) {
+    deleteFoldersRecursive(`${__dirname}/www`);
+    deleteFoldersRecursive(`${__dirname}/src-vis/build`);
+
+    let npmPromise;
+
+    if (!existsSync(`${__dirname}/src-vis/node_modules`)) {
+        npmPromise = npmInstall(`${__dirname}/src-vis`);
+    } else {
+        npmPromise = Promise.resolve();
+    }
+    npmPromise
+        .then(() => generateSvgFiles())
+        .then(() => buildEditor())
+        .then(() => copyAllFiles())
+        .then(() => patchEditor())
+        .then(() => writeFileSync(
+            path.join(__dirname, 'www/index.html'),
+            readFileSync(path.join(__dirname, 'www', 'edit.html')),
+        ))
+        .catch(e => console.error(`Cannot build: ${e}`));
 } else {
     clean();
     copyRuntimeSrc();

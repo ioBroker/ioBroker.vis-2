@@ -16,7 +16,7 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
+
 
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
 
@@ -27,7 +27,7 @@ type RxData = {
     target: 'auto' | '_blank' | '_self' | '_parent' | '_top' | string;
 };
 
-class BasicLink extends VisRxWidget<RxData> {
+class BasicLink extends window.visRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplLink',
@@ -69,11 +69,7 @@ class BasicLink extends VisRxWidget<RxData> {
         return BasicLink.getWidgetInfo();
     }
 
-    /**
-     * Renders the widget
-     *
-     * @return {Element}
-     */
+    /** Renders the widget */
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
         if (props.style.width === undefined) {

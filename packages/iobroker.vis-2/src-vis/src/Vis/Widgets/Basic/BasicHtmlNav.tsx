@@ -16,14 +16,12 @@
 import React from 'react';
 
 import type { GetRxDataFromWidget, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
 
-// eslint-disable-next-line no-use-before-define
 type RxData = GetRxDataFromWidget<typeof BasicHtmlNav>;
 
-class BasicHtmlNav extends VisRxWidget<RxData> {
+class BasicHtmlNav extends window.visRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplHtmlNav',

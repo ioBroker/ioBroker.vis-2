@@ -33,7 +33,6 @@ import 'dayjs/locale/nl';
 import type { TextFieldVariants } from '@mui/material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
 
 const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
     textRoot: {
@@ -55,7 +54,7 @@ type RxData = {
     stepMinute: number;
 };
 
-class JQuiInputDateTime extends VisRxWidget<RxData> {
+class JQuiInputDateTime extends window.visRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplJquiInputDatetime',

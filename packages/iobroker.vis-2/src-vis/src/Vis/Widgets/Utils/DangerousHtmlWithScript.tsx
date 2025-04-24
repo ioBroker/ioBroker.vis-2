@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface DangerousHtmlWithScriptProps {
-    /** The passed html */
+    /** The passed HTML */
     html: string;
     /** If true uses a div, else a span */
     isDiv?: boolean;
@@ -47,7 +47,6 @@ class DangerousHtmlWithScript extends React.Component<DangerousHtmlWithScriptPro
         const { isDiv, html, ...otherProps } = this.props;
 
         if (isDiv) {
-            // eslint-disable-next-line react/no-danger
             return (
                 <div
                     dangerouslySetInnerHTML={{ __html: html }}
@@ -56,7 +55,6 @@ class DangerousHtmlWithScript extends React.Component<DangerousHtmlWithScriptPro
             );
         }
 
-        // eslint-disable-next-line react/no-danger
         return (
             <span
                 dangerouslySetInnerHTML={{ __html: html }}

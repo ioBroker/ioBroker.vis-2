@@ -19,7 +19,7 @@ import { Tab, Tabs } from '@mui/material';
 import { Icon } from '@iobroker/adapter-react-v5';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, WidgetData } from '@iobroker/types-vis-2';
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 
 interface RxData extends WidgetData {
     show_tabs: number;
@@ -40,7 +40,7 @@ interface TabsSliderTabsState extends VisRxWidgetState {
     tabIndex: number;
 }
 
-class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
+class TabsSliderTabs extends window.visRxWidget<RxData, TabsSliderTabsState> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplSTab',

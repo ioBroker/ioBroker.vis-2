@@ -746,7 +746,7 @@ export interface ProjectSettings {
     reloadOnSleep: number;
     statesDebounceTime: number;
     scripts: unknown;
-    /** Which user has read or write access for the project */
+    /** Shows, which user has read or write access for the project */
     permissions?: UserPermissions;
     marketplace?: MarketplaceWidgetRevision[];
     ts?: string;
@@ -1333,7 +1333,7 @@ declare global {
 
         visWidgetTypes: WidgetType[];
 
-        __widgetsLoadIndicator: (process: number, max: number) => void;
+        __widgetsLoadIndicator: ((process: number, max: number) => void) | null;
         _lastAppliedStyle: string;
         /** Marketplace API server */
         apiUrl: string;
@@ -1561,7 +1561,7 @@ export interface VisTheme extends IobTheme {
     };
 }
 
-type CanObservable<T> = T & {
+export type CanObservable<T> = T & {
     attr: (
         id: VisRxWidgetStateValues | string,
         val?: string | number | boolean,
@@ -1701,7 +1701,7 @@ export interface CustomPaletteProperties {
     };
 }
 
-interface RxWidgetInfoGroup {
+export interface RxWidgetInfoGroup {
     /** Name of the attributes section */
     readonly name: string;
     /** Fields of this attribute section */
@@ -1713,7 +1713,7 @@ interface RxWidgetInfoGroup {
     readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
 }
 
-interface RxWidgetInfo {
+export interface RxWidgetInfo {
     /** Unique ID of the widget. Starts with 'tpl...' */
     readonly id: string;
 
@@ -1771,9 +1771,9 @@ export interface CustomWidgetProperties {
     selectedWidget: AnyWidgetId;
 }
 
-type Writeable<T> = { -readonly [P in keyof T]: Writeable<T[P]> };
+export type Writeable<T> = { -readonly [P in keyof T]: Writeable<T[P]> };
 
-type RxWidgetInfoWriteable = Writeable<RxWidgetInfo>;
+export type RxWidgetInfoWriteable = Writeable<RxWidgetInfo>;
 
 type AttributeTypeToDataType<TType extends RxWidgetAttributeType> = TType extends 'checkbox'
     ? boolean
@@ -1787,7 +1787,8 @@ type GetRxDataFromVisAttrs<T extends Record<string, any>> = {
 };
 
 /** Infers the RxData from a given Widget */
-type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }> = GetRxDataFromVisAttrs<
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }> = GetRxDataFromVisAttrs<
     ReturnType<T['getWidgetInfo']>
 >;
 
@@ -1795,3 +1796,5 @@ type GetRxDataFromWidget<T extends { getWidgetInfo: () => Record<string, any> }>
 declare const __brand: unique symbol;
 type Brand<B> = { [__brand]: B };
 export type Branded<T, B> = T & Brand<B>;
+
+export type { VisRxWidget, POSSIBLE_MUI_STYLES, type VisRxWidgetState, type VisRxData } from './visRxWidget';

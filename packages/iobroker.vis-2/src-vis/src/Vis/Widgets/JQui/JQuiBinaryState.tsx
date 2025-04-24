@@ -28,8 +28,6 @@ import type {
     Writeable,
 } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '../../visRxWidget';
-// eslint-disable-next-line no-duplicate-imports
-import VisRxWidget from '../../visRxWidget';
 
 type RxData = {
     type: 'button' | 'round-button' | 'html' | 'radio' | 'checkbox' | 'image' | 'switch';
@@ -75,7 +73,7 @@ interface JQuiBinaryStateState extends VisRxWidgetState {
     width: number;
 }
 
-class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
+class JQuiBinaryState extends window.visRxWidget<RxData, JQuiBinaryStateState> {
     private textsLengthCache: Record<string, number> = {};
 
     constructor(props: VisBaseWidgetProps) {
@@ -392,7 +390,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         widgetInfo: RxWidgetInfo,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
+        return window.visRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -691,7 +689,6 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             this.state.rxData.html_prepend ? (
                 <span
                     key="prepend"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html_prepend }}
                 />
             ) : null,
@@ -699,14 +696,12 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             html ? (
                 <span
                     key="content"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: html }}
                 />
             ) : null,
             this.state.rxData.html_append ? (
                 <span
                     key="append"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html_append }}
                 />
             ) : null,
@@ -908,7 +903,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach(attr => {
             const value = this.state.rxStyle[attr as keyof typeof this.state.rxStyle];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value !== null && value !== undefined && window.visRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
                 attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 (buttonStyle as any)[attr] = value;
             }

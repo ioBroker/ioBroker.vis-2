@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
+
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 import { Button } from '@mui/material';
 import { Close } from '@mui/icons-material';
@@ -15,7 +15,7 @@ type RxData = {
     image: string;
 };
 
-export default class BasicLogout extends VisRxWidget<RxData> {
+export default class BasicLogout extends window.visRxWidget<RxData> {
     /**
      * Returns the widget info which is rendered in the edit mode
      */

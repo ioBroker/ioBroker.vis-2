@@ -9,14 +9,19 @@ import type {
     CustomPaletteProperties,
     RxWidgetInfoAttributesField,
     WidgetData,
-    RxWidgetInfoCustomComponentProperties,
     RxWidgetAttributeType,
     Widget,
-    WidgetStyle, VisTheme, AnyWidgetId,
+    WidgetStyle,
+    VisTheme,
+    AnyWidgetId,
 } from '@iobroker/types-vis-2';
-import type VisRxWidget from '@/Vis/visRxWidget';
+import type { VisRxWidgetLoaded } from './types';
 
 import { getRemoteWidgets } from './visLoadWidgets';
+import VisCanWidget from './visCanWidget';
+import VisBaseWidget from './visBaseWidget';
+import { VisRxWidget } from './visRxWidget';
+
 import WIDGETS from './Widgets';
 
 const DEFAULT_SET_COLORS: Record<string, string> = {
@@ -129,11 +134,11 @@ export type RxWidgetInfoAttributesFieldAll = {
                 instance: number;
                 adapterName: string;
                 views: Project;
-                theme: VisTheme
+                theme: VisTheme;
             };
             selectedView: string;
             selectedWidgets: AnyWidgetId[];
-            selectedWidget: `w${string}` | `g${string}`
+            selectedWidget: `w${string}` | `g${string}`;
         },
     ) => React.JSX.Element | React.JSX.Element[];
 
@@ -182,6 +187,7 @@ export interface WidgetAttributeInfoStored extends RxWidgetInfoAttributesFieldAl
         indexFrom: number | string | undefined;
     };
 }
+
 export interface WidgetAttributeIterable {
     group: string;
     isFirst: boolean;
@@ -250,20 +256,12 @@ export interface WidgetType {
     i18nPrefix?: string;
 }
 
-interface VisRxWidgetLoaded extends VisRxWidget<any> {
-    readonly i18nPrefix?: string | undefined;
-    readonly adapter?: string;
-    readonly version?: string;
-    readonly visHidden?: boolean;
-    readonly url?: string;
-}
-
 export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (usedWidgetSets?: string[]) => {
     if (!window.visWidgetTypes) {
         window.visSets = {};
-        VisWidgetsCatalog.allWidgetsList = [];
+        window.VisWidgetsCatalog.allWidgetsList = [];
 
-        if (!VisWidgetsCatalog.rxWidgets) {
+        if (!window.VisWidgetsCatalog.rxWidgets) {
             return [];
         }
 
@@ -271,13 +269,13 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
         window.visWidgetTypes = Array.from(document.querySelectorAll('script[type="text/ejs"]'))
             .map(script => {
                 const name: string | null = script.getAttribute('id');
-                if (!name || !VisWidgetsCatalog.rxWidgets) {
+                if (!name || !window.VisWidgetsCatalog.rxWidgets) {
                     return null;
                 }
                 // only if RX widget with the same name not found
                 let info;
-                if (VisWidgetsCatalog.rxWidgets[name]?.getWidgetInfo) {
-                    info = VisWidgetsCatalog.rxWidgets[name].getWidgetInfo();
+                if (window.VisWidgetsCatalog.rxWidgets[name]?.getWidgetInfo) {
+                    info = window.VisWidgetsCatalog.rxWidgets[name].getWidgetInfo();
                     if (info?.visAttrs && typeof info.visAttrs !== 'string') {
                         return null;
                     }
@@ -323,7 +321,7 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
                     hidden: script.getAttribute('data-vis-no-palette') === 'true',
                 };
 
-                VisWidgetsCatalog.allWidgetsList?.push(widgetObj.name);
+                window.VisWidgetsCatalog.allWidgetsList?.push(widgetObj.name);
 
                 return widgetObj;
             })
@@ -331,7 +329,7 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
 
         // React widgets
         // We have here two types of widgets: native (from this repository - function) and loaded via getRemoteWidgets (objects)
-        const widgets: VisRxWidgetLoaded[] = Object.values(VisWidgetsCatalog.rxWidgets);
+        const widgets: VisRxWidgetLoaded[] = Object.values(window.VisWidgetsCatalog.rxWidgets);
         widgets.forEach(widget => {
             const widgetInfo = widget.getWidgetInfo();
             const i18nPrefix = widget.i18nPrefix || '';
@@ -365,9 +363,12 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
                 developerMode: widget.url?.startsWith('http://'),
                 i18nPrefix,
             };
-            VisWidgetsCatalog.allWidgetsList &&
-                !VisWidgetsCatalog.allWidgetsList.includes(widgetObj.name) &&
-                VisWidgetsCatalog.allWidgetsList.push(widgetObj.name);
+
+            if (window.VisWidgetsCatalog.allWidgetsList) {
+                if (!window.VisWidgetsCatalog.allWidgetsList.includes(widgetObj.name)) {
+                    window.VisWidgetsCatalog.allWidgetsList.push(widgetObj.name);
+                }
+            }
 
             const index = (window as any).visWidgetTypes.findIndex((item: WidgetType) => item.name === widgetObj.name);
             if (index > -1) {
@@ -394,8 +395,8 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
                                 _field.options.forEach(option => {
                                     if (typeof option === 'object') {
                                         if (option.label && !option.label.startsWith(i18nPrefix)) {
-                                            // @ts-expect-error we must add prefix to the label
-                                            option.label = i18nPrefix + option.label;
+                                            // we must add prefix to the label
+                                            (option as any).label = i18nPrefix + option.label;
                                         }
                                     }
                                 });
@@ -409,13 +410,24 @@ export const getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[] = (use
 
     return (window as any).visWidgetTypes;
 };
+window.getWidgetTypes = getWidgetTypes;
 
-class VisWidgetsCatalog {
-    static rxWidgets: Record<string, VisRxWidgetLoaded> | null = null;
+type VisWidgetsCatalogType = {
+    rxWidgets: Record<string, VisRxWidgetLoaded> | null;
+    allWidgetsList: string[] | null;
+    getUsedWidgetSets: (project: Project) => string[] | false;
+    setUsedWidgetSets: (project: Project) => Project;
+    collectRxInformation: (
+        socket: LegacyConnection,
+        project: Project,
+        changeProject?: (newProject: Project) => void,
+    ) => Promise<Record<string, VisRxWidget<any>>>;
+};
 
-    static allWidgetsList: string[] | null = null;
-
-    static getUsedWidgetSets(project: Project): string[] | false {
+const VisWidgetsCatalog: VisWidgetsCatalogType = {
+    rxWidgets: null,
+    allWidgetsList: null,
+    getUsedWidgetSets: (project: Project): string[] | false => {
         let anyWithoutSet = false;
         const widgetSets: string[] = [];
 
@@ -445,9 +457,9 @@ class VisWidgetsCatalog {
         !anyWithoutSet && widgetSets.sort();
 
         return anyWithoutSet ? false : widgetSets;
-    }
+    },
 
-    static setUsedWidgetSets(project: Project): Project {
+    setUsedWidgetSets: (project: Project): Project => {
         // provide for all widgets the widget set and set
         let views: Project;
         const widgetTypes = window.visWidgetTypes; // getWidgetTypes();
@@ -488,13 +500,13 @@ class VisWidgetsCatalog {
         }
 
         return views;
-    }
+    },
 
-    static collectRxInformation(
+    collectRxInformation: (
         socket: LegacyConnection,
         project: Project,
         changeProject?: (newProject: Project) => void,
-    ): Promise<Record<string, VisRxWidget<any>>> {
+    ): Promise<Record<string, VisRxWidget<any>>> => {
         if (!VisWidgetsCatalog.rxWidgets) {
             VisWidgetsCatalog.rxWidgets = {};
             // collect all widget sets used in a project
@@ -503,11 +515,11 @@ class VisWidgetsCatalog {
                 usedWidgetSets = VisWidgetsCatalog.getUsedWidgetSets(project);
             }
 
-            return new Promise(resolve => {
+            return new Promise<Record<string, VisRxWidget<any>>>(resolve => {
                 setTimeout(
                     () =>
                         getRemoteWidgets(socket, !changeProject && usedWidgetSets ? usedWidgetSets : false).then(
-                            (widgetSets: void | VisRxWidget<any>[]) => {
+                            (widgetSets: void | VisRxWidget<any>[]): void => {
                                 const collectedWidgets: VisRxWidget<any>[] = [
                                     ...WIDGETS,
                                     ...(widgetSets || []),
@@ -534,13 +546,10 @@ class VisWidgetsCatalog {
 
                                 // init all widgets
                                 if (changeProject) {
-                                    // eslint-disable-next-line no-use-before-define
                                     getWidgetTypes();
                                 } else if (usedWidgetSets) {
-                                    // eslint-disable-next-line no-use-before-define
                                     getWidgetTypes(usedWidgetSets);
                                 } else {
-                                    // eslint-disable-next-line no-use-before-define
                                     getWidgetTypes();
                                 }
 
@@ -562,12 +571,31 @@ class VisWidgetsCatalog {
         }
 
         return Promise.resolve(VisWidgetsCatalog.rxWidgets);
+    },
+};
+
+declare global {
+    interface Window {
+        // because of circular dependencies
+        VisWidgetsCatalog: VisWidgetsCatalogType;
+        getWidgetTypes: (_usedWidgetSets?: string[]) => WidgetType[];
+        parseAttributes: (
+            widgetParams: string | RxWidgetInfoGroup[],
+            widgetIndex?: number,
+            commonGroups?: CommonGroups,
+            commonFields?: Record<string, number>,
+            widgetSet?: string,
+            widgetData?: Record<string, any>,
+        ) => null | WidgetAttributesGroupInfoStored[];
     }
 }
+
+window.VisWidgetsCatalog = VisWidgetsCatalog;
 
 function deepCloneRx(obj: any[] | Record<string, any>): any[] | Record<string, any> {
     if (Array.isArray(obj)) {
         const newObj: any[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-for-in-array
         for (const key in obj) {
             if (obj[key] !== undefined) {
                 if (Array.isArray(obj[key]) || typeof obj[key] === 'object') {
@@ -1018,4 +1046,4 @@ export const parseAttributes = (
     return null;
 };
 
-export default VisWidgetsCatalog;
+window.parseAttributes = parseAttributes;

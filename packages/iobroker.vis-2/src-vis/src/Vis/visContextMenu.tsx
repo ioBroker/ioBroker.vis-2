@@ -20,7 +20,7 @@ import type Editor from '@/Editor';
 import IOContextMenu from '../Components/IOContextMenu';
 import WidgetExportDialog from '../Toolbar/WidgetExportDialog';
 import WidgetImportDialog from '../Toolbar/WidgetImportDialog';
-import { type WidgetType, getWidgetTypes } from './visWidgetsCatalog';
+import { type WidgetType } from './visWidgetsCatalog';
 
 interface VisContextMenuProps {
     changeProject: (project: Project) => void;
@@ -108,7 +108,7 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                               widgetType = I18n.t('Group');
                           } else {
                               const wSet = view.widgets[coordinatesWidgets[0]].widgetSet;
-                              const widgetItem = getWidgetTypes().find(item => item.name === tpl && item.set === wSet);
+                              const widgetItem = window.getWidgetTypes().find(item => item.name === tpl && item.set === wSet);
                               widgetType = widgetItem ? widgetItem.title : tpl;
                           }
                       }

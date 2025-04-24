@@ -33,7 +33,6 @@ import 'dayjs/locale/nl';
 import type { TextFieldVariants } from '@mui/material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
 
 const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
     textRoot: {
@@ -57,7 +56,7 @@ type RxData = {
     wideFormat: boolean;
 };
 
-class JQuiInputDate extends VisRxWidget<RxData> {
+class JQuiInputDate extends window.visRxWidget<RxData> {
     /** If a user does not want to use full date */
     private readonly EASY_DATE_FORMAT = 'DD.MM.YYYY';
 

@@ -30,9 +30,8 @@ import type {
     VisBaseWidgetProps,
     RxWidgetInfo,
 } from '@iobroker/types-vis-2';
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 
-// eslint-disable-next-line no-use-before-define
 type RxData = {
     dlgName: string;
     buttontext: string;
@@ -56,7 +55,7 @@ interface JQuiButtonDialogCloseState extends VisRxWidgetState {
     height: number;
 }
 
-class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseState> {
+class JQuiButtonDialogClose extends window.visRxWidget<RxData, JQuiButtonDialogCloseState> {
     constructor(props: VisBaseWidgetProps) {
         super(props);
         (this.state as JQuiButtonDialogCloseState).width = 0;
@@ -329,7 +328,7 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach((attr: keyof WidgetStyleState) => {
             const value = this.state.rxStyle[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value !== null && value !== undefined && window.visRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
                 (attr as string) = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 (buttonStyle as any)[attr] = value;
             }
@@ -361,14 +360,12 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
             this.state.rxData.html_prepend ? (
                 <span
                     key="prepend"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html_prepend }}
                 />
             ) : null,
             this.state.rxData.html ? (
                 <span
                     key="content"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html }}
                 />
             ) : this.state.rxData.no_style || this.state.rxData.jquery_style ? (
@@ -408,7 +405,6 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
             this.state.rxData.html_append ? (
                 <span
                     key="append"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html_append }}
                 />
             ) : null,

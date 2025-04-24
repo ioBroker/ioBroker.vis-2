@@ -1,9 +1,8 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 
-// eslint-disable-next-line no-use-before-define
+
 type RxData = {
     svgType:
         | 'line'
@@ -25,7 +24,7 @@ type RxData = {
     scaleHeight: number;
 };
 
-export default class BasicSvgShape extends VisRxWidget<RxData> {
+export default class BasicSvgShape extends window.visRxWidget<RxData> {
     /**
      * Returns the widget info which is rendered in the edit mode
      */

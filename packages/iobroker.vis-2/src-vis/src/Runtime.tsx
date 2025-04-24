@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 
 import {
@@ -44,10 +44,10 @@ import type {
     WidgetData,
     WidgetStyle,
 } from '@iobroker/types-vis-2';
-import VisEngine from './Vis/visEngine';
+
+const VisEngine = React.lazy(() => import('./Vis/visEngine'));
+
 import { extractBinding, findWidgetUsages, readFile } from './Vis/visUtils';
-import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
-import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -64,6 +64,7 @@ import esLang from './i18n/es.json';
 import plLang from './i18n/pl.json';
 import ukLang from './i18n/uk.json';
 import zhLang from './i18n/zh-cn.json';
+import { buildPath, getCurrentPath } from './Vis/visPath';
 
 const styles: { editModeComponentStyle: React.CSSProperties } = {
     editModeComponentStyle: {
@@ -128,7 +129,7 @@ export interface RuntimeState extends GenericAppState {
     showCodeDialog: {
         code: string;
         title: string;
-        mode: string;
+        mode: 'json' | 'html' | 'css' | 'javascript' | 'text';
     };
 }
 
@@ -200,7 +201,6 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
     protected onIgnoreMouseEvents?: (ignore: boolean) => void;
 
-    // eslint-disable-next-line no-shadow
     protected askAboutInclude?: (
         wid: AnyWidgetId,
         toWid: AnyWidgetId,
@@ -284,7 +284,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
         // temporary disable translation warnings
         // I18n.disableWarning(true);
-        registerWidgetsLoadIndicator(this.setWidgetsLoadingProgress);
+        window.__widgetsLoadIndicator = this.setWidgetsLoadingProgress;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -356,7 +356,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     }
 
     onHashChange = (): void => {
-        const currentPath = VisEngine.getCurrentPath();
+        const currentPath = getCurrentPath();
         this.changeView(currentPath.view).catch(e => console.error(`Cannot change view: ${e}`));
     };
 
@@ -701,7 +701,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         this.fixProject(project);
 
         // take selected view from hash
-        const currentPath = VisEngine.getCurrentPath();
+        const currentPath = getCurrentPath();
         let selectedView = currentPath.view;
         if (!selectedView || !project[selectedView]) {
             if (this.state.runtime) {
@@ -857,7 +857,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     async onConnectionReady(): Promise<void> {
         // preload all widgets first
         if (this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_HTML_LOADED) {
-            await VisWidgetsCatalog.collectRxInformation(
+            await window.VisWidgetsCatalog.collectRxInformation(
                 this.socket as unknown as LegacyConnection,
                 store.getState().visProject,
                 this.changeProject,
@@ -940,12 +940,12 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         if (selectedView === this.state.selectedView) {
             // inform about inView navigation
             if (this.state.runtime || !this.state.editMode) {
-                const currentPath = VisEngine.getCurrentPath();
-                const newHash = VisEngine.buildPath(currentPath.view, currentPath.path);
+                const currentPath = getCurrentPath();
+                const newHash = buildPath(currentPath.view, currentPath.path);
                 window.vis.lastChangedView = this.state.projectName
                     ? `${this.state.projectName}/${newHash.replace(/^#/, '')}`
                     : newHash.replace(/^#/, '');
-                window.vis.conn.sendCommand(window.vis.instance, 'changedView', window.vis.lastChangedView);
+                void window.vis.conn.sendCommand(window.vis.instance, 'changedView', window.vis.lastChangedView);
             }
             return;
         }
@@ -986,16 +986,16 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         }
 
         if ((this.state.runtime || !this.state.editMode) && window.vis) {
-            const currentPath = VisEngine.getCurrentPath();
-            const newHash = VisEngine.buildPath(currentPath.view, currentPath.path);
+            const currentPath = getCurrentPath();
+            const newHash = buildPath(currentPath.view, currentPath.path);
 
             window.vis.lastChangedView = this.state.projectName
                 ? `${this.state.projectName}/${newHash.replace(/^#/, '')}`
                 : newHash.replace(/^#/, '');
-            window.vis.conn.sendCommand(window.vis.instance, 'changedView', window.vis.lastChangedView);
+            void window.vis.conn.sendCommand(window.vis.instance, 'changedView', window.vis.lastChangedView);
 
             // inform the legacy widgets
-            window.jQuery && (window.jQuery as any)(window).trigger('viewChanged', selectedView);
+            (window.jQuery as any)?.(window).trigger('viewChanged', selectedView);
         }
 
         // disable group edit if view changed
@@ -1005,8 +1005,8 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
         window.localStorage.setItem('selectedView', selectedView);
 
-        const currentPath = VisEngine.getCurrentPath();
-        const newPath = VisEngine.buildPath(selectedView, currentPath.path);
+        const currentPath = getCurrentPath();
+        const newPath = buildPath(selectedView, currentPath.path);
 
         if (window.location.hash !== newPath) {
             window.location.hash = newPath;
@@ -1053,7 +1053,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     async onWidgetsLoaded(): Promise<void> {
         let widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_HTML_LOADED;
         if (this.socket.isConnected()) {
-            await VisWidgetsCatalog.collectRxInformation(
+            await window.VisWidgetsCatalog.collectRxInformation(
                 this.socket as unknown as LegacyConnection,
                 store.getState().visProject,
                 this.changeProject,
@@ -1282,71 +1282,73 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 return this.showSmallProjectsDialog();
             }
 
-            this.refreshProjects().then(() => {
+            void void this.refreshProjects().then(() => {
                 this.setState({ showProjectsDialog: true });
             });
             return null;
         }
 
         return (
-            <VisEngine
-                key={this.state.projectName}
-                widgetsLoaded={this.state.widgetsLoaded}
-                activeView={this.state.selectedView || ''}
-                editMode={!this.state.runtime && this.state.editMode}
-                runtime={this.state.runtime}
-                socket={this.socket as unknown as LegacyConnection}
-                visCommonCss={this.state.visCommonCss}
-                visUserCss={this.state.visUserCss}
-                lang={this.socket.systemLang}
-                adapterName={this.adapterName}
-                instance={this.instance}
-                selectedWidgets={this.state.selectedWidgets}
-                setSelectedWidgets={this.setSelectedWidgets}
-                onLoaded={() => this.onWidgetsLoaded()}
-                selectedGroup={this.state.selectedGroup}
-                setSelectedGroup={this.setSelectedGroup}
-                onWidgetsChanged={this.onWidgetsChanged}
-                projectName={this.state.projectName}
-                lockDragging={this.state.lockDragging}
-                disableInteraction={this.state.disableInteraction}
-                widgetHint={this.state.widgetHint}
-                onFontsUpdate={this.state.runtime ? null : (fonts: string[]) => this.onFontsUpdate(fonts)}
-                registerEditorCallback={this.state.runtime ? null : this.registerCallback}
-                themeType={this.state.themeType}
-                themeName={this.state.themeName}
-                theme={this.state.theme as VisTheme}
-                adapterId={this.adapterId}
-                editModeComponentStyle={styles.editModeComponentStyle}
-                onIgnoreMouseEvents={this.onIgnoreMouseEvents}
-                setLoadingText={this.setLoadingText}
-                onConfirmDialog={(
-                    message: string,
-                    title: string,
-                    icon: string,
-                    width: number,
-                    callback: (isYes: boolean) => void,
-                ) =>
-                    this.showConfirmDialog &&
-                    this.showConfirmDialog({
-                        message,
-                        title,
-                        icon,
-                        width,
-                        callback,
-                    })
-                }
-                onShowCode={(code: string, title: string, mode: string) =>
-                    this.showCodeDialog && this.showCodeDialog({ code, title, mode })
-                }
-                currentUser={this.state.currentUser}
-                userGroups={this.state.userGroups}
-                renderAlertDialog={this.renderAlertDialog}
-                showLegacyFileSelector={this.showLegacyFileSelector}
-                toggleTheme={(newThemeName: ThemeName) => this.toggleTheme(newThemeName)}
-                askAboutInclude={this.askAboutInclude}
-                changeProject={this.changeProject}
-            />
+            <Suspense fallback={<div />}>
+                <VisEngine
+                    key={this.state.projectName}
+                    widgetsLoaded={this.state.widgetsLoaded}
+                    activeView={this.state.selectedView || ''}
+                    editMode={!this.state.runtime && this.state.editMode}
+                    runtime={this.state.runtime}
+                    socket={this.socket as unknown as LegacyConnection}
+                    visCommonCss={this.state.visCommonCss}
+                    visUserCss={this.state.visUserCss}
+                    lang={this.socket.systemLang}
+                    adapterName={this.adapterName}
+                    instance={this.instance}
+                    selectedWidgets={this.state.selectedWidgets}
+                    setSelectedWidgets={this.setSelectedWidgets}
+                    onLoaded={() => this.onWidgetsLoaded()}
+                    selectedGroup={this.state.selectedGroup}
+                    setSelectedGroup={this.setSelectedGroup}
+                    onWidgetsChanged={this.onWidgetsChanged}
+                    projectName={this.state.projectName}
+                    lockDragging={this.state.lockDragging}
+                    disableInteraction={this.state.disableInteraction}
+                    widgetHint={this.state.widgetHint}
+                    onFontsUpdate={this.state.runtime ? null : (fonts: string[]) => this.onFontsUpdate(fonts)}
+                    registerEditorCallback={this.state.runtime ? null : this.registerCallback}
+                    themeType={this.state.themeType}
+                    themeName={this.state.themeName}
+                    theme={this.state.theme as VisTheme}
+                    adapterId={this.adapterId}
+                    editModeComponentStyle={styles.editModeComponentStyle}
+                    onIgnoreMouseEvents={this.onIgnoreMouseEvents}
+                    setLoadingText={this.setLoadingText}
+                    onConfirmDialog={(
+                        message: string,
+                        title: string,
+                        icon: string,
+                        width: number,
+                        callback: (isYes: boolean) => void,
+                    ) =>
+                        this.showConfirmDialog &&
+                        this.showConfirmDialog({
+                            message,
+                            title,
+                            icon,
+                            width,
+                            callback,
+                        })
+                    }
+                    onShowCode={(code: string, title: string, mode: string) =>
+                        this.showCodeDialog && this.showCodeDialog({ code, title, mode })
+                    }
+                    currentUser={this.state.currentUser}
+                    userGroups={this.state.userGroups}
+                    renderAlertDialog={this.renderAlertDialog}
+                    showLegacyFileSelector={this.showLegacyFileSelector}
+                    toggleTheme={(newThemeName: ThemeName) => this.toggleTheme(newThemeName)}
+                    askAboutInclude={this.askAboutInclude}
+                    changeProject={this.changeProject}
+                />
+            </Suspense>
         );
     }
 

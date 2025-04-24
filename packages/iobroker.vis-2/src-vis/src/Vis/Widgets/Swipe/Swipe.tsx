@@ -17,7 +17,7 @@ import React from 'react';
 
 import { I18n } from '@iobroker/adapter-react-v5';
 import type { RxRenderWidgetProps, RxWidgetInfo, WidgetData } from '@iobroker/types-vis-2';
-import VisRxWidget from '../../visRxWidget';
+
 import InstallSwipe from './InstallSwipe';
 
 interface RxData extends WidgetData {
@@ -27,7 +27,7 @@ interface RxData extends WidgetData {
     threshold: number;
 }
 
-class Swipe extends VisRxWidget<RxData> {
+class Swipe extends window.visRxWidget<RxData> {
     private swipeable: InstallSwipe | null = null;
 
     static getWidgetInfo(): RxWidgetInfo {

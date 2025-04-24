@@ -5,12 +5,13 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/
 import { Close as CloseIcon, ImportExport } from '@mui/icons-material';
 
 import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
-import { isGroup, getNewGroupId, getNewWidgetId, deepClone } from '@/Utils/utils';
 
+import type { AnyWidgetId, GroupWidget, GroupWidgetId, Project, Widget } from '@iobroker/types-vis-2';
+
+import { isGroup, getNewGroupId, getNewWidgetId, deepClone } from '@/Utils/utils';
 import { useFocus } from '@/Utils';
 import { store } from '@/Store';
-import type { AnyWidgetId, GroupWidget, GroupWidgetId, Project, Widget } from '@iobroker/types-vis-2';
-import CustomAceEditor from '../Components/CustomAceEditor';
+import CustomEditor from '../Components/CustomEditor';
 
 interface WidgetImportDialogProps {
     changeProject: (project: Project) => void;
@@ -87,14 +88,10 @@ const WidgetImportDialog = (props: WidgetImportDialogProps): React.JSX.Element =
         >
             <DialogTitle>{I18n.t('Import widgets')}</DialogTitle>
             <DialogContent>
-                <CustomAceEditor
+                <CustomEditor
                     type="json"
                     error={error}
                     themeType={props.themeType}
-                    refEditor={node => {
-                        editor.current = node;
-                        inputField.current = node;
-                    }}
                     value={data}
                     onChange={newValue => {
                         try {

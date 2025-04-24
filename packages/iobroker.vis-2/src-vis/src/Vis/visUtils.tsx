@@ -37,7 +37,10 @@ declare global {
     }
 }
 
-function replaceGroupAttr(inputStr: string, groupAttrList: WidgetData): { doesMatch: boolean; newString: string } {
+export function replaceGroupAttr(
+    inputStr: string,
+    groupAttrList: WidgetData,
+): { doesMatch: boolean; newString: string } {
     let newString = inputStr;
     let match = false;
     // old style: groupAttr0, groupAttr1, groupAttr2, ...
@@ -72,7 +75,7 @@ function replaceGroupAttr(inputStr: string, groupAttrList: WidgetData): { doesMa
     return { doesMatch: match, newString };
 }
 
-function getWidgetGroup(views: Project, view: string, widget: AnyWidgetId): GroupWidgetId | undefined {
+export function getWidgetGroup(views: Project, view: string, widget: AnyWidgetId): GroupWidgetId | undefined {
     const widgets = views[view].widgets;
     const groupId: GroupWidgetId | undefined = widgets[widget]?.groupid;
     if (groupId && widgets[groupId]) {
@@ -92,7 +95,7 @@ function isIdBinding(
     return !!assignment.match(/^[\d\w_]+:\s?[-.\d\w_#]+$/);
 }
 
-function extractBinding(format: string): VisBinding[] | null {
+export function extractBinding(format: string): VisBinding[] | null {
     const oid = format.match(/{(.+?)}/g);
     let result: VisBinding[] | null = null;
 
@@ -302,7 +305,12 @@ function extractBinding(format: string): VisBinding[] | null {
 //    visibility: {} //
 //    signals: {}    //
 // }
-function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId, linkContext: VisStateUsage): void {
+export function getUsedObjectIDsInWidget(
+    views: Project,
+    view: string,
+    wid: AnyWidgetId,
+    linkContext: VisStateUsage,
+): void {
     // Check all attributes
     const widget = deepClone(views[view].widgets[wid]);
 
@@ -681,7 +689,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
     store.dispatch(updateWidget({ viewId: view, widgetId: wid, data: widget }));
 }
 
-function getUsedObjectIDs(views: Project, isByViews?: boolean): VisStateUsage | null {
+export function getUsedObjectIDs(views: Project, isByViews?: boolean): VisStateUsage | null {
     if (!views) {
         console.log('Check why views are not yet loaded!');
         return null;
@@ -718,7 +726,6 @@ function getUsedObjectIDs(views: Project, isByViews?: boolean): VisStateUsage | 
         do {
             changed = false;
             // Check containers
-            // eslint-disable-next-line no-loop-func
             Object.keys(views).forEach(view => {
                 if (view === '___settings') {
                     return;
@@ -747,7 +754,7 @@ function getUsedObjectIDs(views: Project, isByViews?: boolean): VisStateUsage | 
     return linkContext;
 }
 
-function getUrlParameter(attr: string): string | true {
+export function getUrlParameter(attr: string): string | true {
     const sURLVariables = window.location.search.substring(1).split('&');
 
     for (let i = 0; i < sURLVariables.length; i++) {
@@ -761,7 +768,7 @@ function getUrlParameter(attr: string): string | true {
     return '';
 }
 
-async function readFile(
+export async function readFile(
     socket: LegacyConnection,
     id: string,
     fileName: string,
@@ -786,7 +793,7 @@ async function readFile(
     return data;
 }
 
-function addClass(actualClass: string, toAdd: string | undefined): string {
+export function addClass(actualClass: string, toAdd: string | undefined): string {
     if (actualClass) {
         const parts = actualClass
             .split(' ')
@@ -801,7 +808,7 @@ function addClass(actualClass: string, toAdd: string | undefined): string {
     return toAdd || '';
 }
 
-function removeClass(actualClass: string, toRemove: string): string {
+export function removeClass(actualClass: string, toRemove: string): string {
     if (actualClass) {
         const parts = actualClass
             .split(' ')
@@ -817,7 +824,7 @@ function removeClass(actualClass: string, toRemove: string): string {
     return '';
 }
 
-function parseDimension(field: string | number | null | undefined): { value: number; dimension: string } {
+export function parseDimension(field: string | number | null | undefined): { value: number; dimension: string } {
     const result = { value: 0, dimension: 'px' };
     if (!field) {
         return result;
@@ -831,7 +838,7 @@ function parseDimension(field: string | number | null | undefined): { value: num
     return result;
 }
 
-function findWidgetUsages(
+export function findWidgetUsages(
     views: Project,
     view: string,
     widgetId: AnyWidgetId,
@@ -861,17 +868,3 @@ function findWidgetUsages(
     Object.keys(views).forEach(_view => _view !== '___settings' && findWidgetUsages(views, _view, widgetId, _result));
     return result;
 }
-
-export {
-    getUsedObjectIDs,
-    extractBinding,
-    getWidgetGroup,
-    replaceGroupAttr,
-    getUsedObjectIDsInWidget,
-    getUrlParameter,
-    parseDimension,
-    addClass,
-    removeClass,
-    readFile,
-    findWidgetUsages,
-};

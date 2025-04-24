@@ -24,7 +24,7 @@ import { FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
 import { I18n } from '@iobroker/adapter-react-v5';
 
 import type { Project, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { type VisRxWidgetState } from '../../visRxWidget';
 
 type RxData = {
     contains_view: string;
@@ -50,7 +50,7 @@ type BasicViewInWidgetOptions =
           level: number;
       };
 
-class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
+class BasicViewInWidget extends window.visRxWidget<RxData, BasicViewInWidgetState> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplContainerView',

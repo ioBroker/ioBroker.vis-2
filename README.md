@@ -295,6 +295,8 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@GermanBluefox) Added new SVG icon as favicon.
+* (@GermanBluefox) Migrated to vite
+* (@GermanBluefox) Replaced `ace` editor with `Monaco` editor
 
 ### 2.11.2 (2025-01-23)
 * (@GermanBluefox) Do not load vis-1 widgets if vis-2 widgets are provided

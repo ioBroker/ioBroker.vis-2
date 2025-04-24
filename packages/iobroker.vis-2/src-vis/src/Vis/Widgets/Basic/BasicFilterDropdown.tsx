@@ -29,7 +29,6 @@ import type {
     RxWidgetInfoCustomComponentContext,
     VisWidgetCommand,
 } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
 import FiltersEditorDialog from './FiltersEditorDialog';
 
 interface Item {
@@ -142,7 +141,7 @@ const ItemsEditor = (props: ItemsEditorProps): React.JSX.Element => {
     );
 };
 
-class BasicFilterDropdown extends VisRxWidget<RxData> {
+class BasicFilterDropdown extends window.visRxWidget<RxData> {
     private editMode: boolean | undefined;
 
     static getWidgetInfo(): RxWidgetInfo {

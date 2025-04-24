@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import VisRxWidget from '@/Vis/visRxWidget';
+
 import { I18n } from '@iobroker/adapter-react-v5';
 
 type RxData = {
@@ -15,7 +15,7 @@ type RxData = {
     header_color: string;
 };
 
-export default class BasicFrame extends VisRxWidget<RxData> {
+export default class BasicFrame extends window.visRxWidget<RxData> {
     /**
      * Returns the widget info which is rendered in the edit mode
      */

@@ -40,7 +40,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { deepClone, calculateOverflow } from '../Utils/utils';
 import VisBaseWidget, { type VisBaseWidgetState, type WidgetStyleState } from './visBaseWidget';
-import VisView from './visView';
+import { getOneWidget } from './visViewUtils';
 import { addClass, getUsedObjectIDsInWidget } from './visUtils';
 
 type VisRxWidgetProps = VisBaseWidgetProps;
@@ -90,7 +90,7 @@ export const POSSIBLE_MUI_STYLES = [
     'word-spacing',
 ];
 
-class VisRxWidget<
+export class VisRxWidget<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
 > extends VisBaseWidget<VisRxWidgetState & TState & { rxData: TRxData }> {
@@ -419,12 +419,10 @@ class VisRxWidget<
                 .catch(e => console.error(`Cannot subscribe on ${this.linkContext.IDs}: ${e}`));
     }
 
-    // eslint-disable-next-line no-unused-vars,class-methods-use-this, @typescript-eslint/no-unused-vars
     onRxDataChanged(_prevRxData: typeof this.state.rxData): void {
         //
     }
 
-    // eslint-disable-next-line no-unused-vars,class-methods-use-this, @typescript-eslint/no-unused-vars
     onRxStyleChanged(_prevRxStyle: typeof this.state.rxStyle): void {
         //
     }
@@ -527,7 +525,7 @@ class VisRxWidget<
         const subscribe = this.linkContext.IDs.filter(id => !oldIDs.includes(id));
         if (subscribe.length) {
             // legacy connection can process arrays
-            context.socket.subscribeState(subscribe, this.onIoBrokerStateChanged);
+            void context.socket.subscribeState(subscribe, this.onIoBrokerStateChanged);
         }
 
         this.onStateChanged();
@@ -707,7 +705,6 @@ class VisRxWidget<
         );
     }
 
-    // eslint-disable-next-line no-unused-vars
     getWidgetInWidget(
         view: string,
         wid: AnyWidgetId,
@@ -720,7 +717,7 @@ class VisRxWidget<
         props = props || {};
 
         // old (can) widgets require props.refParent
-        return VisView.getOneWidget(props.index || 0, this.props.context.views[view].widgets[wid], {
+        return getOneWidget(props.index || 0, this.props.context.views[view].widgets[wid], {
             // custom attributes
             context: this.props.context,
             editMode: this.state.editMode,
@@ -1103,5 +1100,7 @@ class VisRxWidget<
         throw new Error('not implemented');
     }
 }
+
+
 
 export default VisRxWidget;

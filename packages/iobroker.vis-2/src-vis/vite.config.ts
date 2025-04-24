@@ -4,6 +4,7 @@ import commonjs from 'vite-plugin-commonjs';
 import vitetsConfigPaths from 'vite-tsconfig-paths';
 import { federation } from '@module-federation/vite';
 import { resolve } from 'node:path';
+
 import { moduleFederationShared } from './modulefederation.vis.config';
 
 export default defineConfig({
@@ -43,8 +44,43 @@ export default defineConfig({
             '@iobroker/types-vis-2': resolve(__dirname, '..', '..', 'types-vis-2'),
         },
     },
+    optimizeDeps: {
+        include: ['monaco-editor'],
+    },
     build: {
         target: 'chrome89',
         outDir: './build',
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'monaco-editor': ['monaco-editor'],
+                },
+            },
+        },
+    },
+    worker: {
+        format: 'es',
+        // @ts-expect-error fix later
+        plugins: [
+            {
+                name: 'monaco-editor-worker',
+                resolveId(source: string): string {
+                    if (source === 'monaco-editor/esm/vs/editor/editor.worker') {
+                        return 'monaco-editor/esm/vs/editor/editor.worker.js';
+                    }
+                    return null;
+                },
+                load(id: string): string {
+                    if (id === 'monaco-editor/esm/vs/editor/editor.worker.js') {
+                        return `
+                            import * as monaco from 'monaco-editor/esm/vs/editor/editor.worker';
+                            self.MonacoEnvironment = { baseUrl: '/' };
+                            export default monaco;
+                        `;
+                    }
+                    return null;
+                },
+            },
+        ],
     },
 });
