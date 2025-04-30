@@ -36,6 +36,7 @@
         "@iobroker/type-detector": "^4.3.1",
         "@iobroker/db-objects-redis": "^7.0.7",
         "@iobroker/db-states-redis": "^7.0.7",
+        "@iobroker/vis-2-widgets-testing": "^1.0.5",
         "@material-icons/svg": "^1.0.33",
         "@reduxjs/toolkit": "^2.7.0",
         "@sentry/browser": "^9.15.0",
