@@ -3,6 +3,7 @@ const {
     mkdirSync,
     readFileSync,
     writeFileSync,
+    createReadStream,
     createWriteStream,
     readdirSync,
     lstatSync,
@@ -195,8 +196,7 @@ async function generateSvgFiles() {
         !existsSync(`${__dirname}/knx-uf-iconset`) && mkdirSync(`${__dirname}/knx-uf-iconset`);
         writeFileSync(`${__dirname}/knx-uf-iconset/master.zip`, res.data);
 
-        const zip = fs
-            .createReadStream(`${__dirname}/knx-uf-iconset/master.zip`)
+        const zip = createReadStream(`${__dirname}/knx-uf-iconset/master.zip`)
             .pipe(unzipper.Parse({ forceStream: true }));
         for await (const entry of zip) {
             const fileName = entry.path;
