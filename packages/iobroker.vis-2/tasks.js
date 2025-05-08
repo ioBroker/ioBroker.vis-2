@@ -35,7 +35,7 @@ function copyRuntimeSrc() {
     let runtimeText = text.replace('<title>Editor.vis</title>', '<title>ioBroker.vis</title>');
     runtimeText = runtimeText.replace('faviconEdit.ico', 'favicon.ico');
     if (runtimeText !== text) {
-        writeFileSync(`${__dirname}/runtime/public/index.html`, runtimeText);
+        writeFileSync(`${__dirname}/runtime/index.html`, runtimeText);
     }
 
     copyFolder(`${__dirname}/src-vis/src/Vis`, `${__dirname}/runtime/src/Vis`, [
