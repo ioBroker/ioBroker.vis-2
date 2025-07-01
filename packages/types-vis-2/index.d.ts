@@ -1052,6 +1052,7 @@ export interface ViewSettings {
     gridSize?: number;
     sizex?: number;
     sizey?: number;
+    resolution?: string;
     limitScreen?: boolean;
     limitForInstances?: string;
     limitScreenDesktop?: boolean;
