@@ -296,6 +296,7 @@ npm run start
 ### **WORK IN PROGRESS**
 * (@GermanBluefox) Corrected selection of the view for resolution
 * (@GermanBluefox) Added option to ignore the unloaded widgets in runtime
+* (@oweitman) Corrected the user defined resolution for the view
 
 ### 2.12.10 (2025-05-25)
 * (@GermanBluefox) Added possibility to define favicon and browser tab title
