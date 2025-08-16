@@ -12,13 +12,7 @@ import type {
 } from '@mui/material/styles/createPalette';
 import type { Color, PaletteMode } from '@mui/material';
 
-import type {
-    LegacyConnection,
-    ThemeType,
-    IobTheme,
-    ThemeName,
-    ObjectBrowserCustomFilter,
-} from '@iobroker/adapter-react-v5';
+import type { LegacyConnection, ThemeType, IobTheme, ThemeName } from '@iobroker/adapter-react-v5';
 
 interface VisView extends React.FC<VisViewProps> {
     getOneWidget(
