@@ -42,6 +42,15 @@ interface WidgetSetStruct {
     init?: (shareScope: string) => Promise<void>;
 }
 
+interface VisIconSet {
+    name?: ioBroker.StringOrTranslated;
+    url: string;
+    /** If set, this is not a widget set, but icon set. url, name and icon are required */
+    icon?: string; // base 64 string for iconSet (not used for widgetSets)
+    /** The vis icon set does not support the listed major versions of vis */
+    ignoreInVersions?: number[];
+}
+
 declare global {
     interface Window {
         [promiseName: PromiseName]: Promise<any>;
@@ -193,27 +202,6 @@ function getRemoteWidgets(
                             visWidgetsCollection.url = `./vis-2/widgets/${visWidgetsCollection.url}`;
                         }
 
-                        // @ts-expect-error implemented in js-controller objects
-                        const iconSet: {
-                            name: ioBroker.StringOrTranslated;
-                            url: string;
-                            /** If set, this is not a widget set, but icon set. url, name and icon are required */
-                            iconSet: true;
-                            icon?: string; // base 64 string for iconSet (not used for widgetSets)
-                            /** The vis widget set does not support the listed major versions of vis */
-                            ignoreInVersions?: number[];
-                        } = visWidgetsCollection;
-
-                        // Collect icon sets only if editor
-                        if (iconSet.iconSet && !onlyWidgetSets) {
-                            additionalSets[widgetSetName] = {
-                                name: iconSet.name,
-                                url: iconSet.url,
-                                icon: iconSet.icon,
-                            };
-                            continue;
-                        }
-
                         registerRemotes(
                             [
                                 {
@@ -339,6 +327,32 @@ function getRemoteWidgets(
                                 }
                             })(visWidgetsCollection, dynamicWidgetInstance);
                         }
+                    }
+                }
+                if (!onlyWidgetSets) {
+                    // @ts-expect-error defined in js-controller@7.0.8
+                    const visIconSets: { [name: string]: VisIconSet } = dynamicWidgetInstance.common.visIconSets || {};
+
+                    for (const widgetSetName in visIconSets) {
+                        const visIconSetCollection = visIconSets[widgetSetName];
+
+                        if (
+                            Array.isArray(visIconSetCollection.ignoreInVersions) &&
+                            visIconSetCollection.ignoreInVersions.includes(2)
+                        ) {
+                            continue;
+                        }
+
+                        if (!visIconSetCollection.url?.startsWith('http')) {
+                            visIconSetCollection.url = `./vis-2/widgets/${visIconSetCollection.url}`;
+                        }
+
+                        // Collect icon sets only if editor
+                        additionalSets[widgetSetName] = {
+                            name: visIconSetCollection.name,
+                            url: visIconSetCollection.url,
+                            icon: visIconSetCollection.icon,
+                        };
                     }
                 }
             }
