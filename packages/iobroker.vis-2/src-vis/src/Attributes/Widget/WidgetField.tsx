@@ -56,6 +56,7 @@ import type {
     ClassesValue,
     RxWidgetInfoAttributesField,
     VisTheme,
+    AdditionalIconSet,
 } from '@iobroker/types-vis-2';
 
 import type {
@@ -311,6 +312,7 @@ interface WidgetFieldProps {
     userGroups: ioBroker.UserGroup[];
     themeType: ThemeType;
     theme: VisTheme;
+    additionalSets: AdditionalIconSet;
 }
 
 const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | React.JSX.Element[] => {
@@ -1720,6 +1722,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         themeType={props.themeType}
                         theme={props.theme}
                         value={value as string}
+                        additionalSets={props.additionalSets}
                         onClose={(icon: string | null) => {
                             setIdDialog(false);
                             if (icon !== null) {

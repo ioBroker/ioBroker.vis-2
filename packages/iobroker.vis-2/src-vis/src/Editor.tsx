@@ -93,6 +93,7 @@ import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages } from './Vis/visUtils';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
 import type { VisEngineHandlers } from './Vis/visView';
+import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 const styles: Record<string, any> = {
     block: {
@@ -2069,6 +2070,7 @@ class Editor extends Runtime<EditorProps, EditorState> {
                         this.setState({ hideAttributes: true });
                     }}
                     adapterId={this.adapterId}
+                    additionalSets={VisWidgetsCatalog.additionalSets}
                 />
             </div>
         );

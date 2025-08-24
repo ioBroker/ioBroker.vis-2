@@ -16,7 +16,7 @@ import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 // eslint-disable-next-line no-duplicate-imports
 import type VisRxWidget from '@/Vis/visRxWidget';
-import type { Branded } from '@iobroker/types-vis-2';
+import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
 import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
@@ -35,6 +35,7 @@ export interface VisRxWidgetWithInfo<
     // Widget set icon
     setIcon: string;
 }
+
 interface WidgetSetStruct {
     __initialized: boolean;
     get: (module: string) => Promise<() => { default: VisRxWidgetWithInfo<any> }>;
@@ -126,11 +127,27 @@ function getText(text: string | ioBroker.StringOrTranslated): string {
 function getRemoteWidgets(
     socket: LegacyConnection,
     onlyWidgetSets?: false | string[],
-): Promise<void | VisRxWidgetWithInfo<any>[]> {
+): Promise<
+    | undefined
+    | {
+          widgetSets: VisRxWidgetWithInfo<any>[];
+          additionalSets: AdditionalIconSet;
+      }
+> {
     return socket
         .getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.\u9999')
         .then(objects => {
             const result: VisRxWidgetWithInfo<any>[] = [];
+            const additionalSets: {
+                // customIcons, 'baseline', 'outline', 'round', 'sharp', 'twotone', 'knx-uf', 'upload' are reserved
+                [setName: string]: {
+                    // Name of icons
+                    name: ioBroker.StringOrTranslated;
+                    icon: string; // base64 svg or png
+                    // Path to file
+                    url: string;
+                };
+            } = {};
             const countRef = { count: 0, max: 0 };
             const instances: ioBroker.InstanceObject[] = Object.values(
                 objects as Record<string, ioBroker.InstanceObject>,
@@ -175,12 +192,35 @@ function getRemoteWidgets(
                         if (!visWidgetsCollection.url?.startsWith('http')) {
                             visWidgetsCollection.url = `./vis-2/widgets/${visWidgetsCollection.url}`;
                         }
+
+                        // @ts-expect-error implemented in js-controller objects
+                        const iconSet: {
+                            name: ioBroker.StringOrTranslated;
+                            url: string;
+                            /** If set, this is not a widget set, but icon set. url, name and icon are required */
+                            iconSet: true;
+                            icon?: string; // base 64 string for iconSet (not used for widgetSets)
+                            /** The vis widget set does not support the listed major versions of vis */
+                            ignoreInVersions?: number[];
+                        } = visWidgetsCollection;
+
+                        // Collect icon sets only if editor
+                        if (iconSet.iconSet && !onlyWidgetSets) {
+                            additionalSets[widgetSetName] = {
+                                name: iconSet.name,
+                                url: iconSet.url,
+                                icon: iconSet.icon,
+                            };
+                            continue;
+                        }
+
                         registerRemotes(
                             [
                                 {
                                     name: visWidgetsCollection.name,
                                     entry: visWidgetsCollection.url,
-                                    type: (visWidgetsCollection as any).bundlerType || undefined,
+                                    //@ts-expect-error implemented in js-controller objects
+                                    type: visWidgetsCollection.bundlerType || undefined,
                                 },
                             ],
                             // force: true // may be needed to side-load remotes after the fact.
@@ -303,9 +343,15 @@ function getRemoteWidgets(
                 }
             }
 
-            return Promise.all(promises).then(() => result);
+            return Promise.all(promises).then(() => ({
+                widgetSets: result,
+                additionalSets,
+            }));
         })
-        .catch(e => console.error('Cannot read instances', e));
+        .catch((e: unknown): undefined => {
+            console.error('Cannot read instances', e);
+            return undefined;
+        });
 }
 
 export { getRemoteWidgets, registerWidgetsLoadIndicator };
