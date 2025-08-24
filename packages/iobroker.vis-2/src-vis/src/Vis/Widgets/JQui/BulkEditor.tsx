@@ -537,13 +537,13 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                         value={this.state.editDialog.value}
                         onChange={e => {
                             if (this.state.editDialog) {
-                                this.setState({
+                                this.setState(prevState => ({
                                     editDialog: {
                                         value: e.target.value,
-                                        add: this.state.editDialog.add,
-                                        index: this.state.editDialog.index,
+                                        add: prevState.editDialog.add,
+                                        index: prevState.editDialog.index,
                                     },
-                                });
+                                }));
                             }
                         }}
                     />
