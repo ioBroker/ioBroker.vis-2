@@ -1474,7 +1474,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     return option.type === 'view' ? option.label : option.folder.name;
                 }}
                 getOptionDisabled={option => option.type === 'folder'}
-                renderOption={(optionProps, option) =>
+                renderOption={(optionProps: React.HTMLAttributes<HTMLLIElement> & { key: any }, option) =>
                     option.type === 'view' ? (
                         <Box
                             component="li"
@@ -1505,7 +1505,6 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         helperText={typeof error === 'string' ? I18n.t(error) : null}
                         disabled={disabled}
                         {...params}
-                        inputProps={{ ...params.inputProps }}
                     />
                 )}
             />

@@ -81,7 +81,7 @@ import Toolbar from './Toolbar';
 import CodeDialog from './Components/CodeDialog';
 import CreateFirstProjectDialog from './Components/CreateFirstProjectDialog';
 import { DndPreview, isTouchDevice } from './Utils';
-import {
+import VisWidgetsCatalog, {
     getWidgetTypes,
     parseAttributes,
     type WidgetAttributesGroupInfoStored,
@@ -93,7 +93,6 @@ import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages } from './Vis/visUtils';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
 import type { VisEngineHandlers } from './Vis/visView';
-import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 const styles: Record<string, any> = {
     block: {

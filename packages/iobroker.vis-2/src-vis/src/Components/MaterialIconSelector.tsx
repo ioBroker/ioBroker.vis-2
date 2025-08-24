@@ -206,7 +206,6 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                 },
                 () => this.applyFilter(true),
             );
-
         }
         return type;
     }
