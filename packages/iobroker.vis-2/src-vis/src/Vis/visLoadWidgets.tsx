@@ -147,16 +147,7 @@ function getRemoteWidgets(
         .getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.\u9999')
         .then(objects => {
             const result: VisRxWidgetWithInfo<any>[] = [];
-            const additionalSets: {
-                // customIcons, 'baseline', 'outline', 'round', 'sharp', 'twotone', 'knx-uf', 'upload' are reserved
-                [setName: string]: {
-                    // Name of icons
-                    name: ioBroker.StringOrTranslated;
-                    icon: string; // base64 svg or png
-                    // Path to file
-                    url: string;
-                };
-            } = {};
+            const additionalSets: AdditionalIconSet = {};
             const countRef = { count: 0, max: 0 };
             const instances: ioBroker.InstanceObject[] = Object.values(
                 objects as Record<string, ioBroker.InstanceObject>,

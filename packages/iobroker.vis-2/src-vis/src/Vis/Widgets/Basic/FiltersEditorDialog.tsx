@@ -25,7 +25,7 @@ import { Add, Check, Clear as ClearIcon, Close, Delete, DragHandle } from '@mui/
 
 import { ColorPicker, I18n, Icon, SelectFile as SelectFileDialog, type Connection } from '@iobroker/adapter-react-v5';
 
-import type { RxWidgetInfoCustomComponentContext, VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
+import type { RxWidgetInfoCustomComponentContext, VisTheme } from '@iobroker/types-vis-2';
 
 import MaterialIconSelector from '../../../Components/MaterialIconSelector';
 
@@ -80,7 +80,6 @@ interface FiltersEditorDialogProps {
     onClose: (items?: Item[]) => void;
     context: RxWidgetInfoCustomComponentContext;
     multiple?: boolean;
-    additionalSets: AdditionalIconSet;
 }
 
 interface FiltersEditorDialogState {
@@ -126,7 +125,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                 themeType={this.props.context.theme.palette.mode}
                 theme={this.props.context.theme}
                 value={this.state.items[this.state.selectIcon]}
-                additionalSets={this.props.additionalSets}
+                additionalSets={this.props.context.additionalSets}
                 onClose={(icon: string | null) => {
                     if (icon !== null) {
                         const items = JSON.parse(JSON.stringify(this.state.items));

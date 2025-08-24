@@ -1607,6 +1607,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             adapterName,
                             views: store.getState().visProject,
                             theme: props.theme,
+                            additionalSets: props.additionalSets,
                         },
                         Editor,
                         selectedView: props.selectedView,

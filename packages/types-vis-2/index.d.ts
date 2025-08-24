@@ -171,6 +171,7 @@ export interface RxWidgetInfoCustomComponentContext {
     readonly adapterName: string;
     readonly views: Project;
     readonly theme: VisTheme;
+    readonly additionalSets: AdditionalIconSet;
 }
 
 export interface RxWidgetInfoCustomComponentProperties {
@@ -1339,7 +1340,7 @@ export interface VisLegacy {
 }
 export interface IconSetDescription {
     // Name of icons
-    name: ioBroker.StringOrTranslated;
+    name?: ioBroker.StringOrTranslated;
     icon?: string; // base64 svg or png
     // Path to file
     url: string;

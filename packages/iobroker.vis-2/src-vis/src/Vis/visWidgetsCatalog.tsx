@@ -132,6 +132,7 @@ export type RxWidgetInfoAttributesFieldAll = {
                 adapterName: string;
                 views: Project;
                 theme: VisTheme;
+                additionalSets: AdditionalIconSet;
             };
             Editor?: React.FC<{ field: RxWidgetInfoAttributesFieldAll; index?: number; disabled?: boolean }>;
             selectedView: string;
