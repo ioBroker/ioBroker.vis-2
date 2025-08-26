@@ -5,6 +5,7 @@ import vitetsConfigPaths from 'vite-tsconfig-paths';
 import { federation } from '@module-federation/vite';
 import { resolve } from 'node:path';
 import { moduleFederationShared } from '@iobroker/types-vis-2/modulefederation.vis.config';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
     plugins: [
@@ -17,6 +18,12 @@ export default defineConfig({
             remotes: {},
             filename: 'remoteEntry.js',
             manifest: true,
+        }),
+        topLevelAwait({
+            // The export name of top-level await promise for each chunk module
+            promiseExportName: '__tla',
+            // The function to generate import names of top-level await promise in each chunk module
+            promiseImportName: i => `__tla_${i}`,
         }),
         react(),
         vitetsConfigPaths(),
@@ -44,7 +51,7 @@ export default defineConfig({
         },
     },
     build: {
-        target: 'chrome89',
+        target: 'chrome81',
         outDir: './build',
     },
 });
