@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.5",
+    "version": "2.13.6",
     "news": {
+      "2.13.6": {
+        "en": "Prevent error by the icons selection dialog",
+        "de": "Fehler durch den Auswahldialog der Icons verhindern",
+        "ru": "Предотвратить ошибку в диалоге выбора иконок",
+        "pt": "Evitar erros na janela de selecção dos ícones",
+        "nl": "Fout voorkomen door het dialoogvenster Pictogrammenselectie",
+        "fr": "Prévenir l'erreur par la boîte de dialogue de sélection des icônes",
+        "it": "Prevenire l'errore dalla finestra di dialogo di selezione delle icone",
+        "es": "Evitar error por el diálogo de selección de iconos",
+        "pl": "Zapobieganie błędom przez okno wyboru ikon",
+        "uk": "Запобігання помилки підбір іконок діалог",
+        "zh-cn": "防止图标选择对话框出错"
+      },
       "2.13.5": {
         "en": "Corrected loading of icon sets",
         "de": "Behobenes Laden von Symbolsets",
@@ -80,19 +93,6 @@
         "pl": "Dodano możliwość zdefiniowania zestawów ikon SVG z zestawów widżetów",
         "uk": "Додано можливість визначити значки SVG з наборів віджетів",
         "zh-cn": "从部件集中添加定义 SVG 图标集的可能性"
-      },
-      "2.12.12": {
-        "en": "enabled the local binding states for widgets",
-        "de": "die lokalen bindungszustände für widgets aktiviert",
-        "ru": "возможность локальных связывающих состояний для виджетов",
-        "pt": "ativou os estados de ligação locais para widgets",
-        "nl": "de lokale bindingstoestanden voor widgets ingeschakeld",
-        "fr": "a permis aux états contraignants locaux pour les widgets",
-        "it": "abilitato gli stati di binding locali per i widget",
-        "es": "habilitado los estados de unión local para widgets",
-        "pl": "włącz lokalne stany wiążące widżety",
-        "uk": "увімкнено локальні стани для віджетів",
-        "zh-cn": "启用用于部件的本地绑定状态"
       }
     },
     "title": "Visualisation Next Generation",

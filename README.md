@@ -292,7 +292,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.13.6 (2025-10-10)
 * (@GermanBluefox) Prevent error by the icons selection dialog
 
 ### 2.13.5 (2025-09-16)
@@ -306,9 +306,6 @@ npm run start
 
 ### 2.13.2 (2025-08-26)
 * (@GermanBluefox) Added support for older Android versions
-
-### 2.13.1 (2025-08-25)
-* (@GermanBluefox) Fixed loading of widgets on the cloud
 
 ## License
  Copyright (c) 2021-2025 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,

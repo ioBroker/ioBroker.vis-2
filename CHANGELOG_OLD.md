@@ -356,6 +356,9 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.13.1 (2025-08-25)
+* (@GermanBluefox) Fixed loading of widgets on the cloud
+
 ## 2.13.0 (2025-08-24)
 * (@GermanBluefox) Added possibility to define SVG icon sets from widgets sets
 
