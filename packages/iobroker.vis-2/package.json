@@ -54,12 +54,12 @@
     "bugs": {
         "url": "https://github.com/iobroker/iobroker.vis/issues"
     },
-    "main": "build-backend/main.js",
+    "main": "build/main.js",
     "files": [
         "admin/",
         "img/",
         "lib/",
-        "build-backend/",
+        "build/",
         "www/",
         "io-package.json",
         "LICENSE"

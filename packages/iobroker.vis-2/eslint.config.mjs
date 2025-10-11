@@ -22,6 +22,6 @@ export default [
         },
     },
     {
-        ignores: ['build-backend/**/*', 'lib/**/*'],
+        ignores: ['build/**/*', 'lib/**/*'],
     },
 ];

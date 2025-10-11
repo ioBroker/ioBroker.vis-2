@@ -297,9 +297,9 @@ function copyBackend() {
     if (!existsSync(`${__dirname}/lib`)) {
         mkdirSync(`${__dirname}/lib`);
     }
-    writeFileSync(`${__dirname}/lib/states.js`, readFileSync(`${__dirname}/build-backend/lib/states.js`));
-    writeFileSync(`${__dirname}/build-backend/lib/cloudCert.crt`, readFileSync(`${__dirname}/src/lib/cloudCert.crt`));
-    writeFileSync(`${__dirname}/build-backend/lib/updating.html`, readFileSync(`${__dirname}/src/lib/updating.html`));
+    writeFileSync(`${__dirname}/lib/states.js`, readFileSync(`${__dirname}/build/lib/states.js`));
+    writeFileSync(`${__dirname}/build/lib/cloudCert.crt`, readFileSync(`${__dirname}/src/lib/cloudCert.crt`));
+    writeFileSync(`${__dirname}/build/lib/updating.html`, readFileSync(`${__dirname}/src/lib/updating.html`));
 }
 
 function patchFile(htmlFile) {
@@ -359,8 +359,8 @@ function patchEditor() {
 
     copyFolder(`${__dirname}/www`, `${__dirname}/../../www`);
     writeFileSync(`${__dirname}/../../io-package.json`, readFileSync(`${__dirname}/io-package.json`).toString());
-    writeFileSync(`${__dirname}/../../main.js`, readFileSync(`${__dirname}/build-backend/main.js`).toString());
-    copyFolder(`${__dirname}/build-backend/lib`, `${__dirname}/../../lib`);
+    writeFileSync(`${__dirname}/../../main.js`, readFileSync(`${__dirname}/build/main.js`).toString());
+    copyFolder(`${__dirname}/build/lib`, `${__dirname}/../../lib`);
 
     let readme = readFileSync(`${__dirname}/../../README.md`).toString('utf8');
     readme = readme.replaceAll('packages/iobroker.vis-2/', '');

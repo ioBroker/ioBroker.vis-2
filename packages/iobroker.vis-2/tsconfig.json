@@ -7,7 +7,7 @@
         // check JS files
         "allowJs": true,
         "checkJs": true,
-        "outDir": "./build-backend/",
+        "outDir": "./build/",
         "sourceMap": true,
         "inlineSources": true,
 
@@ -19,5 +19,5 @@
         "types": ["@types/node", "@iobroker/types"]
     },
     "include": ["src/**/*.ts"],
-    "exclude": ["node_modules/**", "www/**", "lib/**", "build-backend/**", "tasks.js"]
+    "exclude": ["node_modules/**", "www/**", "lib/**", "build/**", "tasks.js"]
 }
