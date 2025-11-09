@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.6",
+    "version": "2.13.7",
     "news": {
+      "2.13.7": {
+        "en": "Updated packages\nCorrected the basic image refreshing",
+        "de": "Aktualisierte Pakete\nKorrektur der grundlegenden Bilderfrischung",
+        "ru": "Обновленные пакеты\nИсправлено базовое обновление изображения",
+        "pt": "Pacotes atualizados\nCorrigido a imagem básica refrescante",
+        "nl": "Bijgewerkte pakketten\nDe basisafbeelding verfrissend corrigeren",
+        "fr": "Paquets mis à jour\nCorrection de l'image de base rafraîchissante",
+        "it": "Pacchetti aggiornati\nCorretto l'immagine di base rinfrescante",
+        "es": "Paquetes actualizados\nCorregido la imagen básica refrescante",
+        "pl": "Aktualizacja pakietów\nPoprawił podstawowy obraz orzeźwiający",
+        "uk": "Оновлені пакети\nВиправлено базове оновлення зображення",
+        "zh-cn": "更新软件包\n更正基本图像刷新"
+      },
       "2.13.6": {
         "en": "Prevent error by the icons selection dialog",
         "de": "Fehler durch den Auswahldialog der Icons verhindern",
@@ -80,19 +93,6 @@
         "pl": "Naprawiono wczytywanie widżetów na chmurze",
         "uk": "Виправлено завантаження віджетів у хмарі",
         "zh-cn": "将部件固定装入云中"
-      },
-      "2.13.0": {
-        "en": "Added possibility to define SVG icon sets from widgets sets",
-        "de": "Zusätzliche Möglichkeit, SVG-Symbol-Sets von Widgets-Sets zu definieren",
-        "ru": "Добавлена возможность определять наборы значков SVG из наборов виджетов",
-        "pt": "Adicionada possibilidade de definir conjuntos de ícones SVG a partir de conjuntos de widgets",
-        "nl": "Toegevoegd mogelijkheid om SVG-pictogramsets van widgetssets te definiëren",
-        "fr": "Ajout de la possibilité de définir les ensembles d'icônes SVG à partir des jeux de widgets",
-        "it": "Aggiunta possibilità di definire set icona SVG da widget set",
-        "es": "Añadido posibilidad de definir conjuntos de iconos SVG de widgets",
-        "pl": "Dodano możliwość zdefiniowania zestawów ikon SVG z zestawów widżetów",
-        "uk": "Додано можливість визначити значки SVG з наборів віджетів",
-        "zh-cn": "从部件集中添加定义 SVG 图标集的可能性"
       }
     },
     "title": "Visualisation Next Generation",
