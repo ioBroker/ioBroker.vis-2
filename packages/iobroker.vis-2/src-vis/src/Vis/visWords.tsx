@@ -15,7 +15,7 @@
 (window as any).systemDictionary = {};
 (window as any).systemLang = 'en';
 
-function translateWord(
+function _translateWord(
     text: string,
     lang?: ioBroker.Languages,
     dictionary?: Record<string, Record<ioBroker.Languages, string>>,
@@ -53,7 +53,7 @@ function translateWord(
     arg2?: boolean | number | string,
     arg3?: boolean | number | string,
 ) => {
-    text = translateWord(text);
+    text = _translateWord(text);
 
     let pos = text.indexOf('%s');
     if (pos !== -1) {

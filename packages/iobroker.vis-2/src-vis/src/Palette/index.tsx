@@ -448,7 +448,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
     }
 
     async toggleDebugVersion(category: string): Promise<void> {
-        const objects = await this.props.socket.getObjectViewSystem(
+        const objects: { [id: string]: ioBroker.InstanceObject } = await this.props.socket.getObjectViewSystem(
             'instance',
             'system.adapter.',
             'system.adapter.\u9999',
@@ -467,11 +467,13 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     )
                 ) {
                     Object.keys(wSetObj.common.visWidgets).forEach(key => {
-                        if (typeof wSetObj.common.name === 'object') {
+                        const name: ioBroker.StringOrTranslated = wSetObj.common.name;
+                        if (name && typeof name === 'object') {
+                            const multiName: ioBroker.Translated = name as ioBroker.Translated;
                             wSetObj.common.visWidgets[key].url =
-                                `${wSetObj.common.name[this.lang] || wSetObj.common.name.en}/customWidgets.js`;
+                                `${multiName[this.lang] || multiName.en}/customWidgets.js`;
                         } else {
-                            wSetObj.common.visWidgets[key].url = `${wSetObj.common.name}/customWidgets.js`;
+                            wSetObj.common.visWidgets[key].url = `${name}/customWidgets.js`;
                         }
                     });
                     await this.props.socket.setObject(wSetObj._id, wSetObj);
@@ -489,8 +491,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                         // disable the load over http
                         Object.keys(visWidgets).forEach(key => {
                             const name: ioBroker.StringOrTranslated = dynamicWidgetInstances[i].common.name;
-                            if (typeof name === 'object') {
-                                visWidgets[key].url = `${name[this.lang] || name.en}/customWidgets.js`;
+                            if (name && typeof name === 'object') {
+                                const multiName: ioBroker.Translated = name as ioBroker.Translated;
+                                visWidgets[key].url = `${multiName[this.lang] || multiName.en}/customWidgets.js`;
                             } else {
                                 visWidgets[key].url = `${name}/customWidgets.js`;
                             }

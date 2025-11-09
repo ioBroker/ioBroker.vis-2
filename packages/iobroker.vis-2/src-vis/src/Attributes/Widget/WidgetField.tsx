@@ -68,6 +68,7 @@ import type {
 import commonStyles from '@/Utils/styles';
 import TextDialog from './TextDialog';
 import MaterialIconSelector from '../../Components/MaterialIconSelector';
+import type { SelectIDFilters } from '@iobroker/adapter-react-v5/build/Dialogs/SelectID';
 
 const POSSIBLE_UNITS = ['px', '%', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ex', 'ch', 'cm', 'mm', 'in', 'pt', 'pc'];
 
@@ -687,7 +688,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
         // Find filter
         let customFilter: ObjectBrowserCustomFilter | null = null;
-        let filters = null;
+        let filters: SelectIDFilters | null = null;
         if (idDialog && !disabled) {
             if (field.type === 'hid') {
                 customFilter = { common: { custom: '_dataSources' } };
@@ -703,7 +704,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     field.filter.startsWith('level') ||
                     field.filter.startsWith('value')
                 ) {
-                    filters = { role: field.filter };
+                    filters = { role: [field.filter] };
                 } else {
                     customFilter = { type: field.filter as ioBroker.ObjectType };
                 }

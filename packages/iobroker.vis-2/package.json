@@ -25,30 +25,30 @@
         "vis-2"
     ],
     "dependencies": {
-        "@iobroker/adapter-core": "^3.3.2",
-        "axios": "^1.13.2",
+        "@iobroker/adapter-core": "^3.2.3",
+        "axios": "^1.11.0",
         "jsonwebtoken": "^9.0.2",
         "mime": "^3.0.0"
     },
     "devDependencies": {
         "@iobroker/build-tools": "^2.0.15",
-        "@iobroker/db-objects-redis": "^7.0.8-alpha.7-20250928-40cb80c18",
-        "@iobroker/db-states-redis": "^7.0.8-alpha.7-20250928-40cb80c18",
+        "@iobroker/db-objects-redis": "^7.0.7",
+        "@iobroker/db-states-redis": "^7.0.7",
         "@iobroker/vis-2-widgets-testing": "^1.0.6",
         "@material-icons/svg": "^1.0.33",
         "@tsconfig/node18": "^18.2.4",
-        "@types/jquery": "^3.5.33",
+        "@types/jquery": "^3.5.32",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mime": "^3.0.4",
         "@types/mocha": "^10.0.10",
         "@types/unzipper": "^0.10.11",
         "chai": "^4.5.0",
-        "dayjs": "^1.11.19",
+        "dayjs": "^1.11.13",
         "iobroker.web": "*",
         "jquery-ui": "^1.14.1",
-        "mocha": "^11.7.5",
-        "rimraf": "^6.1.0",
-        "sass": "^1.93.3",
+        "mocha": "^11.7.1",
+        "rimraf": "^6.0.1",
+        "sass": "^1.89.2",
         "unzipper": "^0.12.3"
     },
     "bugs": {
@@ -65,7 +65,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "check-ts": "cd src-vis && tsc --project tsconfig.json && cd .. && tsc --project tsconfig.build.json",
+        "check-ts": "cd src-vis && tsc --noEmit -p tsconfig.json && cd .. && tsc --noEmit -p tsconfig.json",
         "start": "cd src-vis && npm run start",
         "test": "mocha ./test/*.engine.js --exit",
         "test-gui": "mocha ./test/*.gui.js --exit",

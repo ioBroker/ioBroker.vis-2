@@ -78,12 +78,11 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
      * Lifecycle hook called when component is mounted
      */
     async componentDidMount(): Promise<void> {
-        const userView: Record<string, ioBroker.UserObject> =
-            await this.props.socket.getObjectViewSystem<ioBroker.UserObject>(
-                'user',
-                'system.user.',
-                'system.user.\u9999',
-            );
+        const userView: Record<string, ioBroker.UserObject> = await this.props.socket.getObjectViewSystem(
+            'user',
+            'system.user.',
+            'system.user.\u9999',
+        );
         const { visProject } = store.getState();
         const projectPermissions = new Map<string, Permissions>();
         const viewPermissions: Record<string, PermissionsMap> = {};
