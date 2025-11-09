@@ -1405,6 +1405,7 @@ declare global {
         systemLang?: ioBroker.Languages;
         addWords: (words: Record<string, Record<ioBroker.Languages, string>>) => void;
         VisMarketplace?: Marketplace;
+        translateWord: (text: string, lang?: string, dictionary?: Record<string, Record<string, string>>) => string;
 
         [promiseName: PromiseName]: Promise<any>;
 
