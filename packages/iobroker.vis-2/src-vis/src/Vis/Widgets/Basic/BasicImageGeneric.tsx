@@ -16,7 +16,7 @@ export interface RxDataBasicImageGeneric extends WidgetData {
 export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneric> extends VisRxWidget<T> {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-    private readonly imageRef: React.RefObject<HTMLImageElement>;
+    private readonly imageRef: React.RefObject<HTMLImageElement> = React.createRef<HTMLImageElement>();
 
     private hashInstalled = false;
 
@@ -26,7 +26,6 @@ export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneri
 
     constructor(props: VisBaseWidgetProps) {
         super(props);
-        this.imageRef = React.createRef<HTMLImageElement>();
     }
 
     componentDidMount(): void {
@@ -36,7 +35,9 @@ export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneri
 
     componentWillUnmount(): void {
         super.componentWillUnmount();
-        this.refreshInterval && clearInterval(this.refreshInterval);
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
         if (this.hashInstalled) {
             this.hashInstalled = false;
             window.removeEventListener('hashchange', this.onHashChange);
@@ -98,29 +99,26 @@ export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneri
             if (refreshInterval > 0) {
                 if (this.startedInterval !== refreshInterval) {
                     this.startedInterval = refreshInterval;
-                    this.refreshInterval && clearInterval(this.refreshInterval);
-                    this.refreshInterval = null;
+                    if (this.refreshInterval) {
+                        clearInterval(this.refreshInterval);
+                        this.refreshInterval = null;
+                    }
                 }
                 // install refresh handler
-                this.refreshInterval =
-                    this.refreshInterval ||
-                    setInterval(() => {
+                this.refreshInterval ||= setInterval(() => {
+                    if (this.imageRef.current && !BasicImageGeneric.isHidden(this.imageRef.current as HTMLElement)) {
+                        const parents = BasicImageGeneric.getParents(this.imageRef.current).filter(el =>
+                            BasicImageGeneric.isHidden(el),
+                        );
                         if (
-                            this.imageRef.current &&
-                            !BasicImageGeneric.isHidden(this.imageRef.current as HTMLElement)
+                            !parents.length ||
+                            parents[0].tagName === 'BODY' ||
+                            parents[0].id === 'materialdesign-vuetify-container'
                         ) {
-                            const parents = BasicImageGeneric.getParents(this.imageRef.current).filter(el =>
-                                BasicImageGeneric.isHidden(el),
-                            );
-                            if (
-                                !parents.length ||
-                                parents[0].tagName === 'BODY' ||
-                                parents[0].id === 'materialdesign-vuetify-container'
-                            ) {
-                                this.refreshImage();
-                            }
+                            this.refreshImage();
                         }
-                    }, refreshInterval);
+                    }
+                }, refreshInterval);
             } else if (this.refreshInterval) {
                 this.startedInterval = 0;
                 clearInterval(this.refreshInterval);

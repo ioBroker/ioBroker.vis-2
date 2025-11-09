@@ -463,11 +463,12 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                         if (window.localStorage.getItem('developerMode') === 'true') {
                             window.localStorage.removeItem('developerMode');
                             // disable all development URL
-                            const objects = await props.socket.getObjectViewSystem(
-                                'instance',
-                                'system.adapter.',
-                                'system.adapter.\u9999',
-                            );
+                            const objects: { [id: string]: ioBroker.InstanceObject } =
+                                await props.socket.getObjectViewSystem(
+                                    'instance',
+                                    'system.adapter.',
+                                    'system.adapter.\u9999',
+                                );
                             const instances = Object.values(objects);
                             for (let i = 0; i < instances.length; i++) {
                                 if (instances[i].common?.visWidgets) {
@@ -478,8 +479,10 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                     ) {
                                         Object.keys(instances[i].common.visWidgets).forEach(key => {
                                             const name: ioBroker.StringOrTranslated = instances[i].common.name;
-                                            if (typeof name === 'object') {
-                                                instances[i].common.visWidgets[key].url = `${name.en}/customWidgets.js`;
+                                            if (name && typeof name === 'object') {
+                                                const translatedName: ioBroker.Translated = name as ioBroker.Translated;
+                                                instances[i].common.visWidgets[key].url =
+                                                    `${translatedName[I18n.getLanguage()] && translatedName.en}/customWidgets.js`;
                                             } else {
                                                 instances[i].common.visWidgets[key].url = `${name}/customWidgets.js`;
                                             }

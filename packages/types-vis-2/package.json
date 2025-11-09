@@ -16,13 +16,13 @@
         "access": "public"
     },
     "devDependencies": {
-        "@mui/material": "^6.4.12",
+        "@mui/material": "^6.5.0",
         "@types/moment": "^2.13.0",
-        "@types/react": "^18.3.23",
-        "@types/validator": "^13.15.2"
+        "@types/react": "^18.3.26",
+        "@types/validator": "^13.15.4"
     },
     "scripts": {
-        "check-ts": "tsc --noEmit --checkJS false",
+        "check-ts": "tsc --noEmit -p tsconfig.json",
         "lint": "eslint -c eslint.config.mjs",
         "tsc": "tsc -p tsconfig.json"
     }

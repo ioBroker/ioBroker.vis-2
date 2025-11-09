@@ -176,9 +176,7 @@ function getRemoteWidgets(
       }
 > {
     let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
-    // @ts-expect-error implemented in socket-client
     if (socket.getObjectViewSystemCached) {
-        // @ts-expect-error implemented in socket-client
         getObjectViewSystem = socket.getObjectViewSystemCached.bind(socket);
     }
 

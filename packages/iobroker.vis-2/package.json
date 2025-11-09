@@ -65,7 +65,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "check-ts": "cd src-vis && tsc --project tsconfig.json && cd .. && tsc --project tsconfig.build.json",
+        "check-ts": "cd src-vis && tsc --noEmit -p tsconfig.json && cd .. && tsc --noEmit -p tsconfig.json",
         "start": "cd src-vis && npm run start",
         "test": "mocha ./test/*.engine.js --exit",
         "test-gui": "mocha ./test/*.gui.js --exit",

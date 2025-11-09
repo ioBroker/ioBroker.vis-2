@@ -292,6 +292,10 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@GermanBluefox) Updated packages
+* (@GermanBluefox) Corrected the basic image refreshing
+
 ### 2.13.6 (2025-10-10)
 * (@GermanBluefox) Prevent error by the icons selection dialog
 
