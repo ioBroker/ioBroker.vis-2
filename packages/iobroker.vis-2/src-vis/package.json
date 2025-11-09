@@ -27,7 +27,7 @@
         "@types/uuid": "^11.0.0",
         "@vitejs/plugin-react": "^5.1.0",
         "echarts": "^5.6.0",
-        "echarts-for-react": "^3.0.2",
+        "echarts-for-react": "^3.0.5",
         "html-to-image": "^1.11.13",
         "mui-nested-menu": "^4.0.1",
         "react-beautiful-dnd": "^13.1.1",
