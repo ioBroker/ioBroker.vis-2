@@ -42,6 +42,7 @@ import {
     type Connection,
     type LegacyConnection,
     type ThemeType,
+    type SelectIDFilters,
 } from '@iobroker/adapter-react-v5';
 
 import { findWidgetUsages } from '@/Vis/visUtils';
@@ -68,7 +69,6 @@ import type {
 import commonStyles from '@/Utils/styles';
 import TextDialog from './TextDialog';
 import MaterialIconSelector from '../../Components/MaterialIconSelector';
-import type { SelectIDFilters } from '@iobroker/adapter-react-v5/build/Dialogs/SelectID';
 
 const POSSIBLE_UNITS = ['px', '%', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ex', 'ch', 'cm', 'mm', 'in', 'pt', 'pc'];
 
