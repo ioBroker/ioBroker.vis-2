@@ -292,6 +292,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@GermanBluefox) Updated packages
+
 ### 2.13.7 (2025-11-09)
 * (@GermanBluefox) Updated packages
 * (@GermanBluefox) Corrected the basic image refreshing

@@ -135,7 +135,7 @@ interface ToolbarState {
     upload: number;
 }
 
-class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
+export default class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
     private readonly rightRef: React.RefObject<HTMLButtonElement>;
     private readonly lang: ioBroker.Languages;
     private readonly runtimeURL: string;
@@ -504,5 +504,3 @@ class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
         );
     }
 }
-
-export default Toolbar;

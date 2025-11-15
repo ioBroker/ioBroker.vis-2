@@ -325,7 +325,7 @@ declare global {
     }
 }
 
-class Editor extends Runtime<EditorProps, EditorState> {
+export default class Editor extends Runtime<EditorProps, EditorState> {
     mainRef: React.RefObject<HTMLDivElement>;
 
     tempProject: Project;
@@ -2586,5 +2586,3 @@ class Editor extends Runtime<EditorProps, EditorState> {
         );
     }
 }
-
-export default Editor;

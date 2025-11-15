@@ -37,7 +37,10 @@ export default function createTheme(themeName: ThemeName, overrides?: Record<str
             minHeight: 0,
         },
         lightedPanel: {
-            backgroundColor: themeName === 'dark' || themeName === 'blue' ? 'hsl(0deg 0% 20%)' : 'hsl(0deg 0% 90%)',
+            backgroundColor:
+                themeName === 'dark' || themeName === 'blue' || themeName === 'NW'
+                    ? 'hsl(0deg 0% 20%)'
+                    : 'hsl(0deg 0% 90%)',
         },
         toolbar: {
             display: 'flex',

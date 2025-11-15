@@ -288,7 +288,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
     // eslint-disable-next-line class-methods-use-this
     createTheme(name?: ThemeName | null): VisTheme {
-        return createTheme(Utils.getThemeName(name));
+        return createTheme('NW'/*Utils.getThemeName(name)*/);
     }
 
     setWidgetsLoadingProgress: (step: number, total: number) => void;
