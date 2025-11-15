@@ -292,7 +292,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.13.8 (2025-11-15)
 * (@GermanBluefox) Updated packages
 
 ### 2.13.7 (2025-11-09)
@@ -307,9 +307,6 @@ npm run start
 
 ### 2.13.4 (2025-09-05)
 * (@GermanBluefox) Added the basic methods for metro widgets again
-
-### 2.13.3 (2025-08-27)
-* (@GermanBluefox) Corrected loading of icon sets
 
 ## License
  Copyright (c) 2021-2025 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,

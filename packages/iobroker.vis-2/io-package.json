@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.7",
+    "version": "2.13.8",
     "news": {
+      "2.13.8": {
+        "en": "Updated packages",
+        "de": "Aktualisierte Pakete",
+        "ru": "Обновленные пакеты",
+        "pt": "Pacotes atualizados",
+        "nl": "Bijgewerkte pakketten",
+        "fr": "Paquets mis à jour",
+        "it": "Pacchetti aggiornati",
+        "es": "Paquetes actualizados",
+        "pl": "Aktualizacja pakietów",
+        "uk": "Оновлені пакети",
+        "zh-cn": "更新软件包"
+      },
       "2.13.7": {
         "en": "Updated packages\nCorrected the basic image refreshing",
         "de": "Aktualisierte Pakete\nKorrektur der grundlegenden Bilderfrischung",
@@ -80,19 +93,6 @@
         "pl": "Dodano wsparcie dla starszych wersji Android",
         "uk": "Додано підтримку для старих версій Android",
         "zh-cn": "对较旧的Android版本添加支持"
-      },
-      "2.13.1": {
-        "en": "Fixed loading of widgets on the cloud",
-        "de": "Fixes Laden von Widgets auf der Cloud",
-        "ru": "Фиксированная загрузка виджетов в облако",
-        "pt": "Carregamento fixo de elementos na nuvem",
-        "nl": "Vast laden van widgets op de cloud",
-        "fr": "Chargement fixe de widgets sur le nuage",
-        "it": "Caricamento fisso dei widget sul cloud",
-        "es": "Carga fija de widgets en la nube",
-        "pl": "Naprawiono wczytywanie widżetów na chmurze",
-        "uk": "Виправлено завантаження віджетів у хмарі",
-        "zh-cn": "将部件固定装入云中"
       }
     },
     "title": "Visualisation Next Generation",

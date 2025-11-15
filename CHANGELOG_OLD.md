@@ -356,6 +356,9 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.13.3 (2025-08-27)
+* (@GermanBluefox) Corrected loading of icon sets
+
 ## 2.13.2 (2025-08-26)
 * (@GermanBluefox) Added support for older Android versions
 
