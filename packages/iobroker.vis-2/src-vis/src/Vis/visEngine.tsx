@@ -2124,6 +2124,8 @@ class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
                 } catch {
                     console.warn(`Command seems to be an object, but cannot parse it: ${state.val}`);
                 }
+            } else if (typeof state.val === 'object') {
+                command = state.val;
             }
 
             // if command is an object {instance: 'iii', command: 'cmd', data: 'ddd'}
