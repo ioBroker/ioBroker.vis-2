@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2022-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2022-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -213,7 +213,7 @@ declare global {
     }
 }
 
-class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
+export default class VisEngine extends React.Component<VisEngineProps, VisEngineState> {
     isTouch: boolean;
 
     debounceInterval: number;
@@ -2542,5 +2542,3 @@ ${this.scripts}
         return views;
     }
 }
-
-export default VisEngine;

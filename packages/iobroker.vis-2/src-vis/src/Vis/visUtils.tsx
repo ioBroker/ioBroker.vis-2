@@ -104,7 +104,7 @@ function isIdBinding(
     /** the possible assignment to check */
     assignment: string,
 ): boolean {
-    return !!assignment.match(/^[\d\w_]+:\s?[-.\d\w_#]+$/);
+    return !!assignment.match(/^[\d\w_]+:\s?[-._/ :!#$%&()+=@^{}|~\p{Ll}\p{Lu}\p{Nd}]+$/u);
 }
 
 export function extractBinding(format: string): VisBinding[] | null {
