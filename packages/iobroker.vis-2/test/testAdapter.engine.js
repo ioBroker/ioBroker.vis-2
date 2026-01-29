@@ -1,5 +1,5 @@
 const path = require('node:path');
-const expect = require('chai').expect;
+const { assert } = require('node:assert');
 const setup = require('@iobroker/legacy-testing');
 
 let objects = null;
@@ -60,9 +60,9 @@ describe(`Test ${adapterShortName} adapter`, function () {
 
     it(`Test ${adapterShortName} instance object: it must exists`, function (done) {
         objects.getObject(`system.adapter.${adapterShortName}.0`, (err, obj) => {
-            expect(err).to.be.null;
-            expect(obj).to.be.an('object');
-            expect(obj).not.to.be.null;
+            assert(err === null);
+            assert(typeof obj === 'object');
+            assert(obj !== null && obj !== undefined);
             done();
         });
     });
@@ -72,7 +72,7 @@ describe(`Test ${adapterShortName} adapter`, function () {
         checkConnectionOfAdapter(res => {
             if (res) console.log(res);
             if (runningMode === 'daemon') {
-                expect(res).not.to.be.equal('Cannot check connection');
+                assert(res !== 'Cannot check connection');
             } else {
                 //??
             }
