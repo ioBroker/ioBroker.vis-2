@@ -14,7 +14,6 @@
  */
 import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
-// eslint-disable-next-line no-duplicate-imports
 import type VisRxWidget from '@/Vis/visRxWidget';
 import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
 import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
@@ -151,7 +150,6 @@ function fixCloudBundlerType(adapterName: string, visWidgetsCollection: ioBroker
     if (window.location.hostname.includes('iobroker.')) {
         // fix possible wrong bundlerType
         if (adapterName in cloudVersions) {
-            //@ts-expect-error implemented in js-controller objects
             visWidgetsCollection.bundlerType = cloudVersions[adapterName];
         }
     }
@@ -189,7 +187,6 @@ function getRemoteWidgets(
                 objects as Record<string, ioBroker.InstanceObject>,
             );
             const dynamicWidgetInstances: ioBroker.InstanceObject[] = instances.filter(obj => {
-                // @ts-expect-error defined in js-controller@7.0.8
                 if (!obj.common.visWidgets && !obj.common.visIconSets) {
                     return false;
                 }
@@ -241,7 +238,6 @@ function getRemoteWidgets(
                                 {
                                     name: visWidgetsCollection.name,
                                     entry: visWidgetsCollection.url,
-                                    //@ts-expect-error implemented in js-controller objects
                                     type: visWidgetsCollection.bundlerType || undefined,
                                 },
                             ],
@@ -364,7 +360,6 @@ function getRemoteWidgets(
                     }
                 }
                 if (!onlyWidgetSets) {
-                    // @ts-expect-error defined in js-controller@7.0.8
                     const visIconSets: { [name: string]: VisIconSet } = dynamicWidgetInstance.common.visIconSets || {};
 
                     for (const iconSetName in visIconSets) {

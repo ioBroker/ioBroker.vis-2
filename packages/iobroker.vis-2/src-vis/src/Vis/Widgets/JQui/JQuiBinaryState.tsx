@@ -28,7 +28,6 @@ import type {
     Writeable,
 } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '../../visRxWidget';
-// eslint-disable-next-line no-duplicate-imports
 import VisRxWidget from '../../visRxWidget';
 
 type RxData = {
