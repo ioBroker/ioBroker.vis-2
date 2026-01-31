@@ -1291,6 +1291,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 multiple={field.multiple !== false}
                 renderValue={selected => {
                     if (Array.isArray(selected)) {
+                        if (selected.length > 3) {
+                            return `${selected[0]}, ${selected[1]}, ${t('and %s more', selected.length - 2)}`;
+                        }
                         return selected.join(', ');
                     }
                     return selected;
