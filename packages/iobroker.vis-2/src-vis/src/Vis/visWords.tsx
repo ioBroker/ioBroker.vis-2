@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2022-2023 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2022-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -239,7 +239,7 @@ function _translateWord(
     },
     'Update found, loading new Files...': {
         en: 'Update found.<br/>Loading new Files...',
-        de: 'Neue Version gefunden.<br/>Lade neue Dateien...',
+        de: 'Neue Version gefunden.<br/>Lade neue Dateien …',
         ru: 'Обнаружено Обновление.<br/>Загружаю новые файлы...',
         pt: 'Atualização encontrada. <br/> Carregando novos arquivos ...',
         nl: 'Update gevonden. <br/> Nieuwe bestanden laden ...',

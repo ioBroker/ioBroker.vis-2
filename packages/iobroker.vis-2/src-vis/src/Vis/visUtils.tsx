@@ -104,7 +104,7 @@ function isIdBinding(
     /** the possible assignment to check */
     assignment: string,
 ): boolean {
-    return !!assignment.match(/^[\d\w_]+:\s?[-._/ :!#$%&()+=@^{}|~\p{Ll}\p{Lu}\p{Nd}]+$/u);
+    return !!assignment.match(/^[\w_]+:\s?[-._/ :!#$%&()+=@^{}|~\p{Ll}\p{Lu}\p{Nd}]+$/u);
 }
 
 export function extractBinding(format: string): VisBinding[] | null {
@@ -121,7 +121,7 @@ export function extractBinding(format: string): VisBinding[] | null {
             if (_oid[0] === '{') {
                 continue;
             }
-            // If the first symbol is '"' => it is JSON
+            // If the first symbol is '"', so it is JSON
             if (_oid && _oid[0] === '"') {
                 continue;
             }
@@ -149,7 +149,7 @@ export function extractBinding(format: string): VisBinding[] | null {
             }
             let operations: VisBindingOperation[] | null = null;
             const isEval =
-                visOid.match(/^[\d\w_]+:\s?[-._/ :!#$%&()+=@^{}|~\p{Ll}\p{Lu}\p{Nd}]+$/u) ||
+                visOid.match(/^[\w_]+:\s?[-._/ :!#$%&()+=@^{}|~\p{Ll}\p{Lu}\p{Nd}]+$/u) ||
                 (!visOid.length && parts.length > 0); // (visOid.indexOf(':') !== -1) && (visOid.indexOf('::') === -1);
 
             if (isEval) {
@@ -230,7 +230,7 @@ export function extractBinding(format: string): VisBinding[] | null {
                             if (parse[2] === undefined) {
                                 console.log(`Invalid format of format string: ${format}`);
                             } else {
-                                // try to extract number
+                                // try to extract a number
                                 let argStr: string = (parse[2] || '').trim().replace(',', '.');
                                 argStr = argStr.substring(1, argStr.length - 1).trim();
                                 const arg: number = parseFloat(argStr);
@@ -410,7 +410,7 @@ export function getUsedObjectIDsInWidget(
     let { data } = widget;
     const { style } = widget;
 
-    // if widget is in the group => replace groupAttrX values
+    // if the widget is in the group, so replace groupAttrX values
     if (widget.grouped) {
         // if groupid is not defined => fix it and find it
         if (!widget.groupid) {
@@ -423,7 +423,7 @@ export function getUsedObjectIDsInWidget(
             );
         }
 
-        // If the group, to which the widget belongs to does not exist, fix it
+        // If the group to which the widget belongs to does not exist, fix it
         if (widget.groupid && !store.getState().visProject[view].widgets[widget.groupid]) {
             store.dispatch(
                 updateWidget({
@@ -744,7 +744,7 @@ export function getUsedObjectIDs(views: Project, isByViews?: boolean): VisStateU
                 }
 
                 Object.values(views[view].widgets).forEach(widget => {
-                    // Add all OIDs from this view to parent
+                    // Add all OIDs from this view to the parent
                     if (widget.tpl === 'tplContainerView' && widget.data.contains_view && linkContext.byViews) {
                         const ids = linkContext.byViews[widget.data.contains_view];
                         if (ids) {
@@ -791,7 +791,7 @@ export async function readFile(
 ): Promise<string | { file: string; mimeType: string }> {
     const file = await socket.readFile(id, fileName);
     let mimeType = '';
-    let data = '';
+    let data: string;
     if (typeof file === 'object') {
         if (withType) {
             // @ts-expect-error LegacyConnection delivers file.mimeType
@@ -861,7 +861,7 @@ export function findWidgetUsages(
 ): { view: string; wid: AnyWidgetId; attr: string }[] {
     if (view) {
         _result = _result || [];
-        // search in specific view
+        // search in a specific view
 
         Object.keys(views[view].widgets).forEach(wid => {
             if (wid === widgetId) {
