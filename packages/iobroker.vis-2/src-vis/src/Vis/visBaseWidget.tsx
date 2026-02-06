@@ -390,7 +390,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         let copied = false;
 
         if (widget.groupid) {
-            // this widget belongs to group
+            // this widget belongs to the group
             const parentWidgetData = context.views[props.view].widgets[widget.groupid].data;
             // extract attribute names
             const names = Object.keys(parentWidgetData)
@@ -468,13 +468,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // restore original data
             if (copied) {
                 data = (widget.data as WidgetDataState) || { bindings: [] };
-                // detect for CanWidgets if size was changed
+                // detect for CanWidgets if the size was changed
                 style = (widget.style as WidgetStyleState) || { bindings: [] };
             } else {
                 data = widget.data
                     ? (deepClone(widget.data) as WidgetDataState)
                     : ({ bindings: [] } as WidgetDataState);
-                // detect for CanWidgets if size was changed
+                // detect for CanWidgets if the size was changed
                 style = widget.style
                     ? (deepClone(widget.style) as WidgetStyleState)
                     : ({ bindings: [] } as WidgetStyleState);
@@ -727,7 +727,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
 
             if (x === undefined) {
-                // start of resizing
+                // start resizing
                 const rect = (this.widDiv || this.refService.current)?.getBoundingClientRect();
 
                 if (rect) {
@@ -1058,7 +1058,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         const widgetWidth100 = widget.style.width === '100%';
         const widgetHeight100 = widget.style.height === '100%';
 
-        const color = '#014488'; // it is so, to be able to change color in web storm
+        const color = '#014488'; // it is so to be able to change color in a web storm
         const border = `0.1em dashed ${color}`;
         const borderDisabled = '0.1em dashed #888';
 

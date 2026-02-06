@@ -50,7 +50,7 @@ export type RxWidgetInfoAttributesFieldAll = {
     index?: number;
     /** Field default value */
     default?: string | number | boolean;
-    /** If sizes should be deleted or set to specific value. `false` - delete sizes, or {width: 100, height: 100} */
+    /** If sizes should be deleted or set to a specific value. `false` - delete sizes, or {width: 100, height: 100} */
     desiredSize?: { width: number; height: number } | boolean;
     /** if true, no edit button will be shown. Default is true. */
     readonly noButton?: boolean;
@@ -64,7 +64,7 @@ export type RxWidgetInfoAttributesFieldAll = {
     readonly multiline?: boolean;
     /** Do not write 'nothing_selected' into the field by creation */
     readonly noInit?: boolean;
-    /** Do not subscribe on changes of the object */
+    /** Do not subscribe to changes of the object */
     readonly noSubscribe?: boolean;
     /**
      * Filter of objects (not JSON string, it is an object), like:
@@ -85,11 +85,11 @@ export type RxWidgetInfoAttributesFieldAll = {
         | ioBroker.ObjectType
         | ((data: WidgetData, index: number) => Record<string, any>)
         | string;
-    /** Additionally, you can provide `adapter` to filter the instances of specific adapter. With special adapter name `_dataSources` you can get all adapters with flag `common.getHistory`. */
+    /** Additionally, you can provide `adapter` to filter the instances of a specific adapter. With the special adapter name `_dataSources` you can get all adapters with a flag `common.getHistory`. */
     readonly adapter?: string;
     /** Additionally, you can provide `adapters` to filter the instances of specific adapters. */
     readonly adapters?: string[];
-    /** In this case, only instance number (like `0`) is shown and not `history.0`. It can be set to true only with non-empty `adapter` setting. */
+    /** In this case, only an instance number (like `0`) is shown and not `history.0`. It can be set to true only with a non-empty ` adapter ` setting. */
     readonly isShort?: boolean;
     /** Options for a select type */
     options?: RxFieldOption[] | string[];
@@ -111,7 +111,7 @@ export type RxWidgetInfoAttributesFieldAll = {
     readonly withGroups?: boolean;
     /** if true, the current widget will be shown in the list too. */
     readonly withSelf?: boolean;
-    /** if true, it will be checked if the widget is used somewhere else and user will be asked. */
+    /** if true, it will be checked if the widget is used somewhere else and the user will be asked. */
     readonly checkUsage?: boolean;
     /** if true, only widgets will be shown, which are not used in some view. Default is false. */
     readonly hideUsed?: boolean;
@@ -155,7 +155,7 @@ export type RxWidgetInfoAttributesFieldAll = {
     disabled?: string | ((data: Record<string, any>, index?: number, style?: React.CSSProperties) => boolean) | boolean;
     /** JS Function for error */
     error?: string | ((data: Record<string, any>, index?: number, style?: React.CSSProperties) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     onChange?: (
@@ -381,7 +381,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
 
             const index = (window as any).visWidgetTypes.findIndex((item: WidgetType) => item.name === widgetObj.name);
             if (index > -1) {
-                (window as any).visWidgetTypes[index] = widgetObj; // replace old widget with RX widget
+                (window as any).visWidgetTypes[index] = widgetObj; // replace the old widget with RX widget
             } else {
                 (window as any).visWidgetTypes.push(widgetObj);
             }
@@ -557,7 +557,7 @@ export default class VisWidgetsCatalog {
                                 }
 
                                 if (usedWidgetSets === false && changeProject) {
-                                    // some widgets without set found
+                                    // some widgets without a set found
                                     const newProject = VisWidgetsCatalog.setUsedWidgetSets(project);
                                     if (newProject) {
                                         console.warn('Found widgets without widget set. Project updated');
@@ -583,7 +583,7 @@ function deepCloneRx(obj: any[] | Record<string, any>): any[] | Record<string, a
         for (let key = 0; key < obj.length; key++) {
             if (obj[key] !== undefined) {
                 if (Array.isArray(obj[key]) || typeof obj[key] === 'object') {
-                    // If it is ReactJS object
+                    // If it is a ReactJS object
                     if (Object.prototype.hasOwnProperty.call(obj, '$$typeof')) {
                         newObj[key] = obj[key];
                     } else {
@@ -601,7 +601,7 @@ function deepCloneRx(obj: any[] | Record<string, any>): any[] | Record<string, a
     for (const key in obj) {
         if (obj[key] !== undefined) {
             if (Array.isArray(obj[key]) || typeof obj[key] === 'object') {
-                // If it is ReactJS object
+                // If it is a ReactJS object
                 if (Object.prototype.hasOwnProperty.call(obj, '$$typeof')) {
                     newObj[key] = obj[key];
                 } else {
@@ -788,7 +788,7 @@ export const parseAttributes = (
                         field.step = field.max - field.min / 100;
                     }
                 }
-                // remove comma from type
+                // remove comma from a type
                 if (field.type?.startsWith('style,')) {
                     console.warn(`Attribute "${field.name}" of ${widgetSet} has wrong type: ${field.type}`);
                     field.type = field.type.split(',')[0] as RxWidgetAttributeType;

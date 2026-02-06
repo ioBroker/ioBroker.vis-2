@@ -50,7 +50,7 @@ export interface VisRxData {
     filterkey?: string | string[];
     /** If value is hide widget should be hidden if user not in groups, else disabled */
     'visibility-groups-action': 'hide' | 'disabled';
-    /** If entry in an array but user not in array, apply visibility-groups-action logic */
+    /** If entry in an array but user not in arrays, apply visibility-groups-action logic */
     'visibility-groups': string[];
 }
 
@@ -170,7 +170,7 @@ export class VisRxWidget<
 
         getUsedObjectIDsInWidget(props.context.views, props.view, props.id, this.linkContext);
 
-        // do not change it to lambda function as onStateChanged could be inherited.
+        // do not change it to a lambda function as onStateChanged could be inherited.
         this.onStateChangedBind = this.onStateChanged.bind(this);
 
         // apply bindings and modifications
@@ -285,8 +285,8 @@ export class VisRxWidget<
         return result;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
-    onStateUpdated(id: string, state: Partial<ioBroker.State>): void {
+    // eslint-disable-next-line class-methods-use-this
+    onStateUpdated(_id: string, _state: Partial<ioBroker.State>): void {
         //
     }
 
@@ -423,7 +423,7 @@ export class VisRxWidget<
 
         if (localStateIds.length) {
             // we need to register changes of local states
-            this.localStateChangeCb = (arg, id, val, ack, ts) => {
+            this.localStateChangeCb = (_arg, id, val, ack, ts) => {
                 if (!localStateIds.includes(id)) {
                     return;
                 }
@@ -449,7 +449,7 @@ export class VisRxWidget<
         //
     }
 
-    componentDidUpdate(prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
+    componentDidUpdate(_prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
         if (prevState) {
             if (JSON.stringify(this.state.rxData) !== JSON.stringify(prevState.rxData)) {
                 this.onRxDataChanged(prevState.rxData);
@@ -488,7 +488,7 @@ export class VisRxWidget<
     }
 
     /**
-     * Checks if widget is visible according to the state id
+     * Checks if the widget is visible according to the state id
      *
      * @param stateId state id to check visibility for
      * @param newState the new state
@@ -542,7 +542,7 @@ export class VisRxWidget<
         // extract bindings anew as data or style was changes
         getUsedObjectIDsInWidget(context.views, this.props.view, this.props.id, this.linkContext);
 
-        // subscribe on some new IDs and remove old IDs
+        // subscribe to some new IDs and remove old IDs
         const unsubscribe = oldIDs.filter(id => !this.linkContext.IDs.includes(id));
         if (unsubscribe.length) {
             // legacy connection can process arrays
@@ -908,7 +908,7 @@ export class VisRxWidget<
                 left: `${parseInt(this.state.rxData[`signals-horz-${index}`], 10) || 0}%`,
                 zIndex: 10,
                 textAlign: 'center',
-                // make it possible to click through signal if in front of widget
+                // make it possible to click through signal if in front of the widget
                 pointerEvents: 'none',
             };
             if (icon) {
@@ -1051,7 +1051,7 @@ export class VisRxWidget<
 
         return (
             <div
-                className="vis-last-change" // just to have a possibility to address it in user's CSS
+                className="vis-last-change" // just to have a possibility to address it in the user's CSS
                 style={style}
             >
                 {this.formatDate(
@@ -1093,7 +1093,7 @@ export class VisRxWidget<
                 this.onPropertiesUpdated();
 
                 const refs: any[] = [];
-                // if widget has included widgets => inform them about the new size or position
+                // if the widget has included widgets, so inform them about the new size or position
                 const oWidget = this.props.context.views[this.props.view].widgets[this.props.id];
                 const attrs = Object.keys(oWidget.data);
                 attrs.forEach(attr => {
@@ -1123,7 +1123,7 @@ export class VisRxWidget<
     }
 
     /**
-     * Get information about specific widget, needs to be implemented by widget class
+     * Get information about a specific widget, needs to be implemented by widget class
      */
     // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): Readonly<RxWidgetInfo> {
