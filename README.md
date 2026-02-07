@@ -313,7 +313,7 @@ npm run start
 * (@GermanBluefox) Added the basic methods for metro widgets again
 
 ## License
- Copyright (c) 2021-2025 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
+ Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
   
  Creative Common Attribution-NonCommercial (CC BY-NC)
 
