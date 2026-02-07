@@ -77,7 +77,7 @@ jobs:
 
             - name: Extract the version and commit body from the tag
               id: extract_release
-              # The body may be multiline, therefore, we need to escape some characters
+              # The body may be multiline; therefore, we need to escape some characters
               run: |
                   VERSION="${{ github.ref }}"
                   VERSION=${VERSION##*/}
@@ -99,8 +99,7 @@ jobs:
               env:
                   VERSION: ${{ steps.extract_release.outputs.VERSION }}
               run: |
-                  npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
-                  npm whoami
+                  npm i npm@latest -g
                             
                   git add .
                   git config --global user.email "dogafox@gmail.com"
