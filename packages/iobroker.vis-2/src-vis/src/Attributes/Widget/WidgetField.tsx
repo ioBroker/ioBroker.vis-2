@@ -1536,7 +1536,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 onChange={e => change(e.target.value)}
                 renderValue={(selectValue: string) => (
                     <div style={commonStyles.backgroundClass}>
-                        <span style={stylesOptions[selectValue]?.parentStyle}>
+                        <span style={stylesOptions[selectValue]?.parentStyle as React.CSSProperties}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={selectValue}
@@ -1552,7 +1552,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         value={styleName}
                         key={`${styleName}_${i}`}
                     >
-                        <span style={stylesOptions[styleName].parentStyle}>
+                        <span style={stylesOptions[styleName].parentStyle as React.CSSProperties}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={styleName}
@@ -1674,7 +1674,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 value={value}
                 disabled={disabled}
                 onChange={fileBlob => change(fileBlob)}
-                previewStyle={commonStyles.iconPreview}
+                previewStyle={commonStyles.iconPreview as any}
             />
         );
     }
