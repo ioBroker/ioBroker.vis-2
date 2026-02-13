@@ -595,9 +595,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             if (this.state.multiViewWidget) {
                 if (Date.now() - this.lastClick < 250) {
                     // change view
-                    const parts: string[] = this.props.id.split('_');
-                    const multiView: string = parts[0];
-                    const multiId: AnyWidgetId = parts[1] as AnyWidgetId;
+                    const lastUnderscore = this.props.id.lastIndexOf('_');
+                    const multiView: string = this.props.id.substring(1, lastUnderscore);
+                    const multiId: AnyWidgetId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
                     this.props.context.setSelectedWidgets([multiId], multiView);
                 }
 
@@ -2063,9 +2063,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 setTimeout(() => this.forceUpdate(), 50);
             }
 
-            const parts: (string | null)[] = this.state.multiViewWidget ? this.props.id.split('_') : [null, null];
-            const multiView: string | null = parts[0];
-            const multiId: AnyWidgetId | null = parts[1] as AnyWidgetId | null;
+            let multiView: string | null = null;
+            let multiId: AnyWidgetId | null = null;
+            if (this.state.multiViewWidget) {
+                const lastUnderscore = this.props.id.lastIndexOf('_');
+                multiView = this.props.id.substring(1, lastUnderscore);
+                multiId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
+            }
 
             const resizable = !widget.usedInWidget && this.isResizable();
 

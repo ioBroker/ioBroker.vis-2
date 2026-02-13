@@ -1,5 +1,6 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import 'prop-types';
 
 import {
     DialogContent,
