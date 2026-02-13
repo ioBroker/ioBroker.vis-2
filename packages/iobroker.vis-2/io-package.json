@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.9",
+    "version": "2.13.10",
     "news": {
+      "2.13.10": {
+        "en": "Fixing the usage of umlauts in patterns\nFixing commands via control interface when sent as JSON",
+        "de": "Festlegung der Verwendung von Umlauten in Mustern\nBefehle über die Bedienoberfläche zu fixieren, wenn als JSON gesendet",
+        "ru": "Исправление использования умлаутов в шаблонах\nИсправление команд через интерфейс управления при отправке в виде JSON",
+        "pt": "Corrigindo o uso de umlauts em padrões\nCorrigindo comandos via interface de controle quando enviado como JSON",
+        "nl": "Vaststelling van het gebruik van umlauts in patronen\nVaststellen van opdrachten via control interface wanneer verzonden als JSON",
+        "fr": "Fixer l'utilisation des umlauts dans les modèles\nCorrection des commandes via l'interface de contrôle lors de l'envoi sous JSON",
+        "it": "Fissare l'uso di umlauts in modelli\nFissaggio dei comandi tramite interfaccia di controllo quando inviato come JSON",
+        "es": "Arreglar el uso de umlauts en patrones\nArreglar comandos mediante interfaz de control cuando se envía como JSON",
+        "pl": "Naprawianie stosowania umlautów w wzorach\nUstawianie poleceń przez interfejs sterujący po wysłaniu jako JSON",
+        "uk": "Фіксація використання узорів у візерунках\nВиправлення команд через інтерфейс керування при відправленні JSON",
+        "zh-cn": "修复图案中的乌姆劳特的使用\n作为 JSON 发送时通过控制接口修正命令"
+      },
       "2.13.8": {
         "en": "Updated packages",
         "de": "Aktualisierte Pakete",
