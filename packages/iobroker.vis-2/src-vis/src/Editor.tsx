@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import { ThemeProvider, StyledEngineProvider, SxProps } from '@mui/material/styles';
 import { DndProvider, useDrop } from 'react-dnd';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -145,11 +145,11 @@ const styles: Record<string, any> = {
         alignItems: 'center',
         textTransform: 'none',
     },
-    viewTabs: (theme: VisTheme): React.CSSProperties => ({
+    viewTabs: (theme: VisTheme): SxProps => ({
         display: 'inline-block',
         ...theme.classes.viewTabs,
     }),
-    viewTab: (theme: VisTheme): React.CSSProperties => ({
+    viewTab: (theme: VisTheme): SxProps => ({
         padding: '6px 12px',
         ...theme.classes.viewTab,
     }),
