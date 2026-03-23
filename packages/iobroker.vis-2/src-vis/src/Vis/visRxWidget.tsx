@@ -40,7 +40,6 @@ import type {
 } from '@iobroker/types-vis-2';
 import { deepClone, calculateOverflow } from '../Utils/utils';
 import VisBaseWidget, { type VisBaseWidgetState, type WidgetStyleState } from './visBaseWidget';
-import VisView from './visView';
 import { addClass, getUsedObjectIDsInWidget, isLocalStateId } from './visUtils';
 
 type VisRxWidgetProps = VisBaseWidgetProps;
@@ -744,7 +743,7 @@ export class VisRxWidget<
         props = props || {};
 
         // old (can) widgets require props.refParent
-        return VisView.getOneWidget(props.index || 0, this.props.context.views[view].widgets[wid], {
+        return this.props.context.VisView.getOneWidget(props.index || 0, this.props.context.views[view].widgets[wid], {
             // custom attributes
             context: this.props.context,
             editMode: this.state.editMode,
