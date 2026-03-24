@@ -9,6 +9,10 @@
         "modulefederation.vis.config.*",
         "LICENSE"
     ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ioBroker/ioBroker.vis-2.git"
+    },
     "type": "module",
     "main": "index.js",
     "types": "index.d.ts",
