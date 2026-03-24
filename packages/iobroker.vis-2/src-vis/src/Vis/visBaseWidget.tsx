@@ -40,7 +40,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
 
-import VisOrderMenu from './visOrderMenu';
+const VisOrderMenu = React.lazy(() => import('./visOrderMenu'));
 
 interface HTMLDivElementResizers extends HTMLDivElement {
     _storedOpacity: string;
@@ -1849,19 +1849,21 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
 
         return (
-            <VisOrderMenu
-                anchorEl={this.state.showRelativeMoveMenu ? this.relativeMoveMenu : undefined}
-                order={this.props.relativeWidgetOrder}
-                wid={this.props.id}
-                view={this.props.view}
-                views={this.props.context.views}
-                themeType={this.props.context.themeType}
-                onClose={(order: AnyWidgetId[]) => {
-                    this.props.onIgnoreMouseEvents(false);
-                    this.setState({ showRelativeMoveMenu: false });
-                    order && this.props.context.onWidgetsChanged(null, this.props.view, { order });
-                }}
-            />
+            <React.Suspense fallback={null}>
+                <VisOrderMenu
+                    anchorEl={this.state.showRelativeMoveMenu ? this.relativeMoveMenu : undefined}
+                    order={this.props.relativeWidgetOrder}
+                    wid={this.props.id}
+                    view={this.props.view}
+                    views={this.props.context.views}
+                    themeType={this.props.context.themeType}
+                    onClose={(order: AnyWidgetId[]) => {
+                        this.props.onIgnoreMouseEvents(false);
+                        this.setState({ showRelativeMoveMenu: false });
+                        order && this.props.context.onWidgetsChanged(null, this.props.view, { order });
+                    }}
+                />
+            </React.Suspense>
         );
     }
 
