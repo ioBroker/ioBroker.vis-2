@@ -99,7 +99,7 @@ jobs:
               env:
                   VERSION: ${{ steps.extract_release.outputs.VERSION }}
               run: |
-                  npm i npm@latest -g
+                  npm i npm@10 -g
                             
                   git add .
                   git config --global user.email "dogafox@gmail.com"
