@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.16",
+    "version": "2.13.17",
     "news": {
+      "2.13.17": {
+        "en": "Removed debug code for theme",
+        "de": "Entfernte Debug-Code für Thema",
+        "ru": "Удаленный код отладки для темы",
+        "pt": "Código de depuração removido do tema",
+        "nl": "Verwijderde debugcode voor thema",
+        "fr": "Code de débogage supprimé pour le thème",
+        "it": "Codice di debug rimosso per tema",
+        "es": "Código de depuración eliminado para el tema",
+        "pl": "Usunięto kod debugowania motywu",
+        "uk": "Вилучено debug код для теми",
+        "zh-cn": "删除主题的调试代码"
+      },
       "2.13.16": {
         "en": "Fixing the usage of umlauts in patterns\nFixing commands via control interface when sent as JSON",
         "de": "Festlegung der Verwendung von Umlauten in Mustern\nBefehle über die Bedienoberfläche zu fixieren, wenn als JSON gesendet",
@@ -80,19 +93,6 @@
         "pl": "Dodano podstawowe metody dla widżetów metra ponownie",
         "uk": "Додайте основні методи віджетів метро",
         "zh-cn": "再次添加地铁部件的基本方法"
-      },
-      "2.13.3": {
-        "en": "Corrected loading of icon sets",
-        "de": "Korrigierte Beladung von Symbolsätzen",
-        "ru": "Исправленная загрузка наборов значков",
-        "pt": "Carregamento corrigido de conjuntos de ícones",
-        "nl": "Gecorrigeerd laden van pictogramsets",
-        "fr": "Chargement corrigé des jeux d'icônes",
-        "it": "Caricamento corretto delle icone",
-        "es": "Carga corregida de conjuntos de iconos",
-        "pl": "Poprawione wczytywanie zestawów ikon",
-        "uk": "Корисне завантаження іконок",
-        "zh-cn": "修改图标集的装入"
       }
     },
     "title": "Visualisation Next Generation",
