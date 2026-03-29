@@ -32,6 +32,7 @@ import {
     type GenericAppProps,
     type GenericAppState,
     type ThemeName,
+    Utils,
 } from '@iobroker/adapter-react-v5';
 
 import type {
@@ -287,8 +288,8 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     }
 
     // eslint-disable-next-line class-methods-use-this
-    createTheme(_name?: ThemeName | null): VisTheme {
-        return createTheme('NW' /* Utils.getThemeName(name) */);
+    createTheme(name?: ThemeName | null): VisTheme {
+        return createTheme(Utils.getThemeName(name));
     }
 
     setWidgetsLoadingProgress: (step: number, total: number) => void;

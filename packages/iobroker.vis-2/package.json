@@ -26,7 +26,7 @@
     ],
     "dependencies": {
         "@iobroker/adapter-core": "^3.3.2",
-        "axios": "^1.13.4",
+        "axios": "^1.14.0",
         "jsonwebtoken": "^9.0.3",
         "mime": "^3.0.0"
     },
@@ -43,7 +43,7 @@
         "@types/mocha": "^10.0.10",
         "@types/react": "^18.3.28",
         "@types/unzipper": "^0.10.11",
-        "dayjs": "^1.11.19",
+        "dayjs": "^1.11.20",
         "iobroker.web": "*",
         "jquery-ui": "^1.14.2",
         "mocha": "^11.7.5",
