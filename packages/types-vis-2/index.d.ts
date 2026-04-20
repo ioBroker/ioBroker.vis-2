@@ -68,7 +68,7 @@ export interface VisBaseWidgetProps {
     editMode: boolean;
     /** If runtime */
     runtime: boolean;
-    /** View where widget is on */
+    /** View where the widget is on */
     view: string;
     /** If it is positioned relative */
     isRelative: boolean;
@@ -76,7 +76,7 @@ export interface VisBaseWidgetProps {
     selectedWidgets: AnyWidgetId[];
     /** Relative order of widgets */
     relativeWidgetOrder: AnyWidgetId[];
-    /** If moving of widget is allowed */
+    /** If moving of the widget is allowed */
     moveAllowed: boolean;
     /** Currently selected group */
     selectedGroup: GroupWidgetId | null;
@@ -204,7 +204,7 @@ export type RxWidgetInfoAttributesFieldText = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -274,7 +274,7 @@ export type RxWidgetInfoAttributesFieldHTML = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -293,14 +293,14 @@ export type RxWidgetInfoAttributesFieldID = {
     readonly default?: string;
     /** Do not write 'nothing_selected' into the field by creation */
     readonly noInit?: boolean;
-    /** Do not subscribe on changes of the object */
+    /** Do not subscribe to changes of the object */
     readonly noSubscribe?: boolean;
     /**
      * Filter of objects (not JSON string, it is an object), like:
      - `{common: {custom: true}}` - show only objects with some custom settings
      - `{common: {custom: 'sql.0'}}` - show only objects with sql.0 custom settings (only of the specific instance)
      - `{common: {custom: '_dataSources'}}` - show only objects of adapters `influxdb' or 'sql' or 'history'
-     - `{common: {custom: 'adapterName.'}}` - show only objects of the custom settings for specific adapter (all instances)
+     - `{common: {custom: 'adapterName.'}}` - show only objects of the custom settings for a specific adapter (all instances)
      - `{type: 'channel'}` - show only channels
      - `{type: ['channel', 'device']}` - show only channels and devices
      - `{common: {type: 'number'}` - show only states of type 'number
@@ -338,7 +338,7 @@ export type RxWidgetInfoAttributesFieldID = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -355,11 +355,11 @@ export type RxWidgetInfoAttributesFieldInstance = {
     readonly type: 'instance';
     /** Field default value */
     readonly default?: string;
-    /** Additionally, you can provide `adapter` to filter the instances of specific adapter. With special adapter name `_dataSources` you can get all adapters with flag `common.getHistory`. */
+    /** Additionally, you can provide `adapter` to filter the instances of a specific adapter. With the special adapter name `_dataSources` you can get all adapters with the flag `common.getHistory`. */
     readonly adapter?: string;
     /** Additionally, you can provide `adapters` to filter the instances of specific adapters. */
     readonly adapters?: string;
-    /** In this case, only instance number (like `0`) is shown and not `history.0`. It can be set to true only with non-empty `adapter` setting. */
+    /** In this case, only an instance number (like `0`) is shown and not `history.0`. It can be set to true only with a non-empty ` adapter ` setting. */
     readonly isShort?: boolean;
 
     /** Used by counted fields */
@@ -377,7 +377,7 @@ export type RxWidgetInfoAttributesFieldInstance = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -414,7 +414,7 @@ export type RxWidgetInfoAttributesFieldSelect = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -431,7 +431,7 @@ export type RxWidgetInfoAttributesFieldCheckbox = {
     readonly type: 'checkbox';
     /** Field default value */
     readonly default?: boolean;
-    /** If sizes should be deleted or set to specific value. `false` - delete sizes, or {width: 100, height: 100} */
+    /** If sizes should be deleted or set to a specific value. `false` - delete sizes, or {width: 100, height: 100} */
     readonly desiredSize?: { width: number; height: number } | boolean;
 
     /** Used by counted fields */
@@ -449,7 +449,7 @@ export type RxWidgetInfoAttributesFieldCheckbox = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -488,7 +488,7 @@ export type RxWidgetInfoAttributesFieldNumber = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -534,7 +534,7 @@ export type RxWidgetInfoAttributesFieldSlider = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -563,7 +563,7 @@ export type RxWidgetInfoAttributesFieldWidget = {
     readonly withGroups?: boolean;
     /** if true, the current widget will be shown in the list too. */
     readonly withSelf?: boolean;
-    /** if true, it will be checked if the widget is used somewhere else and user will be asked. */
+    /** if true, it will be checked if the widget is used somewhere else and the user will be asked. */
     readonly checkUsage?: boolean;
     /** if true, only widgets will be shown, which are not used in some view. Default is false. */
     readonly hideUsed?: boolean;
@@ -580,7 +580,7 @@ export type RxWidgetInfoAttributesFieldWidget = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -615,7 +615,7 @@ export type RxWidgetInfoAttributesFieldSelectViews = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -656,7 +656,7 @@ export type RxWidgetInfoAttributesFieldCustom = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -704,7 +704,7 @@ export type RxWidgetInfoAttributesFieldSimple = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -735,7 +735,7 @@ export type RxWidgetInfoAttributesFieldDefault = {
     readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
     /** JS Function for error */
     readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
-    /** Do not show binding symbol fot this field */
+    /** Do not show a binding symbol for this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
     readonly onChange?: (
@@ -817,7 +817,7 @@ export interface ProjectSettings {
     title?: string;
     /** Favicon as base64 or URL */
     favicon?: string;
-    /** Do not show error if the widget is not loaded */
+    /** Do not show an error if the widget is not loaded */
     ignoreNotLoaded?: boolean;
 }
 
@@ -828,7 +828,7 @@ export type AnyWidgetId = SingleWidgetId | GroupWidgetId;
 export type StateID = string;
 
 export interface WidgetData {
-    /** Only exists if given by user in a tab general */
+    /** Only exists if given by a user in a tab general */
     name?: string;
     filterkey?: string;
     /** Group widget members */
@@ -1122,7 +1122,7 @@ export interface View {
 }
 
 export interface Project {
-    // @ts-expect-error this type has bad code-style, we should refactor the views in a views: Record<string, View> attribute
+    // @ts-expect-error this type has bad code-style, we should refactor the views in a view: Record<string, View> attribute
     ___settings: ProjectSettings;
     [view: string]: View;
 }
@@ -1544,11 +1544,11 @@ export interface VisLinkContextSignalItem extends VisLinkContextItem {
 }
 
 export interface VisStateUsage {
-    /** list of widgets, that depends on this state */
+    /** list of widgets that depends on this state */
     visibility: Record<string, VisLinkContextItem[]>;
     signals: Record<string, VisLinkContextSignalItem[]>;
     lastChanges: Record<string, VisLinkContextItem[]>;
-    /** list of widgets, that depends on this state */
+    /** list of widgets that depends on this state */
     bindings: Record<StateID, VisLinkContextBinding[]>;
     IDs: StateID[];
     byViews?: Record<string, string[]>;
@@ -1856,20 +1856,20 @@ export interface RxWidgetInfo {
     readonly visDefaultStyle?: WidgetStyle;
     /** Position in the widget set */
     readonly visOrder?: number;
-    /** required, that width is always equal to height (quadratic widget) */
+    /** required that width is always equal to height (quadratic widget) */
     readonly visResizeLocked?: boolean;
-    /** if false, if widget is not resizable */
+    /** if false, if the widget is not resizable */
     readonly visResizable?: boolean;
     /** @deprecated use visResizable */
     readonly resizable?: boolean;
-    /** if false, if widget is not draggable  */
+    /** if false, if the widget is not draggable  */
     readonly visDraggable?: boolean;
     /** Show specific handlers  */
     readonly visResizeHandles?: ResizeHandler[];
     /** @deprecated use visResizeHandles */
     readonly resizeHandles?: ResizeHandler[];
 
-    /** Function to generate custom palette element */
+    /** Function to generate a custom palette element */
     readonly customPalette?: (context: CustomPaletteProperties) => React.JSX.Element;
 }
 

@@ -7,7 +7,9 @@
         "lib": ["es2018", "DOM"],
         "types": ["@iobroker/types"],
         "strict": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "declaration": true,
+        "emitDeclarationOnly": false
     },
     "include": ["*.d.ts", "*.ts"],
 }
