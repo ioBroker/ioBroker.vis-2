@@ -70,8 +70,13 @@ interface VisLoadComponentContext {
     result: VisRxWidgetWithInfo<any>[];
 }
 
+// Must match the name used by the @module-federation/vite-generated hostInit
+// (see remoteEntry.js: mfName = "__mfe_internal__iobroker_vis"). If we init under
+// any other name, we create a second, empty host instance — remotes can no longer
+// see the shared React/MUI from the real host and fall back to their own bundled
+// copies, which leads to two Reacts and `Cannot read properties of null (reading 'useContext')`.
 init({
-    name: 'iobroker_vis',
+    name: '__mfe_internal__iobroker_vis',
     remotes: [],
 });
 
@@ -113,8 +118,9 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
                     }
                 })
                 .catch((e: any) => {
-                    console.error(`Cannot load widget ${context.dynamicWidgetInstance._id}: ${e.toString()}`);
-                    console.error(`Cannot load widget ${context.dynamicWidgetInstance._id}: ${JSON.stringify(e)}`);
+                    console.error(
+                        `Cannot load widget ${context.dynamicWidgetInstance._id}: ${e?.stack || e?.toString?.() || e}`,
+                    );
                 });
 
             promises.push(promise);

@@ -877,7 +877,6 @@ class Widget extends Component<WidgetProps, WidgetState> {
         if (!this.state.widgetTypes) {
             return;
         }
-        console.log('Recalculate fields');
         const widgets = store.getState().visProject[this.props.selectedView]?.widgets;
 
         let widget: SingleGroupWidget;

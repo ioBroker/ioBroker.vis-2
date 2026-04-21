@@ -1135,13 +1135,14 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                         value = value === 'true' || value === true || value === 1 || value === '1';
                     } else if (t === 'number') {
                         value = parseFloat(value);
-                    } else if (t === 'object') {
-                        val = JSON.stringify(val);
                     }
 
                     // Take care: return true if the widget is hidden!
                     switch (condition) {
                         case '==':
+                            if (t === 'object') {
+                                val = JSON.stringify(val);
+                            }
                             value = value.toString();
                             val = val.toString();
                             if (val === '1') {
@@ -1158,6 +1159,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                             }
                             return value !== val;
                         case '!=':
+                            if (t === 'object') {
+                                val = JSON.stringify(val);
+                            }
                             value = value.toString();
                             val = val.toString();
                             if (val === '1') {
@@ -1182,10 +1186,16 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                         case '<':
                             return val >= value;
                         case 'consist':
+                            if (t === 'object') {
+                                val = JSON.stringify(val);
+                            }
                             value = value.toString();
                             val = val.toString();
                             return !val.toString().includes(value);
                         case 'not consist':
+                            if (t === 'object') {
+                                val = JSON.stringify(val);
+                            }
                             value = value.toString();
                             val = val.toString();
                             return val.toString().includes(value);

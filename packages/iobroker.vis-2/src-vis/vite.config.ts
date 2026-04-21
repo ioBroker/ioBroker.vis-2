@@ -9,6 +9,16 @@ import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
     plugins: [
+        // The host name configured here is rewritten by @module-federation/vite into
+        // `__mfe_internal__iobroker_vis` in the generated remoteEntry.js. The runtime
+        // init() call in src/Vis/visLoadWidgets.tsx MUST use that prefixed name, or
+        // two host instances are created, shared React/MUI is not shared, and remote
+        // widgets fall back to their own React — resulting in `Cannot read properties
+        // of null (reading 'useContext')`. The `__mfe_internal__` prefix is a private
+        // convention of @module-federation/vite and may change between versions — the
+        // plugin and the runtime are pinned to exact versions (no caret) in
+        // package.json for exactly this reason. Do not loosen those pins without
+        // verifying the generated name in remoteEntry.js still matches.
         federation({
             name: 'iobroker_vis',
             shared: moduleFederationShared(),

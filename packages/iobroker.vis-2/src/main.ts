@@ -13,9 +13,18 @@ import { normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
 import { syncWidgetSets } from './lib/install';
-import * as console from 'node:console';
 
-const ioPack: ioBroker.AdapterObject = JSON.parse(readFileSync(`${__dirname}/../io-package.json`).toString());
+function loadIoPack(): ioBroker.AdapterObject {
+    const path = `${__dirname}/../io-package.json`;
+    try {
+        return JSON.parse(readFileSync(path).toString());
+    } catch (e) {
+        console.error(`Cannot read or parse "${path}": ${(e as Error).message}`);
+        process.exit(1);
+    }
+}
+
+const ioPack: ioBroker.AdapterObject = loadIoPack();
 
 const cert = readFileSync(`${__dirname}/lib/cloudCert.crt`);
 
@@ -199,7 +208,7 @@ class VisAdapter extends Adapter {
         this.widgetInstances = {};
         enabledList.forEach(
             instance =>
-                (this.widgetInstances[this.name.substring('iobroker.'.length)] = instance.pack?.common?.version),
+                (this.widgetInstances[instance.name.substring('iobroker.'.length)] = instance.pack?.common?.version),
         );
 
         const { widgetSets, filesChanged } = syncWidgetSets(enabledList, forceBuild);
@@ -1123,7 +1132,7 @@ if (typeof exports !== 'undefined') {
             name = 'vis';
         }
         const uuidObj = await this.getForeignObjectAsync('system.meta.uuid');
-        if (!uuidObj || !uuidObj.native || !uuidObj.native.uuid) {
+        if (!uuidObj?.native?.uuid) {
             this.log.error('UUID not found!');
             return false;
         }

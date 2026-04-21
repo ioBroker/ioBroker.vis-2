@@ -187,22 +187,23 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
     const [accordionOpen, setAccordionOpen] = useState<Record<string, 0 | 1 | 2>>({});
     useEffect(() => {
         // init by start
-        let _accordionOpen: Record<string, 0 | 1 | 2>;
         const accordionOpenStr = window.localStorage.getItem('attributesView');
-        if (_accordionOpen) {
-            try {
-                _accordionOpen = JSON.parse(accordionOpenStr || '');
-            } catch {
-                // ignore
-            }
+        if (!accordionOpenStr) {
+            return;
+        }
+        let _accordionOpen: Record<string, 0 | 1 | 2> | null = null;
+        try {
+            _accordionOpen = JSON.parse(accordionOpenStr);
+        } catch {
+            // ignore
         }
         if (_accordionOpen) {
             // convert from old format
             Object.keys(_accordionOpen).forEach(key => {
-                if ((_accordionOpen[key] as any) === true || _accordionOpen[key] === 1) {
-                    _accordionOpen[key] = 1;
+                if ((_accordionOpen![key] as any) === true || _accordionOpen![key] === 1) {
+                    _accordionOpen![key] = 1;
                 } else {
-                    _accordionOpen[key] = 0;
+                    _accordionOpen![key] = 0;
                 }
             });
             setAccordionOpen(_accordionOpen);
