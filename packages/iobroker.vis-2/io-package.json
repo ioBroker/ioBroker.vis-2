@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.17",
+    "version": "2.13.18-alpha.0",
     "news": {
+      "2.13.18-alpha.0": {
+        "en": "Refactoring",
+        "de": "Herstellung",
+        "ru": "Рефакторинг",
+        "pt": "Refatorização",
+        "nl": "Refactoring",
+        "fr": "Refactoration",
+        "it": "Refactoring",
+        "es": "Refactoring",
+        "pl": "Refaktoring",
+        "uk": "Рефакторинг",
+        "zh-cn": "正在重构"
+      },
       "2.13.17": {
         "en": "Removed debug code for theme",
         "de": "Entfernte Debug-Code für Thema",
@@ -80,19 +93,6 @@
         "pl": "Poprawiona została ładowanie zestawów ikon",
         "uk": "Виправлено завантаження наборів іконок",
         "zh-cn": "修正了图标集的加载"
-      },
-      "2.13.4": {
-        "en": "Added the basic methods for metro widgets again",
-        "de": "Die Grundmethoden für U-Bahn-Widgets erneut hinzugefügt",
-        "ru": "Добавлены основные методы для виджетов метро",
-        "pt": "Adicionados os métodos básicos para widgets de metro novamente",
-        "nl": "De basismethoden voor metro-widgets opnieuw toegevoegd",
-        "fr": "Ajout des méthodes de base pour les widgets de métro",
-        "it": "Aggiunto i metodi di base per i widget della metropolitana di nuovo",
-        "es": "Añadido los métodos básicos para los widgets de metro de nuevo",
-        "pl": "Dodano podstawowe metody dla widżetów metra ponownie",
-        "uk": "Додайте основні методи віджетів метро",
-        "zh-cn": "再次添加地铁部件的基本方法"
       }
     },
     "title": "Visualisation Next Generation",
