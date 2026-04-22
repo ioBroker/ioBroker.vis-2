@@ -70,13 +70,14 @@ interface VisLoadComponentContext {
     result: VisRxWidgetWithInfo<any>[];
 }
 
-// Must match the name used by the @module-federation/vite-generated hostInit
-// (see remoteEntry.js: mfName = "__mfe_internal__iobroker_vis"). If we init under
-// any other name, we create a second, empty host instance — remotes can no longer
-// see the shared React/MUI from the real host and fall back to their own bundled
-// copies, which leads to two Reacts and `Cannot read properties of null (reading 'useContext')`.
+// Must match the `name` configured in vite.config.ts (federation({ name: 'iobroker_vis' })).
+// @module-federation/vite (>= 1.9) auto-inits the host under exactly that name — no prefix.
+// If we init under any other name, we create a second, empty host instance that overwrites
+// the global FederationInstance, so subsequent registerRemotes/loadRemote calls target the
+// empty host. Remotes then fall back to their own bundled React/MUI and we get two Reacts
+// plus `Cannot read properties of null (reading 'useContext')`.
 init({
-    name: '__mfe_internal__iobroker_vis',
+    name: 'iobroker_vis',
     remotes: [],
 });
 

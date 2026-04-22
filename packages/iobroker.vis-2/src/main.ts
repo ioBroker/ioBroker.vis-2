@@ -1153,6 +1153,9 @@ if (typeof exports !== 'undefined') {
             this.log.error(`No license found for ${name}. Please get one on https://iobroker.net !`);
             return false;
         }
+
+        license = license.trim();
+
         try {
             return !(await this.doLicense(license, uuidObj.native.uuid, name));
         } catch (err: unknown) {
