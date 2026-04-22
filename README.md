@@ -292,6 +292,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@GermanBluefox) Refactoring
+
 ### 2.13.17 (2026-03-29)
 * (@GermanBluefox) Removed debug code for theme
 
