@@ -1,7 +1,7 @@
 import React from 'react';
 import VisRxWidget from '@/Vis/visRxWidget';
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
-import { NOTHING_SELECTED } from '@/Utils/utils';
+import { NOTHING_SELECTED } from '@/Utilities/utils';
 
 type RxData = {
     oid: string;

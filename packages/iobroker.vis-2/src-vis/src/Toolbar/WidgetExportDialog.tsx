@@ -6,7 +6,7 @@ import type { AnyWidgetId, GroupWidgetId, Widget } from '@iobroker/types-vis-2';
 import React from 'react';
 import IODialog from '../Components/IODialog';
 import CustomEditor from '../Components/CustomEditor';
-import { deepClone } from '../Utils/utils';
+import { deepClone } from '../Utilities/utils';
 
 interface WidgetExportDialogProps {
     onClose: () => void;

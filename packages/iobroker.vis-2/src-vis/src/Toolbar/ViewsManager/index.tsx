@@ -25,9 +25,9 @@ import View from './View';
 import ExportDialog from './ExportDialog';
 import ImportDialog from './ImportDialog';
 import FolderDialog from './FolderDialog';
-import { DndPreview, isTouchDevice, safeParseLS } from '../../Utils';
+import { DndPreview, isTouchDevice } from '../../Utils';
 import { store } from '../../Store';
-import { deepClone, getNewWidgetId, hasViewAccess, isGroup, pasteGroup } from '../../Utils/utils';
+import { deepClone, getNewWidgetId, hasViewAccess, isGroup, pasteGroup, safeParseLS } from '../../Utilities/utils';
 
 const styles: Record<string, any> = {
     dialog: {

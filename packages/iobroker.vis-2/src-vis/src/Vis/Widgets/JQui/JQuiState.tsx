@@ -34,7 +34,7 @@ import {
 import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
 
 import VisBaseWidget from '@/Vis/visBaseWidget';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 import BulkEditor from './BulkEditor';

@@ -23,8 +23,8 @@ import {
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
-import { deepClone } from '@/Utils/utils';
-import commonStyles from '@/Utils/styles';
+import { deepClone } from '@/Utilities/utils';
+import commonStyles from '@/Utilities/styles';
 import type { Field } from '@/Attributes/View/Items';
 import type { AdditionalIconSet, Project, ViewSettings, VisTheme } from '@iobroker/types-vis-2';
 

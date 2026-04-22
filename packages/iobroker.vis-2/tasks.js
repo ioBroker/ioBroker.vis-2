@@ -26,7 +26,7 @@ function copyRuntimeSrc() {
     !existsSync(`${__dirname}/runtime/src-vis`) && mkdirSync(`${__dirname}/runtime/src`);
     // copy only a single shared utils file now
     !existsSync(`${__dirname}/runtime/src-vis/Vis`) && mkdirSync(`${__dirname}/runtime/src/Vis`);
-    !existsSync(`${__dirname}/runtime/src-vis/Utils`) && mkdirSync(`${__dirname}/runtime/src/Utils`);
+    !existsSync(`${__dirname}/runtime/src-vis/Utilities`) && mkdirSync(`${__dirname}/runtime/src/Utilities`);
     !existsSync(`${__dirname}/runtime/src-vis/i18n`) && mkdirSync(`${__dirname}/runtime/src/i18n`);
     !existsSync(`${__dirname}/runtime/public`) && mkdirSync(`${__dirname}/runtime/public`);
     copyFolder(`${__dirname}/src-vis/public`, `${__dirname}/runtime/public`, ['visEditWords.js']);
@@ -120,7 +120,10 @@ export default FiltersEditorDialog;
     writeFileSync(`${__dirname}/runtime/src/version.json`, readFileSync(`${__dirname}/src-vis/src/version.json`));
     writeFileSync(`${__dirname}/runtime/tsconfig.json`, readFileSync(`${__dirname}/src-vis/tsconfig.json`));
     writeFileSync(`${__dirname}/runtime/src/Store.tsx`, readFileSync(`${__dirname}/src-vis/src/Store.tsx`));
-    writeFileSync(`${__dirname}/runtime/src/Utils/utils.tsx`, readFileSync(`${__dirname}/src-vis/src/Utils/utils.tsx`));
+    writeFileSync(
+        `${__dirname}/runtime/src/Utilities/utils.tsx`,
+        readFileSync(`${__dirname}/src-vis/src/Utilities/utils.tsx`),
+    );
     writeFileSync(
         `${__dirname}/runtime/src/serviceWorker.tsx`,
         readFileSync(`${__dirname}/src-vis/src/serviceWorker.tsx`),
@@ -129,7 +132,7 @@ export default FiltersEditorDialog;
     writeFileSync(`${__dirname}/runtime/src/theme.tsx`, readFileSync(`${__dirname}/src-vis/src/theme.tsx`));
     writeFileSync(`${__dirname}/runtime/src/index.css`, readFileSync(`${__dirname}/src-vis/src/index.css`));
     writeFileSync(
-        `${__dirname}/runtime/src/Utils/styles.tsx`,
+        `${__dirname}/runtime/src/Utilities/styles.tsx`,
         'const commonStyles: Record<string, any> = {};\nexport default commonStyles;',
     );
     copyFolder(`${__dirname}/src-vis/src/i18nRuntime`, `${__dirname}/runtime/src/i18n`);

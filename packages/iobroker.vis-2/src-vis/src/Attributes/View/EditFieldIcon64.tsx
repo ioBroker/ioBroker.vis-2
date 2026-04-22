@@ -7,7 +7,7 @@ import { Icon, type ThemeType } from '@iobroker/adapter-react-v5';
 
 import MaterialIconSelector from '@/Components/MaterialIconSelector';
 import type { VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 
 interface EditFieldIcon64Props {
     value: string;

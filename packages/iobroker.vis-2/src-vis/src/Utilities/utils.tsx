@@ -277,3 +277,20 @@ export function hasWidgetAccess(options: CheckWidgetAccessOptions): boolean {
 
     return !editMode && permissions.read;
 }
+
+/**
+ * Safely read and parse a JSON value from localStorage. Returns the fallback on any error
+ * (missing key, malformed legacy data, quota issues). Never throws.
+ * It is a copy of the function in Utils.tsx, to not use Utils.tsx in runtime
+ */
+export function safeParseLS<T>(key: string, fallback: T): T {
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (raw === null || raw === '') {
+            return fallback;
+        }
+        return JSON.parse(raw) as T;
+    } catch {
+        return fallback;
+    }
+}

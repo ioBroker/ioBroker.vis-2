@@ -10,7 +10,7 @@ import { I18n } from '@iobroker/adapter-react-v5';
 
 import type Editor from '@/Editor';
 import React from 'react';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import IODialog from '../../Components/IODialog';
 import { useFocus } from '../../Utils';
 import { store } from '../../Store';

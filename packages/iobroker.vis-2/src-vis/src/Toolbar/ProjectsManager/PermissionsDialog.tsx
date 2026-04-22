@@ -12,7 +12,7 @@ import Collapse from '@mui/material/Collapse';
 import { type LegacyConnection, I18n } from '@iobroker/adapter-react-v5';
 import type { AnyWidgetId, Permissions, Project, Widget } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
-import { deepClone, DEFAULT_PERMISSIONS } from '@/Utils/utils';
+import { deepClone, DEFAULT_PERMISSIONS } from '@/Utilities/utils';
 import IODialog from '../../Components/IODialog';
 
 interface PermissionsDialogProps {

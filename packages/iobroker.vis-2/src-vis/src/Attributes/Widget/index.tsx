@@ -39,7 +39,7 @@ import {
     getWidgetTypes,
     parseAttributes,
 } from '@/Vis/visWidgetsCatalog';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import type {
     AnyWidgetId,
     Project,
@@ -52,7 +52,7 @@ import type {
     AdditionalIconSet,
 } from '@iobroker/types-vis-2';
 
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 import WidgetField from './WidgetField';
 import IODialog from '../../Components/IODialog';
 import WidgetCSS from './WidgetCSS';

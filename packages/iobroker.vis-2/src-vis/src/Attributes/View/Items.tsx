@@ -9,7 +9,7 @@ import { I18n } from '@iobroker/adapter-react-v5';
 import { background, theme as ViewTheme } from '@/Attributes/ViewData';
 import { store } from '@/Store';
 import type { Project, View } from '@iobroker/types-vis-2';
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 
 export interface Field {
     label: string;

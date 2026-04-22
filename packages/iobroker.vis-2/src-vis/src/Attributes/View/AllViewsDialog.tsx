@@ -11,7 +11,7 @@ import type { Project, ViewSettings, VisTheme, AdditionalIconSet } from '@iobrok
 import { getViewsWithDifferentValues } from '@/Attributes/View/ApplyProperties';
 import getEditField from '@/Attributes/View/EditField';
 import type { Field } from '@/Attributes/View/Items';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 
 const styles: { draggableItem: React.CSSProperties } = {
     draggableItem: {

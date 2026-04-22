@@ -275,8 +275,11 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
             const viewName = Object.keys(this.props.context.views).find(
                 view => this.props.context.views[view].widgets[dlgName],
             );
-            this.props.context.onCommand('closeDialog', viewName as ViewCommand, dlgName);
-
+            this.props.context.onCommand(
+                'closeDialog',
+                viewName as ViewCommand,
+                dlgName as unknown as Record<string, string>,
+            );
             if ((el as any)?._showDialog) {
                 (el as any)._showDialog(false);
             } else {

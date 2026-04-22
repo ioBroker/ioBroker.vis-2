@@ -41,7 +41,7 @@ import type {
     VisBaseWidgetProps,
     VisWidgetCommand,
 } from '@iobroker/types-vis-2';
-import { isVarFinite } from '../../../Utils/utils';
+import { isVarFinite } from '@/Utilities/utils';
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 
 export type JQuiButtonDataProps = {

@@ -47,7 +47,7 @@ import {
 
 import { findWidgetUsages } from '@/Vis/visUtils';
 import { store, recalculateFields, selectWidget } from '@/Store';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import type {
     AnyWidgetId,
     Project,
@@ -66,7 +66,7 @@ import type {
     WidgetAttributeInfoStored,
     WidgetType,
 } from '@/Vis/visWidgetsCatalog';
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 import TextDialog from './TextDialog';
 import MaterialIconSelector from '../../Components/MaterialIconSelector';
 
@@ -125,14 +125,14 @@ function collectClasses(): Record<string, ClassesValue> {
                                         name,
                                         file: fff,
                                         // CSSStyleDeclaration is structurally close enough — UI just reads simple props off of it
-                                        attrs: cssRule.style,
+                                        attrs: cssRule.style as React.CSSProperties,
                                         parentClass: subStyles[0].replace('.', ''),
                                     };
                                 } else {
                                     result[val] = {
                                         name,
                                         file: fff,
-                                        attrs: cssRule.style,
+                                        attrs: cssRule.style as React.CSSProperties,
                                     };
                                 }
                             }
@@ -1539,7 +1539,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 onChange={e => change(e.target.value)}
                 renderValue={(selectValue: string) => (
                     <div style={commonStyles.backgroundClass}>
-                        <span style={stylesOptions[selectValue]?.parentStyles}>
+                        <span style={stylesOptions[selectValue]?.parentStyle as React.CSSProperties}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={selectValue}

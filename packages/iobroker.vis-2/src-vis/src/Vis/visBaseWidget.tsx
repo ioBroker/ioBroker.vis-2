@@ -25,7 +25,7 @@ import {
 
 import { I18n, Utils } from '@iobroker/adapter-react-v5';
 
-import { calculateOverflow, deepClone, isVarFinite } from '@/Utils/utils';
+import { calculateOverflow, deepClone, isVarFinite } from '@/Utilities/utils';
 import type {
     AnyWidgetId,
     ResizeHandler,

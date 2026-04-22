@@ -21,7 +21,7 @@ import { Menu as MenuIcon } from '@mui/icons-material';
 import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 import type { ViewSettings, VisTheme } from '@iobroker/types-vis-2';
 
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import { store } from '@/Store';
 import type Editor from '@/Editor';
 import MultiSelect from './MultiSelect';

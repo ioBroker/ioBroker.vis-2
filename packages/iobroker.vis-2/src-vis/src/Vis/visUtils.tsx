@@ -28,7 +28,7 @@ import type {
     VisBindingOperationType,
     RxWidgetInfoAttributesFieldID,
 } from '@iobroker/types-vis-2';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
 
 declare global {

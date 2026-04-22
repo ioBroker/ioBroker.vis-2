@@ -38,7 +38,7 @@ import type {
     VisWidgetCommand,
     GroupData,
 } from '@iobroker/types-vis-2';
-import { deepClone, calculateOverflow } from '../Utils/utils';
+import { deepClone, calculateOverflow } from '../Utilities/utils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget, isLocalStateId } from './visUtils';
 
@@ -324,7 +324,8 @@ export class VisRxWidget<
 
         if (id && state) {
             const values = this.newState.values;
-            Object.keys(state).forEach(attr => (values[`${id}.${attr}`] = (state as Record<string, any>)[attr]));
+            // @ts-expect-error fix later
+            Object.keys(state).forEach(attr => (values[`${id}.${attr}`] = state[attr]));
             // wait till the state is saved in this.newState.values
             const t = setTimeout(() => {
                 this.stateUpdatedTimers.delete(t);

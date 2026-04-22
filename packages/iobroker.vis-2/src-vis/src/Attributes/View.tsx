@@ -9,7 +9,7 @@ import { Utils, I18n, type LegacyConnection, type ThemeType } from '@iobroker/ad
 import { store } from '@/Store';
 import type { Project, View, VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
 
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 import { resolution, getFields, type Field } from './View/Items';
 import getEditField from './View/EditField';
 import { renderApplyDialog, getViewsWithDifferentValues, type ApplyField } from './View/ApplyProperties';

@@ -17,7 +17,7 @@ import CSS from './CSS';
 import Scripts from './Scripts';
 import View from './View';
 import Widget from './Widget';
-import usePrevious from '../Utils/usePrevious';
+import usePrevious from '@/Utilities/usePrevious';
 
 const styles: Record<string, any> = {
     blockHeader: (theme: VisTheme) => theme.classes.blockHeader,

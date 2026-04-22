@@ -33,7 +33,7 @@ import type {
     AskViewCommand,
     WidgetReference,
 } from '@iobroker/types-vis-2';
-import { hasWidgetAccess, isVarFinite } from '@/Utils/utils';
+import { hasWidgetAccess, isVarFinite } from '@/Utilities/utils';
 import { recalculateFields, selectView, store } from '@/Store';
 
 import VisBaseWidget from './visBaseWidget';

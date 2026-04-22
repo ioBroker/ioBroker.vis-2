@@ -62,8 +62,7 @@ import type {
     VisRxWidgetStateValues,
 } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
-import { deepClone } from '@/Utils/utils';
-import { safeParseLS } from '@/Utils';
+import { deepClone, safeParseLS } from '@/Utilities/utils';
 // Do not delete this import - it loads jQuery for old widgets
 import type JQuery from 'jquery';
 import './visWords';

@@ -26,9 +26,9 @@ import {
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
-import { deepClone } from '@/Utils/utils';
+import { deepClone } from '@/Utilities/utils';
 import type { ProjectSettings, VisTheme } from '@iobroker/types-vis-2';
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 import IODialog from '../Components/IODialog';
 import { applyTitleAndIcon } from '@/Vis/visUtils';
 

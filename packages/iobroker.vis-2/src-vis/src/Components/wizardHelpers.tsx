@@ -25,7 +25,7 @@ import { TbVacuumCleaner } from 'react-icons/tb';
 import ChannelDetector, { Types, type DetectOptions } from '@iobroker/type-detector';
 import type { LegacyConnection } from '@iobroker/adapter-react-v5';
 
-import { getNewWidgetIdNumber, getNewWidgetId } from '@/Utils/utils';
+import { getNewWidgetIdNumber, getNewWidgetId } from '@/Utilities/utils';
 
 const deviceIcons = {
     blind: <Blinds />,

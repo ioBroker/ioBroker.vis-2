@@ -6,7 +6,7 @@ import { TextField } from '@mui/material';
 import { I18n } from '@iobroker/adapter-react-v5';
 
 import { store } from '@/Store';
-import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utils/utils';
+import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
 import { useFocus } from '@/Utils';
 import IODialog from '@/Components/IODialog';
 import type { Project, SingleWidgetId, View } from '@iobroker/types-vis-2';

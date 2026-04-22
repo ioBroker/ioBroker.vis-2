@@ -39,7 +39,7 @@ import {
 
 import MaterialIconSelector from '@/Components/MaterialIconSelector';
 import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
-import commonStyles from '../../../Utils/styles';
+import commonStyles from '@/Utilities/styles';
 
 const BUTTONS: Record<string, string> = {
     AUTO: 'thermostat_auto',

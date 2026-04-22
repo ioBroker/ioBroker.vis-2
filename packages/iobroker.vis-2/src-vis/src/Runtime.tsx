@@ -1,5 +1,6 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+// import becasue of federation and non typescript widgets
 import 'prop-types';
 
 import {
@@ -52,8 +53,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
-import { safeParseLS } from './Utils';
-import { hasProjectAccess, hasViewAccess } from './Utils/utils';
+import { hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
 
 import enLang from './i18n/en.json';
 import deLang from './i18n/de.json';

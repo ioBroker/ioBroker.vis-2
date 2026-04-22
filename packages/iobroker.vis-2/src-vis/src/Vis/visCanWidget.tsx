@@ -33,7 +33,7 @@ import type {
     WidgetStyle,
 } from '@iobroker/types-vis-2';
 
-import { calculateOverflow, isVarFinite, deepClone } from '@/Utils/utils';
+import { calculateOverflow, isVarFinite, deepClone } from '@/Utilities/utils';
 import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget } from './visUtils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 

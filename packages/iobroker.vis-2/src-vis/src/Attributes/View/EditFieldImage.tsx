@@ -12,7 +12,7 @@ import {
 } from '@iobroker/adapter-react-v5';
 
 import type { Field } from '@/Attributes/View/Items';
-import commonStyles from '@/Utils/styles';
+import commonStyles from '@/Utilities/styles';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 interface EditFieldImageProps {
