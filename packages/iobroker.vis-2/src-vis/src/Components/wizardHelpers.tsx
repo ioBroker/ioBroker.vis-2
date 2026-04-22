@@ -141,10 +141,7 @@ interface DetectorResult {
 }
 
 const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]> => {
-    const devicesObject: Record<string, ObjectForDetector> = (await allObjects(socket)) as Record<
-        string,
-        ObjectForDetector
-    >;
+    const devicesObject: Record<string, ObjectForDetector> = await allObjects(socket);
     const keys = Object.keys(devicesObject).sort();
     const detector = new ChannelDetector();
 

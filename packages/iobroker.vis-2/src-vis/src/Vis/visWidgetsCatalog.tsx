@@ -565,7 +565,7 @@ export default class VisWidgetsCatalog {
                                     }
                                 }
 
-                                resolve(VisWidgetsCatalog.rxWidgets as Record<string, VisRxWidget<any>>);
+                                resolve(VisWidgetsCatalog.rxWidgets);
                             },
                         ),
                     0,

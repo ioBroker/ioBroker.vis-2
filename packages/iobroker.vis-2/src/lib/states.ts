@@ -563,7 +563,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                         const systemOid = item.systemOid;
                         if (systemOid) {
                             !linkContext.IDs.includes(systemOid) && linkContext.IDs.push(systemOid);
-                            if (linkContext.byViews && linkContext.byViews[view].includes(systemOid)) {
+                            if (linkContext.byViews && !linkContext.byViews[view].includes(systemOid)) {
                                 linkContext.byViews[view].push(systemOid);
                             }
 
@@ -595,7 +595,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                                     linkContext.byViews[view].push(_systemOid);
                                 }
                                 linkContext.bindings[_systemOid] = linkContext.bindings[_systemOid] || [];
-                                if (!linkContext.bindings[_systemOid].includes) {
+                                if (!linkContext.bindings[_systemOid].includes(item)) {
                                     linkContext.bindings[_systemOid].push(item);
                                 }
                             }

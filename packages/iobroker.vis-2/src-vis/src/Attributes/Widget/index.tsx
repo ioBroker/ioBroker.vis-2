@@ -5,7 +5,6 @@ import {
     AccordionDetails,
     AccordionSummary,
     Checkbox,
-    Divider,
     Button,
     IconButton,
     Tooltip,
@@ -1743,21 +1742,6 @@ class Widget extends Component<WidgetProps, WidgetState> {
         const isBoundField = this.state.bindFields.includes(
             group.isStyle ? `style_${field.name}` : `data_${field.name}`,
         );
-
-        // @ts-expect-error fix later
-        if (field.type === 'delimiter') {
-            return (
-                <Box
-                    component="tr"
-                    key={fieldIndex}
-                    sx={styles.fieldRow}
-                >
-                    <td colSpan={2}>
-                        <Divider style={{ borderBottomWidth: 'thick' }} />
-                    </td>
-                </Box>
-            );
-        }
 
         return (
             <Box

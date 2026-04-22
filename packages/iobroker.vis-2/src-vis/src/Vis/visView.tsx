@@ -35,7 +35,6 @@ import type {
 } from '@iobroker/types-vis-2';
 import { hasWidgetAccess, isVarFinite } from '@/Utils/utils';
 import { recalculateFields, selectView, store } from '@/Store';
-import type { Property } from 'csstype';
 
 import VisBaseWidget from './visBaseWidget';
 import VisCanWidget from './visCanWidget';
@@ -251,7 +250,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     // take bound information
                     filterValues = this.widgetsRefs[wid as AnyWidgetId]?.onCommand('collectFilters') as string[];
                 } else {
-                    filterValues = widgets[wid as AnyWidgetId]?.data?.filterkey as string[] | string;
+                    filterValues = widgets[wid as AnyWidgetId]?.data?.filterkey;
                 }
                 if (filterValues) {
                     if (filterValues && typeof filterValues === 'string') {
@@ -2128,7 +2127,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     style.display = 'flex';
                     style.justifyContent = 'center';
                     style.alignItems = 'center';
-                    style.backgroundColor = bgColor as Property.BackgroundColor;
+                    style.backgroundColor = bgColor;
                 }
             }
         }

@@ -480,7 +480,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                         Object.keys(instances[i].common.visWidgets).forEach(key => {
                                             const name: ioBroker.StringOrTranslated = instances[i].common.name;
                                             if (name && typeof name === 'object') {
-                                                const translatedName: ioBroker.Translated = name as ioBroker.Translated;
+                                                const translatedName: ioBroker.Translated = name;
                                                 instances[i].common.visWidgets[key].url =
                                                     `${translatedName[I18n.getLanguage()] && translatedName.en}/customWidgets.js`;
                                             } else {

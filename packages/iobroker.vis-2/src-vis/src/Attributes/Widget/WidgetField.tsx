@@ -83,12 +83,12 @@ function collectClasses(): Record<string, ClassesValue> {
             const ruleList = document.styleSheets[sSheet].cssRules;
             if (ruleList) {
                 for (let rule = 0; rule < ruleList.length; rule++) {
-                    // @ts-expect-error selectorText does exist
-                    if (!ruleList[rule].selectorText) {
+                    const cssRule = ruleList[rule];
+                    // Only CSSStyleRule has selectorText/style; skip @media, @keyframes, etc.
+                    if (!(cssRule instanceof CSSStyleRule) || !cssRule.selectorText) {
                         continue;
                     }
-                    // @ts-expect-error selectorText does exist
-                    const _styles = ruleList[rule].selectorText.split(',');
+                    const _styles = cssRule.selectorText.split(',');
                     for (let s = 0; s < _styles.length; s++) {
                         const subStyles = _styles[s].trim().split(' ');
                         const _style = subStyles[subStyles.length - 1]
@@ -124,13 +124,16 @@ function collectClasses(): Record<string, ClassesValue> {
                                     result[val] = {
                                         name,
                                         file: fff,
-                                        // @ts-expect-error style does exist
-                                        attrs: ruleList[rule].style,
+                                        // CSSStyleDeclaration is structurally close enough — UI just reads simple props off of it
+                                        attrs: cssRule.style,
                                         parentClass: subStyles[0].replace('.', ''),
                                     };
                                 } else {
-                                    // @ts-expect-error style does exist
-                                    result[val] = { name, file: fff, attrs: ruleList[rule].style };
+                                    result[val] = {
+                                        name,
+                                        file: fff,
+                                        attrs: cssRule.style,
+                                    };
                                 }
                             }
                         }
@@ -1536,7 +1539,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 onChange={e => change(e.target.value)}
                 renderValue={(selectValue: string) => (
                     <div style={commonStyles.backgroundClass}>
-                        <span style={stylesOptions[selectValue]?.parentStyle as React.CSSProperties}>
+                        <span style={stylesOptions[selectValue]?.parentStyles}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={selectValue}
@@ -1552,7 +1555,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         value={styleName}
                         key={`${styleName}_${i}`}
                     >
-                        <span style={stylesOptions[styleName].parentStyle as React.CSSProperties}>
+                        <span style={stylesOptions[styleName].parentStyle}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={styleName}
@@ -1674,7 +1677,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 value={value}
                 disabled={disabled}
                 onChange={fileBlob => change(fileBlob)}
-                previewStyle={commonStyles.iconPreview as any}
+                previewStyle={commonStyles.iconPreview}
             />
         );
     }

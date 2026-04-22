@@ -78,12 +78,18 @@ function build(): void {
 }
 
 // wait till all scrips are loaded
-void window.visConfigLoaded.then(() => {
-    if (!window.disableDataReporting) {
-        window.sentryDSN = 'https://db8b6e837c71447a876069559a00a742@sentry.iobroker.net/232';
-    }
-    build();
-});
+window.visConfigLoaded
+    .then(() => {
+        if (!window.disableDataReporting) {
+            window.sentryDSN = 'https://db8b6e837c71447a876069559a00a742@sentry.iobroker.net/232';
+        }
+        build();
+    })
+    .catch(e => {
+        console.error(`Failed to load vis config: ${e?.stack || e?.toString?.() || e}`);
+        // still try to render so the user sees something
+        build();
+    });
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

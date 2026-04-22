@@ -123,6 +123,7 @@ interface CanHTMLDivElement extends HTMLDivElement {
     _customHandlers?: {
         onShow: (el: HTMLDivElement, id: string) => void;
         onHide: (el: HTMLDivElement, id: string) => void;
+        onMove: (el: HTMLDivElement, id: string) => void;
     };
     _storedDisplay?: React.CSSProperties['display'];
 }
@@ -434,7 +435,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         ) {
             if (!props.runtime) {
                 const styleObj: WidgetStyle = JSON.parse(styleStr);
-                Object.keys(styleObj as Record<string, string>).forEach(attr => {
+                Object.keys(styleObj).forEach(attr => {
                     const oldStyle = (widget.style as Record<string, string>)[attr];
                     const newStyle = (styleObj as Record<string, string>)[attr];
                     if (newStyle !== oldStyle) {
@@ -469,15 +470,11 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             if (copied) {
                 data = (widget.data as WidgetDataState) || { bindings: [] };
                 // detect for CanWidgets if the size was changed
-                style = (widget.style as WidgetStyleState) || { bindings: [] };
+                style = widget.style || { bindings: [] };
             } else {
-                data = widget.data
-                    ? (deepClone(widget.data) as WidgetDataState)
-                    : ({ bindings: [] } as WidgetDataState);
+                data = widget.data ? (deepClone(widget.data) as WidgetDataState) : { bindings: [] };
                 // detect for CanWidgets if the size was changed
-                style = widget.style
-                    ? (deepClone(widget.style) as WidgetStyleState)
-                    : ({ bindings: [] } as WidgetStyleState);
+                style = widget.style ? deepClone(widget.style) : { bindings: [] };
             }
 
             // replace all _PRJ_NAME with vis.0/name
@@ -543,8 +540,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         (style || '').split(';').forEach(part => {
             part = part.trim();
             if (part) {
-                let [attr, value] = part.split(':');
-                attr = attr.trim();
+                const parts = part.split(':');
+                let attr: string = parts[0].trim();
+                let value: string | number = parts[1];
                 if (attr && value) {
                     value = value.trim();
                     if (!isRxStyle && (attr === 'top' || attr === 'left' || attr === 'width' || attr === 'height')) {
@@ -555,7 +553,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                         } else {
                             const f = parseFloat(value);
                             if (value === f.toString()) {
-                                // @ts-expect-error fix later
                                 value = f;
                             }
                         }
@@ -935,11 +932,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 this.widDiv.style.left = left;
                 this.widDiv.style.top = top;
 
-                // @ts-expect-error check later
-                if (this.widDiv._customHandlers && this.widDiv._customHandlers.onMove) {
-                    // @ts-expect-error check later
-                    this.widDiv._customHandlers.onMove(this.widDiv, this.props.id);
-                }
+                this.widDiv._customHandlers?.onMove?.(this.widDiv, this.props.id);
             }
 
             if (this.props.isRelative && calculateRelativeWidgetPosition) {
@@ -1229,7 +1222,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
             if (typeof widgetData.filterkey === 'string') {
                 // deprecated, but for back compatibility
-                filterKeys = (widgetData.filterkey as any as string)
+                filterKeys = widgetData.filterkey
                     .split(',')
                     .map(f => f.trim())
                     .filter(f => f);
@@ -1964,14 +1957,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
         }
 
-        if (
-            this.props.isRelative &&
-            isVarFinite(this.props.context.views[this.props.view].settings?.rowGap as string)
-        ) {
-            style.marginBottom = parseFloat(this.props.context.views[this.props.view].settings?.rowGap as string) || 0;
+        if (this.props.isRelative && isVarFinite(this.props.context.views[this.props.view].settings?.rowGap)) {
+            style.marginBottom =
+                parseFloat((this.props.context.views[this.props.view].settings?.rowGap as string) || '0') || 0;
         }
 
-        const rxWidget = this.renderWidgetBody(props as any);
+        const rxWidget = this.renderWidgetBody(props);
 
         if (doNotTakeWidth) {
             delete style.width;
@@ -2014,7 +2005,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             const anyStyle = style as Record<string, number | string | undefined>;
             if (anyStyle[attr] !== undefined && typeof anyStyle[attr] === 'string') {
                 if (isVarFinite(anyStyle[attr])) {
-                    anyStyle[attr] = parseFloat(anyStyle[attr] as any as string) || 0;
+                    anyStyle[attr] = parseFloat(anyStyle[attr]) || 0;
                 } else if (anyStyle[attr].includes('{')) {
                     // try to steal style by rxWidget
                     const value = (this.state.rxStyle as Record<string, string | undefined>)?.[attr];
@@ -2102,7 +2093,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 >
                     <span>
                         {this.state.multiViewWidget
-                            ? I18n.t('%s from %s', multiId as string, multiView)
+                            ? I18n.t('%s from %s', multiId, multiView)
                             : widget.data?.name || this.props.id}
                     </span>
                     {this.state.multiViewWidget || widget.usedInWidget ? null : (

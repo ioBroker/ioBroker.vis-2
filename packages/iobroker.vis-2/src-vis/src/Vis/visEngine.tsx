@@ -63,6 +63,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
 import { deepClone } from '@/Utils/utils';
+import { safeParseLS } from '@/Utils';
 // Do not delete this import - it loads jQuery for old widgets
 import type JQuery from 'jquery';
 import './visWords';
@@ -326,8 +327,8 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             ready: false,
             legacyRequestedViews: [],
 
-            timeInterval: JSON.parse(window.localStorage.getItem('timeInterval')) || 'week',
-            timeStart: JSON.parse(window.localStorage.getItem('timeStart')) || null,
+            timeInterval: safeParseLS<string>('timeInterval', 'week'),
+            timeStart: safeParseLS<string | null>('timeStart', null),
         };
 
         // set moment locale
@@ -384,7 +385,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
         this.conn = this.createConnection();
         this.canStates = this.initCanObjects();
-        this.vis = this.createLegacyVisObject() as unknown as VisLegacy;
+        this.vis = this.createLegacyVisObject();
 
         window._ = this.vis._; // legacy translation function
         window.vis = this.vis;
@@ -410,18 +411,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 this.vis.language = systemConfig.common.language || 'en';
                 this.systemConfig = systemConfig;
 
-                void this.props.socket.subscribeState(
-                    this.ID_CONTROL_INSTANCE,
-                    this.onStateChange as ioBroker.StateChangeHandler,
-                );
-                void this.props.socket.subscribeState(
-                    this.ID_CONTROL_DATA,
-                    this.onStateChange as ioBroker.StateChangeHandler,
-                );
-                void this.props.socket.subscribeState(
-                    this.ID_CONTROL_COMMAND,
-                    this.onStateChange as ioBroker.StateChangeHandler,
-                );
+                void this.props.socket.subscribeState(this.ID_CONTROL_INSTANCE, this.onStateChange);
+                void this.props.socket.subscribeState(this.ID_CONTROL_DATA, this.onStateChange);
+                void this.props.socket.subscribeState(this.ID_CONTROL_COMMAND, this.onStateChange);
 
                 this.props.setLoadingText?.('Load widgets...');
 
@@ -521,27 +513,25 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         }
 
         // unsubscribe all
-        Object.keys(this.subscribes).forEach(id =>
-            this.props.socket.unsubscribeState(id, this.onStateChange as ioBroker.StateChangeHandler),
-        );
+        Object.keys(this.subscribes).forEach(id => this.props.socket.unsubscribeState(id, this.onStateChange));
 
-        this.props.socket.unsubscribeState(this.ID_CONTROL_INSTANCE, this.onStateChange as ioBroker.StateChangeHandler);
-        this.props.socket.unsubscribeState(this.ID_CONTROL_DATA, this.onStateChange as ioBroker.StateChangeHandler);
-        this.props.socket.unsubscribeState(this.ID_CONTROL_COMMAND, this.onStateChange as ioBroker.StateChangeHandler);
+        this.props.socket.unsubscribeState(this.ID_CONTROL_INSTANCE, this.onStateChange);
+        this.props.socket.unsubscribeState(this.ID_CONTROL_DATA, this.onStateChange);
+        this.props.socket.unsubscribeState(this.ID_CONTROL_COMMAND, this.onStateChange);
 
-        let userScript = window.document.getElementById('#vis_user_scripts');
+        let userScript = window.document.getElementById('vis_user_scripts');
         if (userScript) {
             userScript.remove();
             userScript = null;
         }
 
-        let userCommonCss = window.document.getElementById('#vis_common_user');
+        let userCommonCss = window.document.getElementById('vis_common_user');
         if (userCommonCss) {
             userCommonCss.remove();
             userCommonCss = null;
         }
 
-        let userUserCss = window.document.getElementById('#vis_user');
+        let userUserCss = window.document.getElementById('vis_user');
         if (userUserCss) {
             userUserCss.remove();
             userUserCss = null;
@@ -1370,10 +1360,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 cb?: (error: string | null, systemConfig?: ioBroker.SystemConfigCommon) => void,
             ) => {
                 if (typeof useCache === 'function') {
-                    cb = useCache as unknown as (
-                        error: string | null,
-                        systemConfig?: ioBroker.SystemConfigCommon,
-                    ) => void;
+                    cb = useCache;
                     useCache = false;
                 }
 
@@ -2249,7 +2236,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 console.log(`[${new Date().toISOString()}] +SUBSCRIBE: ${id}`);
                 this.createCanState(id);
                 if (!isLocalStateId(id)) {
-                    void this.props.socket.subscribeState(id, this.onStateChange as ioBroker.StateChangeHandler);
+                    void this.props.socket.subscribeState(id, this.onStateChange);
                 }
             }
         });
@@ -2295,7 +2282,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                     console.log(`[${new Date().toISOString()}] -UNSUBSCRIBE: ${id}`);
 
                     if (!isLocalStateId(id)) {
-                        this.props.socket.unsubscribeState(id, this.onStateChange as ioBroker.StateChangeHandler);
+                        this.props.socket.unsubscribeState(id, this.onStateChange);
                     }
                     delete this.subscribes[id];
                 }
@@ -2311,7 +2298,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 if (visProject.___settings) {
                     if (this.scripts !== (visProject.___settings.scripts || '')) {
                         this.scripts = visProject.___settings.scripts || '';
-                        let userScript = window.document.getElementById('#vis_user_scripts');
+                        let userScript = window.document.getElementById('vis_user_scripts');
                         if (!userScript) {
                             userScript = window.document.createElement('script');
                             userScript.setAttribute('id', 'vis_user_scripts');
@@ -2333,7 +2320,7 @@ ${this.scripts}
             } else if (this.scripts) {
                 // unload scripts in edit mode
                 this.scripts = null;
-                let userScript = window.document.getElementById('#vis_user_scripts');
+                let userScript = window.document.getElementById('vis_user_scripts');
                 if (userScript) {
                     userScript.remove();
                     userScript = null;

@@ -24,7 +24,6 @@ import type {
     RxWidgetInfoAttributesField,
     Project,
     SingleWidgetId,
-    RxWidgetInfoAttributesFieldHelp,
     RxWidgetInfoGroup,
     RxWidgetInfoAttributesFieldSelect,
     RxWidgetInfoAttributesFieldText,
@@ -104,7 +103,7 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
                     label: 'group_hint',
                     type: 'help',
                     text: 'group_help',
-                } as RxWidgetInfoAttributesFieldHelp,
+                },
             ],
         };
 

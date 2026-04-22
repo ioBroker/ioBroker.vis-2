@@ -68,7 +68,7 @@ function analyzeDraggableResizable(
                 resizableOptions = JSON.parse(resizableOptionsStr);
             } catch {
                 console.error(
-                    `Cannot parse resizable options by ${el.getAttribute('id')}: ${JSON.stringify(resizableOptions)}`,
+                    `Cannot parse resizable options by ${el.getAttribute('id')}: ${JSON.stringify(resizableOptionsStr)}`,
                 );
             }
             if (resizableOptions) {
@@ -543,7 +543,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     lcDiv.innerHTML = window.vis.binds.basic.formatDate(
                         this.props.context.canStates.attr(
                             `${widgetData['lc-oid']}.${widgetData['lc-type'] === 'last-change' ? 'lc' : 'ts'}`,
-                        ) as string,
+                        ),
                         widgetData['lc-format'],
                         widgetData['lc-is-interval'],
                         widgetData['lc-is-moment'],

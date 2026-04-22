@@ -200,10 +200,10 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
         if (_accordionOpen) {
             // convert from old format
             Object.keys(_accordionOpen).forEach(key => {
-                if ((_accordionOpen![key] as any) === true || _accordionOpen![key] === 1) {
-                    _accordionOpen![key] = 1;
+                if ((_accordionOpen[key] as any) === true || _accordionOpen[key] === 1) {
+                    _accordionOpen[key] = 1;
                 } else {
-                    _accordionOpen![key] = 0;
+                    _accordionOpen[key] = 0;
                 }
             });
             setAccordionOpen(_accordionOpen);

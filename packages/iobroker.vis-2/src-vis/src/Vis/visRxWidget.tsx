@@ -13,7 +13,7 @@
  * (Free for non-commercial use).
  */
 
-import React, { type Component } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@mui/material';
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
@@ -39,7 +39,7 @@ import type {
     GroupData,
 } from '@iobroker/types-vis-2';
 import { deepClone, calculateOverflow } from '../Utils/utils';
-import VisBaseWidget, { type VisBaseWidgetState, type WidgetStyleState } from './visBaseWidget';
+import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 import { addClass, getUsedObjectIDsInWidget, isLocalStateId } from './visUtils';
 
 type VisRxWidgetProps = VisBaseWidgetProps;
@@ -130,6 +130,8 @@ export class VisRxWidget<
 
     private informIncludedWidgets?: ReturnType<typeof setTimeout>;
 
+    private stateUpdatedTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+
     private filterDisplay?: '' | 'none' | 'block' | 'inline' | 'inline-block';
 
     /** state change handler for local state changes */
@@ -145,15 +147,12 @@ export class VisRxWidget<
         if (Array.isArray(options.visAttrs)) {
             options.visAttrs.forEach((group: RxWidgetInfoGroup) =>
                 group.fields?.forEach(item => {
+                    const type = (item as RxWidgetInfoAttributesFieldSimple).type;
                     widgetAttrInfo[item.name] = {
                         name: item.name,
-                        type: (item as RxWidgetInfoAttributesFieldSimple).type,
+                        // Fallback to '' for legacy widgets that omit the field type entirely
+                        type: type || ('' as RxWidgetInfoAttributesFieldSimple['type']),
                     };
-                    // @ts-expect-error fallback
-                    if (!widgetAttrInfo[item.name].type) {
-                        // @ts-expect-error fallback
-                        widgetAttrInfo[item.name].type = '';
-                    }
                 }),
             );
         }
@@ -304,16 +303,13 @@ export class VisRxWidget<
         /** if state should not be set */
         doNotApplyState?: boolean,
     ): Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null {
-        if (!this.newState) {
-            // @ts-expect-error fix later
-            this.newState = {
-                values: deepClone(this.state.values || {}),
-                rxData: { ...this.state.data } as unknown as TRxData,
-                rxStyle: { ...this.state.style } as WidgetStyleState,
-                editMode: this.props.editMode,
-                applyBindings: false,
-            };
-        }
+        this.newState ||= {
+            values: deepClone(this.state.values || {}),
+            rxData: { ...this.state.data } as unknown as TRxData,
+            rxStyle: { ...this.state.style },
+            editMode: this.props.editMode,
+            applyBindings: false,
+        } as Partial<VisRxWidgetState & TState & { rxData: TRxData }>;
 
         if (!this.newState) {
             return null;
@@ -327,14 +323,19 @@ export class VisRxWidget<
         }
 
         if (id && state) {
-            // @ts-expect-error fix later
-            Object.keys(state).forEach(attr => (this.newState.values[`${id}.${attr}`] = state[attr]));
+            const values = this.newState.values;
+            Object.keys(state).forEach(attr => (values[`${id}.${attr}`] = (state as Record<string, any>)[attr]));
             // wait till the state is saved in this.newState.values
-            setTimeout(() => this.onStateUpdated(id, state), 60);
+            const t = setTimeout(() => {
+                this.stateUpdatedTimers.delete(t);
+                this.onStateUpdated(id, state);
+            }, 60);
+            this.stateUpdatedTimers.add(t);
         }
 
-        // @ts-expect-error fix later
-        Object.keys(this.linkContext.bindings).forEach(_id => this.applyBinding(_id, this.newState));
+        Object.keys(this.linkContext.bindings).forEach(_id =>
+            this.applyBinding(_id, this.newState as typeof this.state),
+        );
 
         if (id === this.newState.rxData?.['visibility-oid']) {
             this.newState.visible = this.checkVisibility(id, this.newState);
@@ -371,13 +372,18 @@ export class VisRxWidget<
             this.updateTimer = null;
         }
 
-        // compare
-        if (
-            JSON.stringify(this.state.values) !== JSON.stringify(this.newState.values) ||
-            JSON.stringify(this.state.rxData) !== JSON.stringify(this.newState.rxData) ||
-            JSON.stringify(this.state.rxStyle) !== JSON.stringify(this.newState.rxStyle) ||
-            JSON.stringify(this.state.applyBindings) !== JSON.stringify(this.newState.applyBindings)
-        ) {
+        // compare: try reference equality first (newState may reuse the same object refs), fall back to stringify only on mismatch
+        const needsUpdate =
+            (this.state.values !== this.newState.values &&
+                JSON.stringify(this.state.values) !== JSON.stringify(this.newState.values)) ||
+            (this.state.rxData !== this.newState.rxData &&
+                JSON.stringify(this.state.rxData) !== JSON.stringify(this.newState.rxData)) ||
+            (this.state.rxStyle !== this.newState.rxStyle &&
+                JSON.stringify(this.state.rxStyle) !== JSON.stringify(this.newState.rxStyle)) ||
+            (this.state.applyBindings !== this.newState.applyBindings &&
+                JSON.stringify(this.state.applyBindings) !== JSON.stringify(this.newState.applyBindings));
+
+        if (needsUpdate) {
             this.updateTimer = setTimeout(() => {
                 this.updateTimer = undefined;
                 const newState = this.newState ?? null;
@@ -406,11 +412,9 @@ export class VisRxWidget<
             });
 
             if (item.type === 'data') {
-                // @ts-expect-error fix later
-                newState.rxData[item.attr] = value;
+                (newState.rxData as Record<string, any>)[item.attr] = value;
             } else if (newState.rxStyle) {
-                // @ts-expect-error fix later
-                newState.rxStyle[item.attr] = value;
+                (newState.rxStyle as Record<string, any>)[item.attr] = value;
             }
         });
     }
@@ -460,6 +464,21 @@ export class VisRxWidget<
     }
 
     componentWillUnmount(): void {
+        if (this.updateTimer) {
+            clearTimeout(this.updateTimer);
+            this.updateTimer = undefined;
+        }
+        if (this.bindingsTimer) {
+            clearTimeout(this.bindingsTimer);
+            this.bindingsTimer = undefined;
+        }
+        if (this.informIncludedWidgets) {
+            clearTimeout(this.informIncludedWidgets);
+            this.informIncludedWidgets = undefined;
+        }
+        this.stateUpdatedTimers.forEach(t => clearTimeout(t));
+        this.stateUpdatedTimers.clear();
+
         if (this.linkContext.IDs.length) {
             this.props.context.socket.unsubscribeState(this.linkContext.IDs, this.onIoBrokerStateChanged);
         }
@@ -580,14 +599,14 @@ export class VisRxWidget<
         cardContentStyle?: React.CSSProperties,
         headerStyle?: React.CSSProperties,
         onCardClick?: (e?: React.MouseEvent<HTMLElement>) => void,
-        components?: Record<string, Component<any>>,
+        components?: Record<string, React.ComponentType<any>>,
     ): React.JSX.Element | React.JSX.Element[] | null {
         if (this.props.context.views[this.props.view].widgets[this.props.id].usedInWidget) {
             return content;
         }
 
-        const MyCard = components?.Card || Card;
-        const MyCardContent = components?.CardContent || CardContent;
+        const MyCard: React.ElementType = components?.Card || Card;
+        const MyCardContent: React.ElementType = components?.CardContent || CardContent;
 
         const style = {
             width: 'calc(100% - 8px)',
@@ -598,28 +617,22 @@ export class VisRxWidget<
         };
 
         // apply style from the element
-        Object.keys(this.state.rxStyle as Record<string, number | string | boolean | null | undefined>).forEach(
-            attr => {
-                const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[
-                    attr
-                ];
-                if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
-                    attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                    style[attr] = value;
-                }
-            },
-        );
+        Object.keys(this.state.rxStyle).forEach(attr => {
+            const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
+            if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
+                attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
+                style[attr] = value;
+            }
+        });
 
         this.wrappedContent = true;
 
         return (
-            // @ts-expect-error fix later
             <MyCard
                 className="vis_rx_widget_card"
                 style={style}
                 onClick={onCardClick}
             >
-                {/* @ts-expect-error fix later */}
                 <MyCardContent
                     className="vis_rx_widget_card_content"
                     style={{
@@ -673,20 +686,16 @@ export class VisRxWidget<
             props.className = addClass(props.className, 'vis-user-disabled');
         }
 
-        Object.keys(this.state.rxStyle as Record<string, number | string | boolean | null | undefined>).forEach(
-            attr => {
-                const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[
-                    attr
-                ];
-                if (value !== null && value !== undefined) {
-                    if (!this.wrappedContent || !POSSIBLE_MUI_STYLES.includes(attr)) {
-                        attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
+        Object.keys(this.state.rxStyle).forEach(attr => {
+            const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
+            if (value !== null && value !== undefined) {
+                if (!this.wrappedContent || !POSSIBLE_MUI_STYLES.includes(attr)) {
+                    attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
 
-                        (props.style as Record<string, number | string | boolean | null | undefined>)[attr] = value;
-                    }
+                    (props.style as Record<string, number | string | boolean | null | undefined>)[attr] = value;
                 }
-            },
-        );
+            }
+        });
 
         if (this.props.isRelative) {
             props.style.position = this.state.rxStyle?.position || 'relative';
@@ -757,8 +766,7 @@ export class VisRxWidget<
             askView: this.props.askView,
             relativeWidgetOrder: [wid],
             selectedGroup: this.props.selectedGroup,
-            // @ts-expect-error fix later
-            selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.props.selectedWidgets,
+            selectedWidgets: this.props.selectedWidgets,
             view,
             viewsActiveFilter: this.props.viewsActiveFilter,
             customSettings: this.props.customSettings,

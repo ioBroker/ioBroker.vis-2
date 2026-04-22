@@ -52,6 +52,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
+import { safeParseLS } from './Utils';
 import { hasProjectAccess, hasViewAccess } from './Utils/utils';
 
 import enLang from './i18n/en.json';
@@ -763,8 +764,8 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             this.subscribedProject &&
             (this.subscribedProject !== projectName || project.___settings.reloadOnEdit === false)
         ) {
-            this.subscribedProject = null;
             this.socket.unsubscribeFiles(this.adapterId, `${this.subscribedProject}/*`, this.onProjectChange);
+            this.subscribedProject = null;
         }
 
         // copy multi-views to corresponding views
@@ -897,9 +898,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             currentUser,
             userGroups,
             selectedView: '',
-            splitSizes: window.localStorage.getItem('Vis.splitSizes')
-                ? JSON.parse(window.localStorage.getItem('Vis.splitSizes'))
-                : [20, 60, 20],
+            splitSizes: safeParseLS<[number, number, number]>('Vis.splitSizes', [20, 60, 20]),
         });
 
         // subscribe on info.uploaded
@@ -969,8 +968,10 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             selectedView,
         };
 
-        let selectedWidgets: AnyWidgetId[] =
-            JSON.parse(window.localStorage.getItem(`${this.state.projectName}.${selectedView}.widgets`) || '[]') || [];
+        let selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
+            `${this.state.projectName}.${selectedView}.widgets`,
+            [],
+        );
 
         // Check that all selectedWidgets exist
         for (let i = selectedWidgets.length - 1; i >= 0; i--) {
@@ -1327,7 +1328,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 registerEditorCallback={this.state.runtime ? null : this.registerCallback}
                 themeType={this.state.themeType}
                 themeName={this.state.themeName}
-                theme={this.state.theme as VisTheme}
+                theme={this.state.theme}
                 adapterId={this.adapterId}
                 editModeComponentStyle={styles.editModeComponentStyle}
                 onIgnoreMouseEvents={this.onIgnoreMouseEvents}

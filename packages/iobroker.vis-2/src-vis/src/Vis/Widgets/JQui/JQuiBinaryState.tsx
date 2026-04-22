@@ -839,7 +839,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         return (
             <ButtonGroup
                 style={style}
-                variant={variant as any}
+                variant={variant}
                 orientation={(this.state.rxData.orientation as any) || 'horizontal'}
             >
                 <Button

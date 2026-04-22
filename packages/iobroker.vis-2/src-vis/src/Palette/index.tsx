@@ -469,7 +469,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     Object.keys(wSetObj.common.visWidgets).forEach(key => {
                         const name: ioBroker.StringOrTranslated = wSetObj.common.name;
                         if (name && typeof name === 'object') {
-                            const multiName: ioBroker.Translated = name as ioBroker.Translated;
+                            const multiName: ioBroker.Translated = name;
                             wSetObj.common.visWidgets[key].url =
                                 `${multiName[this.lang] || multiName.en}/customWidgets.js`;
                         } else {
@@ -492,7 +492,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                         Object.keys(visWidgets).forEach(key => {
                             const name: ioBroker.StringOrTranslated = dynamicWidgetInstances[i].common.name;
                             if (name && typeof name === 'object') {
-                                const multiName: ioBroker.Translated = name as ioBroker.Translated;
+                                const multiName: ioBroker.Translated = name;
                                 visWidgets[key].url = `${multiName[this.lang] || multiName.en}/customWidgets.js`;
                             } else {
                                 visWidgets[key].url = `${name}/customWidgets.js`;
@@ -572,7 +572,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                     const __marketplace = this.state.accordionOpen.__marketplace;
                                     const accordionOpen: Record<string, boolean> = {};
                                     Object.keys(this.state.widgetsList).forEach(group => (accordionOpen[group] = true));
-                                    Object.assign(this.state.accordionOpen, { __marketplace });
+                                    accordionOpen.__marketplace = __marketplace;
                                     window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
                                     this.setState({ accordionOpen });
                                 }}
@@ -600,7 +600,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                     Object.keys(this.state.widgetsList).forEach(
                                         group => (accordionOpen[group] = false),
                                     );
-                                    Object.assign(this.state.accordionOpen, { __marketplace: false });
+                                    accordionOpen.__marketplace = false;
                                     window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
                                     this.setState({ accordionOpen });
                                 }}

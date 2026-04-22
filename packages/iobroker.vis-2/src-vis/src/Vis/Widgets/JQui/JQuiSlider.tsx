@@ -515,8 +515,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
             immediate ? 0 : parseInt(this.state.rxData.timeout as unknown as string, 10) || 300,
         );
 
-        // @ts-expect-error should cast it somehow
-        this.setState(this.newState);
+        this.setState(this.newState as Partial<typeof this.state> as typeof this.state);
     }
 
     renderIcon(isMax: boolean): React.JSX.Element | null {

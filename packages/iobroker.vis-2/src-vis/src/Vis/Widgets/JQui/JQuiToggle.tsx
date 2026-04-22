@@ -16,7 +16,6 @@
 import type {
     RxWidgetInfo,
     RxWidgetInfoAttributesField,
-    RxWidgetInfoAttributesFieldHelp,
     RxWidgetInfoAttributesFieldSimple,
     Writeable,
 } from '@iobroker/types-vis-2';
@@ -44,7 +43,7 @@ class JQuiToggle extends JQuiBinaryState {
             name: '_note',
             type: 'help',
             text: 'jqui_button_binary_control_note',
-        } as Writeable<RxWidgetInfoAttributesFieldHelp>);
+        });
 
         const iconFalse: Writeable<RxWidgetInfoAttributesFieldSimple> =
             JQuiBinaryState.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'icon_false');

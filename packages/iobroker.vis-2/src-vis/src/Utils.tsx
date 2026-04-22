@@ -14,6 +14,22 @@ export const DndPreview = (): React.JSX.Element | null => {
 };
 
 /**
+ * Safely read and parse a JSON value from localStorage. Returns the fallback on any error
+ * (missing key, malformed legacy data, quota issues). Never throws.
+ */
+export function safeParseLS<T>(key: string, fallback: T): T {
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (raw === null || raw === '') {
+            return fallback;
+        }
+        return JSON.parse(raw) as T;
+    } catch {
+        return fallback;
+    }
+}
+
+/**
  * Determine if we are on a mobile device
  */
 export function mobileCheck(): boolean {
@@ -62,7 +78,7 @@ export const useFocus = (open: boolean, select: boolean, isAce = false): Mutable
                     }
                     clearInterval(interval);
                 }
-            }, 100);
+            }, 250);
         }
         return () => clearInterval(interval);
     }, [open, isAce, select]);

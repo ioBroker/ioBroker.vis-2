@@ -106,7 +106,7 @@ export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneri
                 }
                 // install refresh handler
                 this.refreshInterval ||= setInterval(() => {
-                    if (this.imageRef.current && !BasicImageGeneric.isHidden(this.imageRef.current as HTMLElement)) {
+                    if (this.imageRef.current && !BasicImageGeneric.isHidden(this.imageRef.current)) {
                         const parents = BasicImageGeneric.getParents(this.imageRef.current).filter(el =>
                             BasicImageGeneric.isHidden(el),
                         );

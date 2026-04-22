@@ -279,7 +279,7 @@ class VisAdapter extends Adapter {
             await this.setState('info.uploaded', Date.now(), true);
         } else {
             const state = await this.getStateAsync('info.uploaded');
-            if (!state?.val) {
+            if (state?.val == null) {
                 await this.setState('info.uploaded', Date.now(), true);
             }
         }
@@ -718,7 +718,7 @@ if (typeof exports !== 'undefined') {
                 // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
                 type: 'commercial' | string;
                 uuid: string;
-            } = verify(license, readFileSync(`${__dirname}/lib/cloudCert.crt`)) as {
+            } = verify(license, cert, { algorithms: ['RS256'] }) as {
                 name: string;
                 version: string;
                 expires: number;
@@ -763,6 +763,7 @@ if (typeof exports !== 'undefined') {
                     'Content-Type': 'application/json',
                     'Content-Length': Buffer.byteLength(data),
                 },
+                timeout: 10_000,
             };
 
             // Set up the request
@@ -794,7 +795,7 @@ if (typeof exports !== 'undefined') {
                                             // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
                                             type: 'commercial' | string;
                                             uuid: string;
-                                        } = verify(license, readFileSync(`${__dirname}/lib/cloudCert.crt`)) as {
+                                        } = verify(license, cert, { algorithms: ['RS256'] }) as {
                                             name: string;
                                             version: string;
                                             expires: number;
@@ -826,7 +827,7 @@ if (typeof exports !== 'undefined') {
                             }
                         } catch (err: unknown) {
                             this.log.warn(`License is invalid 2. Error: ${err as Error}`);
-                            reject(new Error(err as string));
+                            reject(err instanceof Error ? err : new Error(String(err)));
                         }
                     });
 
@@ -838,6 +839,10 @@ if (typeof exports !== 'undefined') {
                 .on('error', err => {
                     this.log.warn(`License is invalid 1. Error: ${err}`);
                     reject(err);
+                })
+                .on('timeout', () => {
+                    this.log.warn('License check timed out after 10s');
+                    postReq.destroy(new Error('license check timeout'));
                 });
 
             postReq.write(data);

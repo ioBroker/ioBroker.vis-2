@@ -702,7 +702,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         const rxData = this.state.rxData as unknown as Record<string, string>;
 
         if ((this.state.object as ioBroker.StateObject)?._id !== this.state.rxData.oid && this.state.object !== false) {
-            Object.assign(this.state, { object: false });
+            this.setState({ object: false });
             setTimeout(async () => {
                 if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
                     const obj = await this.props.context.socket.getObject(this.state.rxData.oid);

@@ -219,7 +219,7 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
                 this.refreshInterval =
                     this.refreshInterval ||
                     setInterval(() => {
-                        if (this.frameRef.current && !BasicIFrame8.isHidden(this.frameRef.current as HTMLElement)) {
+                        if (this.frameRef.current && !BasicIFrame8.isHidden(this.frameRef.current)) {
                             const parents = BasicIFrame8.getParents(this.frameRef.current).filter(el =>
                                 BasicIFrame8.isHidden(el),
                             );

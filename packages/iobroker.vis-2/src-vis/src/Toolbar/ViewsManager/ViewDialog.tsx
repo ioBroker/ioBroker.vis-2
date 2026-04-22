@@ -115,7 +115,7 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element => {
     const copyView = async (): Promise<void> => {
         const view = props.dialogView || props.selectedView;
         const project = deepClone(store.getState().visProject);
-        project[props.dialogName] = { ...project[view], widgets: {}, activeWidgets: [] } as View;
+        project[props.dialogName] = { ...project[view], widgets: {}, activeWidgets: [] };
         const originalWidgets = deepClone(project[view].widgets);
 
         for (const [wid, widget] of Object.entries(originalWidgets)) {

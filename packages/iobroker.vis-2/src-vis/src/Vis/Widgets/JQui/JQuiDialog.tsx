@@ -17,7 +17,6 @@ import type {
     RxWidgetInfoAttributesField,
     RxWidgetInfoAttributesFieldCheckbox,
     RxWidgetInfoAttributesFieldSimple,
-    WidgetStyle,
     Writeable,
     RxWidgetInfo,
 } from '@iobroker/types-vis-2';
@@ -56,7 +55,7 @@ class JQuiDialog extends JQuiButton {
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html_dialog');
         htmlDialog.default = '<div>HTML Dialog</div>';
 
-        (newWidgetInfo.visDefaultStyle as Writeable<WidgetStyle>) = {
+        newWidgetInfo.visDefaultStyle = {
             'border-width': '1px',
             'border-style': 'solid',
             'border-color': '#000',

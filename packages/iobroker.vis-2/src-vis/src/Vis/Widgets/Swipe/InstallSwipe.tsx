@@ -38,7 +38,7 @@ export default class InstallSwipe {
         },
     ): void {
         if (el) {
-            this.el = el as SwipeElement;
+            this.el = el;
         }
         if (options) {
             if (options.hideIndication !== undefined) {

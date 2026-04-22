@@ -191,10 +191,18 @@ async function generateSvgFiles() {
 
     // prepare https://github.com/OpenAutomationProject/knx-uf-iconset/archive/refs/heads/master.zip
     if (!existsSync(`${__dirname}/knx-uf-iconset/master.zip`)) {
-        const res = await axios(
-            'https://github.com/OpenAutomationProject/knx-uf-iconset/archive/refs/heads/master.zip',
-            { responseType: 'arraybuffer' },
-        );
+        let res;
+        try {
+            res = await axios(
+                'https://github.com/OpenAutomationProject/knx-uf-iconset/archive/refs/heads/master.zip',
+                { responseType: 'arraybuffer', timeout: 30_000 },
+            );
+        } catch (e) {
+            console.warn(
+                `Could not download knx-uf-iconset (skipping): ${e.code || e.message || e}`,
+            );
+            return;
+        }
         !existsSync(`${__dirname}/knx-uf-iconset`) && mkdirSync(`${__dirname}/knx-uf-iconset`);
         writeFileSync(`${__dirname}/knx-uf-iconset/master.zip`, res.data);
 

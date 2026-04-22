@@ -99,8 +99,14 @@ function copyFolderRecursiveSync(source: string, target: string, forceBuild?: bo
             oldFiles.forEach(file => {
                 const pathName = join(targetFolder, file);
                 if (!files.includes(file) && !lstatSync(pathName).isDirectory()) {
-                    unlinkSync(pathName);
-                    changed = true;
+                    try {
+                        unlinkSync(pathName);
+                        changed = true;
+                    } catch (e) {
+                        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') {
+                            throw e;
+                        }
+                    }
                 }
             });
         }

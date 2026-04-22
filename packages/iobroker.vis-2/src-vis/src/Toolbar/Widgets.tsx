@@ -101,7 +101,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     color: viewSettings.filterWidgets?.length ? '#c00000' : undefined,
                     disabled: !props.editMode,
                     onAction: () => setFilterDialog(true),
-                } as ToolbarItem,
+                },
                 {
                     type: 'multiselect',
                     name: I18n.t('Active widget(s) from %s', shownWidgets.length),
@@ -179,7 +179,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     width: 240,
                     value: props.selectedWidgets,
                     onAction: value => props.setSelectedWidgets(value as AnyWidgetId[]),
-                } as ToolbarItem,
+                },
                 [
                     [
                         {
@@ -190,7 +190,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                                 !props.selectedWidgets.length ||
                                 (props.selectedGroup && props.selectedWidgets.includes(props.selectedGroup)),
                             onAction: () => props.deleteWidgets(),
-                        } as ToolbarItem,
+                        },
                     ],
                     [
                         {
@@ -201,7 +201,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                                 !props.selectedWidgets.length ||
                                 (props.selectedGroup && props.selectedWidgets.includes(props.selectedGroup)),
                             onAction: () => props.cloneWidgets(),
-                        } as ToolbarItem,
+                        },
                     ],
                 ],
 
@@ -218,7 +218,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                                 !props.selectedWidgets.length ||
                                 (props.selectedGroup && props.selectedWidgets.includes(props.selectedGroup)),
                             onAction: () => props.cutWidgets(),
-                        } as ToolbarItem,
+                        },
                         {
                             type: 'icon-button',
                             Icon: BiCopy,
@@ -228,7 +228,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                                 !props.selectedWidgets.length ||
                                 (props.selectedGroup && props.selectedWidgets.includes(props.selectedGroup)),
                             onAction: () => props.copyWidgets(),
-                        } as ToolbarItem,
+                        },
                     ],
                     [
                         {
@@ -238,7 +238,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             size: 'normal',
                             disabled: !Object.keys(props.widgetsClipboard.widgets).length,
                             onAction: () => props.pasteWidgets(),
-                        } as ToolbarItem,
+                        },
                     ],
                 ],
                 {
@@ -248,14 +248,14 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     subName: `(${props.historyCursor + 1} / ${props.history.length})`,
                     onAction: props.undo,
                     disabled: !props.editMode || props.historyCursor === 0,
-                } as ToolbarItem,
+                },
                 {
                     type: 'icon-button',
                     Icon: RedoIcon,
                     name: 'Redo',
                     onAction: props.redo,
                     disabled: !props.editMode || props.historyCursor === props.history.length - 1,
-                } as ToolbarItem,
+                },
 
                 { type: 'divider' },
 
@@ -372,7 +372,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             name: 'Lock dragging',
                             selected: props.lockDragging,
                             onAction: () => props.toggleLockDragging(),
-                        } as ToolbarItem,
+                        },
                     ],
                     [
                         {
@@ -381,7 +381,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             color: props.widgetHint === 'light' ? 'white' : 'black',
                             name: `Toggle widget hint (${props.widgetHint})`,
                             onAction: () => props.toggleWidgetHint(),
-                        } as ToolbarItem,
+                        },
                     ],
                 ],
                 { type: 'divider' },
@@ -394,7 +394,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             size: 'normal',
                             disabled: !props.editMode,
                             onAction: () => setImportDialog(true),
-                        } as ToolbarItem,
+                        },
                     ],
                     [
                         {
@@ -404,11 +404,11 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             size: 'normal',
                             disabled: !props.selectedWidgets.length,
                             onAction: () => setExportDialog(true),
-                        } as ToolbarItem,
+                        },
                     ],
                 ],
             ],
-        } as ToolbarGroup;
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         props.selectedGroup,

@@ -433,7 +433,7 @@ class JQuiButton<
         widgetInfo: RxWidgetInfo | RxWidgetInfoWriteable,
         name: string,
     ): Writeable<Field> | null {
-        return VisRxWidget.findField(widgetInfo as RxWidgetInfo, name) as unknown as Writeable<Field>;
+        return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
     // eslint-disable-next-line class-methods-use-this
@@ -666,9 +666,7 @@ class JQuiButton<
     }
 
     renderRxDialog(dialogStyle: CSSProperties, content: React.JSX.Element): React.JSX.Element {
-        console.log('test');
         if (this.state.rxData.modal) {
-            console.log('in');
             return (
                 <Dialog
                     // fullWidth
@@ -719,7 +717,6 @@ class JQuiButton<
             dialogStyle.minHeight = 100;
         }
 
-        dialogStyle.backgroundColor = 'blue';
         const paperStyle = { ...dialogStyle };
         delete paperStyle.top;
         delete paperStyle.left;
@@ -738,7 +735,7 @@ class JQuiButton<
                     }
                 }}
             >
-                <Paper style={{ ...paperStyle, background: 'red !important' }}>
+                <Paper style={paperStyle}>
                     {this.state.rxData.title ? (
                         <DialogTitle style={{ padding: '16px 0 0 0' }}>
                             <div>{this.state.rxData.title}</div>

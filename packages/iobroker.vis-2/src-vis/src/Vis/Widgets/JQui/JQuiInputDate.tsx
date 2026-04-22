@@ -155,10 +155,9 @@ class JQuiInputDate extends VisRxWidget<RxData> {
                     adapterLocale={this.props.context.lang}
                 >
                     <DatePicker
-                        // @ts-expect-error fix later
                         value={
                             this.state.rxData.asFullDate
-                                ? dayjs(this.state.values[`${this.state.rxData.oid}.val`]) || ''
+                                ? dayjs(this.state.values[`${this.state.rxData.oid}.val`])
                                 : dayjs(this.state.values[`${this.state.rxData.oid}.val`], this.EASY_DATE_FORMAT)
                         }
                         label={this.state.rxData.widgetTitle || null}

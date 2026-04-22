@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ThemeProvider, StyledEngineProvider, SxProps } from '@mui/material/styles';
+import { ThemeProvider, StyledEngineProvider, type SxProps } from '@mui/material/styles';
 import { DndProvider, useDrop } from 'react-dnd';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -80,7 +80,7 @@ import Palette from './Palette';
 import Toolbar from './Toolbar';
 import CodeDialog from './Components/CodeDialog';
 import CreateFirstProjectDialog from './Components/CreateFirstProjectDialog';
-import { DndPreview, isTouchDevice } from './Utils';
+import { DndPreview, isTouchDevice, safeParseLS } from './Utils';
 import VisWidgetsCatalog, {
     getWidgetTypes,
     parseAttributes,
@@ -386,8 +386,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 type: null,
                 widgets: {},
             },
-            lockDragging: JSON.parse(window.localStorage.getItem('lockDragging')),
-            disableInteraction: JSON.parse(window.localStorage.getItem('disableInteraction')),
+            lockDragging: safeParseLS<boolean>('lockDragging', false),
+            disableInteraction: safeParseLS<boolean>('disableInteraction', false),
             toolbarHeight: window.localStorage.getItem('Vis.toolbarForm') || 'full',
             updateWidgetsDialog: false,
             deleteWidgetsDialog: false,
@@ -508,8 +508,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
     loadSelectedWidgets(selectedView: string): AnyWidgetId[] {
         selectedView = selectedView || this.state.selectedView;
-        const selectedWidgets: AnyWidgetId[] =
-            JSON.parse(window.localStorage.getItem(`${this.state.projectName}.${selectedView}.widgets`) || '[]') || [];
+        const selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
+            `${this.state.projectName}.${selectedView}.widgets`,
+            [],
+        );
 
         // Check that all selectedWidgets exist
         for (let i = selectedWidgets.length - 1; i >= 0; i--) {

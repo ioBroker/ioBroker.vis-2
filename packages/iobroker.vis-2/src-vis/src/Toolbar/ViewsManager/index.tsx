@@ -25,7 +25,7 @@ import View from './View';
 import ExportDialog from './ExportDialog';
 import ImportDialog from './ImportDialog';
 import FolderDialog from './FolderDialog';
-import { DndPreview, isTouchDevice } from '../../Utils';
+import { DndPreview, isTouchDevice, safeParseLS } from '../../Utils';
 import { store } from '../../Store';
 import { deepClone, getNewWidgetId, hasViewAccess, isGroup, pasteGroup } from '../../Utils/utils';
 
@@ -90,8 +90,9 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
 
     const [foldersCollapsed, setFoldersCollapsed] = useState<string[]>([]);
     useEffect(() => {
-        if (window.localStorage.getItem('ViewsManager.foldersCollapsed')) {
-            setFoldersCollapsed(JSON.parse(window.localStorage.getItem('ViewsManager.foldersCollapsed')));
+        const stored = safeParseLS<string[] | null>('ViewsManager.foldersCollapsed', null);
+        if (stored) {
+            setFoldersCollapsed(stored);
         }
     }, []);
 

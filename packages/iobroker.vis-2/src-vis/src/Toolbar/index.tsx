@@ -381,7 +381,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                     {heightButton}
                     <ToggleThemeMenu
                         toggleTheme={this.props.toggleTheme}
-                        themeName={this.props.themeName as any}
+                        themeName={this.props.themeName}
                         t={I18n.t}
                     />
                     {lastCommandButton}

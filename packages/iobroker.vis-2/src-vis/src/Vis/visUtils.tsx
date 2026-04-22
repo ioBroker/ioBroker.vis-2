@@ -793,12 +793,12 @@ export async function readFile(
     let mimeType = '';
     let data: string;
     if (typeof file === 'object') {
+        // LegacyConnection returns the file in slightly different shapes depending on transport
+        const f = file as { mimeType?: string; type?: string; file?: string; data?: string };
         if (withType) {
-            // @ts-expect-error LegacyConnection delivers file.mimeType
-            mimeType = file.mimeType ? file.mimeType : file.type ? file.type : '';
+            mimeType = f.mimeType || f.type || '';
         }
-        // @ts-expect-error LegacyConnection delivers file.data
-        data = file.file || file.data;
+        data = f.file || f.data;
     } else {
         data = file;
     }

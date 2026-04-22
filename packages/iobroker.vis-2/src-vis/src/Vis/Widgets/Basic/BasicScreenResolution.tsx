@@ -5,9 +5,9 @@ import { I18n } from '@iobroker/adapter-react-v5';
 import type {
     RxRenderWidgetProps,
     VisLegacy,
-    RxWidgetProps,
     GetRxDataFromWidget,
     RxWidgetInfo,
+    VisRxWidgetProps,
 } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import VisRxWidget from '@/Vis/visRxWidget';
@@ -30,8 +30,7 @@ type RxData = GetRxDataFromWidget<typeof BasicScreenResolution>;
 export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScreenResolutionState> {
     private essentialData: string;
 
-    constructor(props: RxWidgetProps) {
-        // @ts-expect-error refactor types to extend from parent types
+    constructor(props: VisRxWidgetProps) {
         super(props);
         this.state = {
             ...this.state,
