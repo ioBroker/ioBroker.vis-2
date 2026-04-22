@@ -64,7 +64,5 @@ export default defineConfig({
     build: {
         target: 'chrome81',
         outDir: './build',
-        minify: false,
-        sourcemap: true,
     },
 });
