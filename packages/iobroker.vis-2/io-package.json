@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.18-alpha.1",
+    "version": "2.13.18",
     "news": {
+      "2.13.18": {
+        "en": "Refactoring",
+        "de": "Herstellung",
+        "ru": "Рефакторинг",
+        "pt": "Refatorização",
+        "nl": "Refactoring",
+        "fr": "Refactoration",
+        "it": "Refactoring",
+        "es": "Refactoring",
+        "pl": "Refaktoring",
+        "uk": "Рефакторинг",
+        "zh-cn": "正在重构"
+      },
       "2.13.17": {
         "en": "Removed debug code for theme",
         "de": "Entfernte Debug-Code für Thema",
