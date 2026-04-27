@@ -292,7 +292,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### 2.13.18 (2026-04-27)
+### **WORK IN PROGRESS**
 * (@GermanBluefox) Refactoring
 
 ### 2.13.17 (2026-03-29)

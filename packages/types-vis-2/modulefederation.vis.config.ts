@@ -18,16 +18,18 @@ export function moduleFederationShared(packageJson?: Record<string, any> | strin
     [packageName: string]: { requiredVersion: '*'; singleton: true };
 } {
     const list = [
+        '@emotion/react',
+        '@emotion/styled',
         '@iobroker/adapter-react-v5',
         '@iobroker/adapter-react-v5/i18n/de.json',
         '@iobroker/adapter-react-v5/i18n/en.json',
         '@iobroker/adapter-react-v5/i18n/es.json',
-        '@iobroker/adapter-react-v5/i18n/ru.json',
-        '@iobroker/adapter-react-v5/i18n/nl.json',
+        '@iobroker/adapter-react-v5/i18n/fr.json',
         '@iobroker/adapter-react-v5/i18n/it.json',
+        '@iobroker/adapter-react-v5/i18n/nl.json',
         '@iobroker/adapter-react-v5/i18n/pl.json',
         '@iobroker/adapter-react-v5/i18n/pt.json',
-        '@iobroker/adapter-react-v5/i18n/fr.json',
+        '@iobroker/adapter-react-v5/i18n/ru.json',
         '@iobroker/adapter-react-v5/i18n/uk.json',
         '@iobroker/adapter-react-v5/i18n/zh-cn.json',
         '@iobroker/vis-2-widgets-react-dev',
