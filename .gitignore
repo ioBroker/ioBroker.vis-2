@@ -10,7 +10,6 @@ node_modules
 /lerna-debug.log
 knx-uf-iconset
 iob_npm.done
-/packages/**/package-lock.json
 packages/iobroker.vis-2/admin/i18n/*/flat.txt
 packages/iobroker.vis-2/admin/i18n/flat.txt
 *.vis.code-workspace
