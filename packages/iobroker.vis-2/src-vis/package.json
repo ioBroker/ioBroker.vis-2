@@ -11,6 +11,8 @@
     },
     "devDependencies": {
         "@devbookhq/splitter": "^1.4.2",
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.0",
         "@iobroker/vis-2-widgets-react-dev": "^4.0.4",
         "@iobroker/vis-2-widgets-testing": "^1.0.6",
         "@module-federation/runtime": "0.21.3",
