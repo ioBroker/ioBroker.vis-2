@@ -338,7 +338,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         this.fieldsBefore = Widget.getFieldsBefore();
         this.fieldsSignals = [];
-        for (let i = 0; i <= 3; i++) {
+        for (let i = 0; i <= 6; i++) {
             this.fieldsSignals.push(Widget.getSignals(i));
         }
 
@@ -1027,7 +1027,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             this.props.selectedWidgets.length === 1 ? widget : commonValues,
             this.props.fonts,
         );
-        const fieldsSignals = this.fieldsSignals[signalsCount] || this.fieldsSignals[3];
+        const fieldsSignals = this.fieldsSignals[signalsCount] || this.fieldsSignals[0];
         if (fields) {
             const customGroups: PaletteGroup[] = fields.map(group => ({
                 fields: group.fields,
