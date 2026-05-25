@@ -997,6 +997,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         newState.commonValues = commonValues;
         newState.widgetType = widgetType;
 
+        const maxSignalsCount = this.fieldsSignals.length - 1;
         let signalsCount = 3;
 
         if (this.props.selectedWidgets.length === 1) {
@@ -1008,7 +1009,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 while (widgetData[`signals-oid-${i}`]) {
                     i++;
                 }
-                signalsCount = i + 1;
+                signalsCount = Math.max(0, Math.min(i + 1, maxSignalsCount));
                 if (signalsCount > 1) {
                     store.dispatch(
                         updateWidget({
@@ -1019,7 +1020,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     );
                 }
             } else {
-                signalsCount = parseInt(widgetData['signals-count'], 10);
+                const parsedSignalsCount = parseInt(widgetData['signals-count'], 10);
+                signalsCount = Number.isFinite(parsedSignalsCount)
+                    ? Math.max(0, Math.min(parsedSignalsCount, maxSignalsCount))
+                    : 0;
             }
         }
 
@@ -1027,7 +1031,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             this.props.selectedWidgets.length === 1 ? widget : commonValues,
             this.props.fonts,
         );
-        const fieldsSignals = this.fieldsSignals[signalsCount] || this.fieldsSignals[3];
+        const fieldsSignals = this.fieldsSignals[signalsCount];
         if (fields) {
             const customGroups: PaletteGroup[] = fields.map(group => ({
                 fields: group.fields,
