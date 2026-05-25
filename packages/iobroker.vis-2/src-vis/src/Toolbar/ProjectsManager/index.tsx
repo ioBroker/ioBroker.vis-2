@@ -141,9 +141,9 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
                     window.alert(data.error);
                 } else {
                     const d = new Date();
-					const month = String(d.getMonth() + 1).padStart(2, '0');
-					const day = String(d.getDate()).padStart(2, '0');
-					const date = `${d.getFullYear()}-${month}-${day}-`;
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const date = `${d.getFullYear()}-${month}-${day}-`;
                     setWorking(false);
                     (window.$ as any)('body').append(
                         `<a id="zip_download" href="data: application/zip;base64,${data.data}" download="${date}${projectName}.zip"></a>`,
