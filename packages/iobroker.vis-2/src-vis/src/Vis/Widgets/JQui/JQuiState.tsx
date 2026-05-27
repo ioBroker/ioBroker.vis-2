@@ -37,7 +37,6 @@ import VisBaseWidget from '@/Vis/visBaseWidget';
 import { deepClone } from '@/Utilities/utils';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
-import BulkEditor from './BulkEditor';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -48,6 +47,9 @@ import type {
     WidgetData,
     Writeable,
 } from '@iobroker/types-vis-2';
+
+// Editor-only dialog: lazy-loaded so it is excluded from the runtime bundle (see tasks.js stub)
+const BulkEditor = React.lazy(() => import('./BulkEditor'));
 
 interface BulkEditorData {
     variant?: 'outlined' | 'contained';
@@ -136,8 +138,9 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 socket: LegacyConnection,
                             ): Promise<void> => {
                                 if (data.oid) {
+                                    const { default: BulkEditorComponent } = await import('./BulkEditor');
                                     // unknown bug by compilation
-                                    if (await (BulkEditor.generateFields as any)(data, socket)) {
+                                    if (await (BulkEditorComponent.generateFields as any)(data, socket)) {
                                         changeData(data);
                                     }
                                 }
@@ -169,18 +172,20 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 onDataChange: (newData: WidgetData) => void,
                                 props: RxWidgetInfoCustomComponentProperties,
                             ) => (
-                                <BulkEditor
-                                    // TODO: if multiple widgets of this type selected data will get undefined, check why
-                                    theme={props.context.theme}
-                                    data={(data as BulkEditorData) || ({} as BulkEditorData)}
-                                    onDataChange={onDataChange}
-                                    socket={props.context.socket}
-                                    themeType={props.context.theme.palette.mode === 'dark' ? 'dark' : 'light'}
-                                    adapterName={props.context.adapterName}
-                                    instance={props.context.instance}
-                                    projectName={props.context.projectName}
-                                    additionalSets={props.context.additionalSets}
-                                />
+                                <React.Suspense fallback={null}>
+                                    <BulkEditor
+                                        // TODO: if multiple widgets of this type selected data will get undefined, check why
+                                        theme={props.context.theme}
+                                        data={(data as BulkEditorData) || ({} as BulkEditorData)}
+                                        onDataChange={onDataChange}
+                                        socket={props.context.socket}
+                                        themeType={props.context.theme.palette.mode === 'dark' ? 'dark' : 'light'}
+                                        adapterName={props.context.adapterName}
+                                        instance={props.context.instance}
+                                        projectName={props.context.projectName}
+                                        additionalSets={props.context.additionalSets}
+                                    />
+                                </React.Suspense>
                             ),
                         },
                         {

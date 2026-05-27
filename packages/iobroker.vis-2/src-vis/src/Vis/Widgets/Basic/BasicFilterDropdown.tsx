@@ -30,7 +30,9 @@ import type {
     VisWidgetCommand,
 } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
-import FiltersEditorDialog from './FiltersEditorDialog';
+
+// Editor-only dialog: lazy-loaded so it is excluded from the runtime bundle (see tasks.js stub)
+const FiltersEditorDialog = React.lazy(() => import('./FiltersEditorDialog'));
 
 interface Item {
     id?: string;
@@ -124,19 +126,21 @@ const ItemsEditor = (props: ItemsEditorProps): React.JSX.Element => {
                 {I18n.t('Edit')}
             </Button>
             {open ? (
-                <FiltersEditorDialog
-                    context={props.context}
-                    items={items || []}
-                    multiple={props.data.multiple}
-                    onClose={(newItems: Item[]) => {
-                        if (newItems) {
-                            const data = JSON.parse(JSON.stringify(props.data));
-                            data.items = JSON.stringify(newItems);
-                            props.setData(data);
-                        }
-                        setOpen(false);
-                    }}
-                />
+                <React.Suspense fallback={null}>
+                    <FiltersEditorDialog
+                        context={props.context}
+                        items={items || []}
+                        multiple={props.data.multiple}
+                        onClose={(newItems: Item[]) => {
+                            if (newItems) {
+                                const data = JSON.parse(JSON.stringify(props.data));
+                                data.items = JSON.stringify(newItems);
+                                props.setData(data);
+                            }
+                            setOpen(false);
+                        }}
+                    />
+                </React.Suspense>
             ) : null}
         </>
     );
