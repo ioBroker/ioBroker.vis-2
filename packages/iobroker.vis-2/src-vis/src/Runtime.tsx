@@ -76,6 +76,7 @@ const styles: { editModeComponentStyle: React.CSSProperties } = {
 export interface RuntimeProps extends GenericAppProps {
     runtime?: boolean;
     setBackground: () => void;
+    version: string;
 }
 
 export interface RuntimeState extends GenericAppState {

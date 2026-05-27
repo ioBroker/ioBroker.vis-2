@@ -267,9 +267,7 @@ const ViewDrop: React.FC<ViewDropProps> = props => {
     );
 };
 
-export interface EditorProps extends RuntimeProps {
-    version: string;
-}
+export type EditorProps = RuntimeProps;
 
 export interface EditorState extends RuntimeState {
     theme: VisTheme;
