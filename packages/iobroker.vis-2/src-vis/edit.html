@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
-    <title>ioBroker.vis</title>
+    <title>Editor.vis</title>
     <meta charset="utf-8"/>
-    <link rel="shortcut icon" href="/favicon.ico"/>
+    <link rel="shortcut icon" href="/faviconEdit.ico"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <meta name="theme-color" content="#000000"/>
     <link rel="manifest" href="/manifest.json" id="vis-manifest"/>
@@ -21,6 +21,9 @@
         window.apiUrl = 'https://iobroker.net'; // Marketplace server
         window.webPrefix = '/market'; // Prefix for the marketplace client
         window.marketplaceClient = 'https://iobroker.net/market';
+        // window.apiUrl = 'http://localhost:3009'; // Marketplace server
+        // window.webPrefix = ''; // Prefix for marketplace client
+        // window.marketplaceClient = 'http://localhost:3002';
 
         function loadRemoteScript(scriptId, scriptUrl) {
             return new Promise(resolveScript => fetch(scriptUrl, {
@@ -109,10 +112,11 @@
 
         document.head.appendChild(script);
     </script>
+    <!--script type="text/javascript" src="/../../socket.io/socket.io.js"></script-->
 </head>
 <body>
 <div id="root"></div>
-<script type="module" src="/src/indexRuntime.tsx"></script>
+<script type="module" src="/src/index.tsx"></script>
 </body>
 <script>
     // set background as early as possible

@@ -64,5 +64,16 @@ export default defineConfig({
     build: {
         target: 'chrome81',
         outDir: './build',
+        rollupOptions: {
+            // Two HTML inputs from a single source tree:
+            //   index.html → src/indexRuntime.tsx → Runtime (end-user, slim bundle)
+            //   edit.html  → src/index.tsx       → Editor (full bundle)
+            // The runtime entry tree-shakes the editor import graph out of its bundle,
+            // replacing the tasks.js copy-and-substitute runtime build.
+            input: {
+                index: resolve(__dirname, 'index.html'),
+                edit: resolve(__dirname, 'edit.html'),
+            },
+        },
     },
 });
