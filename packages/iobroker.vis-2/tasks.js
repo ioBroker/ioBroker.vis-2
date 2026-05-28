@@ -16,136 +16,12 @@ const unzipper = require('unzipper');
 
 function clean() {
     deleteFoldersRecursive(`${__dirname}/www`);
+    // Defensive: remove any leftover runtime/ source-copy tree from the legacy build.
+    // The runtime is now produced by the multi-entry Vite build (index.html -> Runtime,
+    // edit.html -> Editor) directly into src-vis/build/, so runtime/ is no longer created.
     deleteFoldersRecursive(`${__dirname}/runtime`, ['node_modules', 'package-lock.json']);
     const version = JSON.parse(readFileSync(`${__dirname}/package.json`, 'utf8')).version;
     writeFileSync(`${__dirname}/src-vis/src/version.json`, JSON.stringify({ version }, null, 2));
-}
-
-function copyRuntimeSrc() {
-    !existsSync(`${__dirname}/runtime`) && mkdirSync(`${__dirname}/runtime`);
-    !existsSync(`${__dirname}/runtime/src-vis`) && mkdirSync(`${__dirname}/runtime/src`);
-    // copy only a single shared utils file now
-    !existsSync(`${__dirname}/runtime/src-vis/Vis`) && mkdirSync(`${__dirname}/runtime/src/Vis`);
-    !existsSync(`${__dirname}/runtime/src-vis/Utilities`) && mkdirSync(`${__dirname}/runtime/src/Utilities`);
-    !existsSync(`${__dirname}/runtime/src-vis/i18n`) && mkdirSync(`${__dirname}/runtime/src/i18n`);
-    !existsSync(`${__dirname}/runtime/public`) && mkdirSync(`${__dirname}/runtime/public`);
-    copyFolder(`${__dirname}/src-vis/public`, `${__dirname}/runtime/public`, ['visEditWords.js']);
-    writeFileSync(`${__dirname}/runtime/index.html`, readFileSync(`${__dirname}/src-vis/index.html`));
-    let text = readFileSync(`${__dirname}/runtime/index.html`).toString('utf-8');
-    let runtimeText = text.replace('<title>Editor.vis</title>', '<title>ioBroker.vis</title>');
-    runtimeText = runtimeText.replace('faviconEdit.ico', 'favicon.ico');
-    if (runtimeText !== text) {
-        writeFileSync(`${__dirname}/runtime/index.html`, runtimeText);
-    }
-
-    copyFolder(`${__dirname}/src-vis/src/Vis`, `${__dirname}/runtime/src/Vis`, [
-        'visContextMenu.tsx',
-        'oldVis.jsx',
-        'visOrderMenu.tsx',
-        'BulkEditor.tsx',
-    ]);
-    copyFolder(`${__dirname}/src-vis/src/img`, `${__dirname}/runtime/src/img`);
-
-    writeFileSync(
-        `${__dirname}/runtime/src/Vis/visOrderMenu.tsx`,
-        `
-import React from 'react';
-
-class VisOrderMenu extends React.Component<any, any> {
-    render(): React.ReactNode {
-        return null;
-    }
-}
-
-export default VisOrderMenu;
-
-`,
-    );
-
-    writeFileSync(
-        `${__dirname}/runtime/src/Vis/Widgets/JQui/BulkEditor.tsx`,
-        `
-import React from 'react';
-
-class BulkEditor extends React.Component<any, any> {
-    render(): React.ReactNode  {
-        return null;
-    }
-    
-    static async generateFields(): Promise<any> {
-        return false;
-    }
-}
-
-export default BulkEditor;
-
-`,
-    );
-
-    writeFileSync(
-        `${__dirname}/runtime/src/Vis/Widgets/Basic/FiltersEditorDialog.tsx`,
-        `
-import React from 'react';
-
-class FiltersEditorDialog extends React.Component<any, any> {
-    render(): React.ReactNode {
-        return null;
-    }
-}
-
-export default FiltersEditorDialog;
-
-`,
-    );
-
-    const pack = JSON.parse(readFileSync(`${__dirname}/src-vis/package.json`).toString());
-    delete pack.devDependencies['@devbookhq/splitter'];
-    delete pack.devDependencies['@monaco-editor/react'];
-    delete pack.devDependencies['iobroker.type-detector'];
-    delete pack.devDependencies['mui-nested-menu'];
-    delete pack.devDependencies['react-dnd'];
-    delete pack.devDependencies['react-dnd-html5-backend'];
-    delete pack.devDependencies['react-dnd-preview'];
-    delete pack.devDependencies['react-dnd-touch-backend'];
-    delete pack.devDependencies['react-beautiful-dnd'];
-    delete pack.devDependencies['react-dropzone'];
-    delete pack.devDependencies['html-to-image'];
-    delete pack.devDependencies['react-dropzone'];
-    delete pack.devDependencies['@iobroker/vis-2-widgets-testing'];
-    delete pack.devDependencies['@types/react-beautiful-dnd'];
-
-    writeFileSync(`${__dirname}/runtime/package.json`, JSON.stringify(pack, null, 2));
-    writeFileSync(`${__dirname}/runtime/vite.config.ts`, readFileSync(`${__dirname}/src-vis/vite.config.ts`));
-    writeFileSync(`${__dirname}/runtime/src/Editor.tsx`, readFileSync(`${__dirname}/src-vis/src/Runtime.tsx`));
-    writeFileSync(`${__dirname}/runtime/src/version.json`, readFileSync(`${__dirname}/src-vis/src/version.json`));
-    writeFileSync(`${__dirname}/runtime/tsconfig.json`, readFileSync(`${__dirname}/src-vis/tsconfig.json`));
-    writeFileSync(`${__dirname}/runtime/src/Store.tsx`, readFileSync(`${__dirname}/src-vis/src/Store.tsx`));
-    writeFileSync(
-        `${__dirname}/runtime/src/Utilities/utils.tsx`,
-        readFileSync(`${__dirname}/src-vis/src/Utilities/utils.tsx`),
-    );
-    writeFileSync(
-        `${__dirname}/runtime/src/serviceWorker.tsx`,
-        readFileSync(`${__dirname}/src-vis/src/serviceWorker.tsx`),
-    );
-    writeFileSync(`${__dirname}/runtime/src/index.tsx`, readFileSync(`${__dirname}/src-vis/src/index.tsx`));
-    writeFileSync(`${__dirname}/runtime/src/theme.tsx`, readFileSync(`${__dirname}/src-vis/src/theme.tsx`));
-    writeFileSync(`${__dirname}/runtime/src/index.css`, readFileSync(`${__dirname}/src-vis/src/index.css`));
-    writeFileSync(
-        `${__dirname}/runtime/src/Utilities/styles.tsx`,
-        'const commonStyles: Record<string, any> = {};\nexport default commonStyles;',
-    );
-    copyFolder(`${__dirname}/src-vis/src/i18nRuntime`, `${__dirname}/runtime/src/i18n`);
-}
-
-function copyRuntimeDist() {
-    copyFolder(path.join(__dirname, 'runtime/build'), path.join(__dirname, 'www'), ['asset-manifest.json']);
-}
-
-function patchRuntime() {
-    patchFile(`${__dirname}/www/index.html`);
-    patchFile(`${__dirname}/runtime/build/index.html`);
-    copyFolder(`${__dirname}/www`, `${__dirname}/../../www`);
 }
 
 function updateFile(fileName, data) {
@@ -293,15 +169,16 @@ function buildEditor() {
         );
     }
 
+    // The Vite build is now multi-entry: src-vis/index.html -> Runtime, src-vis/edit.html -> Editor.
+    // A single buildReact() produces both build/index.html (runtime) and build/edit.html (editor).
     return buildReact(`${__dirname}/src-vis/`, { vite: true, ramSize: 7000, rootDir: `${__dirname}/../../` });
 }
 
 function copyAllFiles() {
-    copyFolder(path.join(__dirname, 'src-vis/build'), path.join(__dirname, 'www'), ['index.html']);
-    writeFileSync(
-        path.join(__dirname, 'www/edit.html'),
-        readFileSync(path.join(__dirname, 'src-vis', 'build', 'index.html')),
-    );
+    // The multi-entry Vite build produces both build/index.html (runtime) and
+    // build/edit.html (editor) directly, so we copy everything from build/ into www/
+    // in one shot. No more exclusion of index.html and no manual edit.html write.
+    copyFolder(path.join(__dirname, 'src-vis/build'), path.join(__dirname, 'www'));
 }
 
 function copyBackend() {
@@ -378,21 +255,7 @@ function patchEditor() {
     writeFileSync(`${__dirname}/README.md`, readme);
 }
 
-if (process.argv.includes('--runtime-0-clean')) {
-    clean();
-} else if (process.argv.includes('--runtime-1-copy-src')) {
-    copyRuntimeSrc();
-} else if (process.argv.includes('--runtime-2-npm')) {
-    npmInstall(`${__dirname}/runtime`).catch(e => console.error(`Cannot install: ${e}`));
-} else if (process.argv.includes('--runtime-3-build')) {
-    buildReact(`${__dirname}/runtime/`, { vite: true, ramSize: 7000, rootDir: `${__dirname}/../../` }).catch(e =>
-        console.error(`Cannot build: ${e}`),
-    );
-} else if (process.argv.includes('--runtime-4-copy')) {
-    copyRuntimeDist();
-} else if (process.argv.includes('--runtime-5-patch')) {
-    patchRuntime();
-} else if (process.argv.includes('--0-clean')) {
+if (process.argv.includes('--0-clean')) {
     deleteFoldersRecursive(`${__dirname}/src-vis/build`);
 } else if (process.argv.includes('--1-npm')) {
     if (!existsSync(`${__dirname}/src-vis/node_modules`)) {
@@ -409,10 +272,12 @@ if (process.argv.includes('--runtime-0-clean')) {
 } else if (process.argv.includes('--copy-backend')) {
     copyBackend();
 } else if (process.argv.includes('--build-editor')) {
+    // Single-step build: with the multi-entry Vite build, this now produces both
+    // the runtime (index.html) and the editor (edit.html) in one pass.
     deleteFoldersRecursive(`${__dirname}/www`);
     deleteFoldersRecursive(`${__dirname}/src-vis/build`);
 
-    let npmPromise = !existsSync(`${__dirname}/src-vis/node_modules`)
+    const npmPromise = !existsSync(`${__dirname}/src-vis/node_modules`)
         ? npmInstall(`${__dirname}/src-vis`)
         : Promise.resolve();
     npmPromise
@@ -420,24 +285,16 @@ if (process.argv.includes('--runtime-0-clean')) {
         .then(() => buildEditor())
         .then(() => copyAllFiles())
         .then(() => patchEditor())
-        .then(() => {
-            writeFileSync(`${__dirname}/www/index.html`, readFileSync(`${__dirname}/www/edit.html`));
-        })
         .catch(e => console.error(`Cannot build: ${e}`));
 } else {
+    // Default workflow: one multi-entry Vite build produces runtime + editor in a
+    // single pass. The legacy runtime/ source-copy + second npm install + separate
+    // build are gone; clean() defensively removes any leftover runtime/ tree.
     clean();
-    copyRuntimeSrc();
-    npmInstall(`${__dirname}/runtime`)
-        .then(() => buildReact(`${__dirname}/runtime/`, { vite: true, ramSize: 7000, rootDir: `${__dirname}/../../` }))
-        .then(() => copyRuntimeDist())
-        .then(() => patchRuntime())
-        .then(() => deleteFoldersRecursive(`${__dirname}/src-vis/build`))
-        .then(() => {
-            if (!existsSync(`${__dirname}/src-vis/node_modules`)) {
-                return npmInstall(`${__dirname}/src-vis`);
-            }
-            return Promise.resolve();
-        })
+    const npmPromise = !existsSync(`${__dirname}/src-vis/node_modules`)
+        ? npmInstall(`${__dirname}/src-vis`)
+        : Promise.resolve();
+    npmPromise
         .then(() => generateSvgFiles())
         .then(() => buildEditor())
         .then(() => copyAllFiles())
