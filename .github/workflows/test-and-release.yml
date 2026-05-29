@@ -93,8 +93,14 @@ jobs:
                   "
                   echo '--- ~/.cache/puppeteer contents ---'
                   ls -la "$HOME/.cache/puppeteer"
-                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome' -type f 2>/dev/null
-                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome-headless-shell' -type f 2>/dev/null
+                  CHROME=$(find "$HOME/.cache/puppeteer" -maxdepth 5 -name chrome -type f 2>/dev/null | head -1)
+                  HEADLESS=$(find "$HOME/.cache/puppeteer" -maxdepth 5 -name chrome-headless-shell -type f 2>/dev/null | head -1)
+                  echo "chrome binary:           ${CHROME:-MISSING}"
+                  echo "chrome-headless-shell:   ${HEADLESS:-MISSING}"
+                  # Fail loud if either binary is missing — otherwise this step appears green
+                  # and the failure manifests far away in the test step instead.
+                  [ -n "$CHROME" ] || { echo "ERROR: chrome binary not installed"; exit 1; }
+                  [ -n "$HEADLESS" ] || { echo "ERROR: chrome-headless-shell binary not installed"; exit 1; }
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
@@ -103,7 +109,22 @@ jobs:
               run: npm run check-ts -w packages/iobroker.vis-2
 
             - name: Run local tests
-              run: npm run test-gui -w packages/iobroker.vis-2
+              # Print Puppeteer-resolved state immediately before mocha runs, so the test
+              # log itself shows whether Chrome is present at launch time — this catches
+              # any case where something between install and test removed the binaries.
+              shell: bash
+              run: |
+                  echo "=== HOME=$HOME ==="
+                  echo "=== ~/.cache/puppeteer right before tests ==="
+                  ls -la "$HOME/.cache/puppeteer" 2>&1 || echo "(missing!)"
+                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome*' -type f 2>/dev/null | head
+                  echo "=== puppeteer.executablePath() ==="
+                  node -e "console.log(require('puppeteer').executablePath())"
+                  echo "=== file present at that path? ==="
+                  EP=$(node -e "console.log(require('puppeteer').executablePath())")
+                  ls -la "$EP" 2>&1 || echo "(not at expected path!)"
+                  echo "=== launching mocha ==="
+                  npm run test-gui -w packages/iobroker.vis-2
 
             - name: Archive screenshots
               if: always()
