@@ -356,6 +356,10 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.13.7 (2025-11-09)
+* (@GermanBluefox) Updated packages
+* (@GermanBluefox) Corrected the basic image refreshing
+
 ## 2.13.6 (2025-10-10)
 * (@GermanBluefox) Prevent error by the icon selection dialog
 

@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.13.19",
+    "version": "2.14.0",
     "news": {
+      "2.14.0": {
+        "en": "Refactoring of the build process",
+        "de": "Herstellung des Build-Prozesses",
+        "ru": "Рефакторинг процесса строительства",
+        "pt": "Refatorização do processo de compilação",
+        "nl": "Refactoring van het bouwproces",
+        "fr": "Refacturation du processus de construction",
+        "it": "Refactoring del processo di costruzione",
+        "es": "Refactorización del proceso de construcción",
+        "pl": "Refaktoring procesu budowy",
+        "uk": "Рефакторинг процесу будівництва",
+        "zh-cn": "重建进程"
+      },
       "2.13.19": {
         "en": "Refactoring",
         "de": "Herstellung",
@@ -80,19 +93,6 @@
         "pl": "Zapobieganie błędom przez okno wyboru ikon",
         "uk": "Запобігання помилки підбір іконок діалог",
         "zh-cn": "防止图标选择对话框出错"
-      },
-      "2.13.5": {
-        "en": "Corrected loading of icon sets",
-        "de": "Behobenes Laden von Symbolsets",
-        "ru": "Исправлена загрузка наборов иконок",
-        "pt": "Corrigido carregamento de conjuntos de ícones",
-        "nl": "Gecorrigeerd laden van pictogrammen sets",
-        "fr": "Correction du chargement des jeux d'icônes",
-        "it": "Corretto il caricamento dei set di icone",
-        "es": "Corregida la carga de conjuntos de iconos",
-        "pl": "Poprawiona została ładowanie zestawów ikon",
-        "uk": "Виправлено завантаження наборів іконок",
-        "zh-cn": "修正了图标集的加载"
       }
     },
     "title": "Visualisation Next Generation",
