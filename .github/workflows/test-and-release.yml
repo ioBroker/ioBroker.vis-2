@@ -62,19 +62,19 @@ jobs:
 
             - name: Install Chrome for Puppeteer (cache miss)
               if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # Use Puppeteer's own revisions data so the installed Chrome version
-              # matches exactly what `puppeteer.launch()` resolves at test time.
-              # Wipe any stale half-cache from the runner image first, then install
-              # both browser flavours sequentially (no Promise.all race).
+              # Use Puppeteer's own CLI without a browser argument — this is the
+              # documented way (https://pptr.dev/contributing) to install exactly the
+              # browser versions puppeteer.launch() resolves at test time. The CLI
+              # internally knows the right PUPPETEER_REVISIONS without us having to
+              # parse them (revisions.js is gated behind the package's exports map
+              # in puppeteer 24.x and is no longer require()-able from outside).
+              # Wipe any stale half-cache from the runner image first.
               run: |
                   rm -rf "$HOME/.cache/puppeteer"
-                  CHROME_VER=$(node -p "require('puppeteer/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS.chrome")
-                  HEADLESS_VER=$(node -p "require('puppeteer/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS['chrome-headless-shell']")
-                  echo "Puppeteer wants chrome=$CHROME_VER, chrome-headless-shell=$HEADLESS_VER"
-                  npx --yes @puppeteer/browsers install "chrome@$CHROME_VER"
-                  npx --yes @puppeteer/browsers install "chrome-headless-shell@$HEADLESS_VER"
+                  npx --yes puppeteer browsers install
                   echo '--- ~/.cache/puppeteer after install ---'
-                  ls -la "$HOME/.cache/puppeteer" || true
+                  ls -la "$HOME/.cache/puppeteer" 2>/dev/null || echo '(missing)'
+                  find "$HOME/.cache/puppeteer" -maxdepth 4 -name 'chrome*' -type d 2>/dev/null
                   echo '--- puppeteer.executablePath() ---'
                   node -e "console.log(require('puppeteer').executablePath())"
 
