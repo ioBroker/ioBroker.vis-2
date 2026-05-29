@@ -62,30 +62,39 @@ jobs:
 
             - name: Install Chrome for Puppeteer (cache miss)
               if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # Call Puppeteer's own postinstall script directly. That script is the
-              # source of truth: it knows the exact browser versions and product
-              # layout that puppeteer.launch() later resolves, downloads to the same
-              # path, and is the same logic the normal `npm install` postinstall
-              # runs — just invoked here in isolation so no other npm install
-              # invocation can race with it and leave a half-cache behind.
-              #
-              # The previous `npx puppeteer browsers install` (no arg) silently
-              # installed nothing — Post Cache step ended up skipped because
-              # ~/.cache/puppeteer did not exist at save time.
+              # Use @puppeteer/browsers programmatic install with PROPER await.
+              # Puppeteer's bundled install.mjs (postinstall script) fires
+              # downloadBrowsers() without awaiting and wraps it in a try/catch
+              # that converts errors into console.warn — so on the GitHub runner
+              # it can exit 0 without actually downloading (the previous attempt's
+              # Post Cache step was skipped because ~/.cache/puppeteer did not
+              # exist at job end, which means install.mjs returned before any
+              # files landed). Version comes from puppeteer.executablePath() —
+              # public API, no internal-module access required.
               shell: bash
               run: |
                   set -ex
-                  echo '=== state BEFORE wipe ==='
-                  ls -la "$HOME/.cache/puppeteer" 2>/dev/null || echo '(missing)'
                   rm -rf "$HOME/.cache/puppeteer"
-                  echo '=== puppeteer.executablePath() (where launcher will look) ==='
-                  node -e "console.log(require('puppeteer').executablePath())"
-                  echo '=== run puppeteer postinstall directly ==='
-                  ( cd node_modules/puppeteer && node install.mjs )
-                  echo '=== state AFTER install ==='
-                  ls -la "$HOME/.cache/puppeteer" || echo '(STILL missing!)'
-                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome' -type f 2>/dev/null | head
-                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome-headless-shell' -type f 2>/dev/null | head
+                  node -e "console.log('launcher will look at:', require('puppeteer').executablePath())"
+                  node -e "
+                  (async () => {
+                      const { install, Browser } = require('@puppeteer/browsers');
+                      const cacheDir = require('os').homedir() + '/.cache/puppeteer';
+                      const ep = require('puppeteer').executablePath();
+                      const m = ep.match(/(?:linux|win64|mac|mac_arm)-([0-9.]+)/);
+                      if (!m) throw new Error('cannot parse Chrome version from executablePath: ' + ep);
+                      const buildId = m[1];
+                      console.log('Installing chrome@' + buildId + ' and chrome-headless-shell@' + buildId + ' to ' + cacheDir);
+                      await install({ browser: Browser.CHROME, buildId, cacheDir });
+                      console.log('chrome installed');
+                      await install({ browser: Browser.CHROMEHEADLESSSHELL, buildId, cacheDir });
+                      console.log('chrome-headless-shell installed');
+                  })().catch(e => { console.error(e); process.exit(1); });
+                  "
+                  echo '--- ~/.cache/puppeteer contents ---'
+                  ls -la "$HOME/.cache/puppeteer"
+                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome' -type f 2>/dev/null
+                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome-headless-shell' -type f 2>/dev/null
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
