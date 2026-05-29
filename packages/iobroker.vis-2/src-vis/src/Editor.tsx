@@ -4,7 +4,6 @@ import { DndProvider, useDrop } from 'react-dnd';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import ReactSplit, { SplitDirection } from '@devbookhq/splitter';
-import { safeParseLS } from './Utilities/utils';
 
 import {
     IconButton,
@@ -74,6 +73,7 @@ import {
     unsyncMultipleWidgets,
     deepClone,
     pasteSingleWidget,
+    safeParseLS,
 } from './Utilities/utils';
 
 import Attributes from './Attributes';
