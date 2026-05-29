@@ -1,6 +1,6 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
-// import becasue of federation and non typescript widgets
+// import because of federation and non TypeScript widgets
 import 'prop-types';
 
 import {
@@ -26,9 +26,6 @@ import {
     I18n,
     Loader,
     LegacyConnection,
-    LoaderMV,
-    LoaderPT,
-    LoaderVendor,
     GenericApp,
     type GenericAppProps,
     type GenericAppState,
@@ -1364,33 +1361,6 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     renderLoader(): React.JSX.Element | null {
         if (window.loadingHideLogo === 'true') {
             return null;
-        }
-        if (window.vendorPrefix === 'MV') {
-            return (
-                <LoaderMV
-                    themeType={this.state.themeType}
-                    backgroundColor={window.loadingBackgroundColor}
-                    backgroundImage={window.loadingBackgroundImage}
-                />
-            );
-        }
-        if (window.vendorPrefix === 'PT') {
-            return (
-                <LoaderPT
-                    themeType={this.state.themeType}
-                    backgroundColor={window.loadingBackgroundColor}
-                    backgroundImage={window.loadingBackgroundImage}
-                />
-            );
-        }
-        if (window.vendorPrefix && window.vendorPrefix !== '@@vendorPrefix@@') {
-            return (
-                <LoaderVendor
-                    themeType={this.state.themeType}
-                    backgroundColor={window.loadingBackgroundColor}
-                    backgroundImage={window.loadingBackgroundImage}
-                />
-            );
         }
         return (
             <Loader

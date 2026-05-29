@@ -89,6 +89,16 @@
             });
         }
 
+        function setBackgroundColor() {
+            let themeType = window.localStorage.getItem('Editor.themeType');
+            themeType ||= (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (themeType === 'dark' || window.vendorPrefix === 'HA') {
+                window.document.body.className = 'body-dark';
+            } else {
+                window.document.body.className = 'body-light';
+            }
+        }
+
         window.visConfigLoaded
             .then(() => {
                 window.vendorPrefix ||= '@@vendorPrefix@@';
@@ -96,6 +106,8 @@
                 window.loadingBackgroundColor ||= '@@loadingBackgroundColor@@';
                 window.loadingBackgroundImage ||= '@@loadingBackgroundImage@@';
                 window.loadingHideLogo ||= '@@loadingHideLogo@@';
+                // set background as early as possible
+                setBackgroundColor();
             });
     </script>
     <script>
@@ -120,12 +132,6 @@
 </body>
 <script>
     // set background as early as possible
-    let themeType = window.localStorage.getItem('Editor.themeType');
-    themeType ||= (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    if (themeType === 'dark' || window.vendorPrefix === 'HA') {
-        window.document.body.className += 'body-dark';
-    } else {
-        window.document.body.className += 'body-light';
-    }
+    setBackgroundColor();
 </script>
 </html>
