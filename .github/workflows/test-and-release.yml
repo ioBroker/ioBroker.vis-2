@@ -44,30 +44,39 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.cache/puppeteer
-                  # Bump the version suffix whenever the install behaviour changes
-                  # (e.g., adding a browser flavour). Lockfile hash covers Puppeteer
-                  # version bumps automatically.
-                  key: puppeteer-v2-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
-            - name: Purge runner-bundled Puppeteer half-cache (on miss)
-              if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # The GitHub-hosted Ubuntu image ships with a partially-populated
-              # ~/.cache/puppeteer/ dir for some chrome-headless-shell version.
-              # On miss, wipe it so Puppeteer's own postinstall starts from a clean
-              # slate (the "folder exists but executable missing" check in @puppeteer/
-              # browsers' DefaultProvider otherwise bails out without repairing).
-              run: rm -rf ~/.cache/puppeteer
+                  # Bump the version suffix whenever the install behaviour changes.
+                  # Lockfile hash covers Puppeteer version bumps automatically.
+                  key: puppeteer-v3-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
             - name: Install Monorepo
               run: npm run install-monorepo
               env:
-                  # On cache hit, skip the postinstall download — browsers are already
-                  # restored. On miss, let Puppeteer's postinstall do the work: it knows
-                  # the exact Chrome version and product layout it expects to launch,
-                  # so there is no risk of "installed chrome but launcher looks for a
-                  # different path" that bites a hand-rolled `npx puppeteer browsers
-                  # install` step.
-                  PUPPETEER_SKIP_DOWNLOAD: ${{ steps.puppeteer-cache.outputs.cache-hit == 'true' }}
+                  # Skip Puppeteer's postinstall ALWAYS. The `install-monorepo` script
+                  # runs four chained `npm i` invocations; the runner-image-bundled
+                  # half-cache plus a race in the postinstall's parallel chrome /
+                  # chrome-headless-shell downloads cause one invocation to leave a
+                  # "folder exists but executable missing" state that the next
+                  # invocation's @puppeteer/browsers DefaultProvider bails out on.
+                  # The controlled install below avoids this entirely.
+                  PUPPETEER_SKIP_DOWNLOAD: 'true'
+
+            - name: Install Chrome for Puppeteer (cache miss)
+              if: steps.puppeteer-cache.outputs.cache-hit != 'true'
+              # Use Puppeteer's own revisions data so the installed Chrome version
+              # matches exactly what `puppeteer.launch()` resolves at test time.
+              # Wipe any stale half-cache from the runner image first, then install
+              # both browser flavours sequentially (no Promise.all race).
+              run: |
+                  rm -rf "$HOME/.cache/puppeteer"
+                  CHROME_VER=$(node -p "require('puppeteer/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS.chrome")
+                  HEADLESS_VER=$(node -p "require('puppeteer/lib/cjs/puppeteer/revisions.js').PUPPETEER_REVISIONS['chrome-headless-shell']")
+                  echo "Puppeteer wants chrome=$CHROME_VER, chrome-headless-shell=$HEADLESS_VER"
+                  npx --yes @puppeteer/browsers install "chrome@$CHROME_VER"
+                  npx --yes @puppeteer/browsers install "chrome-headless-shell@$HEADLESS_VER"
+                  echo '--- ~/.cache/puppeteer after install ---'
+                  ls -la "$HOME/.cache/puppeteer" || true
+                  echo '--- puppeteer.executablePath() ---'
+                  node -e "console.log(require('puppeteer').executablePath())"
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
