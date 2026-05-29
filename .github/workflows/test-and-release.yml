@@ -44,35 +44,30 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.cache/puppeteer
-                  # The `chrome-v1` prefix encodes WHICH browser product the install step
-                  # below puts into ~/.cache/puppeteer. Bump it whenever that changes
-                  # (e.g., to add chrome-headless-shell). The lockfile hash takes care of
-                  # Puppeteer/Chrome-version bumps automatically; the prefix protects
-                  # against stale caches when the install command itself changes.
-                  key: puppeteer-chrome-v1-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+                  # Bump the version suffix whenever the install behaviour changes
+                  # (e.g., adding a browser flavour). Lockfile hash covers Puppeteer
+                  # version bumps automatically.
+                  key: puppeteer-v2-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+
+            - name: Purge runner-bundled Puppeteer half-cache (on miss)
+              if: steps.puppeteer-cache.outputs.cache-hit != 'true'
+              # The GitHub-hosted Ubuntu image ships with a partially-populated
+              # ~/.cache/puppeteer/ dir for some chrome-headless-shell version.
+              # On miss, wipe it so Puppeteer's own postinstall starts from a clean
+              # slate (the "folder exists but executable missing" check in @puppeteer/
+              # browsers' DefaultProvider otherwise bails out without repairing).
+              run: rm -rf ~/.cache/puppeteer
 
             - name: Install Monorepo
               run: npm run install-monorepo
               env:
-                  # Always skip Puppeteer's postinstall download — it's the fragile step.
-                  # It looks at ~/.cache/puppeteer to decide if Chrome is installed, finds the
-                  # half-populated directory that GitHub-hosted Ubuntu images ship with, and
-                  # bails out instead of repairing. The explicit install below does the right
-                  # thing (wipes the stale dir, then downloads cleanly).
-                  PUPPETEER_SKIP_DOWNLOAD: 'true'
-
-            - name: Ensure Chrome for Puppeteer
-              if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              working-directory: packages/iobroker.vis-2/src-vis
-              # Wipe any stale ~/.cache/puppeteer first (the runner image may carry a
-              # half-populated dir — see the "folder exists but executable missing"
-              # failure mode), then install the FULL Chrome browser. Default
-              # puppeteer.launch() resolves the `chrome` product, NOT chrome-headless-shell,
-              # so installing only the headless shell leaves the test launcher with
-              # "Could not find Chrome (ver ...)".
-              run: |
-                  rm -rf ~/.cache/puppeteer
-                  npx puppeteer browsers install chrome
+                  # On cache hit, skip the postinstall download — browsers are already
+                  # restored. On miss, let Puppeteer's postinstall do the work: it knows
+                  # the exact Chrome version and product layout it expects to launch,
+                  # so there is no risk of "installed chrome but launcher looks for a
+                  # different path" that bites a hand-rolled `npx puppeteer browsers
+                  # install` step.
+                  PUPPETEER_SKIP_DOWNLOAD: ${{ steps.puppeteer-cache.outputs.cache-hit == 'true' }}
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
