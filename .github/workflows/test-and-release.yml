@@ -44,7 +44,12 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.cache/puppeteer
-                  key: puppeteer-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+                  # The `chrome-v1` prefix encodes WHICH browser product the install step
+                  # below puts into ~/.cache/puppeteer. Bump it whenever that changes
+                  # (e.g., to add chrome-headless-shell). The lockfile hash takes care of
+                  # Puppeteer/Chrome-version bumps automatically; the prefix protects
+                  # against stale caches when the install command itself changes.
+                  key: puppeteer-chrome-v1-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
             - name: Install Monorepo
               run: npm run install-monorepo
