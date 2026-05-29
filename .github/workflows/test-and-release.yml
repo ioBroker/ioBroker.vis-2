@@ -62,21 +62,30 @@ jobs:
 
             - name: Install Chrome for Puppeteer (cache miss)
               if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # Use Puppeteer's own CLI without a browser argument — this is the
-              # documented way (https://pptr.dev/contributing) to install exactly the
-              # browser versions puppeteer.launch() resolves at test time. The CLI
-              # internally knows the right PUPPETEER_REVISIONS without us having to
-              # parse them (revisions.js is gated behind the package's exports map
-              # in puppeteer 24.x and is no longer require()-able from outside).
-              # Wipe any stale half-cache from the runner image first.
+              # Call Puppeteer's own postinstall script directly. That script is the
+              # source of truth: it knows the exact browser versions and product
+              # layout that puppeteer.launch() later resolves, downloads to the same
+              # path, and is the same logic the normal `npm install` postinstall
+              # runs — just invoked here in isolation so no other npm install
+              # invocation can race with it and leave a half-cache behind.
+              #
+              # The previous `npx puppeteer browsers install` (no arg) silently
+              # installed nothing — Post Cache step ended up skipped because
+              # ~/.cache/puppeteer did not exist at save time.
+              shell: bash
               run: |
-                  rm -rf "$HOME/.cache/puppeteer"
-                  npx --yes puppeteer browsers install
-                  echo '--- ~/.cache/puppeteer after install ---'
+                  set -ex
+                  echo '=== state BEFORE wipe ==='
                   ls -la "$HOME/.cache/puppeteer" 2>/dev/null || echo '(missing)'
-                  find "$HOME/.cache/puppeteer" -maxdepth 4 -name 'chrome*' -type d 2>/dev/null
-                  echo '--- puppeteer.executablePath() ---'
+                  rm -rf "$HOME/.cache/puppeteer"
+                  echo '=== puppeteer.executablePath() (where launcher will look) ==='
                   node -e "console.log(require('puppeteer').executablePath())"
+                  echo '=== run puppeteer postinstall directly ==='
+                  ( cd node_modules/puppeteer && node install.mjs )
+                  echo '=== state AFTER install ==='
+                  ls -la "$HOME/.cache/puppeteer" || echo '(STILL missing!)'
+                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome' -type f 2>/dev/null | head
+                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome-headless-shell' -type f 2>/dev/null | head
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
