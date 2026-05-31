@@ -338,7 +338,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         this.fieldsBefore = Widget.getFieldsBefore();
         this.fieldsSignals = [];
-        for (let i = 0; i <= 3; i++) {
+        for (let i = 0; i <= 6; i++) {
             this.fieldsSignals.push(Widget.getSignals(i));
         }
 
