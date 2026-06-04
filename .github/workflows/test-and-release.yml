@@ -34,73 +34,8 @@ jobs:
               with:
                   node-version: 24.15.0
 
-            # Cache the Puppeteer browser downloads (chrome-headless-shell) keyed by the
-            # lockfiles. On a hit the postinstall download is skipped; on a miss the browser
-            # is installed explicitly below. This avoids the "folder exists but executable
-            # missing" half-cache failure mode that Puppeteer's own postinstall does not
-            # repair (it sees the directory and bails out as if already installed).
-            - name: Cache Puppeteer browsers
-              id: puppeteer-cache
-              uses: actions/cache@v4
-              with:
-                  path: ~/.cache/puppeteer
-                  # Bump the version suffix whenever the installation behaviour changes.
-                  # Lockfile hash covers Puppeteer version bumps automatically.
-                  key: puppeteer-v3-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
             - name: Install Monorepo
               run: npm run install-monorepo
-              env:
-                  # Skip Puppeteer's postinstall ALWAYS. The `install-monorepo` script
-                  # runs four chained `npm i` invocations; the runner-image-bundled
-                  # half-cache plus a race in the postinstall's parallel chrome /
-                  # chrome-headless-shell downloads cause one invocation to leave a
-                  # "folder exists but executable missing" state that the next
-                  # invocation's @puppeteer/browsers DefaultProvider bails out on.
-                  # The controlled installation below avoids this entirely.
-                  PUPPETEER_SKIP_DOWNLOAD: 'true'
-
-            - name: Install Chrome for Puppeteer (cache miss)
-              if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # Use @puppeteer/browsers programmatic installation with PROPER await.
-              # Puppeteer's bundled install.mjs (postinstall script) fires
-              # downloadBrowsers() without awaiting and wraps it in a try/catch
-              # that converts errors into console.warn — so on the GitHub runner
-              # it can exit 0 without actually downloading (the previous attempt's
-              # Post Cache step was skipped because ~/.cache/puppeteer did not
-              # exist at job end, which means install.mjs returned before any
-              # files landed). Version comes from puppeteer.executablePath() —
-              # public API, no internal-module access required.
-              shell: bash
-              run: |
-                  set -ex
-                  rm -rf "$HOME/.cache/puppeteer"
-                  node -e "console.log('launcher will look at:', require('puppeteer').executablePath())"
-                  node -e "
-                  (async () => {
-                      const { install, Browser } = require('@puppeteer/browsers');
-                      const cacheDir = require('os').homedir() + '/.cache/puppeteer';
-                      const ep = require('puppeteer').executablePath();
-                      const m = ep.match(/(?:linux|win64|mac|mac_arm)-([0-9.]+)/);
-                      if (!m) throw new Error('cannot parse Chrome version from executablePath: ' + ep);
-                      const buildId = m[1];
-                      console.log('Installing chrome@' + buildId + ' and chrome-headless-shell@' + buildId + ' to ' + cacheDir);
-                      await install({ browser: Browser.CHROME, buildId, cacheDir });
-                      console.log('chrome installed');
-                      await install({ browser: Browser.CHROMEHEADLESSSHELL, buildId, cacheDir });
-                      console.log('chrome-headless-shell installed');
-                  })().catch(e => { console.error(e); process.exit(1); });
-                  "
-                  echo '--- ~/.cache/puppeteer contents ---'
-                  ls -la "$HOME/.cache/puppeteer"
-                  CHROME=$(find "$HOME/.cache/puppeteer" -maxdepth 5 -name chrome -type f 2>/dev/null | head -1)
-                  HEADLESS=$(find "$HOME/.cache/puppeteer" -maxdepth 5 -name chrome-headless-shell -type f 2>/dev/null | head -1)
-                  echo "chrome binary:           ${CHROME:-MISSING}"
-                  echo "chrome-headless-shell:   ${HEADLESS:-MISSING}"
-                  # Fail loud if either binary is missing — otherwise this step appears green
-                  # and the failure manifests far away in the test step instead.
-                  [ -n "$CHROME" ] || { echo "ERROR: chrome binary not installed"; exit 1; }
-                  [ -n "$HEADLESS" ] || { echo "ERROR: chrome-headless-shell binary not installed"; exit 1; }
 
             - name: Build
               run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
@@ -109,22 +44,7 @@ jobs:
               run: npm run check-ts -w packages/iobroker.vis-2
 
             - name: Run local tests
-              # Print Puppeteer-resolved state immediately before mocha runs, so the test
-              # log itself shows whether Chrome is present at launch time — this catches
-              # any case where something between install and test removed the binaries.
-              shell: bash
-              run: |
-                  echo "=== HOME=$HOME ==="
-                  echo "=== ~/.cache/puppeteer right before tests ==="
-                  ls -la "$HOME/.cache/puppeteer" 2>&1 || echo "(missing!)"
-                  find "$HOME/.cache/puppeteer" -maxdepth 5 -name 'chrome*' -type f 2>/dev/null | head
-                  echo "=== puppeteer.executablePath() ==="
-                  node -e "console.log(require('puppeteer').executablePath())"
-                  echo "=== file present at that path? ==="
-                  EP=$(node -e "console.log(require('puppeteer').executablePath())")
-                  ls -la "$EP" 2>&1 || echo "(not at expected path!)"
-                  echo "=== launching mocha ==="
-                  npm run test-gui -w packages/iobroker.vis-2
+              run: npm run test-gui -w packages/iobroker.vis-2
 
             - name: Archive screenshots
               if: always()
@@ -177,10 +97,6 @@ jobs:
 
             - name: Install Dependencies
               run: npm run install-monorepo
-              env:
-                  # Deploy job doesn't run GUI tests, so skip the Puppeteer browser download
-                  # entirely (saves ~30 MB + avoids the same half-cache failure mode).
-                  PUPPETEER_SKIP_DOWNLOAD: 'true'
 
             - name: Create a clean build
               run: npm run build
