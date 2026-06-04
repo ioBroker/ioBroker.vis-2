@@ -32,7 +32,7 @@ jobs:
             - name: Use Node.js 24.x
               uses: actions/setup-node@v4
               with:
-                  node-version: 24.x
+                  node-version: 24.15.0
 
             # Cache the Puppeteer browser downloads (chrome-headless-shell) keyed by the
             # lockfiles. On a hit the postinstall download is skipped; on a miss the browser
@@ -44,7 +44,7 @@ jobs:
               uses: actions/cache@v4
               with:
                   path: ~/.cache/puppeteer
-                  # Bump the version suffix whenever the install behaviour changes.
+                  # Bump the version suffix whenever the installation behaviour changes.
                   # Lockfile hash covers Puppeteer version bumps automatically.
                   key: puppeteer-v3-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
@@ -57,12 +57,12 @@ jobs:
                   # chrome-headless-shell downloads cause one invocation to leave a
                   # "folder exists but executable missing" state that the next
                   # invocation's @puppeteer/browsers DefaultProvider bails out on.
-                  # The controlled install below avoids this entirely.
+                  # The controlled installation below avoids this entirely.
                   PUPPETEER_SKIP_DOWNLOAD: 'true'
 
             - name: Install Chrome for Puppeteer (cache miss)
               if: steps.puppeteer-cache.outputs.cache-hit != 'true'
-              # Use @puppeteer/browsers programmatic install with PROPER await.
+              # Use @puppeteer/browsers programmatic installation with PROPER await.
               # Puppeteer's bundled install.mjs (postinstall script) fires
               # downloadBrowsers() without awaiting and wraps it in a try/catch
               # that converts errors into console.warn — so on the GitHub runner
