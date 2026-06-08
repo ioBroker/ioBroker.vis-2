@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.14.0",
+    "version": "2.14.1",
     "news": {
+      "2.14.1": {
+        "en": "Applied the user-defined style to tplValueInput",
+        "de": "Anwenden des benutzerdefinierten Stils auf tplValueInput",
+        "ru": "Применить пользовательский стиль к tplValueInput",
+        "pt": "Aplicou o estilo definido pelo usuário ao tplValueInput",
+        "nl": "De door de gebruiker gedefinieerde stijl toegepast op tplValueInput",
+        "fr": "Appliquer le style défini par l'utilisateur à tplValueInput",
+        "it": "Applicare lo stile definito dall'utente a tplValueInput",
+        "es": "Aplica el estilo definido por el usuario a tplValueInput",
+        "pl": "Stosowany styl zdefiniowany przez użytkownika do tplValueInput",
+        "uk": "Приклад користувацького стилю до tplValueInput",
+        "zh-cn": "将用户定义的样式应用到 tplValue 输入"
+      },
       "2.14.0": {
         "en": "Refactoring of the build process",
         "de": "Herstellung des Build-Prozesses",
@@ -80,19 +93,6 @@
         "pl": "Aktualizacja pakietów\nPoprawił podstawowy obraz orzeźwiający",
         "uk": "Оновлені пакети\nВиправлено базове оновлення зображення",
         "zh-cn": "更新软件包\n更正基本图像刷新"
-      },
-      "2.13.6": {
-        "en": "Prevent error by the icons selection dialog",
-        "de": "Fehler durch den Auswahldialog der Icons verhindern",
-        "ru": "Предотвратить ошибку в диалоге выбора иконок",
-        "pt": "Evitar erros na janela de selecção dos ícones",
-        "nl": "Fout voorkomen door het dialoogvenster Pictogrammenselectie",
-        "fr": "Prévenir l'erreur par la boîte de dialogue de sélection des icônes",
-        "it": "Prevenire l'errore dalla finestra di dialogo di selezione delle icone",
-        "es": "Evitar error por el diálogo de selección de iconos",
-        "pl": "Zapobieganie błędom przez okno wyboru ikon",
-        "uk": "Запобігання помилки підбір іконок діалог",
-        "zh-cn": "防止图标选择对话框出错"
       }
     },
     "title": "Visualisation Next Generation",
