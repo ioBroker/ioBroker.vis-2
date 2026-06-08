@@ -2,13 +2,7 @@ import React from 'react';
 
 import { I18n } from '@iobroker/adapter-react-v5';
 
-import type {
-    RxRenderWidgetProps,
-    VisLegacy,
-    GetRxDataFromWidget,
-    RxWidgetInfo,
-    VisRxWidgetProps,
-} from '@iobroker/types-vis-2';
+import type { RxRenderWidgetProps, VisLegacy, RxWidgetInfo, VisRxWidgetProps } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import VisRxWidget from '@/Vis/visRxWidget';
 
@@ -25,7 +19,7 @@ interface BasicScreenResolutionState extends VisRxWidgetState {
     essentialData?: string;
 }
 
-type RxData = GetRxDataFromWidget<typeof BasicScreenResolution>;
+type RxData = Record<string, any>;
 
 export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScreenResolutionState> {
     private essentialData: string;

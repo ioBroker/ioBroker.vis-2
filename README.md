@@ -292,6 +292,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@GermanBluefox) Applied the user-defined style to tplValueInput 
+
 ### 2.14.0 (2026-05-29)
 * (@GermanBluefox) Refactoring of the build process
 

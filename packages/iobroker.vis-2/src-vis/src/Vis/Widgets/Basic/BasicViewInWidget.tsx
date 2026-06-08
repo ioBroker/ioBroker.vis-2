@@ -227,12 +227,8 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
         // set default width and height
-        if (props.style.width === undefined) {
-            props.style.width = 400;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 270;
-        }
+        props.style.width ??= 400;
+        props.style.height ??= 270;
 
         const view = this.state.rxData.contains_view;
 

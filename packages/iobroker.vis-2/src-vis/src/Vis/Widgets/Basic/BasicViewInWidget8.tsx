@@ -45,14 +45,10 @@ class BasicViewInWidget8 extends VisRxWidget<RxData> {
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
         // set default width and height
-        if (props.style.width === undefined) {
-            props.style.width = 400;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 270;
-        }
+        props.style.width ??= 400;
+        props.style.height ??= 270;
 
-        const viewArr = [];
+        const viewArr: string[] = [];
         let i = 1;
         while (this.state.rxData[`contains_view_${i}`] !== undefined) {
             viewArr.push(this.state.rxData[`contains_view_${i}`]);
@@ -61,7 +57,7 @@ class BasicViewInWidget8 extends VisRxWidget<RxData> {
 
         const oid = this.state.rxData.oid;
         let val = this.state.values[`${oid}.val`];
-        let view;
+        let view: string | undefined;
 
         if (oid !== 'nothing_selected' && val !== undefined) {
             if (val === 'true' || val === true) {

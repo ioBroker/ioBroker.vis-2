@@ -43,7 +43,7 @@ interface BasicValueInputState extends VisRxWidgetState {
     sentValue: boolean;
 }
 
-class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
+export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
     private setTimer: ReturnType<typeof setTimeout> | null = null;
 
     static getWidgetInfo(): RxWidgetInfo {
@@ -141,12 +141,9 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
         super.renderWidgetBody(props);
 
         // set default width and height
-        if (props.style.width === undefined) {
-            props.style.width = 100;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 25;
-        }
+        props.style.width ??= 100;
+        props.style.height ??= 25;
+
         const oid =
             this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected' && this.state.rxData.oid.includes('"')
                 ? ''
@@ -157,16 +154,21 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
             if (this.state.rxData.oid.includes('"')) {
                 value = this.state.rxData.oid.substring(1, this.state.rxData.oid.length - 1);
             } else if (oid) {
-                value = this.state.value;
-                if (value === undefined || value === null) {
-                    value = '';
-                }
+                value = this.state.value ?? '';
             } else {
                 value = '';
             }
         } else {
             value = '';
         }
+        const style: React.CSSProperties = {
+            color: this.state.rxStyle.color,
+            background: this.state.rxStyle.background,
+            backgroundColor: this.state.rxStyle['background-color'],
+            fontFamily: this.state.rxStyle['font-family'],
+            fontSize: this.state.rxStyle['font-size'],
+            fontStyle: this.state.rxStyle['font-style'],
+        };
 
         let content;
         if (this.state.rxData.noStyle) {
@@ -178,6 +180,7 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
                         height: 'calc(100% - 6px)',
                         backgroundColor: this.props.context.themeType === 'dark' ? '#333' : '#fff',
                         color: this.props.context.themeType === 'dark' ? '#FFF' : '#000',
+                        ...style,
                     }}
                     readOnly={this.state.rxData.readOnly || this.props.editMode}
                     autoFocus={this.state.rxData.autoFocus}
@@ -213,6 +216,9 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
                         '& .MuiInputBase-root': {
                             height: '100%',
                         },
+                        '& .MuiInputBase-input': style,
+                        '& .MuiFormLabel-root': style,
+                        '& .MuiFormHelperText-root': style,
                     }}
                     variant={this.state.rxData.variant}
                     slotProps={{
@@ -242,7 +248,9 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         this.setState({ value: e.target.value, sentValue: false }, () => {
                             if (this.state.rxData.autoSet && oid) {
-                                this.setTimer && clearTimeout(this.setTimer);
+                                if (this.setTimer) {
+                                    clearTimeout(this.setTimer);
+                                }
                                 this.setTimer = setTimeout(() => {
                                     this.setTimer = null;
                                     this.setState({ sentValue: true }, () =>
@@ -279,5 +287,3 @@ class BasicValueInput extends VisRxWidget<RxData, BasicValueInputState> {
         );
     }
 }
-
-export default BasicValueInput;

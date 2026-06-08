@@ -15,14 +15,18 @@
 
 import React from 'react';
 
-import type { GetRxDataFromWidget, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
+import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
 
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
 
-type RxData = GetRxDataFromWidget<typeof BasicHtmlNav>;
+type RxData = {
+    html?: string;
+    nav_view?: string;
+    sub_view?: string;
+};
 
-class BasicHtmlNav extends VisRxWidget<RxData> {
+export default class BasicHtmlNav extends VisRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplHtmlNav',
@@ -78,12 +82,8 @@ class BasicHtmlNav extends VisRxWidget<RxData> {
      */
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
-        if (props.style.width === undefined) {
-            props.style.width = 200;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 130;
-        }
+        props.style.width ??= 200;
+        props.style.height ??= 130;
 
         return (
             <DangerousHtmlWithScript
@@ -96,5 +96,3 @@ class BasicHtmlNav extends VisRxWidget<RxData> {
         );
     }
 }
-
-export default BasicHtmlNav;

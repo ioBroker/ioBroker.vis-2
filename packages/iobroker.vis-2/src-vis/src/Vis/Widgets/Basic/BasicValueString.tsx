@@ -73,12 +73,8 @@ class BasicValueString extends VisRxWidget<RxData> {
         super.renderWidgetBody(props);
 
         // set default width and height
-        if (props.style.width === undefined) {
-            props.style.width = 50;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 20;
-        }
+        props.style.width ??= 50;
+        props.style.height ??= 20;
 
         const oid = this.state.rxData.oid && this.state.rxData.oid.includes('"') ? '' : this.state.rxData.oid || '';
 

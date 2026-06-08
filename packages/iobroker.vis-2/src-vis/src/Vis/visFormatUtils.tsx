@@ -354,7 +354,7 @@ class VisFormatUtils {
             if (oid.visOid) {
                 value = this.getSpecialValues(oid.visOid, view, wid, widgetData);
                 if (value === undefined || value === null) {
-                    value = (_values as Record<string, any>)[oid.visOid];
+                    value = _values[oid.visOid];
                 }
             }
 
@@ -371,10 +371,8 @@ class VisFormatUtils {
 
                             if (value === undefined || value === null) {
                                 value = evalArgs[a].visOid.startsWith('widgetOid.')
-                                    ? (_values as Record<string, any>)[
-                                          evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)
-                                      ]
-                                    : (_values as Record<string, any>)[evalArgs[a].visOid];
+                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)]
+                                    : _values[evalArgs[a].visOid];
                             }
                             if (value === null) {
                                 string += `const ${evalArgs[a].name} = null;`;

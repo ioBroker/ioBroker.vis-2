@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2023-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2023-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -15,11 +15,14 @@
 
 import React from 'react';
 
-import type { GetRxDataFromWidget, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
+import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
 
-type RxData = GetRxDataFromWidget<typeof BasicHtml>;
+type RxData = {
+    html: string;
+    refreshInterval: number;
+};
 
 class BasicHtml extends VisRxWidget<RxData> {
     interval: ReturnType<typeof setInterval> | null = null;
