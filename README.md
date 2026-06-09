@@ -292,7 +292,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### 2.14.2 (2026-06-09)
+### **WORK IN PROGRESS**
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
 
 ### 2.14.0 (2026-05-29)
