@@ -1539,7 +1539,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 onChange={e => change(e.target.value)}
                 renderValue={(selectValue: string) => (
                     <div style={commonStyles.backgroundClass}>
-                        <span style={stylesOptions[selectValue]?.parentStyle as React.CSSProperties}>
+                        <span style={stylesOptions[selectValue]?.parentStyle}>
                             <span
                                 style={commonStyles.backgroundClassSquare}
                                 className={selectValue}

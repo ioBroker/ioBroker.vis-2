@@ -72,12 +72,8 @@ class BasicLink extends VisRxWidget<RxData> {
     /** Renders the widget */
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
-        if (props.style.width === undefined) {
-            props.style.width = 200;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 130;
-        }
+        props.style.width ??= 200;
+        props.style.height ??= 130;
 
         return (
             <a

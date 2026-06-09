@@ -523,12 +523,8 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
 
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
-        if (props.style.width === undefined) {
-            props.style.width = 200;
-        }
-        if (props.style.height === undefined) {
-            props.style.height = 50;
-        }
+        props.style.width ??= 200;
+        props.style.height ??= 50;
 
         const items = this.getItems();
         if (this.editMode !== undefined && this.editMode !== this.props.editMode) {
