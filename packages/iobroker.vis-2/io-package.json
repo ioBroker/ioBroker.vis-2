@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.14.1",
+    "version": "2.14.2",
     "news": {
+      "2.14.2": {
+        "en": "Applied the user-defined style to tplValueInput",
+        "de": "Anwenden des benutzerdefinierten Stils auf tplValueInput",
+        "ru": "Применить пользовательский стиль к tplValueInput",
+        "pt": "Aplicou o estilo definido pelo usuário ao tplValueInput",
+        "nl": "De door de gebruiker gedefinieerde stijl toegepast op tplValueInput",
+        "fr": "Appliquer le style défini par l'utilisateur à tplValueInput",
+        "it": "Applicare lo stile definito dall'utente a tplValueInput",
+        "es": "Aplica el estilo definido por el usuario a tplValueInput",
+        "pl": "Stosowany styl zdefiniowany przez użytkownika do tplValueInput",
+        "uk": "Приклад користувацького стилю до tplValueInput",
+        "zh-cn": "将用户定义的样式应用到 tplValue 输入"
+      },
       "2.14.1": {
         "en": "Applied the user-defined style to tplValueInput",
         "de": "Anwenden des benutzerdefinierten Stils auf tplValueInput",
@@ -80,19 +93,6 @@
         "pl": "Aktualizacja pakietów",
         "uk": "Оновлені пакети",
         "zh-cn": "更新软件包"
-      },
-      "2.13.7": {
-        "en": "Updated packages\nCorrected the basic image refreshing",
-        "de": "Aktualisierte Pakete\nKorrektur der grundlegenden Bilderfrischung",
-        "ru": "Обновленные пакеты\nИсправлено базовое обновление изображения",
-        "pt": "Pacotes atualizados\nCorrigido a imagem básica refrescante",
-        "nl": "Bijgewerkte pakketten\nDe basisafbeelding verfrissend corrigeren",
-        "fr": "Paquets mis à jour\nCorrection de l'image de base rafraîchissante",
-        "it": "Pacchetti aggiornati\nCorretto l'immagine di base rinfrescante",
-        "es": "Paquetes actualizados\nCorregido la imagen básica refrescante",
-        "pl": "Aktualizacja pakietów\nPoprawił podstawowy obraz orzeźwiający",
-        "uk": "Оновлені пакети\nВиправлено базове оновлення зображення",
-        "zh-cn": "更新软件包\n更正基本图像刷新"
       }
     },
     "title": "Visualisation Next Generation",
