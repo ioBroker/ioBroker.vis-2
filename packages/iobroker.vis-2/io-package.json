@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.14.2",
+    "version": "2.14.3",
     "news": {
+      "2.14.3": {
+        "en": "Applied the user-defined style to tplValueInput",
+        "de": "Anwenden des benutzerdefinierten Stils auf tplValueInput",
+        "ru": "Применить пользовательский стиль к tplValueInput",
+        "pt": "Aplicou o estilo definido pelo usuário ao tplValueInput",
+        "nl": "De door de gebruiker gedefinieerde stijl toegepast op tplValueInput",
+        "fr": "Appliquer le style défini par l'utilisateur à tplValueInput",
+        "it": "Applicare lo stile definito dall'utente a tplValueInput",
+        "es": "Aplica el estilo definido por el usuario a tplValueInput",
+        "pl": "Stosowany styl zdefiniowany przez użytkownika do tplValueInput",
+        "uk": "Приклад користувацького стилю до tplValueInput",
+        "zh-cn": "将用户定义的样式应用到 tplValue 输入"
+      },
       "2.14.0": {
         "en": "Refactoring of the build process",
         "de": "Herstellung des Build-Prozesses",
