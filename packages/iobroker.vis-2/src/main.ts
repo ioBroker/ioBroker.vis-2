@@ -180,7 +180,7 @@ class VisAdapter extends Adapter {
             ) {
                 return;
             }
-            const name = obj && obj._id && obj._id.replace('system.adapter.', '').replace(/\.\d+$/, '');
+            const name = obj?._id?.replace('system.adapter.', '').replace(/\.\d+$/, '');
             if (name && !instances.includes(name)) {
                 instances.push(name);
             }
