@@ -1263,18 +1263,21 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
 
             let val = states[`${oid}.val`];
+            let value = widgetData['visibility-val'];
 
             if (val === undefined || val === null) {
-                return condition === 'not exist';
+                // the user compares explicitly against null => use the "null" placeholder in the comparison below
+                if (value !== 'null') {
+                    return condition === 'not exist';
+                }
+                val = 'null';
             }
-
-            let value = widgetData['visibility-val'];
 
             if (!condition || value === undefined || value === null) {
                 return condition === 'not exist';
             }
 
-            if (val === 'null' && condition !== 'exist' && condition !== 'not exist') {
+            if (val === 'null' && condition !== 'exist' && condition !== 'not exist' && value !== 'null') {
                 return false;
             }
 
