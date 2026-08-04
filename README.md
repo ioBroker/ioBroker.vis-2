@@ -292,6 +292,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) Fixed the user permissions being ignored for widgets inside a group
+
 ### 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
 
