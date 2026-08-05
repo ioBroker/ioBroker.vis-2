@@ -294,6 +294,7 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
+* (@typhosj) Fixed the position of the members when a nested group is dissolved
 
 ### 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput

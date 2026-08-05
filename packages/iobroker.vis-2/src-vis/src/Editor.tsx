@@ -1149,12 +1149,18 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         const groupId = this.state.selectedWidgets[0];
         const group = widgets[groupId];
 
+        // if the group is a member of another group, the members stay in that group and their
+        // coordinates must be relative to it and not to the view
+        const parentGroupRect = this.state.selectedGroup
+            ? Editor.getWidgetRelativeRect(this.state.selectedGroup)
+            : null;
+
         for (const member of group.data.members) {
             const widgetBoundingRect = Editor.getWidgetRelativeRect(member);
 
             if (widgetBoundingRect) {
-                widgets[member].style.left = `${widgetBoundingRect.left}px`;
-                widgets[member].style.top = `${widgetBoundingRect.top}px`;
+                widgets[member].style.left = `${widgetBoundingRect.left - (parentGroupRect?.left || 0)}px`;
+                widgets[member].style.top = `${widgetBoundingRect.top - (parentGroupRect?.top || 0)}px`;
                 widgets[member].style.width = `${widgetBoundingRect.width}px`;
                 widgets[member].style.height = `${widgetBoundingRect.height}px`;
             }
