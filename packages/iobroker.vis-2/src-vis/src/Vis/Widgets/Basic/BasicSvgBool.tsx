@@ -147,7 +147,7 @@ class BasicSvgBool extends VisRxWidget<RxData> {
 
         return (
             <div
-                onClick={this.props.editMode ? null : () => this.onSvgClick()}
+                onClick={this.props.editMode || this.state.rxData.no_control ? null : () => this.onSvgClick()}
                 className="vis-widget-body"
             >
                 {this.renderSvg()}
