@@ -292,6 +292,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
+
 ### 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
 
