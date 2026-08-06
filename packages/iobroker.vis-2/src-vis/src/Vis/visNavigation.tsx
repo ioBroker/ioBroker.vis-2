@@ -261,7 +261,13 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                         position: this.props.context.runtime ? 'fixed' : 'relative',
                     }}
                 >
-                    <Tabs value={this.props.activeView}>
+                    <Tabs
+                        value={this.props.activeView}
+                        // the standard variant squeezes the entries into the available width, so they overlap if the window is too narrow
+                        variant="scrollable"
+                        scrollButtons="auto"
+                        allowScrollButtonsMobile
+                    >
                         {items.map((item, index) => (
                             <Tab
                                 iconPosition="start"
