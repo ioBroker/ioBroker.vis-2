@@ -184,6 +184,19 @@ export function pasteGroup(options: CopyGroupOptions): GroupWidgetId {
 }
 
 /**
+ * Build the ID of a widget, that is shown in another view too (multi-views)
+ *
+ * The ID is used as HTML element ID, so it must start with a letter, even if the view name starts with a digit.
+ * The parsing of this ID (see `visBaseWidget`) expects exactly one character before the view name.
+ *
+ * @param view the view where the widget is defined
+ * @param widgetId the ID of the widget in this view
+ */
+export function getMultiViewWidgetId(view: string, widgetId: AnyWidgetId): AnyWidgetId {
+    return `v${view}_${widgetId}` as AnyWidgetId;
+}
+
+/**
  * Removes all special structures from the project
  *
  * @param project the project to remove special structures from
