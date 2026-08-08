@@ -786,14 +786,19 @@ export class VisRxWidget<
             let targetValue = this.state.rxData[`signals-val-${index}`] ?? 'true';
 
             if (val === undefined || val === null) {
-                return condition === 'not exist';
+                // the user compares explicitly against null => use the "null" placeholder in the comparison below.
+                // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
+                if (targetValue !== 'null' || condition === 'exist' || condition === 'not exist') {
+                    return condition === 'not exist';
+                }
+                val = 'null';
             }
 
             if (!condition || targetValue === undefined || targetValue === null) {
                 return condition === 'not exist';
             }
 
-            if (val === 'null' && condition !== 'exist' && condition !== 'not exist') {
+            if (val === 'null' && condition !== 'exist' && condition !== 'not exist' && targetValue !== 'null') {
                 return false;
             }
 
@@ -857,10 +862,11 @@ export class VisRxWidget<
                     targetValue = targetValue.toString();
                     val = val.toString();
                     return !val.toString().includes(targetValue);
+                // 'exist'/'not exist' test the state value, not the comparison value
                 case 'exist':
-                    return targetValue !== 'null';
+                    return val !== 'null';
                 case 'not exist':
-                    return targetValue === 'null';
+                    return val === 'null';
                 default:
                     console.log(`Unknown signals condition for ${this.props.id}: ${condition}`);
                     return false;

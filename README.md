@@ -293,6 +293,8 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Fixed `exist`/`not exist` of signals evaluating the comparison value instead of the state value
+* (@GermanBluefox) Fixed the signal condition if the state value is `null`
 * (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
 * (@typhosj) Fixed the visibility condition if the state value is `null`
 

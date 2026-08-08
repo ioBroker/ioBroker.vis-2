@@ -759,20 +759,25 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         const oid = widgetData[`signals-oid-${index}`];
 
         if (oid) {
-            const val = this.props.context.canStates.attr(`${oid}.val`);
+            let val = this.props.context.canStates.attr(`${oid}.val`);
 
             const condition = widgetData[`signals-cond-${index}`];
             let value = widgetData[`signals-val-${index}`];
 
             if (val === undefined || val === null) {
-                return condition === 'not exist';
+                // the user compares explicitly against null => use the "null" placeholder in the comparison below.
+                // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
+                if (value !== 'null' || condition === 'exist' || condition === 'not exist') {
+                    return condition === 'not exist';
+                }
+                val = 'null';
             }
 
             if (!condition || value === undefined || value === null) {
                 return condition === 'not exist';
             }
 
-            if (val === 'null' && condition !== 'exist' && condition !== 'not exist') {
+            if (val === 'null' && condition !== 'exist' && condition !== 'not exist' && value !== 'null') {
                 return false;
             }
             let valNotNull: string | number | boolean = val as string | number | boolean;
@@ -835,10 +840,11 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     value = value.toString();
                     valNotNull = valNotNull.toString();
                     return !valNotNull.toString().includes(value);
+                // 'exist'/'not exist' test the state value, not the comparison value
                 case 'exist':
-                    return value !== 'null';
+                    return valNotNull !== 'null';
                 case 'not exist':
-                    return value === 'null';
+                    return valNotNull === 'null';
                 default:
                     console.log(`[${this.props.id}] Unknown signals condition: ${condition}`);
                     return false;
