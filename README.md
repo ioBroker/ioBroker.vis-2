@@ -302,6 +302,8 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) Added the CSS classes `vis-filter-item` and `vis-filter-item-active` to the `filter - dropdown` widget
+* (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
+* (@typhosj) Fixed the visibility condition if the state value is `null`
 
 ### 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
