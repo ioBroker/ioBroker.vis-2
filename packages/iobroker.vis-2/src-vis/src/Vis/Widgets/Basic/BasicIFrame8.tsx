@@ -101,7 +101,7 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
                     fields: [
                         {
                             name: 'src_',
-                            type: 'id',
+                            type: 'url',
                         },
                         {
                             name: 'noSandbox',
