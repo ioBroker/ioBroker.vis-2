@@ -133,6 +133,11 @@ declare class VisRxWidget<
     ): JSX.Element | JSX.Element[] | null;
     renderWidgetBody(props: RxRenderWidgetProps): JSX.Element[] | JSX.Element | null;
     getWidgetView(view: string, props?: Partial<VisViewProps>): JSX.Element;
+    /**
+     * Render another widget inside this widget.
+     * Returns `null` if the widget cannot be rendered, e.g. if the widget sets are not loaded yet
+     * or if the current user has no access to the requested widget.
+     */
     getWidgetInWidget(
         view: string,
         wid: AnyWidgetId,
@@ -141,7 +146,7 @@ declare class VisRxWidget<
             refParent?: React.RefObject<HTMLDivElement>;
             isRelative?: boolean;
         },
-    ): JSX.Element;
+    ): JSX.Element | null;
     isSignalVisible(index: number): boolean;
     static text2style(textStyle: string, style: React.CSSProperties): React.CSSProperties;
     renderSignal(index: number): JSX.Element;

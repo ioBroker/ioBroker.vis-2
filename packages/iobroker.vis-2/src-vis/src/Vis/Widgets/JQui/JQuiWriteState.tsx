@@ -470,7 +470,8 @@ class JQuiWriteState<
         super.renderWidgetBody(props);
         const isActive = this.getIsActive();
 
-        const buttonStyle: React.CSSProperties = {};
+        // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+        const buttonStyle: React.CSSProperties = { textTransform: 'none' };
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string>)[attr];

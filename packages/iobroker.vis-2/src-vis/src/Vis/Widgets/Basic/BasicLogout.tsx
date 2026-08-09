@@ -130,6 +130,8 @@ export default class BasicLogout extends VisRxWidget<RxData> {
                         borderWidth: this.state.rxStyle['border-width'] || undefined,
                         borderColor: this.state.rxStyle['border-color'] || undefined,
                         borderRadius: this.state.rxStyle['border-radius'] || undefined,
+                        // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+                        textTransform: 'none',
                     }}
                     variant={this.state.rxData.variant}
                     onClick={() => this.onLogout()}

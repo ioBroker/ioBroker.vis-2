@@ -27,6 +27,7 @@ import type {
     VisBinding,
     VisBindingOperationType,
     RxWidgetInfoAttributesFieldID,
+    RxWidgetInfoAttributesField,
 } from '@iobroker/types-vis-2';
 import { deepClone } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
@@ -95,6 +96,43 @@ const LOCAL_STATE_PREFIX = 'local_';
  */
 export function isLocalStateId(id: string): boolean {
     return id.startsWith(LOCAL_STATE_PREFIX);
+}
+
+/**
+ * Check if the widget attribute contains an object ID, that must be subscribed
+ *
+ * @param attr name of the widget attribute
+ * @param widgetAttrInfo types of the widget attributes (only for react widgets known)
+ */
+export function isIdAttribute(attr: string, widgetAttrInfo?: Record<string, RxWidgetInfoAttributesField>): boolean {
+    if (attr.match(/oid\d{0,2}$/) || attr.startsWith('oid') || attr.startsWith('signals-oid-')) {
+        return true;
+    }
+
+    if (widgetAttrInfo) {
+        const info = widgetAttrInfo[attr.replace(/\d{0,2}$/, '')] as RxWidgetInfoAttributesFieldID;
+        return info?.type === 'id' && info.noSubscribe !== true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if the value, that was calculated from a binding, could be an object ID
+ *
+ * @param value the calculated value of a binding
+ */
+export function isIdValue(value: unknown): value is string {
+    return (
+        typeof value === 'string' &&
+        !!value &&
+        value.length < 300 &&
+        // every state ID has at least three parts: "adapter.instance.name", "system.host.name", ...
+        // this keeps values like "12.5" or "img/logo.png" out, which would be subscribed for nothing
+        value.split('.').length >= 3 &&
+        // the same characters that the js-controller refuses in an ID
+        !/[\]["'`\\<>*,;?]/.test(value)
+    );
 }
 
 /**
@@ -544,22 +582,7 @@ export function getUsedObjectIDsInWidget(
                 data[attr] &&
                 data[attr] !== 'nothing_selected'
             ) {
-                let isID = !!attr.match(/oid\d{0,2}$/);
-                if (attr.startsWith('oid')) {
-                    isID = true;
-                } else if (attr.startsWith('signals-oid-')) {
-                    isID = true;
-                } else if (linkContext.widgetAttrInfo) {
-                    const _attr = attr.replace(/\d{0,2}$/, '');
-                    if (
-                        (linkContext.widgetAttrInfo[_attr] as RxWidgetInfoAttributesFieldID)?.type === 'id' &&
-                        (linkContext.widgetAttrInfo[_attr] as RxWidgetInfoAttributesFieldID).noSubscribe !== true
-                    ) {
-                        isID = true;
-                    }
-                }
-
-                if (isID) {
+                if (isIdAttribute(attr, linkContext.widgetAttrInfo)) {
                     if (!data[attr].startsWith('"')) {
                         if (!linkContext.IDs.includes(data[attr])) {
                             linkContext.IDs.push(data[attr]);

@@ -1232,6 +1232,22 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         if (!VisWidgetsCatalog.rxWidgets) {
             return null;
         }
+
+        // Every render path goes through here: the widget loop of render(), BasicGroup for grouped
+        // widgets and VisRxWidget.getWidgetInWidget() for embedded ones. Checking the access at this
+        // single choke point is what keeps a new caller from bypassing the permissions by accident.
+        // The additional check in the render loop is NOT redundant, see the comment there.
+        if (
+            !hasWidgetAccess({
+                view: options.view,
+                editMode: options.editMode,
+                project: store.getState().visProject,
+                user: store.getState().activeUser,
+                wid: options.id,
+            })
+        ) {
+            return null;
+        }
         // context, id, isRelative, refParent, askView, mouseDownOnView, view,
         // relativeWidgetOrder, moveAllowed, editMode, multiView, ignoreMouseEvents, selectedGroup
         // viewsActiveFilter, customSettings, onIgnoreMouseEvents
@@ -1743,6 +1759,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         return;
                     }
 
+                    // A widget the user must not see may not occupy a slot in the relative widget
+                    // order either: that order drives the DOM insertion of can widgets and the
+                    // position number and up/down arrows in the editor. So this check has to stay
+                    // even though getOneWidget() checks the access again before rendering.
                     if (
                         !hasWidgetAccess({
                             view: this.props.view,

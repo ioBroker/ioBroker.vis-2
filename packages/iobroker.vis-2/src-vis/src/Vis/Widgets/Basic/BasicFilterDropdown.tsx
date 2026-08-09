@@ -331,6 +331,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
             <FormControl
                 fullWidth
                 variant={this.state.rxData.dropdownVariant || 'standard'}
+                size={this.state.rxData.dropdownSmall ? 'small' : 'medium'}
             >
                 {this.state.rxData.widgetTitle ? <InputLabel>{this.state.rxData.widgetTitle}</InputLabel> : null}
                 <Select
@@ -362,7 +363,10 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                     autoFocus={!!this.state.rxData.autoFocus}
                 >
                     {this.state.rxData.noAllOption ? null : (
-                        <MenuItem value="_">
+                        <MenuItem
+                            value="_"
+                            className={`vis-filter-item${viewsActiveFilter.length ? '' : ' vis-filter-item-active'}`}
+                        >
                             <em>{this.state.rxData.noFilterText || I18n.t('basic_no_filter')}</em>
                         </MenuItem>
                     )}
@@ -382,6 +386,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                             <MenuItem
                                 key={option.value}
                                 value={option.value}
+                                className={`vis-filter-item${viewsActiveFilter.includes(option.value) ? ' vis-filter-item-active' : ''}`}
                                 selected={viewsActiveFilter.includes(option.value)}
                                 style={{
                                     color: viewsActiveFilter.includes(option.value)
@@ -414,8 +419,11 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
             >
                 {this.state.rxData.noAllOption ? null : (
                     <Button
+                        className={`vis-filter-item${viewsActiveFilter.length ? '' : ' vis-filter-item-active'}`}
                         style={{
                             flexGrow: 1,
+                            // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+                            textTransform: 'none',
                         }}
                         onClick={() => {
                             const view = this.props.askView('getViewClass');
@@ -439,6 +447,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                     return (
                         <Button
                             key={option.value}
+                            className={`vis-filter-item${viewsActiveFilter.includes(option.value) ? ' vis-filter-item-active' : ''}`}
                             onClick={() => {
                                 let filter: string[];
                                 if (this.state.rxData.multiple) {
@@ -488,6 +497,8 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                             }
                             style={{
                                 flexGrow: 1,
+                                // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+                                textTransform: 'none',
                                 color: viewsActiveFilter.includes(option.value)
                                     ? option.activeColor || option.color
                                     : option.color,
