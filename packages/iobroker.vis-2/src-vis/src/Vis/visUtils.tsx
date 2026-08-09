@@ -127,7 +127,10 @@ export function isIdValue(value: unknown): value is string {
         typeof value === 'string' &&
         !!value &&
         value.length < 300 &&
-        value.includes('.') &&
+        // every state ID has at least three parts: "adapter.instance.name", "system.host.name", ...
+        // this keeps values like "12.5" or "img/logo.png" out, which would be subscribed for nothing
+        value.split('.').length >= 3 &&
+        // the same characters that the js-controller refuses in an ID
         !/[\]["'`\\<>*,;?]/.test(value)
     );
 }

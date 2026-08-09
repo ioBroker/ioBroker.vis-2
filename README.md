@@ -313,8 +313,9 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
 * (@typhosj) Subscribed to object IDs that are the result of a binding
-* (@typhosj) Fixed the ignored read only option of the Bool SVG widget
+* (@typhosj) Fixed the ignored read-only option of the Bool SVG widget
 * (@GermanBluefox) Fixed the position of a new group created inside another group
 * (@typhosj) Fixed the position of the members when a nested group is dissolved
 * (@GermanBluefox) Fixed "same width"/"same height" applying the sizes of a previously selected widget

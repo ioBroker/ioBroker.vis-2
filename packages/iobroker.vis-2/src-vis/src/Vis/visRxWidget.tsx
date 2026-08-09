@@ -140,6 +140,9 @@ export class VisRxWidget<
     /** true as soon as the widget is mounted and so subscribed to all known IDs */
     private rxMounted = false;
 
+    /** object IDs that were subscribed because a binding delivered them, by widget attribute */
+    private boundIds: Record<string, string> = {};
+
     constructor(props: VisRxWidgetProps) {
         super(props);
 
@@ -431,14 +434,36 @@ export class VisRxWidget<
      * @param value the calculated value of the binding
      */
     subscribeBoundId(attr: string, value: unknown): void {
-        if (
-            !isIdValue(value) ||
-            this.linkContext.IDs.includes(value) ||
-            !isIdAttribute(attr, this.linkContext.widgetAttrInfo)
-        ) {
+        if (!isIdAttribute(attr, this.linkContext.widgetAttrInfo)) {
             return;
         }
 
+        const previous = this.boundIds[attr];
+
+        if (!isIdValue(value)) {
+            // the binding does not deliver an ID (anymore) => release the one of the last run
+            if (previous) {
+                delete this.boundIds[attr];
+                this.releaseBoundId(previous);
+            }
+            return;
+        }
+
+        if (previous === value) {
+            return;
+        }
+
+        if (previous) {
+            delete this.boundIds[attr];
+            this.releaseBoundId(previous);
+        }
+
+        if (this.linkContext.IDs.includes(value)) {
+            // the ID is used by the widget anyway, so it is not ours to manage
+            return;
+        }
+
+        this.boundIds[attr] = value;
         this.linkContext.IDs.push(value);
 
         if (attr === 'visibility-oid') {
@@ -449,6 +474,29 @@ export class VisRxWidget<
         // if not yet mounted, componentDidMount will subscribe to all collected IDs
         if (this.rxMounted) {
             void this.props.context.socket.subscribeState(value, this.onStateChangedBind);
+        }
+    }
+
+    /**
+     * Give up an object ID that was subscribed for a binding, because the binding delivers another one now
+     *
+     * @param id the object ID of the previous run
+     */
+    releaseBoundId(id: string): void {
+        // another bound attribute may still need it
+        if (Object.values(this.boundIds).includes(id)) {
+            return;
+        }
+
+        const pos = this.linkContext.IDs.indexOf(id);
+        if (pos !== -1) {
+            this.linkContext.IDs.splice(pos, 1);
+        }
+
+        VisBaseWidget.removeFromArray(this.linkContext.visibility, [id], this.props.view, this.props.id);
+
+        if (this.rxMounted) {
+            this.props.context.socket.unsubscribeState(id, this.onStateChangedBind);
         }
     }
 
@@ -580,6 +628,8 @@ export class VisRxWidget<
 
     onPropertiesUpdated(): void {
         const oldIDs = this.linkContext.IDs;
+        // the link context is built anew below, so the bound IDs are collected anew as well
+        this.boundIds = {};
         this.linkContext = {
             IDs: [],
             bindings: {},

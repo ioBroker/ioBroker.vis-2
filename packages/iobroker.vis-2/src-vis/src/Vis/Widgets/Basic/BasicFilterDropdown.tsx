@@ -331,6 +331,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
             <FormControl
                 fullWidth
                 variant={this.state.rxData.dropdownVariant || 'standard'}
+                size={this.state.rxData.dropdownSmall ? 'small' : 'medium'}
             >
                 {this.state.rxData.widgetTitle ? <InputLabel>{this.state.rxData.widgetTitle}</InputLabel> : null}
                 <Select
