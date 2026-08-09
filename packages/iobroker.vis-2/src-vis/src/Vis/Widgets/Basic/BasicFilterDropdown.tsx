@@ -422,6 +422,8 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                         className={`vis-filter-item${viewsActiveFilter.length ? '' : ' vis-filter-item-active'}`}
                         style={{
                             flexGrow: 1,
+                            // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+                            textTransform: 'none',
                         }}
                         onClick={() => {
                             const view = this.props.askView('getViewClass');
@@ -495,6 +497,8 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                             }
                             style={{
                                 flexGrow: 1,
+                                // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+                                textTransform: 'none',
                                 color: viewsActiveFilter.includes(option.value)
                                     ? option.activeColor || option.color
                                     : option.color,

@@ -323,7 +323,8 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
             />
         ) : null;
 
-        const buttonStyle: CSSProperties = {};
+        // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach((attr: keyof WidgetStyleState) => {
             const value = this.state.rxStyle[attr];

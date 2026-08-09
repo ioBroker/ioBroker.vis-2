@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Show the text of the button widgets as entered and not upper cased
 * (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
 * (@typhosj) Subscribed to object IDs that are the result of a binding
 * (@typhosj) Fixed the ignored read-only option of the Bool SVG widget
