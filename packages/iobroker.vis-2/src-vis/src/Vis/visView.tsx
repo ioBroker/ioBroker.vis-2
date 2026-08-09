@@ -1232,6 +1232,19 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         if (!VisWidgetsCatalog.rxWidgets) {
             return null;
         }
+
+        // widgets in a group are rendered by BasicGroup and not by the loop above, so the access is checked here for both
+        if (
+            !hasWidgetAccess({
+                view: options.view,
+                editMode: options.editMode,
+                project: store.getState().visProject,
+                user: store.getState().activeUser,
+                wid: options.id,
+            })
+        ) {
+            return null;
+        }
         // context, id, isRelative, refParent, askView, mouseDownOnView, view,
         // relativeWidgetOrder, moveAllowed, editMode, multiView, ignoreMouseEvents, selectedGroup
         // viewsActiveFilter, customSettings, onIgnoreMouseEvents

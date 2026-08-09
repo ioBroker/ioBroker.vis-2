@@ -301,6 +301,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Fixed the user permissions being ignored for widgets inside a group
 * (@typhosj) Added the CSS classes `vis-filter-item` and `vis-filter-item-active` to the `filter - dropdown` widget
 * (@GermanBluefox) Fixed `exist`/`not exist` of signals evaluating the comparison value instead of the state value
 * (@GermanBluefox) Fixed the signal condition if the state value is `null`
