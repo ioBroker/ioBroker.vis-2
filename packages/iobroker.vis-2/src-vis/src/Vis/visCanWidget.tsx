@@ -116,6 +116,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     private IDs: StateID[];
 
+    /** object IDs that were subscribed because a binding delivered them, by widget attribute */
+    private boundIds: Record<string, StateID> = {};
+
     private bindingsTimer: ReturnType<typeof setTimeout> | null = null;
 
     private filterDisplay: React.CSSProperties['display'] | undefined;
@@ -155,6 +158,8 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     setupSubscriptions(): void {
         this.bindings = {};
+        // this.IDs is replaced below, so the IDs from bindings are collected anew as well
+        this.boundIds = {};
 
         const linkContext: VisStateUsage = {
             IDs: [],
@@ -1013,53 +1018,6 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         };
     }
 
-    // visibilityOidBinding(binding, oid) {
-    //     // if attribute 'visibility-oid' contains binding
-    //     if (binding.attr === 'visibility-oid') {
-    //         // runs only if we have a valid id
-    //         if (oid && oid.length < 300 && (/^[^.]*\.\d*\..*|^[^.]*\.[^.]*\.[^.]*\.\d*\..*/).test(oid) && VisBaseWidget.FORBIDDEN_CHARS.test(oid)) {
-    //             const obj = {
-    //                 view: binding.view,
-    //                 widget: binding.widget,
-    //             };
-    //
-    //             // on runtime load oid, check if oid needs to be subscribed
-    //             Object.keys(this.props.context.linkContext.visibility).forEach(id => {
-    //                 const widgetIndex = this.props.context.linkContext.visibility[id].findIndex(x => x.widget === obj.widget);
-    //
-    //                 // remove or add widget to existing oid's in visibility list
-    //                 if (widgetIndex >= 0 && id !== oid) {
-    //                     // widget exists in the visibility list
-    //                     this.props.context.linkContext.visibility[id].splice(widgetIndex, 1);
-    //                 } else if (widgetIndex < 0 && id === oid) {
-    //                     // widget does not exist in the visibility list
-    //                     this.props.context.linkContext.visibility[id].push(obj);
-    //                 }
-    //             });
-    //
-    //             if (!this.props.context.linkContext.visibility[oid]) {
-    //                 // oid not exist in visibility list -> add oid and widget to the visibility list
-    //                 this.props.context.linkContext.visibility[oid] = [obj];
-    //             }
-    //
-    //             // on runtime load oid, check if oid does need to be subscribed
-    //             if (!this.state.editMode) {
-    //                 if (this.IDs.includes(oid)) {
-    //                     this.updateVisibility();
-    //                 } else {
-    //                     this.IDs.push(oid);
-    //                     const val = this.props.context.canStates.attr(`${oid}.val`);
-    //                     if (val !== undefined) {
-    //                         this.updateVisibility();
-    //                     }
-    //
-    //                     this.props.context.linkContext.subscribe([oid]);
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
     /**
      * If a binding delivers an object ID (e.g. in the "oid" attribute), subscribe to this ID too
      *
@@ -1067,10 +1025,36 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
      * @param value the calculated value of the binding
      */
     subscribeBoundId(attr: string, value: unknown): void {
-        if (!isIdValue(value) || this.IDs.includes(value) || !isIdAttribute(attr)) {
+        if (!isIdAttribute(attr)) {
             return;
         }
 
+        const previous = this.boundIds[attr];
+
+        if (!isIdValue(value)) {
+            // the binding does not deliver an ID (anymore) => release the one of the last run
+            if (previous) {
+                delete this.boundIds[attr];
+                this.releaseBoundId(previous);
+            }
+            return;
+        }
+
+        if (previous === value) {
+            return;
+        }
+
+        if (previous) {
+            delete this.boundIds[attr];
+            this.releaseBoundId(previous);
+        }
+
+        if (this.IDs.includes(value)) {
+            // the ID is used by the widget anyway, so it is not ours to manage
+            return;
+        }
+
+        this.boundIds[attr] = value;
         this.IDs.push(value);
 
         if (attr === 'visibility-oid') {
@@ -1079,6 +1063,27 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         }
 
         this.props.context.linkContext.subscribe([value]);
+    }
+
+    /**
+     * Give up an object ID that was subscribed for a binding, because the binding delivers another one now
+     *
+     * @param id the object ID of the previous run
+     */
+    releaseBoundId(id: string): void {
+        // another bound attribute may still need it
+        if (Object.values(this.boundIds).includes(id)) {
+            return;
+        }
+
+        const pos = this.IDs.indexOf(id);
+        if (pos !== -1) {
+            this.IDs.splice(pos, 1);
+        }
+
+        VisBaseWidget.removeFromArray(this.props.context.linkContext.visibility, [id], this.props.view, this.props.id);
+
+        this.props.context.linkContext.unsubscribe([id]);
     }
 
     applyBindings(doNotApplyStyles: boolean, widgetData: WidgetDataWithParsedFilter, widgetStyle: WidgetStyle): void {
@@ -1138,8 +1143,6 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 }
             }
             // TODO
-            // this.subscribeOidAtRuntime(value);
-            // this.visibilityOidBinding(binding, value);
             // this.reRenderWidget(binding.view, binding.view, bid);
         });
     }
