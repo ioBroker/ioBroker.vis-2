@@ -110,9 +110,6 @@ export interface RuntimeState extends GenericAppState {
     currentUser: ioBroker.UserObject;
     userGroups: Record<ioBroker.ObjectIDs.Group, ioBroker.GroupObject>;
     splitSizes: [number, number, number];
-    alignType: 'width' | 'height';
-    alignIndex: number;
-    alignValues: number[];
     selectedGroup: GroupWidgetId | null;
     projectsDialog: boolean;
     showImportDialog: boolean;
@@ -966,29 +963,20 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             selectedView,
         };
 
-        let selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
+        const selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
             `${this.state.projectName}.${selectedView}.widgets`,
             [],
         );
 
-        // Check that all selectedWidgets exist
+        // Check that all selectedWidgets exist.
+        // splice() returns the REMOVED entries, so the result must not be assigned back to selectedWidgets,
+        // otherwise the selection ends up being exactly the widget that does not exist anymore.
         for (let i = selectedWidgets.length - 1; i >= 0; i--) {
             if (!store.getState().visProject[selectedView]?.widgets?.[selectedWidgets[i]]) {
-                selectedWidgets = selectedWidgets.splice(i, 1);
+                selectedWidgets.splice(i, 1);
             }
         }
-        if (JSON.stringify(newState.selectedWidgets) !== JSON.stringify(selectedWidgets)) {
-            newState.selectedWidgets = selectedWidgets;
-        }
-        if (newState.alignType !== null) {
-            newState.alignType = null;
-        }
-        if (newState.alignIndex !== 0) {
-            newState.alignIndex = 0;
-        }
-        if (newState.alignValues?.length > 0) {
-            newState.alignValues = [];
-        }
+        newState.selectedWidgets = selectedWidgets;
 
         if (!this.state.runtime && !store.getState().visProject.___settings.openedViews.includes(selectedView)) {
             const project = JSON.parse(JSON.stringify(store.getState().visProject));

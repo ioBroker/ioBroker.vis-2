@@ -313,6 +313,8 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Fixed "same width"/"same height" applying the sizes of a previously selected widget
+* (@GermanBluefox) Fixed the widget selection when a stored selected widget does not exist anymore
 * (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
 * (@GermanBluefox) The user permissions are now applied to widgets embedded via `getWidgetInWidget`, which can return `null` now
 * (@typhosj) Fixed the user permissions being ignored for widgets inside a group
