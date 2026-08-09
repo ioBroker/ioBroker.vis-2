@@ -313,6 +313,8 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
+* (@typhosj) Fixed the position of the members when a nested group is dissolved
 * (@GermanBluefox) Fixed "same width"/"same height" applying the sizes of a previously selected widget
 * (@GermanBluefox) Fixed the widget selection when a stored selected widget does not exist anymore
 * (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
