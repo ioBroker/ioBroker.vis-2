@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
 * (@typhosj) Show the text of the button widgets as entered and not upper cased
 * (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
 * (@typhosj) Subscribed to object IDs that are the result of a binding

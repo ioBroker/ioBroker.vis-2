@@ -50,7 +50,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
-import { hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
+import { getMultiViewWidgetId, hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
 
 import enLang from './i18n/en.json';
 import deLang from './i18n/de.json';
@@ -542,16 +542,15 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                     const views: string[] = oWidget.data['multi-views'].split(',');
                     views.forEach(viewId => {
                         if (viewId !== view && project[viewId]) {
+                            const multiViewId = getMultiViewWidgetId(view, widgetId);
                             // copy all widgets, that must be shown in this view too
-                            project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId] = JSON.parse(
-                                JSON.stringify(oWidget),
-                            );
-                            delete project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId].data['multi-views'];
+                            project[viewId].widgets[multiViewId] = JSON.parse(JSON.stringify(oWidget));
+                            delete project[viewId].widgets[multiViewId].data['multi-views'];
                             if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
                                 // copy all group widgets too
-                                const newWidget = project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId];
+                                const newWidget = project[viewId].widgets[multiViewId];
                                 newWidget.data.members.forEach((memberId, i) => {
-                                    const newId: AnyWidgetId = `${view}_${memberId}` as AnyWidgetId;
+                                    const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
                                     project[viewId].widgets[newId] = JSON.parse(
                                         JSON.stringify(oView.widgets[memberId]),
                                     );
