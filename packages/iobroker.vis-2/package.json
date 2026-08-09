@@ -25,31 +25,31 @@
         "vis-2"
     ],
     "dependencies": {
-        "@iobroker/adapter-core": "^3.3.2",
-        "axios": "^1.16.1",
+        "@iobroker/adapter-core": "^3.4.3",
+        "axios": "^1.19.0",
         "jsonwebtoken": "^9.0.3",
         "mime": "^3.0.0"
     },
     "devDependencies": {
         "@iobroker/build-tools": "^3.0.1",
-        "@iobroker/db-objects-redis": "^7.1.2",
-        "@iobroker/db-states-redis": "^7.1.2",
+        "@iobroker/db-objects-redis": "^7.2.2",
+        "@iobroker/db-states-redis": "^7.2.2",
         "@iobroker/vis-2-widgets-testing": "^1.0.6",
         "@material-icons/svg": "^1.0.33",
-        "@tsconfig/node18": "^18.2.4",
+        "@tsconfig/node18": "^18.2.6",
         "@types/jquery": "^3.5.33",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mime": "^3.0.4",
         "@types/mocha": "^10.0.10",
-        "@types/react": "^18.3.28",
+        "@types/react": "^18.3.31",
         "@types/unzipper": "^0.10.11",
         "dayjs": "^1.11.21",
         "iobroker.web": "*",
         "jquery-ui": "^1.14.2",
-        "mocha": "^11.7.6",
+        "mocha": "^11.8.0",
         "rimraf": "^6.1.3",
-        "sass": "^1.100.0",
-        "unzipper": "^0.12.3"
+        "sass": "^1.102.0",
+        "unzipper": "^0.12.5"
     },
     "bugs": {
         "url": "https://github.com/iobroker/iobroker.vis/issues"
