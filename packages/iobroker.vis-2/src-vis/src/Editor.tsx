@@ -289,6 +289,8 @@ export interface EditorState extends RuntimeState {
         alignType: 'width' | 'height';
         alignIndex: number;
         alignValues: number[];
+        /** The selection the cached alignValues belong to. If the selection changes, they are collected again. */
+        alignKey: string;
     };
     showCode: boolean;
     marketplaceDialog: Partial<MarketplaceDialogProps> | false;
@@ -376,6 +378,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 alignType: null,
                 alignIndex: 0,
                 alignValues: [],
+                alignKey: '',
             },
             showCode: window.localStorage.getItem('showCode') === 'true',
             editMode: true,
@@ -974,7 +977,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             });
         } else if (type === 'width') {
             let { alignIndex, alignType, alignValues } = this.state.align;
-            if (alignType !== 'width') {
+            // The collected values belong to one selection. As soon as the selection or the type changes,
+            // they must be collected again, otherwise the widths of a previous selection would be applied.
+            const alignKey = this.state.selectedWidgets.join(',');
+            if (alignType !== 'width' || this.state.align.alignKey !== alignKey) {
                 alignType = 'width';
                 alignIndex = 0;
                 alignValues = [];
@@ -997,10 +1003,12 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             this.state.selectedWidgets.forEach(selectedWidget => {
                 widgets[selectedWidget].style.width = alignValues[alignIndex];
             });
-            this.setState({ align: { alignType, alignIndex, alignValues } });
+            this.setState({ align: { alignType, alignIndex, alignValues, alignKey } });
         } else if (type === 'height') {
             let { alignIndex, alignType, alignValues } = this.state.align;
-            if (alignType !== 'height') {
+            // see the comment in the 'width' branch above
+            const alignKey = this.state.selectedWidgets.join(',');
+            if (alignType !== 'height' || this.state.align.alignKey !== alignKey) {
                 alignType = 'height';
                 alignIndex = 0;
                 alignValues = [];
@@ -1023,7 +1031,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             this.state.selectedWidgets.forEach(selectedWidget => {
                 widgets[selectedWidget].style.height = alignValues[alignIndex];
             });
-            this.setState({ align: { alignType, alignIndex, alignValues } });
+            this.setState({ align: { alignType, alignIndex, alignValues, alignKey } });
         }
         void this.changeProject(project);
     };
@@ -1148,7 +1156,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         // remember the group ID, as setSelectedWidgets below replaces this.state.selectedWidgets
         const groupId = this.state.selectedWidgets[0];
         const group = widgets[groupId];
-
+      
         // if the group is a member of another group, the members stay in that group and their
         // coordinates must be relative to it and not to the view
         const parentGroupRect = this.state.selectedGroup
@@ -1366,12 +1374,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 JSON.stringify(selectedWidgets),
             );
 
-            await this.setStateAsync({
-                selectedWidgets,
-                alignType: null,
-                alignIndex: 0,
-                alignValues: [],
-            });
+            await this.setStateAsync({ selectedWidgets });
         }
     };
 
