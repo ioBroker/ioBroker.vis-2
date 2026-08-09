@@ -1145,7 +1145,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     ungroupWidgets = async (): Promise<void> => {
         const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
-        const group = widgets[this.state.selectedWidgets[0]];
+        // remember the group ID, as setSelectedWidgets below replaces this.state.selectedWidgets
+        const groupId = this.state.selectedWidgets[0];
+        const group = widgets[groupId];
 
         for (const member of group.data.members) {
             const widgetBoundingRect = Editor.getWidgetRelativeRect(member);
@@ -1172,13 +1174,13 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 widgets[member].groupid = this.state.selectedGroup;
             }
 
-            const idx = parentGroupWidget.data.members.indexOf(this.state.selectedWidgets[0]);
+            const idx = parentGroupWidget.data.members.indexOf(groupId);
             parentGroupWidget.data.members.splice(idx, 1);
         }
 
         await this.setSelectedWidgets(group.data.members);
 
-        delete widgets[this.state.selectedWidgets[0]];
+        delete widgets[groupId];
 
         return this.changeProject(project);
     };

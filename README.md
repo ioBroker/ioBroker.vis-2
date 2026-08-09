@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
 * (@GermanBluefox) The user permissions are now applied to widgets embedded via `getWidgetInWidget`, which can return `null` now
 * (@typhosj) Fixed the user permissions being ignored for widgets inside a group
 * (@typhosj) Added the CSS classes `vis-filter-item` and `vis-filter-item-active` to the `filter - dropdown` widget
