@@ -741,6 +741,11 @@ export class VisRxWidget<
         );
     }
 
+    /**
+     * Render another widget inside this widget.
+     * Returns `null` if the widget cannot be rendered, e.g. if the widget sets are not loaded yet
+     * or if the current user has no access to the requested widget.
+     */
     getWidgetInWidget(
         view: string,
         wid: AnyWidgetId,
@@ -749,7 +754,7 @@ export class VisRxWidget<
             refParent?: React.RefObject<HTMLDivElement>;
             isRelative?: boolean;
         },
-    ): React.JSX.Element {
+    ): React.JSX.Element | null {
         props = props || {};
 
         // old (can) widgets require props.refParent
