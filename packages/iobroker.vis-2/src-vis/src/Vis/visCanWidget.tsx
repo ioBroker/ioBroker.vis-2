@@ -34,7 +34,7 @@ import type {
 } from '@iobroker/types-vis-2';
 
 import { calculateOverflow, isVarFinite, deepClone } from '@/Utilities/utils';
-import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget } from './visUtils';
+import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget, isIdAttribute, isIdValue } from './visUtils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 
 interface WidgetDataWithParsedFilter extends WidgetData {
@@ -1060,6 +1060,27 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
     //     }
     // }
 
+    /**
+     * If a binding delivers an object ID (e.g. in the "oid" attribute), subscribe to this ID too
+     *
+     * @param attr name of the widget attribute
+     * @param value the calculated value of the binding
+     */
+    subscribeBoundId(attr: string, value: unknown): void {
+        if (!isIdValue(value) || this.IDs.includes(value) || !isIdAttribute(attr)) {
+            return;
+        }
+
+        this.IDs.push(value);
+
+        if (attr === 'visibility-oid') {
+            this.props.context.linkContext.visibility[value] = this.props.context.linkContext.visibility[value] || [];
+            this.props.context.linkContext.visibility[value].push({ view: this.props.view, widget: this.props.id });
+        }
+
+        this.props.context.linkContext.subscribe([value]);
+    }
+
     applyBindings(doNotApplyStyles: boolean, widgetData: WidgetDataWithParsedFilter, widgetStyle: WidgetStyle): void {
         Object.keys(this.bindings).forEach(id => this.applyBinding(id, doNotApplyStyles, widgetData, widgetStyle));
     }
@@ -1096,6 +1117,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     // trigger observable
                     widgetContext.data.attr(item.attr, value);
                 }
+                this.subscribeBoundId(item.attr, value);
             } else if (item.type === 'style') {
                 if (widgetStyle) {
                     (widgetStyle as Record<string, string>)[item.attr] = value;

@@ -40,7 +40,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { deepClone, calculateOverflow } from '../Utilities/utils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
-import { addClass, getUsedObjectIDsInWidget, isLocalStateId } from './visUtils';
+import { addClass, getUsedObjectIDsInWidget, isIdAttribute, isIdValue, isLocalStateId } from './visUtils';
 
 type VisRxWidgetProps = VisBaseWidgetProps;
 
@@ -136,6 +136,9 @@ export class VisRxWidget<
 
     /** state change handler for local state changes */
     private localStateChangeCb?: Parameters<typeof window.vis.registerOnChange>[0];
+
+    /** true as soon as the widget is mounted and so subscribed to all known IDs */
+    private rxMounted = false;
 
     constructor(props: VisRxWidgetProps) {
         super(props);
@@ -414,14 +417,44 @@ export class VisRxWidget<
 
             if (item.type === 'data') {
                 (newState.rxData as Record<string, any>)[item.attr] = value;
+                this.subscribeBoundId(item.attr, value);
             } else if (newState.rxStyle) {
                 (newState.rxStyle as Record<string, any>)[item.attr] = value;
             }
         });
     }
 
+    /**
+     * If a binding delivers an object ID (e.g. in the "oid" attribute), subscribe to this ID too
+     *
+     * @param attr name of the widget attribute
+     * @param value the calculated value of the binding
+     */
+    subscribeBoundId(attr: string, value: unknown): void {
+        if (
+            !isIdValue(value) ||
+            this.linkContext.IDs.includes(value) ||
+            !isIdAttribute(attr, this.linkContext.widgetAttrInfo)
+        ) {
+            return;
+        }
+
+        this.linkContext.IDs.push(value);
+
+        if (attr === 'visibility-oid') {
+            this.linkContext.visibility[value] = this.linkContext.visibility[value] || [];
+            this.linkContext.visibility[value].push({ view: this.props.view, widget: this.props.id });
+        }
+
+        // if not yet mounted, componentDidMount will subscribe to all collected IDs
+        if (this.rxMounted) {
+            void this.props.context.socket.subscribeState(value, this.onStateChangedBind);
+        }
+    }
+
     componentDidMount(): void {
         super.componentDidMount();
+        this.rxMounted = true;
 
         const localStateIds = this.linkContext.IDs.filter(id => isLocalStateId(id));
 

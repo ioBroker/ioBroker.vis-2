@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Subscribed to object IDs that are the result of a binding
 * (@typhosj) Fixed the ignored read only option of the Bool SVG widget
 * (@GermanBluefox) Fixed the position of a new group created inside another group
 * (@typhosj) Fixed the position of the members when a nested group is dissolved
