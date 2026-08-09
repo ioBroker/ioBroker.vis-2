@@ -1140,8 +1140,15 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             }
         }
 
-        group.style.left = `${left}px`;
-        group.style.top = `${top}px`;
+        // left/top are relative to the view. If the new group becomes a member of another group,
+        // it is rendered inside the container of that group, so its position must be relative to it.
+        // Counterpart of the same calculation in ungroupWidgets().
+        const parentGroupRect = this.state.selectedGroup
+            ? Editor.getWidgetRelativeRect(this.state.selectedGroup)
+            : null;
+
+        group.style.left = `${left - (parentGroupRect?.left || 0)}px`;
+        group.style.top = `${top - (parentGroupRect?.top || 0)}px`;
         group.style.width = `${right - left}px`;
         group.style.height = `${bottom - top}px`;
         widgets[groupId] = group;
@@ -1156,7 +1163,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         // remember the group ID, as setSelectedWidgets below replaces this.state.selectedWidgets
         const groupId = this.state.selectedWidgets[0];
         const group = widgets[groupId];
-      
+
         // if the group is a member of another group, the members stay in that group and their
         // coordinates must be relative to it and not to the view
         const parentGroupRect = this.state.selectedGroup
