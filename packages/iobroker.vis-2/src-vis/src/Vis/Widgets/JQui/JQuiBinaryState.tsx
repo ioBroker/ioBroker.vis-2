@@ -829,12 +829,13 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             variant = 'text';
         }
 
-        const buttonStyle =
-            this.state.rxData.orientation === 'vertical'
-                ? { height: '50%' }
-                : this.state.rxData.notEqualLength
-                  ? undefined
-                  : { width: '50%' };
+        // the buttons of the group do not inherit the text transformation of the group
+        const buttonStyle: CSSProperties = { textTransform: style.textTransform };
+        if (this.state.rxData.orientation === 'vertical') {
+            buttonStyle.height = '50%';
+        } else if (!this.state.rxData.notEqualLength) {
+            buttonStyle.width = '50%';
+        }
 
         return (
             <ButtonGroup
@@ -900,7 +901,8 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         super.renderWidgetBody(props);
         const isOn = this.isOn();
 
-        const buttonStyle: CSSProperties = {};
+        // buttons of material UI are upper cased by default, but vis widgets show the text as entered
+        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
         Object.keys(this.state.rxStyle).forEach(attr => {
             const value = this.state.rxStyle[attr as keyof typeof this.state.rxStyle];

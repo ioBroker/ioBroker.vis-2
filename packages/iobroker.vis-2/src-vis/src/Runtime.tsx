@@ -50,7 +50,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
-import { hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
+import { getMultiViewWidgetId, hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
 
 import enLang from './i18n/en.json';
 import deLang from './i18n/de.json';
@@ -110,9 +110,6 @@ export interface RuntimeState extends GenericAppState {
     currentUser: ioBroker.UserObject;
     userGroups: Record<ioBroker.ObjectIDs.Group, ioBroker.GroupObject>;
     splitSizes: [number, number, number];
-    alignType: 'width' | 'height';
-    alignIndex: number;
-    alignValues: number[];
     selectedGroup: GroupWidgetId | null;
     projectsDialog: boolean;
     showImportDialog: boolean;
@@ -545,16 +542,15 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                     const views: string[] = oWidget.data['multi-views'].split(',');
                     views.forEach(viewId => {
                         if (viewId !== view && project[viewId]) {
+                            const multiViewId = getMultiViewWidgetId(view, widgetId);
                             // copy all widgets, that must be shown in this view too
-                            project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId] = JSON.parse(
-                                JSON.stringify(oWidget),
-                            );
-                            delete project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId].data['multi-views'];
+                            project[viewId].widgets[multiViewId] = JSON.parse(JSON.stringify(oWidget));
+                            delete project[viewId].widgets[multiViewId].data['multi-views'];
                             if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
                                 // copy all group widgets too
-                                const newWidget = project[viewId].widgets[`${view}_${widgetId}` as AnyWidgetId];
+                                const newWidget = project[viewId].widgets[multiViewId];
                                 newWidget.data.members.forEach((memberId, i) => {
-                                    const newId: AnyWidgetId = `${view}_${memberId}` as AnyWidgetId;
+                                    const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
                                     project[viewId].widgets[newId] = JSON.parse(
                                         JSON.stringify(oView.widgets[memberId]),
                                     );
@@ -966,29 +962,20 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             selectedView,
         };
 
-        let selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
+        const selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
             `${this.state.projectName}.${selectedView}.widgets`,
             [],
         );
 
-        // Check that all selectedWidgets exist
+        // Check that all selectedWidgets exist.
+        // splice() returns the REMOVED entries, so the result must not be assigned back to selectedWidgets,
+        // otherwise the selection ends up being exactly the widget that does not exist anymore.
         for (let i = selectedWidgets.length - 1; i >= 0; i--) {
             if (!store.getState().visProject[selectedView]?.widgets?.[selectedWidgets[i]]) {
-                selectedWidgets = selectedWidgets.splice(i, 1);
+                selectedWidgets.splice(i, 1);
             }
         }
-        if (JSON.stringify(newState.selectedWidgets) !== JSON.stringify(selectedWidgets)) {
-            newState.selectedWidgets = selectedWidgets;
-        }
-        if (newState.alignType !== null) {
-            newState.alignType = null;
-        }
-        if (newState.alignIndex !== 0) {
-            newState.alignIndex = 0;
-        }
-        if (newState.alignValues?.length > 0) {
-            newState.alignValues = [];
-        }
+        newState.selectedWidgets = selectedWidgets;
 
         if (!this.state.runtime && !store.getState().visProject.___settings.openedViews.includes(selectedView)) {
             const project = JSON.parse(JSON.stringify(store.getState().visProject));

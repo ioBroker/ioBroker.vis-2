@@ -313,7 +313,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                                             <Button
                                                 onClick={() => this.setValue(this.state.input)}
                                                 variant="contained"
-                                                style={{ marginBottom: 10, minWidth: 40 }}
+                                                style={{ marginBottom: 10, minWidth: 40, textTransform: 'none' }}
                                             >
                                                 {this.state.rxData.buttontext}
                                             </Button>
