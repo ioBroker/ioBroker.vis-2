@@ -56,6 +56,9 @@ class JQuiDialog extends JQuiButton {
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html_dialog');
         htmlDialog.default = '<div>HTML Dialog</div>';
 
+        // visDefaultStyle is readonly, so the cast is required to overwrite it. ESLint resolves the type
+        // differently than the tsconfig of the build and reports the cast as unnecessary.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         (newWidgetInfo.visDefaultStyle as Writeable<WidgetStyle>) = {
             'border-width': '1px',
             'border-style': 'solid',
