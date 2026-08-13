@@ -115,9 +115,10 @@ export function getNewGroupId(project: Project, offset = 0): GroupWidgetId {
 interface CopyWidgetOptions {
     /** The widgets key, value object to copy the group to */
     widgets: Record<string, Widget>;
-    /** The offset to use, if multiple groups are copied without saving */
-    offset?: number;
-    /** The project to calculate new widget ids from */
+    /**
+     * The project to calculate new widget ids from. It must be the project that contains `widgets`, so that the
+     * widgets pasted before get their own IDs and are not overwritten by the following ones
+     */
     project: Project;
 }
 
@@ -142,9 +143,9 @@ interface CopyGroupOptions extends CopyWidgetOptions {
  * @param options selected group, widgets and offset information
  */
 export function pasteSingleWidget(options: CopySingleWidgetOptions): SingleWidgetId {
-    const { widgets, offset, project, widget, selectedGroup } = options;
+    const { widgets, project, widget, selectedGroup } = options;
 
-    const newKey = getNewWidgetId(project, offset);
+    const newKey = getNewWidgetId(project);
 
     if (selectedGroup && isGroup(widgets[selectedGroup])) {
         widget.grouped = true;
@@ -164,14 +165,14 @@ export function pasteSingleWidget(options: CopySingleWidgetOptions): SingleWidge
  * @param options group, widgets and offset information
  */
 export function pasteGroup(options: CopyGroupOptions): GroupWidgetId {
-    const { widgets, group, groupMembers, offset, project } = options;
-    const newGroupId = getNewGroupId(project, offset ?? 0);
+    const { widgets, group, groupMembers, project } = options;
+    const newGroupId = getNewGroupId(project);
 
     for (let i = 0; i < group.data.members.length; i++) {
         const wid = group.data.members[i];
         const newMember = deepClone(groupMembers[wid]);
 
-        const newMemberId = getNewWidgetId(project, i);
+        const newMemberId = getNewWidgetId(project);
 
         newMember.groupid = newGroupId;
         group.data.members[i] = newMemberId;
