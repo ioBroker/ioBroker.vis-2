@@ -620,6 +620,15 @@ export interface CommonGroups {
     [key: string]: number;
 }
 
+/**
+ * Read a number of a vis-1 attribute definition, like `slider,0,100,1`. `min`, `max` and `step` are all
+ * optional there, so anything that is not a number stays undefined instead of becoming NaN.
+ */
+function parseNumberOption(option: string | undefined): number | undefined {
+    const value = parseFloat(option);
+    return Number.isFinite(value) ? value : undefined;
+}
+
 export const parseAttributes = (
     widgetParams: string | RxWidgetInfoGroup[],
     widgetIndex?: number,
@@ -770,11 +779,11 @@ export const parseAttributes = (
                 if (field.type && (field.type.startsWith('slider,') || field.type.startsWith('number,'))) {
                     const options = field.type.split(',');
                     field.type = options[0] as RxWidgetAttributeType;
-                    field.min = parseInt(options[1]);
-                    field.max = parseInt(options[2]);
-                    field.step = parseInt(options[3]);
-                    if (!field.step) {
-                        field.step = field.max - field.min / 100;
+                    field.min = parseNumberOption(options[1]);
+                    field.max = parseNumberOption(options[2]);
+                    field.step = parseNumberOption(options[3]);
+                    if (field.step === undefined && field.max !== undefined && field.min !== undefined) {
+                        field.step = (field.max - field.min) / 100;
                     }
                 }
                 if (field.type && field.type.startsWith('style,')) {
@@ -784,8 +793,8 @@ export const parseAttributes = (
                     field.filterName = options[2];
                     field.filterAttrs = options[3];
                     field.removeName = options[4];
-                    if (!field.step && field.max !== undefined && field.min !== undefined) {
-                        field.step = field.max - field.min / 100;
+                    if (field.step === undefined && field.max !== undefined && field.min !== undefined) {
+                        field.step = (field.max - field.min) / 100;
                     }
                 }
                 // remove comma from a type
