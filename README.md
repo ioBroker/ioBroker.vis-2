@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Made the background color and the text color of the selected entry editable for the horizontal navigation menu
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
 * (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
 * (@typhosj) Show the text of the button widgets as entered and not upper cased
