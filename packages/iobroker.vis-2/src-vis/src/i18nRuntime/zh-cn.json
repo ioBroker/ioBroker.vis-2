@@ -16,5 +16,7 @@
   "Create or import new \"vis-2\" project": "创建或导入新的“vis-2”项目",
   "Load project file...": "正在加载项目文件...",
   "Load widgets...": "正在加载小部件...",
-  "Loading objects...": "正在加载对象..."
+  "Loading objects...": "正在加载对象...",
+  "Cannot render widget %s": "无法显示小部件 %s",
+  "Retry": "重试"
 }

@@ -16,5 +16,7 @@
   "Create or import new \"vis-2\" project": "Створіть або імпортуйте новий проект \"vis-2\".",
   "Load project file...": "Завантаження файлу проекту...",
   "Load widgets...": "Завантаження віджетів...",
-  "Loading objects...": "Завантаження об'єктів..."
+  "Loading objects...": "Завантаження об'єктів...",
+  "Cannot render widget %s": "Не вдалося відобразити віджет %s",
+  "Retry": "Повторити"
 }
