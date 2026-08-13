@@ -19,7 +19,6 @@ import { Autocomplete, Button, Fab, TextField } from '@mui/material';
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
-import VisBaseWidget, { type WidgetStyleState } from '@/Vis/visBaseWidget';
 import type {
     AnyWidgetId,
     RxRenderWidgetProps,
@@ -324,22 +323,9 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
         ) : null;
 
         // buttons of material UI are upper cased by default, but vis widgets show the text as entered
-        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach((attr: keyof WidgetStyleState) => {
-            const value = this.state.rxStyle[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
-                (attr as string) = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                (buttonStyle as any)[attr] = value;
-            }
-        });
+        const buttonStyle: CSSProperties = this.getMuiStyle(props, { textTransform: 'none' });
         buttonStyle.minWidth = 'unset';
-        if (buttonStyle.borderWidth) {
-            buttonStyle.borderWidth = VisBaseWidget.correctStylePxValue(buttonStyle.borderWidth);
-        }
-        if (buttonStyle.fontSize) {
-            buttonStyle.fontSize = VisBaseWidget.correctStylePxValue(buttonStyle.fontSize);
-        }
 
         // extra no rxData here, as it is not possible to set it with bindings
         if (this.state.data.visResizable) {

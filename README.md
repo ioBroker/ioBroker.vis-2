@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Fixed the doubled border of the jQui widgets: the border is drawn by the button only and not by the widget too
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
 * (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
 * (@typhosj) Show the text of the button widgets as entered and not upper cased
