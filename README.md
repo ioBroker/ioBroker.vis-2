@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The `bulb on/off` widget writes numeric min/max values as a number and not as a string
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
 * (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
 * (@typhosj) Show the text of the button widgets as entered and not upper cased
