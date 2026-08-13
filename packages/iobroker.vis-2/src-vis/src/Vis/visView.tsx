@@ -41,6 +41,7 @@ import VisCanWidget from './visCanWidget';
 import { addClass, parseDimension } from './visUtils';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
+import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
 
 const MAX_COLUMNS = 8;
 
@@ -1259,13 +1260,35 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             VisWidgetsCatalog.rxWidgets[widget.tpl] ||
             (VisWidgetsCatalog.allWidgetsList?.includes(widget.tpl) ? VisCanWidget : VisBaseWidget);
 
-        return (
+        const widgetElement = (
             // @ts-expect-error fix later
             <WidgetEl
-                key={`${index}_${options.id}`}
                 tpl={widget.tpl}
                 {...options}
             />
+        );
+
+        // Widget sets come from other adapters and are built against their own React/MUI versions, so a widget
+        // can throw while rendering. The boundary sits here, at the choke point, so that every render path is
+        // covered and one broken widget costs a placeholder instead of the whole view.
+        return (
+            <VisWidgetErrorBoundary
+                key={`${index}_${options.id}`}
+                id={options.id}
+                tpl={widget.tpl}
+                view={options.view}
+                isRelative={options.isRelative}
+                style={widget.style}
+                editMode={options.editMode}
+                ignoreNotLoaded={options.context.views.___settings?.ignoreNotLoaded}
+                onSelect={
+                    options.context.setSelectedWidgets
+                        ? () => options.context.setSelectedWidgets([options.id], options.view)
+                        : undefined
+                }
+            >
+                {widgetElement}
+            </VisWidgetErrorBoundary>
         );
     }
 
