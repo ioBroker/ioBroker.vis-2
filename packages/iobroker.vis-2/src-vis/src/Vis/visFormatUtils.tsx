@@ -345,7 +345,9 @@ class VisFormatUtils {
 
         let { format } = options;
 
-        const _values = options.values || this.vis.states;
+        // typed as a plain record, because the IDs are indexed dynamically. VisRxWidgetStateValues has
+        // only template literal index signatures and cannot be indexed with an arbitrary string.
+        const _values: Record<string, any> = options.values || this.vis.states;
 
         const oids = this.extractBinding(options.format);
 
@@ -354,7 +356,7 @@ class VisFormatUtils {
             if (oid.visOid) {
                 value = this.getSpecialValues(oid.visOid, view, wid, widgetData);
                 if (value === undefined || value === null) {
-                    value = (_values as Record<string, any>)[oid.visOid];
+                    value = _values[oid.visOid];
                 }
             }
 
@@ -371,10 +373,8 @@ class VisFormatUtils {
 
                             if (value === undefined || value === null) {
                                 value = evalArgs[a].visOid.startsWith('widgetOid.')
-                                    ? (_values as Record<string, any>)[
-                                          evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)
-                                      ]
-                                    : (_values as Record<string, any>)[evalArgs[a].visOid];
+                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)]
+                                    : _values[evalArgs[a].visOid];
                             }
                             if (value === null) {
                                 string += `const ${evalArgs[a].name} = null;`;

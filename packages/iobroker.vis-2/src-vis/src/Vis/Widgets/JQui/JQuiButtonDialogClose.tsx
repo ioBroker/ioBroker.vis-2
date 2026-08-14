@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2023-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2023-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -24,7 +24,6 @@ import type {
     RxRenderWidgetProps,
     RxWidgetInfoAttributesField,
     RxWidgetInfoCustomComponentProperties,
-    ViewCommand,
     WidgetData,
     VisBaseWidgetProps,
     RxWidgetInfo,
@@ -271,14 +270,6 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                 window.document.getElementById(dlgName) ||
                 window.document.querySelector(`[data-dialog-name="${dlgName}"]`);
 
-            const viewName = Object.keys(this.props.context.views).find(
-                view => this.props.context.views[view].widgets[dlgName],
-            );
-            this.props.context.onCommand(
-                'closeDialog',
-                viewName as ViewCommand,
-                dlgName as unknown as Record<string, string>,
-            );
             if ((el as any)?._showDialog) {
                 (el as any)._showDialog(false);
             } else {
