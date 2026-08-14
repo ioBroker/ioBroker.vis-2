@@ -629,6 +629,14 @@ function parseNumberOption(option: string | undefined): number | undefined {
     return Number.isFinite(value) ? value : undefined;
 }
 
+/**
+ * Check if a group or a field is enumerable. `indexFrom` is either the start index - and 0 is a valid one -
+ * or the name of the attribute that contains the start index.
+ */
+function isIterable(item: { indexFrom?: number | string }): boolean {
+    return typeof item.indexFrom === 'number' || (typeof item.indexFrom === 'string' && !!item.indexFrom);
+}
+
 export const parseAttributes = (
     widgetParams: string | RxWidgetInfoGroup[],
     widgetIndex?: number,
@@ -892,7 +900,7 @@ export const parseAttributes = (
         commonGroups ||= { common: 1 };
         commonFields ||= {};
         const fields = deepCloneRx(widgetParams) as WidgetAttributesGroupInfoStored[];
-        let groupIndex = fields.findIndex(group => typeof group.indexFrom === 'number');
+        let groupIndex = fields.findIndex(group => isIterable(group));
 
         // if enumerable
         while (groupIndex > -1) {
@@ -958,7 +966,7 @@ export const parseAttributes = (
                 indexedGroups.push(indexedGroup);
             }
             fields.splice(groupIndex, 1, ...indexedGroups);
-            groupIndex = fields.findIndex(_group => _group.indexFrom);
+            groupIndex = fields.findIndex(_group => isIterable(_group));
         }
 
         fields.forEach(group => {
@@ -976,7 +984,7 @@ export const parseAttributes = (
             }
             if (group.fields) {
                 // fields can be interable too
-                let fieldIndex = group.fields.findIndex((field: WidgetAttributeInfoStored) => field.indexFrom);
+                let fieldIndex = group.fields.findIndex((field: WidgetAttributeInfoStored) => isIterable(field));
                 while (fieldIndex > -1) {
                     const field = group.fields[fieldIndex] as WidgetAttributeInfoStored;
                     field.singleName = field.name;
@@ -1015,7 +1023,7 @@ export const parseAttributes = (
 
                     group.fields?.splice(fieldIndex, 1, ...indexedFields);
 
-                    fieldIndex = group.fields.findIndex((_field: WidgetAttributeInfoStored) => _field.indexFrom);
+                    fieldIndex = group.fields.findIndex((_field: WidgetAttributeInfoStored) => isIterable(_field));
                 }
 
                 group.fields.forEach((field: WidgetAttributeInfoStored) => {
