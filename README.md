@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The application bar is not wider than the window anymore
 * (@typhosj) Fixed the invisible content of the `tabs` widget if the tabs are placed vertically
 * (@typhosj) The tabs of the `tabs` widget are as wide as their title now and can be scrolled on a touch device
 * (@GermanBluefox) Shortened the values that a failing binding writes to the console: a widget with braces in its HTML produced hundreds of failing bindings, each printing the complete HTML, which buried every other error

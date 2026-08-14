@@ -41,6 +41,8 @@ const styles: Record<string, any> = {
     },
     toolBar: (theme: VisTheme): any => ({
         width: '100%',
+        // the padding must be a part of the width, as the bar would be wider than the window otherwise
+        boxSizing: 'border-box',
         height: TOOLBAR_SIZE,
         overflow: 'hidden',
         lineHeight: `${TOOLBAR_SIZE}px`,
