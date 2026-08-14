@@ -1018,15 +1018,14 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                                 user: this.props.currentUser ? this.props.currentUser._id : 'system.user.admin',
                                 q: 0,
                             };
-                            this.onStateChange(id, state);
-                            return;
                         }
 
                         if (!state) {
                             return;
                         }
 
-                        this.setValue(id, state.val);
+                        // the states are only stored in vis and not written back to ioBroker
+                        this.onStateChange(id, state);
                     });
                 }
             },
