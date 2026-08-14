@@ -2016,11 +2016,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             theme = createTheme(
                 customThemeType || this.props.context.theme.palette.mode,
                 this.props.customSettings.viewStyle.overrides,
+                false,
             );
         } else if (customThemeType && customThemeType !== theme.palette.mode) {
             if (!this.theme[customThemeType]) {
                 // cache theme
-                this.theme[customThemeType] = createTheme(customThemeType);
+                this.theme[customThemeType] = createTheme(customThemeType, undefined, false);
             }
             theme = this.theme[customThemeType];
         }

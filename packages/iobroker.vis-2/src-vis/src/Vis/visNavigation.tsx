@@ -57,7 +57,8 @@ const styles: Record<string, any> = {
         height: 32,
         width: 'auto',
     },
-    verticalMenu: (theme: VisTheme): React.CSSProperties => ({
+    // the bar of the navigation with the orientation "horizontal"
+    horizontalMenu: (theme: VisTheme): React.CSSProperties => ({
         width: '100%',
         top: 0,
         left: 0,
@@ -253,7 +254,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
             return (
                 <Box
                     component="div"
-                    sx={styles.verticalMenu}
+                    sx={styles.horizontalMenu}
                     style={{
                         backgroundColor:
                             settings.navigationBarColor || this.props.context.theme.palette.background.paper,
