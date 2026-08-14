@@ -620,6 +620,23 @@ export interface CommonGroups {
     [key: string]: number;
 }
 
+/**
+ * Read a number of a vis-1 attribute definition, like `slider,0,100,1`. `min`, `max` and `step` are all
+ * optional there, so anything that is not a number stays undefined instead of becoming NaN.
+ */
+function parseNumberOption(option: string | undefined): number | undefined {
+    const value = parseFloat(option);
+    return Number.isFinite(value) ? value : undefined;
+}
+
+/**
+ * Check if a group or a field is enumerable. `indexFrom` is either the start index - and 0 is a valid one -
+ * or the name of the attribute that contains the start index.
+ */
+function isIterable(item: { indexFrom?: number | string }): boolean {
+    return typeof item.indexFrom === 'number' || (typeof item.indexFrom === 'string' && !!item.indexFrom);
+}
+
 export const parseAttributes = (
     widgetParams: string | RxWidgetInfoGroup[],
     widgetIndex?: number,
@@ -770,11 +787,11 @@ export const parseAttributes = (
                 if (field.type && (field.type.startsWith('slider,') || field.type.startsWith('number,'))) {
                     const options = field.type.split(',');
                     field.type = options[0] as RxWidgetAttributeType;
-                    field.min = parseInt(options[1]);
-                    field.max = parseInt(options[2]);
-                    field.step = parseInt(options[3]);
-                    if (!field.step) {
-                        field.step = field.max - field.min / 100;
+                    field.min = parseNumberOption(options[1]);
+                    field.max = parseNumberOption(options[2]);
+                    field.step = parseNumberOption(options[3]);
+                    if (field.step === undefined && field.max !== undefined && field.min !== undefined) {
+                        field.step = (field.max - field.min) / 100;
                     }
                 }
                 if (field.type && field.type.startsWith('style,')) {
@@ -784,8 +801,8 @@ export const parseAttributes = (
                     field.filterName = options[2];
                     field.filterAttrs = options[3];
                     field.removeName = options[4];
-                    if (!field.step && field.max !== undefined && field.min !== undefined) {
-                        field.step = field.max - field.min / 100;
+                    if (field.step === undefined && field.max !== undefined && field.min !== undefined) {
+                        field.step = (field.max - field.min) / 100;
                     }
                 }
                 // remove comma from a type
@@ -883,7 +900,7 @@ export const parseAttributes = (
         commonGroups ||= { common: 1 };
         commonFields ||= {};
         const fields = deepCloneRx(widgetParams) as WidgetAttributesGroupInfoStored[];
-        let groupIndex = fields.findIndex(group => typeof group.indexFrom === 'number');
+        let groupIndex = fields.findIndex(group => isIterable(group));
 
         // if enumerable
         while (groupIndex > -1) {
@@ -949,7 +966,7 @@ export const parseAttributes = (
                 indexedGroups.push(indexedGroup);
             }
             fields.splice(groupIndex, 1, ...indexedGroups);
-            groupIndex = fields.findIndex(_group => _group.indexFrom);
+            groupIndex = fields.findIndex(_group => isIterable(_group));
         }
 
         fields.forEach(group => {
@@ -967,7 +984,7 @@ export const parseAttributes = (
             }
             if (group.fields) {
                 // fields can be interable too
-                let fieldIndex = group.fields.findIndex((field: WidgetAttributeInfoStored) => field.indexFrom);
+                let fieldIndex = group.fields.findIndex((field: WidgetAttributeInfoStored) => isIterable(field));
                 while (fieldIndex > -1) {
                     const field = group.fields[fieldIndex] as WidgetAttributeInfoStored;
                     field.singleName = field.name;
@@ -1006,7 +1023,7 @@ export const parseAttributes = (
 
                     group.fields?.splice(fieldIndex, 1, ...indexedFields);
 
-                    fieldIndex = group.fields.findIndex((_field: WidgetAttributeInfoStored) => _field.indexFrom);
+                    fieldIndex = group.fields.findIndex((_field: WidgetAttributeInfoStored) => isIterable(_field));
                 }
 
                 group.fields.forEach((field: WidgetAttributeInfoStored) => {

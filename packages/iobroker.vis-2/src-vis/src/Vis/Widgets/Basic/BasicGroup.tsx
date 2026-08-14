@@ -70,7 +70,7 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
     static _visAttrs(data: Record<string, any>, views: Project, view: string): RxWidgetInfoGroupReadWrite[] {
         // this will be dynamically rendered in src/src/Attributes/Widget/index.jsx => Widget class
         // Try to find all fields where could be groupAttrX
-        const listOfWidgets: SingleWidgetId[] = data.members;
+        const listOfWidgets: SingleWidgetId[] = data.members || [];
         const attributes: string[] = [];
 
         listOfWidgets.forEach(wid => {
