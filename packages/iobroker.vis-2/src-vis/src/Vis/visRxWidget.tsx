@@ -89,6 +89,12 @@ export const POSSIBLE_MUI_STYLES = [
     'word-spacing',
 ];
 
+/**
+ * These styles draw a visible frame, so they must be applied either to the widget itself or to the MUI
+ * component inside it, but never to both, as the frame would be drawn twice
+ */
+const FRAME_MUI_STYLES = ['border', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow'];
+
 export class VisRxWidget<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
@@ -759,6 +765,38 @@ export class VisRxWidget<
                 </MyCardContent>
             </MyCard>
         );
+    }
+
+    /**
+     * Collect the styles of the widget that a MUI component understands, to apply them to the component
+     * inside the widget. The styles that draw a frame are removed from the widget itself, as it would be
+     * drawn twice otherwise.
+     *
+     * @param props the properties of the widget, as given to `renderWidgetBody`
+     * @param style styles of the MUI component itself, that the widget styles are merged into
+     */
+    protected getMuiStyle(props: RxRenderWidgetProps, style?: React.CSSProperties): React.CSSProperties {
+        const muiStyle: React.CSSProperties = { ...style };
+
+        Object.keys(this.state.rxStyle).forEach(attr => {
+            const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
+            if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
+                const name = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
+                (muiStyle as Record<string, number | string | boolean | null | undefined>)[name] = value;
+                if (FRAME_MUI_STYLES.includes(attr)) {
+                    delete (props.style as Record<string, number | string | boolean | null | undefined>)[name];
+                }
+            }
+        });
+
+        if (muiStyle.borderWidth) {
+            muiStyle.borderWidth = VisBaseWidget.correctStylePxValue(muiStyle.borderWidth);
+        }
+        if (muiStyle.fontSize) {
+            muiStyle.fontSize = VisBaseWidget.correctStylePxValue(muiStyle.fontSize);
+        }
+
+        return muiStyle;
     }
 
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | null {
