@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The `bulb on/off` widget writes numeric min/max values as a number and not as a string
 * (@typhosj) Fixed `min`, `max` and `step` of the vis-1 widget attributes: they are optional and may be fractional
 * (@typhosj) Fixed the doubled border of the jQui widgets: the border is drawn by the button only and not by the widget too
 * (@typhosj) Fixed the missing attributes of a group: the sections could not be opened and the group attributes were not editable
