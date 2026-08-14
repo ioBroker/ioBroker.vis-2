@@ -350,9 +350,8 @@ export class VisRxWidget<
             this.applyBinding(_id, this.newState as typeof this.state),
         );
 
-        if (id === this.newState.rxData?.['visibility-oid']) {
-            this.newState.visible = this.checkVisibility(id, this.newState);
-        }
+        // the visibility must be checked for every state, as the value to compare with can be a binding
+        this.newState.visible = this.checkVisibility(null, this.newState);
 
         if (this.newState.rxData) {
             const userGroups = this.newState.rxData['visibility-groups'];
