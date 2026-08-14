@@ -356,6 +356,10 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.13.16 (2026-03-26)
+* (@GermanBluefox) Fixing the usage of umlauts in patterns
+* (@GermanBluefox) Fixing commands via control interface when sent as JSON
+
 ## 2.13.8 (2025-11-15)
 * (@GermanBluefox) Updated packages
 
