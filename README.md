@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) `vis.updateStates` does not write the states back to ioBroker anymore, like in vis-1
 * (@typhosj) The `iFrame 8` widget shows the frame with the number of the value, also for a boolean object
 * (@typhosj) Every copy of a group gets its own member widgets if several widgets are pasted at once
 * (@typhosj) A binding can be used as the comparison value of the visibility condition
