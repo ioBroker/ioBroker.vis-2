@@ -19,7 +19,6 @@ import { Button, Fab, FormControlLabel, Tooltip, Checkbox, Switch, ButtonGroup }
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
-import VisBaseWidget from '../../visBaseWidget';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -902,25 +901,12 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         const isOn = this.isOn();
 
         // buttons of material UI are upper cased by default, but vis widgets show the text as entered
-        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach(attr => {
-            const value = this.state.rxStyle[attr as keyof typeof this.state.rxStyle];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
-                attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                (buttonStyle as any)[attr] = value;
-            }
-        });
+        const buttonStyle: CSSProperties = this.getMuiStyle(props, { textTransform: 'none' });
 
         let type = this.state.rxData.type;
         if (!type && this.props.tpl === 'tplJquiRadio') {
             type = 'radio';
-        }
-        if (buttonStyle.borderWidth) {
-            buttonStyle.borderWidth = VisBaseWidget.correctStylePxValue(buttonStyle.borderWidth);
-        }
-        if (buttonStyle.fontSize) {
-            buttonStyle.fontSize = VisBaseWidget.correctStylePxValue(buttonStyle.fontSize);
         }
 
         // extra no rxData here, as it is not possible to set it with bindings

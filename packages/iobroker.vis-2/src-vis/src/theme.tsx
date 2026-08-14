@@ -1,11 +1,24 @@
 import type React from 'react';
+import { createTheme as muiCreateTheme } from '@mui/material/styles';
 import { Theme, type ThemeName } from '@iobroker/adapter-react-v5';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
-export default function createTheme(themeName: ThemeName, overrides?: Record<string, any>): VisTheme {
+export default function createTheme(
+    themeName: ThemeName,
+    overrides?: Record<string, any>,
+    /**
+     * Generate the MUI CSS variables (`--mui-palette-*`), so the colors can be adjusted via CSS.
+     * Only the topmost theme may do that, as all variables are written to `:root`
+     * and nested themes would overwrite each other.
+     */
+    cssVariables = true,
+): VisTheme {
     const danger = '#dd5325';
     const success = '#73b6a8';
-    const theme: VisTheme = Theme(themeName, overrides) as VisTheme;
+    let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
+    if (cssVariables) {
+        theme = muiCreateTheme({ ...theme, cssVariables: true }) as VisTheme;
+    }
     theme.palette.text.danger = {
         color: danger,
     };
