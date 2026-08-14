@@ -313,12 +313,13 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Shortened the values that a failing binding writes to the console: a widget with braces in its HTML produced hundreds of failing bindings, each printing the complete HTML, which buried every other error
 * (@typhosj) Fixed the position of the vis-1 widgets in a view with a limited screen size
 * (@typhosj) The `bulb on/off` widget writes numeric min/max values as a number and not as a string
 * (@typhosj) Fixed `min`, `max` and `step` of the vis-1 widget attributes: they are optional and may be fractional
 * (@typhosj) Fixed the doubled border of the jQui widgets: the border is drawn by the button only and not by the widget too
 * (@typhosj) Fixed the missing attributes of a group: the sections could not be opened and the group attributes were not editable
-* (@typhosj) Made the background color and the text color of the selected entry editable for the horizontal navigation menu
+* (@typhosj) Made the background color and the text color of the selected entry editable for the horizontal navigation menu. The new background color takes precedence over the color of the application bar, which the horizontal menu borrowed before, so a view that was switched from the vertical to the horizontal navigation can change its color once
 * (@typhosj) Fixed the enumerable widget groups and fields that start at the index 0 and were not expanded
 * (@typhosj) Added the MUI CSS variables (`--mui-palette-*`), so the theme colors can be adjusted with CSS
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
@@ -334,7 +335,7 @@ npm run start
 * (@typhosj) The entries of the horizontal navigation menu can be scrolled now instead of being cut off in a narrow window
 * (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views. Their IDs changed from `<view>_<widget>` to `v<view>_<widget>`, so a user script or CSS that addresses such a copy must be adapted
 * (@typhosj) Fixed the double click on a widget shown in multiple views jumping to a wrong view
-* (@typhosj) Show the text of the button widgets as entered and not upper cased
+* (@typhosj) Show the text of the button widgets as entered and not upper-cased
 * (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
 * (@typhosj) Subscribed to object IDs that are the result of a binding
 * (@typhosj) Fixed the ignored read-only option of the Bool SVG widget

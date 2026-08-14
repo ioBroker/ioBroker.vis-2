@@ -257,7 +257,9 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     sx={styles.horizontalMenu}
                     style={{
                         backgroundColor:
-                            // navigationBarColor was the only configurable color of the horizontal menu before
+                            // The horizontal menu had no color of its own before and borrowed the one of the
+                            // application bar, so navigationBarColor stays as a fallback. The own setting has to
+                            // win, as it would have no effect at all otherwise as soon as a bar color is set.
                             settings.navigationBackground ||
                             settings.navigationBarColor ||
                             this.props.context.theme.palette.background.paper,

@@ -30,6 +30,27 @@ interface VisFormatUtilsProps {
     vis: VisLegacy;
 }
 
+/** Longest piece of a value that is written to the console */
+const MAX_LOG_LENGTH = 200;
+
+/**
+ * Shorten a value for the console.
+ *
+ * Anything that is written here can be a whole widget attribute, and the HTML of a widget is easily some
+ * hundred lines long. As braces in that HTML - the CSS of the widget, for example - are read as a binding, one
+ * such widget produces hundreds of failing bindings, and every one of them used to print the complete HTML. A
+ * log of a few thousand lines was the result, in which the errors that actually matter cannot be found anymore.
+ *
+ * @param value value to write to the console
+ * @returns the value, cut off after `MAX_LOG_LENGTH` characters
+ */
+function shortenForLog(value: string): string {
+    if (typeof value !== 'string' || value.length <= MAX_LOG_LENGTH) {
+        return value;
+    }
+    return `${value.substring(0, MAX_LOG_LENGTH)}… (${value.length} characters)`;
+}
+
 class VisFormatUtils {
     private readonly vis: VisLegacy;
 
@@ -424,8 +445,8 @@ class VisFormatUtils {
                                 value = JSON.stringify(value);
                             }
                         } catch (e) {
-                            console.error(`Error in eval[value]: ${format}`);
-                            console.error(`Error in eval[script]: ${string}`);
+                            console.error(`Error in eval[value]: ${shortenForLog(format)}`);
+                            console.error(`Error in eval[script]: ${shortenForLog(string)}`);
                             console.error(`Error in eval[error]: ${e}`);
                             value = 0;
                         }
@@ -551,7 +572,7 @@ class VisFormatUtils {
                                     try {
                                         value = JSON.parse(value);
                                     } catch {
-                                        console.warn(`Cannot parse JSON string: ${value}`);
+                                        console.warn(`Cannot parse JSON string: ${shortenForLog(value)}`);
                                     }
                                 }
                                 if (value && typeof value === 'object') {
@@ -560,7 +581,7 @@ class VisFormatUtils {
                                 break;
                             default:
                                 // unknown condition
-                                console.warn(`Unknown operator: ${format}`);
+                                console.warn(`Unknown operator: ${shortenForLog(format)}`);
                                 break;
                         } // switch
                     }
