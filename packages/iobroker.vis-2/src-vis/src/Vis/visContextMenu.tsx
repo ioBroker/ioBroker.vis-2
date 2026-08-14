@@ -21,6 +21,7 @@ import IOContextMenu from '../Components/IOContextMenu';
 import WidgetExportDialog from '../Toolbar/WidgetExportDialog';
 import WidgetImportDialog from '../Toolbar/WidgetImportDialog';
 import { type WidgetType, getWidgetTypes } from './visWidgetsCatalog';
+import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 
 interface VisContextMenuProps {
     changeProject: (project: Project) => void;
@@ -262,6 +263,8 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                                     }
                                 },
                                 hide:
+                                    // the widgeteria is switched off in the GUI, but the code stays in place
+                                    WIDGETERIA_DISABLED ||
                                     props.selectedWidgets.length !== 1 ||
                                     selectedWidget.tpl !== '_tplGroup' ||
                                     selectedWidget.marketplace,

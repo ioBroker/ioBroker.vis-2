@@ -39,6 +39,7 @@ import {
     getWidgetTypes,
     parseAttributes,
 } from '@/Vis/visWidgetsCatalog';
+import BasicGroup from '@/Vis/Widgets/Basic/BasicGroup';
 import { deepClone } from '@/Utilities/utils';
 import type {
     AnyWidgetId,
@@ -899,7 +900,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 }
 
                 let params: string | RxWidgetInfoGroup[];
-                if (typeof widgetType.params === 'function') {
+                if (widget.tpl === '_tplGroup') {
+                    // The attributes of a group are built from the placeholders used by its members,
+                    // so they cannot be taken from the static widget info.
+                    params = BasicGroup._visAttrs(widget.data, store.getState().visProject, this.props.selectedView);
+                } else if (typeof widgetType.params === 'function') {
                     params = widgetType.params(widget.data, null, {
                         views: store.getState().visProject,
                         view: this.props.selectedView,
