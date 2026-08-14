@@ -16,5 +16,7 @@
   "Create or import new \"vis-2\" project": "Utwórz lub zaimportuj nowy projekt „vis-2”.",
   "Load project file...": "Ładowanie pliku projektu...",
   "Load widgets...": "Ładowanie widżetów...",
-  "Loading objects...": "Ładowanie obiektów..."
+  "Loading objects...": "Ładowanie obiektów...",
+  "Cannot render widget %s": "Nie można wyświetlić widżetu %s",
+  "Retry": "Spróbuj ponownie"
 }

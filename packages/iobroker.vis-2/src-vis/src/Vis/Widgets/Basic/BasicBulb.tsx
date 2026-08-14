@@ -18,6 +18,16 @@ type RxData = {
     oidFalseValue?: string;
 };
 
+/**
+ * The attributes are strings, but a number must be written as a number into a state of the type number
+ *
+ * @param value the value of the attribute
+ */
+function parseNumberValue(value: string): string | number {
+    const num = parseFloat(value);
+    return num.toString() === value ? num : value;
+}
+
 export default class BasicBulb extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
@@ -108,8 +118,8 @@ export default class BasicBulb extends VisRxWidget<RxData> {
         const { oidTrue, urlTrue, oid, min, max, oidTrueValue, oidFalseValue } = this.state.rxData;
         let { urlFalse, oidFalse } = this.state.rxData;
 
-        let finalMin: string | boolean = min ?? '';
-        let finalMax: string | boolean = max ?? '';
+        let finalMin: string | boolean | number = min ? parseNumberValue(min) : '';
+        let finalMax: string | boolean | number = max ? parseNumberValue(max) : '';
         let oidTrueValueFinal: string | boolean | number = oidTrueValue ?? '';
         let oidFalseValueFinal: string | boolean | number = oidFalseValue ?? '';
 
@@ -202,7 +212,7 @@ export default class BasicBulb extends VisRxWidget<RxData> {
                 (typeof finalMax === 'number' || typeof finalMax === 'string') &&
                 (typeof finalMin === 'number' || typeof finalMin === 'string')
             ) {
-                if (val >= (parseFloat(finalMax) - parseFloat(finalMin)) / 2) {
+                if (val >= (Number(finalMax) - Number(finalMin)) / 2) {
                     val = finalMin;
                 } else {
                     val = finalMax;

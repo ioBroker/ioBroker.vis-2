@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2023-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2023-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -19,13 +19,11 @@ import { Autocomplete, Button, Fab, TextField } from '@mui/material';
 
 import { I18n, Icon } from '@iobroker/adapter-react-v5';
 
-import VisBaseWidget, { type WidgetStyleState } from '@/Vis/visBaseWidget';
 import type {
     AnyWidgetId,
     RxRenderWidgetProps,
     RxWidgetInfoAttributesField,
     RxWidgetInfoCustomComponentProperties,
-    ViewCommand,
     WidgetData,
     VisBaseWidgetProps,
     RxWidgetInfo,
@@ -272,14 +270,6 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                 window.document.getElementById(dlgName) ||
                 window.document.querySelector(`[data-dialog-name="${dlgName}"]`);
 
-            const viewName = Object.keys(this.props.context.views).find(
-                view => this.props.context.views[view].widgets[dlgName],
-            );
-            this.props.context.onCommand(
-                'closeDialog',
-                viewName as ViewCommand,
-                dlgName as unknown as Record<string, string>,
-            );
             if ((el as any)?._showDialog) {
                 (el as any)._showDialog(false);
             } else {
@@ -324,22 +314,9 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
         ) : null;
 
         // buttons of material UI are upper cased by default, but vis widgets show the text as entered
-        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach((attr: keyof WidgetStyleState) => {
-            const value = this.state.rxStyle[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
-                (attr as string) = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                (buttonStyle as any)[attr] = value;
-            }
-        });
+        const buttonStyle: CSSProperties = this.getMuiStyle(props, { textTransform: 'none' });
         buttonStyle.minWidth = 'unset';
-        if (buttonStyle.borderWidth) {
-            buttonStyle.borderWidth = VisBaseWidget.correctStylePxValue(buttonStyle.borderWidth);
-        }
-        if (buttonStyle.fontSize) {
-            buttonStyle.fontSize = VisBaseWidget.correctStylePxValue(buttonStyle.fontSize);
-        }
 
         // extra no rxData here, as it is not possible to set it with bindings
         if (this.state.data.visResizable) {

@@ -31,6 +31,7 @@ import commonStyles from '@/Utilities/styles';
 import type Editor from '../Editor';
 import Widget from './Widget';
 import MarketplacePalette from '../Marketplace/MarketplacePalette';
+import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
 
 // declare global {
@@ -200,6 +201,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
 
     loadMarketplace(): void {
         if (
+            !WIDGETERIA_DISABLED &&
             this.state.accordionOpen.__marketplace &&
             window.marketplaceClient &&
             !this.state.marketplaceUpdates &&
@@ -377,6 +379,8 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     ...styles.accordionRoot,
                     '&.Mui-expanded': { margin: 0 },
                 }}
+                // the widgeteria is switched off in the GUI, but the code stays in place
+                style={WIDGETERIA_DISABLED ? { display: 'none' } : undefined}
                 elevation={0}
                 expanded={opened || false}
                 onChange={(_e, expanded) => {
