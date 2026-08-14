@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The `iFrame 8` widget shows the frame with the number of the value, also for a boolean object
 * (@typhosj) Every copy of a group gets its own member widgets if several widgets are pasted at once
 * (@typhosj) A binding can be used as the comparison value of the visibility condition
 * (@typhosj) The application bar is not wider than the window anymore
