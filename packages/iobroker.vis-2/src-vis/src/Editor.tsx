@@ -747,8 +747,6 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         const widgets = project[this.state.selectedView].widgets;
 
         const newKeys: AnyWidgetId[] = [];
-        let widgetOffset = 0;
-        let groupOffset = 0;
 
         for (const clipboardWidgetId of Object.keys(this.state.widgetsClipboard.widgets)) {
             const newWidget = deepClone(this.state.widgetsClipboard.widgets[clipboardWidgetId as AnyWidgetId]);
@@ -768,21 +766,16 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 newKey = pasteGroup({
                     group: newWidget,
                     widgets,
-                    offset: groupOffset,
                     groupMembers: this.state.widgetsClipboard.groupMembers,
-                    project: store.getState().visProject,
+                    project,
                 });
-
-                groupOffset++;
             } else {
                 newKey = pasteSingleWidget({
                     widget: newWidget,
-                    offset: widgetOffset,
-                    project: store.getState().visProject,
+                    project,
                     selectedGroup: this.state.selectedGroup,
                     widgets,
                 });
-                widgetOffset++;
             }
 
             newKeys.push(newKey);
@@ -811,12 +804,12 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     group: newWidget,
                     widgets,
                     groupMembers: widgets,
-                    project: store.getState().visProject,
+                    project,
                 });
             } else {
                 const newKey = pasteSingleWidget({
                     widget: newWidget,
-                    project: store.getState().visProject,
+                    project,
                     selectedGroup: this.state.selectedGroup,
                     widgets,
                 });

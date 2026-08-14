@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Every copy of a group gets its own member widgets if several widgets are pasted at once
 * (@typhosj) A binding can be used as the comparison value of the visibility condition
 * (@typhosj) The application bar is not wider than the window anymore
 * (@typhosj) Fixed the invisible content of the `tabs` widget if the tabs are placed vertically
