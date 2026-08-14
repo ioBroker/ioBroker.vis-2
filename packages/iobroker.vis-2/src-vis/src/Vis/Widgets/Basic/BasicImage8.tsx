@@ -108,29 +108,17 @@ export default class BasicImage8 extends BasicImageGeneric<RxData> {
 
     /** Get image according to current state */
     getImage(): string {
-        const images: string[] = [];
+        let val = this.state.values[`${this.state.rxData.oid}.val`];
 
-        for (let i = 0; i <= this.state.rxData.count; i++) {
-            if (this.state.rxData[`src_${i}`]) {
-                images.push(this.state.rxData[`src_${i}`]);
-            }
+        if (this.state.rxData.oid === 'nothing_selected' || val === undefined) {
+            val = 0;
+        } else if (val === 'true' || val === true) {
+            val = 1;
+        } else if (val === 'false' || val === false) {
+            val = 0;
         }
 
-        if (
-            this.state.rxData.oid !== 'nothing_selected' &&
-            this.state.values[`${this.state.rxData.oid}.val`] !== undefined
-        ) {
-            let val = this.state.values[`${this.state.rxData.oid}.val`];
-            if (val === 'true' || val === true) {
-                val = 1;
-            }
-
-            if (val === 'false' || val === false) {
-                val = 0;
-            }
-            return images[val] || '';
-        }
-
-        return images[0] || '';
+        // the value is the number of the image and not the position in the list of the defined images
+        return this.state.rxData[`src_${val}`] || '';
     }
 }

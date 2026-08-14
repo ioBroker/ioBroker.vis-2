@@ -48,28 +48,19 @@ class BasicViewInWidget8 extends VisRxWidget<RxData> {
         props.style.width ??= 400;
         props.style.height ??= 270;
 
-        const viewArr: string[] = [];
-        let i = 1;
-        while (this.state.rxData[`contains_view_${i}`] !== undefined) {
-            viewArr.push(this.state.rxData[`contains_view_${i}`]);
-            i++;
-        }
-
         const oid = this.state.rxData.oid;
         let val = this.state.values[`${oid}.val`];
-        let view: string | undefined;
 
-        if (oid !== 'nothing_selected' && val !== undefined) {
-            if (val === 'true' || val === true) {
-                val = 1;
-            }
-            if (val === 'false' || val === false) {
-                val = 0;
-            }
-            view = viewArr[val];
-        } else {
-            view = viewArr[0];
+        if (oid === 'nothing_selected' || val === undefined) {
+            val = 0;
+        } else if (val === 'true' || val === true) {
+            val = 1;
+        } else if (val === 'false' || val === false) {
+            val = 0;
         }
+
+        // the value is the number of the view and not the position in the list of the defined views
+        const view: string | undefined = this.state.rxData[`contains_view_${val}`];
 
         if (view === this.props.view) {
             return (

@@ -817,12 +817,17 @@ export const parseAttributes = (
                     const repeatsMatch = repeats.match(/\(([0-9a-z_]+)-([0-9a-z_]+)\)/i);
                     const name = field.name;
                     if (repeatsMatch) {
-                        let from = 1;
-                        let to = 1;
-                        if (!repeatsMatch[1].match(/^[0-9]$/)) {
+                        // the limits are either a number or the name of an attribute that contains the number
+                        let from: number;
+                        let to: number;
+                        if (repeatsMatch[1].match(/^[0-9]+$/)) {
+                            from = parseInt(repeatsMatch[1], 10);
+                        } else {
                             from = widgetData ? parseInt(widgetData[repeatsMatch[1]]) : 0;
                         }
-                        if (!repeatsMatch[2].match(/^[0-9]$/)) {
+                        if (repeatsMatch[2].match(/^[0-9]+$/)) {
+                            to = parseInt(repeatsMatch[2], 10);
+                        } else {
                             to = widgetData ? parseInt(widgetData[repeatsMatch[2]]) : 0;
                         }
                         for (let i = from; i <= to; i++) {
