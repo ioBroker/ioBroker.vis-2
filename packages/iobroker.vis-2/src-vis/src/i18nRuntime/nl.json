@@ -16,5 +16,7 @@
   "Create or import new \"vis-2\" project": "Creëer of importeer een nieuw \"vis-2\" project",
   "Load project file...": "Projectbestand laden...",
   "Load widgets...": "Widgets laden...",
-  "Loading objects...": "Objecten laden..."
+  "Loading objects...": "Objecten laden...",
+  "Cannot render widget %s": "Widget %s kan niet worden weergegeven",
+  "Retry": "Opnieuw proberen"
 }

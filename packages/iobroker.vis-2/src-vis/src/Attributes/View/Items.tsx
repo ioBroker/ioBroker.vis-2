@@ -571,7 +571,7 @@ export function getFields(
                     label: 'Background color',
                     attr: 'navigationBackground',
                     notStyle: true,
-                    hidden: '!data.navigation || data.navigationOrientation === "horizontal"',
+                    hidden: '!data.navigation',
                     applyToAll: true,
                 },
                 {
@@ -587,7 +587,7 @@ export function getFields(
                     label: 'Text color if selected',
                     attr: 'navigationSelectedColor',
                     notStyle: true,
-                    hidden: '!data.navigation || data.navigationOrientation === "horizontal"',
+                    hidden: '!data.navigation',
                     applyToAll: true,
                 },
                 {
