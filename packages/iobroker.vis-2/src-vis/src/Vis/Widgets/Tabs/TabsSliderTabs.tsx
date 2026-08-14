@@ -264,7 +264,14 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                     flexDirection: this.state.rxData.vertical ? 'row' : 'column',
                 }}
             >
-                <div style={{ width: '100%', overflow: 'hidden' }}>
+                <div
+                    style={
+                        // if the tabs are on the left, they may not take the whole width, as no place for the view would be left
+                        this.state.rxData.vertical
+                            ? { height: '100%', overflow: 'hidden' }
+                            : { width: '100%', overflow: 'hidden' }
+                    }
+                >
                     <Tabs
                         TabIndicatorProps={{
                             style: {
