@@ -245,7 +245,12 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                     iconPosition="start"
                     value={t}
                     key={t.toString()}
-                    style={{ color: this.state.rxData.color, textTransform: 'none' }}
+                    style={{
+                        color: this.state.rxData.color,
+                        textTransform: 'none',
+                        // the tabs are as wide as their title, so that as many as possible fit into the widget
+                        minWidth: 'unset',
+                    }}
                     wrapped
                 />,
             );
@@ -259,7 +264,14 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                     flexDirection: this.state.rxData.vertical ? 'row' : 'column',
                 }}
             >
-                <div style={{ width: '100%', overflow: 'hidden' }}>
+                <div
+                    style={
+                        // if the tabs are on the left, they may not take the whole width, as no place for the view would be left
+                        this.state.rxData.vertical
+                            ? { height: '100%', overflow: 'hidden' }
+                            : { width: '100%', overflow: 'hidden' }
+                    }
+                >
                     <Tabs
                         TabIndicatorProps={{
                             style: {
@@ -272,6 +284,8 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                             this.setState({ tabIndex });
                         }}
                         scrollButtons="auto"
+                        // without it, the tabs that do not fit are not reachable on a touch device
+                        allowScrollButtonsMobile
                         centered={this.state.rxData.variant === 'centered'}
                         variant={
                             this.state.rxData.variant === 'fullWidth'

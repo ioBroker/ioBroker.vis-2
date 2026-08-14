@@ -41,6 +41,8 @@ const styles: Record<string, any> = {
     },
     toolBar: (theme: VisTheme): any => ({
         width: '100%',
+        // the padding must be a part of the width, as the bar would be wider than the window otherwise
+        boxSizing: 'border-box',
         height: TOOLBAR_SIZE,
         overflow: 'hidden',
         lineHeight: `${TOOLBAR_SIZE}px`,
@@ -257,7 +259,12 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     sx={styles.horizontalMenu}
                     style={{
                         backgroundColor:
-                            settings.navigationBarColor || this.props.context.theme.palette.background.paper,
+                            // The horizontal menu had no color of its own before and borrowed the one of the
+                            // application bar, so navigationBarColor stays as a fallback. The own setting has to
+                            // win, as it would have no effect at all otherwise as soon as a bar color is set.
+                            settings.navigationBackground ||
+                            settings.navigationBarColor ||
+                            this.props.context.theme.palette.background.paper,
                         opacity: this.props.editMode ? 0.4 : 1,
                         position: this.props.context.runtime ? 'fixed' : 'relative',
                     }}

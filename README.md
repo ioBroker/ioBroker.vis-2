@@ -313,6 +313,25 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The `view in widget 8` and `image 8` widgets show the view/image with the number of the value again
+* (@typhosj) `vis.updateStates` does not write the states back to ioBroker anymore, like in vis-1
+* (@typhosj) The `iFrame 8` widget shows the frame with the number of the value, also for a boolean object
+* (@typhosj) Every copy of a group gets its own member widgets if several widgets are pasted at once
+* (@typhosj) A binding can be used as the comparison value of the visibility condition
+* (@typhosj) The application bar is not wider than the window anymore
+* (@typhosj) Fixed the invisible content of the `tabs` widget if the tabs are placed vertically
+* (@typhosj) The tabs of the `tabs` widget are as wide as their title now and can be scrolled on a touch device
+* (@GermanBluefox) Shortened the values that a failing binding writes to the console: a widget with braces in its HTML produced hundreds of failing bindings, each printing the complete HTML, which buried every other error
+* (@typhosj) Fixed the position of the vis-1 widgets in a view with a limited screen size
+* (@typhosj) The `bulb on/off` widget writes numeric min/max values as a number and not as a string
+* (@typhosj) Fixed `min`, `max` and `step` of the vis-1 widget attributes: they are optional and may be fractional
+* (@typhosj) Fixed the doubled border of the jQui widgets: the border is drawn by the button only and not by the widget too
+* (@typhosj) Fixed the missing attributes of a group: the sections could not be opened and the group attributes were not editable
+* (@typhosj) Made the background color and the text color of the selected entry editable for the horizontal navigation menu. The new background color takes precedence over the color of the application bar, which the horizontal menu borrowed before, so a view that was switched from the vertical to the horizontal navigation can change its color once
+* (@typhosj) Fixed the enumerable widget groups and fields that start at the index 0 and were not expanded
+* (@typhosj) Added the MUI CSS variables (`--mui-palette-*`), so the theme colors can be adjusted with CSS
+* (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
+* (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
 * (@GermanBluefox) A widget that crashes while rendering does not take the whole view down anymore, but is replaced by a placeholder
 * (@GermanBluefox) Added `react/jsx-runtime` and `react/jsx-dev-runtime` to the shared modules of the module federation, so a widget set uses the JSX runtime of vis-2 instead of bundling its own
 * (@GermanBluefox) Fixed the shared modules `react-dom/client` and the i18n files of `adapter-react-v5` being dropped if a widget set passes its `package.json` to `moduleFederationShared()`

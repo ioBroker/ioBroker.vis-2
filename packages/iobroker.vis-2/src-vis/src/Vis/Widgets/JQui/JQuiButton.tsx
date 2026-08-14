@@ -31,7 +31,6 @@ import { Close, Check } from '@mui/icons-material';
 
 import { I18n, Icon, Utils, IconCopy } from '@iobroker/adapter-react-v5';
 
-import VisBaseWidget from '@/Vis/visBaseWidget';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -858,21 +857,8 @@ class JQuiButton<
             />
         ) : null;
 
-        const buttonStyle: CSSProperties = { textTransform: 'none' };
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach(attr => {
-            const value = (this.state.rxStyle as any)[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
-                attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                (buttonStyle as any)[attr] = value;
-            }
-        });
-        if (buttonStyle.borderWidth) {
-            buttonStyle.borderWidth = VisBaseWidget.correctStylePxValue(buttonStyle.borderWidth);
-        }
-        if (buttonStyle.fontSize) {
-            buttonStyle.fontSize = VisBaseWidget.correctStylePxValue(buttonStyle.fontSize);
-        }
+        const buttonStyle: CSSProperties = this.getMuiStyle(props, { textTransform: 'none' });
 
         // the following widgets are resizable by default
         let visResizable = this.state.data.visResizable;

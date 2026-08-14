@@ -128,6 +128,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     private readonly refRelativeView: React.RefObject<HTMLDivElement>;
 
+    /** The div with the limited screen size, that contains all widgets if the view is limited */
+    private readonly refLimitScreen: React.RefObject<HTMLDivElement>;
+
     private readonly refRelativeColumnsView: React.RefObject<HTMLDivElement>[];
 
     private widgetsRefs: Record<AnyWidgetId, WidgetReference>;
@@ -176,6 +179,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
         this.refView = React.createRef();
         this.refRelativeView = React.createRef();
+        this.refLimitScreen = React.createRef();
         this.refRelativeColumnsView = new Array(MAX_COLUMNS);
         for (let r = 0; r < MAX_COLUMNS; r++) {
             this.refRelativeColumnsView[r] = React.createRef();
@@ -1661,6 +1665,40 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         );
     }
 
+    /**
+     * Check if all widgets of the view are rendered into an own div with the configured screen size,
+     * that is centered on the view.
+     */
+    static isScreenLimited(settings: ViewSettings | undefined): boolean {
+        if (!settings?.limitScreen) {
+            return false;
+        }
+        if (settings.limitScreenDesktop && (window.screen.width < 800 || window.screen.height < 800)) {
+            return false;
+        }
+        if (settings.limitForInstances) {
+            const visInstance = window.localStorage.getItem('visInstance');
+            if (!visInstance) {
+                return false;
+            }
+            const instances = settings.limitForInstances
+                .split(',')
+                .map(i => i.trim())
+                .filter(i => i);
+            if (instances.length && !instances.includes(visInstance)) {
+                return false;
+            }
+        }
+
+        // the size of the screen must be known
+        return !!(
+            isVarFinite(settings.sizex) &&
+            parseFloat(settings.sizex as unknown as string) &&
+            isVarFinite(settings.sizey) &&
+            parseFloat(settings.sizey as unknown as string)
+        );
+    }
+
     render(): React.JSX.Element {
         let rxAbsoluteWidgets: (React.JSX.Element | null)[] = [];
         let rxRelativeWidgets: React.JSX.Element[] | null = [];
@@ -1673,6 +1711,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
 
         const settings = contextView.settings;
+        // the widgets are rendered into the limited screen div, so the CanJS widgets must be placed there too
+        const screenLimited = VisView.isScreenLimited(settings);
 
         if (this.props.view === this.props.activeView && this.props.editMode && !this.keysHandlerInstalled) {
             this.installKeyHandlers();
@@ -1897,7 +1937,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         moveAllowed,
                         ignoreMouseEvents: this.ignoreMouseEvents,
                         onIgnoreMouseEvents: this.onIgnoreMouseEvents,
-                        refParent: this.props.selectedGroup ? this.refRelativeView : this.refView,
+                        refParent: this.props.selectedGroup
+                            ? this.refRelativeView
+                            : screenLimited
+                              ? this.refLimitScreen
+                              : this.refView,
                         askView: this.askView,
                         relativeWidgetOrder,
                         selectedGroup: this.props.selectedGroup,
@@ -1981,7 +2025,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         moveAllowed,
                         ignoreMouseEvents: this.ignoreMouseEvents,
                         onIgnoreMouseEvents: this.onIgnoreMouseEvents,
-                        refParent: this.refView,
+                        refParent: screenLimited ? this.refLimitScreen : this.refView,
                         askView: this.askView,
                         relativeWidgetOrder,
                         selectedGroup: this.props.selectedGroup,
@@ -2039,11 +2083,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             theme = createTheme(
                 customThemeType || this.props.context.theme.palette.mode,
                 this.props.customSettings.viewStyle.overrides,
+                false,
             );
         } else if (customThemeType && customThemeType !== theme.palette.mode) {
             if (!this.theme[customThemeType]) {
                 // cache theme
-                this.theme[customThemeType] = createTheme(customThemeType);
+                this.theme[customThemeType] = createTheme(customThemeType, undefined, false);
             }
             theme = this.theme[customThemeType];
         }
@@ -2126,53 +2171,31 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
         let limitScreenStyle: React.CSSProperties | null = null;
         // limit screen size of desired
-        if (
-            settings?.limitScreen &&
-            ((window.screen.width >= 800 && window.screen.height >= 800) || !settings.limitScreenDesktop)
-        ) {
-            let ignore = false;
-            if (settings.limitForInstances) {
-                const visInstance = window.localStorage.getItem('visInstance');
-                if (visInstance) {
-                    const instances = settings.limitForInstances
-                        .split(',')
-                        .map(i => i.trim())
-                        .filter(i => i);
-                    if (instances.length && !instances.includes(visInstance)) {
-                        ignore = true;
-                    }
-                } else {
-                    ignore = true;
-                }
-            }
-            if (!ignore) {
-                const ww = isVarFinite(settings.sizex) ? parseFloat(settings.sizex as unknown as string) : 0;
-                const hh = isVarFinite(settings.sizey) ? parseFloat(settings.sizey as unknown as string) : 0;
-                if (ww && hh) {
-                    const borderWidth = parseFloat(settings.limitScreenBorderWidth as unknown as string) || 0;
-                    const borderColor = settings.limitScreenBorderColor || '#333';
-                    const borderStyle = settings.limitScreenBorderStyle || 'dotted';
-                    const bgColor = settings.limitScreenBackgroundColor || null;
+        if (screenLimited) {
+            const ww = parseFloat(settings.sizex as unknown as string);
+            const hh = parseFloat(settings.sizey as unknown as string);
+            const borderWidth = parseFloat(settings.limitScreenBorderWidth as unknown as string) || 0;
+            const borderColor = settings.limitScreenBorderColor || '#333';
+            const borderStyle = settings.limitScreenBorderStyle || 'dotted';
+            const bgColor = settings.limitScreenBackgroundColor || null;
 
-                    limitScreenStyle = {
-                        ...backgroundStyle,
-                        width: ww + borderWidth * 2,
-                        height: hh + borderWidth * 2,
-                        minWidth: ww + borderWidth * 2,
-                        minHeight: hh + borderWidth * 2,
-                        overflow: 'auto',
-                        position: 'relative',
-                        boxSizing: 'border-box',
-                        borderWidth,
-                        borderColor,
-                        borderStyle,
-                    };
-                    style.display = 'flex';
-                    style.justifyContent = 'center';
-                    style.alignItems = 'center';
-                    style.backgroundColor = bgColor;
-                }
-            }
+            limitScreenStyle = {
+                ...backgroundStyle,
+                width: ww + borderWidth * 2,
+                height: hh + borderWidth * 2,
+                minWidth: ww + borderWidth * 2,
+                minHeight: hh + borderWidth * 2,
+                overflow: 'auto',
+                position: 'relative',
+                boxSizing: 'border-box',
+                borderWidth,
+                borderColor,
+                borderStyle,
+            };
+            style.display = 'flex';
+            style.justifyContent = 'center';
+            style.alignItems = 'center';
+            style.backgroundColor = bgColor;
         }
 
         if (this.props.selectedGroup) {
@@ -2198,6 +2221,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         if (limitScreenStyle) {
             renderedWidgets = (
                 <div
+                    ref={this.refLimitScreen}
                     style={limitScreenStyle}
                     className="vis-limit-screen"
                 >
