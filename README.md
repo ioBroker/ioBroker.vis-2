@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The tabs of the `tabs` widget are as wide as their title now and can be scrolled on a touch device
 * (@GermanBluefox) Shortened the values that a failing binding writes to the console: a widget with braces in its HTML produced hundreds of failing bindings, each printing the complete HTML, which buried every other error
 * (@typhosj) Fixed the position of the vis-1 widgets in a view with a limited screen size
 * (@typhosj) The `bulb on/off` widget writes numeric min/max values as a number and not as a string
