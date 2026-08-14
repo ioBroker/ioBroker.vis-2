@@ -33,7 +33,6 @@ import {
 
 import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
 
-import VisBaseWidget from '@/Vis/visBaseWidget';
 import { deepClone } from '@/Utilities/utils';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
@@ -735,22 +734,9 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         }
 
         // buttons of material UI are upper cased by default, but vis widgets show the text as entered
-        const buttonStyle: React.CSSProperties = { textTransform: 'none' };
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach(attr => {
-            const value = rxData[attr];
-            if (value !== null && value !== undefined && VisRxWidget.POSSIBLE_MUI_STYLES.includes(attr)) {
-                attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
-                (buttonStyle as unknown as Record<string, string>)[attr] = value;
-            }
-        });
+        const buttonStyle: React.CSSProperties = this.getMuiStyle(props, { textTransform: 'none' });
         buttonStyle.minWidth = 'unset';
-        if (buttonStyle.borderWidth) {
-            buttonStyle.borderWidth = VisBaseWidget.correctStylePxValue(buttonStyle.borderWidth);
-        }
-        if (buttonStyle.fontSize) {
-            buttonStyle.fontSize = VisBaseWidget.correctStylePxValue(buttonStyle.fontSize);
-        }
 
         let content;
         if (
