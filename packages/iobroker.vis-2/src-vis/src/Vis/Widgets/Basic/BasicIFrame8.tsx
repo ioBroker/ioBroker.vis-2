@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, VisBaseWidgetProps } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
+import { NOTHING_SELECTED } from '@/Utilities/utils';
 
 type RxData = {
     oid: string;
@@ -140,25 +141,32 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
         return BasicIFrame8.getWidgetInfo();
     }
 
-    getSrc(): string {
+    /** The number of the frame to show: the value of the object, where the frames are numbered from 0 */
+    getFrameNumber(): number {
         const value = this.state.values[`${this.state.rxData.oid}.val`];
-        if (value === undefined || value === null) {
-            return this.state.rxData.src_1;
+
+        if (this.state.rxData.oid === NOTHING_SELECTED || value === undefined || value === null) {
+            return 0;
         }
-        return this.state.rxData[`src_${value}`] || '';
+        if (value === 'true' || value === true) {
+            return 1;
+        }
+        if (value === 'false' || value === false) {
+            return 0;
+        }
+
+        return parseFloat(value as string);
+    }
+
+    getSrc(): string {
+        return this.state.rxData[`src_${this.getFrameNumber()}`] || '';
     }
 
     getNoSandBox(): boolean {
-        const value = this.state.values[`${this.state.rxData.oid}.val`];
-        if (value === undefined || value === null) {
-            return this.state.rxData.noSandbox1;
-        }
+        const noSandbox = this.state.rxData[`noSandbox${this.getFrameNumber()}`];
 
-        return (
-            this.state.rxData[`noSandbox${value}`] === true ||
-            // @ts-expect-error back compatibility
-            this.state.rxData[`noSandbox${value}`] === 'true'
-        );
+        // the string is there for back compatibility
+        return noSandbox === true || (noSandbox as unknown) === 'true';
     }
 
     onHashChange = (): void => {

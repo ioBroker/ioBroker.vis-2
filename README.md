@@ -314,6 +314,9 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) `vis.updateStates` does not write the states back to ioBroker anymore, like in vis-1
+* (@typhosj) The `iFrame 8` widget shows the frame with the number of the value, also for a boolean object
+* (@typhosj) Every copy of a group gets its own member widgets if several widgets are pasted at once
+* (@typhosj) A binding can be used as the comparison value of the visibility condition
 * (@typhosj) The application bar is not wider than the window anymore
 * (@typhosj) Fixed the invisible content of the `tabs` widget if the tabs are placed vertically
 * (@typhosj) The tabs of the `tabs` widget are as wide as their title now and can be scrolled on a touch device
