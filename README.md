@@ -316,6 +316,11 @@ npm run start
 * (@typhosj) Added the MUI CSS variables (`--mui-palette-*`), so the theme colors can be adjusted with CSS
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window
 * (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views
+
+### 2.14.4 (2026-08-10)
+* (@typhosj) The entries of the horizontal navigation menu can be scrolled now instead of being cut off in a narrow window
+* (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views. Their IDs changed from `<view>_<widget>` to `v<view>_<widget>`, so a user script or CSS that addresses such a copy must be adapted
+* (@typhosj) Fixed the double click on a widget shown in multiple views jumping to a wrong view
 * (@typhosj) Show the text of the button widgets as entered and not upper cased
 * (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
 * (@typhosj) Subscribed to object IDs that are the result of a binding
@@ -344,10 +349,6 @@ npm run start
 
 ### 2.13.17 (2026-03-29)
 * (@GermanBluefox) Removed debug code for theme
-
-### 2.13.16 (2026-03-26)
-* (@GermanBluefox) Fixing the usage of umlauts in patterns
-* (@GermanBluefox) Fixing commands via control interface when sent as JSON
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
