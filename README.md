@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Made the background color and the text color of the selected entry editable for the horizontal navigation menu
 * (@typhosj) Fixed the enumerable widget groups and fields that start at the index 0 and were not expanded
 * (@typhosj) Added the MUI CSS variables (`--mui-palette-*`), so the theme colors can be adjusted with CSS
 * (@typhosj) Fixed the overlapping entries of the horizontal navigation menu in a narrow window

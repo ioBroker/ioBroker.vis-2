@@ -257,7 +257,10 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     sx={styles.horizontalMenu}
                     style={{
                         backgroundColor:
-                            settings.navigationBarColor || this.props.context.theme.palette.background.paper,
+                            // navigationBarColor was the only configurable color of the horizontal menu before
+                            settings.navigationBackground ||
+                            settings.navigationBarColor ||
+                            this.props.context.theme.palette.background.paper,
                         opacity: this.props.editMode ? 0.4 : 1,
                         position: this.props.context.runtime ? 'fixed' : 'relative',
                     }}
