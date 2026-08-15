@@ -878,9 +878,15 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     }
 
     getResizeHandlers(selected: boolean, widget: Widget, borderWidth: string): React.JSX.Element[] | null {
-        if (!this.state.editMode || !selected || this.props.selectedWidgets?.length !== 1 || this.state.stealMode) {
+        if (!this.state.editMode || !selected || this.state.stealMode) {
             return null;
         }
+
+        /**
+         * Several widgets are selected: they get the same frame as a single one, but nothing to grab - resizing
+         * only works on one widget at a time.
+         */
+        const frameOnly = this.props.selectedWidgets?.length !== 1;
 
         const thickness = 0.4;
         const shift = 0.3;
@@ -923,6 +929,19 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             'bottom-right':
                 !widgetHeight100 && !widgetWidth100 && !widget.usedInWidget && resizeHandlers.includes('se'),
         };
+
+        if (frameOnly) {
+            // all four edges in the same style as an enabled handle, so the frame looks like the one of a
+            // single selected widget; the corners are grab points and therefore left out
+            controllable.top = true;
+            controllable.bottom = true;
+            controllable.left = true;
+            controllable.right = true;
+            controllable['top-left'] = false;
+            controllable['top-right'] = false;
+            controllable['bottom-left'] = false;
+            controllable['bottom-right'] = false;
+        }
 
         const handlers: Record<string, Handler> = {
             top: {
@@ -1016,6 +1035,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 }
                 handler.cursor = 'default';
             }
+            if (frameOnly) {
+                // the frame is decoration here, nothing to grab
+                handler.cursor = 'default';
+            }
 
             return (
                 <div
@@ -1023,7 +1046,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     className="vis-editmode-resizer"
                     style={Object.assign(handler as React.CSSProperties, style)}
                     onMouseDown={
-                        handler.opacity === RESIZERS_OPACITY ? e => this.onResizeStart(e, key as Resize) : undefined
+                        !frameOnly && handler.opacity === RESIZERS_OPACITY
+                            ? e => this.onResizeStart(e, key as Resize)
+                            : undefined
                     }
                 />
             );

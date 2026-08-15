@@ -81,9 +81,10 @@ html {
     top: 0;
     left: 0;
 }
+/* The same blue as the rest of the editor decoration, so hovering and selecting read as one thing */
 .vis-editmode-overlay-not-selected:hover {
-    background: #ada400a0;
-    box-shadow: 0 0 15px 4px #ada400;
+    background: #0d72b8a0;
+    box-shadow: 0 0 15px 4px #0d72b8;
 }
 
 .vis-editmode-overlay-move-button {
@@ -103,13 +104,14 @@ html {
     position: absolute;
 }
 
+/* The frame around a selected widget is drawn by getResizeHandlers(), also when several are selected */
 .vis-editmode-selected.vis-editmode-overlay {
-    /* background-color: green; */
     z-index: 1001;
 }
 
+/* the widget names are hidden, so the selection has to carry more weight */
 .vis-editmode-selected.vis-editmode-selected-background.vis-editmode-overlay {
-    background-color: green;
+    background-color: #0d72b8;
 }
 
 .vis-editmode-widget-name {
