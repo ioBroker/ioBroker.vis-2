@@ -50,8 +50,11 @@ html {
     box-shadow: 0 0 15px 8px #002aad;
 }
 
+/* Slot a dragged relative widget will land in. The copy under the cursor shows the widget, this shows where. */
 .vis-editmode-widget-shadow {
     border: 1px dotted #0d72b8;
+    background-color: rgba(13, 114, 184, 0.15);
+    box-sizing: border-box;
     position: relative;
 }
 

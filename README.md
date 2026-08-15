@@ -313,6 +313,10 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Relative widgets can be reordered by dragging them again: a half transparent copy follows the cursor and a placeholder shows the slot the widget will land in. Dragging one never reordered anything before, because the gesture was not started for relative widgets at all
+* (@GermanBluefox) Removed the arrow buttons and the re-order menu of the relative widgets, as dragging replaces them
+* (@GermanBluefox) Moving and resizing a widget is rendered from the widget state now instead of being written into the DOM, which removes the duplicated geometry of the service and the can.js element
+* (@GermanBluefox) Removed the dead `calculateRelativeWidgetPosition` callback from `onMove` and `WidgetReference`: it has been `null` since 2022, so dragging a relative widget never reordered anything (the arrow buttons do that)
 * (@typhosj) The `view in widget 8` and `image 8` widgets show the view/image with the number of the value again
 * (@typhosj) `vis.updateStates` does not write the states back to ioBroker anymore, like in vis-1
 * (@typhosj) The `iFrame 8` widget shows the frame with the number of the value, also for a boolean object

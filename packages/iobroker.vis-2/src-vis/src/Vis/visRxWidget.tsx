@@ -540,6 +540,8 @@ export class VisRxWidget<
     }
 
     componentDidUpdate(_prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
+        // the base class ends a gesture here, so it must not be cut off
+        super.componentDidUpdate();
         if (prevState) {
             if (JSON.stringify(this.state.rxData) !== JSON.stringify(prevState.rxData)) {
                 this.onRxDataChanged(prevState.rxData);

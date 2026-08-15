@@ -46,14 +46,7 @@ export type WidgetReference = {
     uuid?: string;
     widDiv?: HTMLDivElement | null;
     refService?: React.RefObject<HTMLElement>;
-    onMove?: (
-        x?: number,
-        y?: number,
-        save?: boolean,
-        calculateRelativeWidgetPosition?:
-            | null
-            | ((id: AnyWidgetId, left: string, top: string, shadowDiv: HTMLDivElement, order: AnyWidgetId[]) => void),
-    ) => void;
+    onMove?: (x?: number, y?: number, save?: boolean) => void;
     onResize?: undefined | (() => void);
     onTempSelect?: (selected?: boolean) => void;
     onCommand?: (command: VisWidgetCommand, options?: any) => any;

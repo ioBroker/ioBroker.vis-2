@@ -15,13 +15,7 @@
 
 import React from 'react';
 
-import {
-    Anchor as AnchorIcon,
-    Expand as ExpandIcon,
-    ArrowUpward as UpIcon,
-    ArrowDownward as DownIcon,
-    KeyboardReturn,
-} from '@mui/icons-material';
+import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui/icons-material';
 
 import { I18n, Utils } from '@iobroker/adapter-react-v5';
 
@@ -39,8 +33,6 @@ import type {
     VisBaseWidgetProps,
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
-
-const VisOrderMenu = React.lazy(() => import('./visOrderMenu'));
 
 interface HTMLDivElementResizers extends HTMLDivElement {
     _storedOpacity: string;
@@ -63,6 +55,16 @@ export interface WidgetStyleState extends WidgetStyle {
     _originalData?: string;
 }
 
+/** Geometry a running gesture applies, in pixels. Only the values the gesture actually changes are set. */
+export interface GestureStyle {
+    left?: number;
+    top?: number;
+    width?: number;
+    height?: number;
+    /** A relative widget is lifted out of the flow while it is dragged; the view holds its slot with a placeholder */
+    position?: 'absolute';
+}
+
 export interface VisBaseWidgetState {
     applyBindings?: false | true | { top: string | number; left: string | number };
     data: WidgetDataState | GroupDataState;
@@ -77,7 +79,24 @@ export interface VisBaseWidgetState {
     rxStyle?: WidgetStyleState;
     selected?: boolean;
     selectedOne?: boolean;
-    showRelativeMoveMenu?: boolean;
+    /** The editor waits for the click that picks the style of a widget, so this widget shows no handles */
+    stealMode?: boolean;
+    /**
+     * Geometry of a running gesture, in pixels. It overrides the position of the widget while it is dragged, so
+     * that render() stays the only place that positions the widget - a re-render during the gesture can then not
+     * reset it. It is dropped again as soon as the moved position has arrived through the project.
+     *
+     * Only set for absolute widgets while they are moved. Resizing and relative widgets still write the DOM.
+     *
+     * `base` is the geometry the render used when the gesture started. The override may only be dropped once
+     * the render carries the new geometry by itself - the project needs a moment to be written and the value
+     * then travels through the binding pipeline - as the widget would show its old position until then.
+     */
+    gesture?: {
+        /** Only the values this gesture changes: a resize from the right edge sets the width and nothing else */
+        style: GestureStyle;
+        base: GestureStyle;
+    } | null;
     style: WidgetStyleState;
     usedInWidget: boolean;
     widgetHint?: 'light' | 'dark' | 'hide';
@@ -135,8 +154,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     static FORBIDDEN_CHARS = /[^._\-/ :!#$%&()+=@^{}|~]+/g; // from https://github.com/ioBroker/ioBroker.js-controller/blob/master/packages/common/lib/common/tools.js
 
     /** We do not store the SVG Element in the state because it is cyclic */
-    private relativeMoveMenu?: EventTarget & SVGSVGElement;
-
     /** if currently resizing */
     private resize: Resize = false;
 
@@ -154,9 +171,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
     private pressTimeout?: ReturnType<typeof setTimeout>;
 
-    private shadowDiv: HTMLDivElement | null;
-
-    private stealCursor?: string;
+    /**
+     * Geometry the last render used before a running gesture was applied on top. It is the only honest measure
+     * for the question whether the gesture may be dropped: only when this carries the new values by itself does
+     * dropping it change nothing on the screen.
+     */
+    private renderedBaseGeometry: GestureStyle = {};
 
     private beforeIncludeColor?: string;
 
@@ -264,6 +284,29 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             });
     }
 
+    componentDidUpdate(_prevProps?: VisBaseWidgetProps, _prevState?: Readonly<TState>): void {
+        const gesture = this.state.gesture;
+        // while the gesture is running it is the truth and must stay
+        if (!gesture || this.movement) {
+            return;
+        }
+
+        const attrs = Object.keys(gesture.style) as (keyof GestureStyle)[];
+        // dropping the override is invisible as soon as the render carries its values without it
+        const redundant = attrs.every(attr => this.renderedBaseGeometry[attr] === gesture.style[attr]);
+        // the widget was positioned from somewhere else - the attribute panel or an undo - so the override,
+        // which would otherwise win forever, is stale
+        const changedElsewhere = attrs.some(
+            attr =>
+                this.renderedBaseGeometry[attr] !== gesture.style[attr] &&
+                this.renderedBaseGeometry[attr] !== gesture.base[attr],
+        );
+
+        if (redundant || changedElsewhere) {
+            this.setState({ gesture: null });
+        }
+    }
+
     componentWillUnmount(): void {
         this.updateInterval && clearInterval(this.updateInterval);
         this.updateInterval = undefined;
@@ -273,10 +316,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
         // delete service ref from view only in edit mode
         this.props.askView && this.props.askView('unregister', { id: this.props.id, uuid: this.uuid });
-        if (this.shadowDiv) {
-            this.shadowDiv.remove();
-            this.shadowDiv = null;
-        }
     }
 
     // this method may be not in form onCommand = command => {}, as it can be overloaded
@@ -298,35 +337,15 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             return true;
         }
 
+        // The steal mode is a state of the editor and not a gesture, so it is rendered and not written into the
+        // DOM: render() adds the class and the cursor, and getResizeHandlers() draws no handles while it is on.
         if (command === 'startStealMode') {
-            this.stealCursor = this.refService.current?.style.cursor || 'nocursor';
-            if (this.refService.current) {
-                this.refService.current.style.cursor = 'crosshair';
-                this.refService.current.className = addClass(
-                    this.refService.current.className,
-                    'vis-editmode-steal-style',
-                );
-            }
-            const resizers: NodeListOf<HTMLDivElement> =
-                this.refService.current?.querySelectorAll('.vis-editmode-resizer');
-            resizers?.forEach(item => (item.style.display = 'none'));
+            this.setState({ stealMode: true });
             return true;
         }
 
         if (command === 'cancelStealMode') {
-            if (this.stealCursor !== 'nocursor' && this.refService.current && this.stealCursor) {
-                this.refService.current.style.cursor = this.stealCursor;
-            }
-            this.stealCursor = undefined;
-            if (this.refService.current) {
-                this.refService.current.className = removeClass(
-                    this.refService.current.className,
-                    'vis-editmode-steal-style',
-                );
-            }
-            const resizers: NodeListOf<HTMLDivElement> =
-                this.refService.current?.querySelectorAll('.vis-editmode-resizer');
-            resizers?.forEach(item => (item.style.display = ''));
+            this.setState({ stealMode: false });
             return true;
         }
 
@@ -382,6 +401,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         const context = props.context;
         let newState: Partial<VisBaseWidgetState> | null = null; // No change to state by default
         let widget = context.views[props.view].widgets[props.id];
+
         const gap =
             widget.style.position === 'relative'
                 ? isVarFinite(context.views[props.view].settings?.rowGap)
@@ -517,6 +537,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             newState.usedInWidget = !!widget.usedInWidget;
         }
 
+        // The gesture geometry only overrides the position until the moved position has arrived through the
+        // project. Dropping it at the end of the gesture instead would show the old position for one frame,
+        // because the project is only updated afterwards.
         return newState;
     }
 
@@ -574,7 +597,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
     onMouseDown(e: React.MouseEvent): void {
         e.stopPropagation();
-        if (this.stealCursor && !this.state.multiViewWidget) {
+        if (this.state.stealMode && !this.state.multiViewWidget) {
             e.stopPropagation();
             this.props.mouseDownOnView(e, this.props.id, this.props.isRelative);
             return;
@@ -621,72 +644,19 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // set select
             this.props.context.setSelectedWidgets([this.props.id]);
         } else if (this.props.moveAllowed && this.state.draggable !== false) {
-            if (!this.props.isRelative) {
-                // User can drag only objects of the same type
-                this.props.mouseDownOnView(
-                    e,
-                    this.props.id,
-                    this.props.isRelative,
-                    false,
-                    this.lastClick !== undefined && Date.now() - this.lastClick < 300,
-                );
-            } else if (this.lastClick && Date.now() - this.lastClick < 250) {
-                // if double-click on a group
-                if (
-                    this.props.selectedWidgets.length === 1 &&
-                    this.props.context.views[this.props.view].widgets[this.props.selectedWidgets[0]].tpl === '_tplGroup'
-                ) {
-                    this.props.context.setSelectedGroup(this.props.selectedWidgets[0]);
-                }
-            }
+            // Relative widgets start the gesture as well: it reorders them, and it is what offers to include a
+            // widget into a container. That only absolute widgets may be dragged together with each other is
+            // already decided by `moveAllowed`, and the double click that opens a group is recognized by
+            // `mouseDownOnView` itself.
+            this.props.mouseDownOnView(
+                e,
+                this.props.id,
+                this.props.isRelative,
+                false,
+                this.lastClick !== undefined && Date.now() - this.lastClick < 300,
+            );
         }
         this.lastClick = Date.now();
-    }
-
-    createWidgetMovementShadow(): void {
-        if (this.shadowDiv) {
-            this.shadowDiv.remove();
-            this.shadowDiv = null;
-        }
-
-        if (!this.movement) {
-            console.error('Unknown issue, movement is falsy');
-            return;
-        }
-
-        this.shadowDiv = window.document.createElement('div');
-        this.shadowDiv.setAttribute('id', `${this.props.id}_shadow`);
-        this.shadowDiv.className = 'vis-editmode-widget-shadow';
-        if (this.refService.current) {
-            this.shadowDiv.style.width = `${this.refService.current.clientWidth}px`;
-            this.shadowDiv.style.height = `${this.refService.current.clientHeight}px`;
-            if (this.refService.current.style.borderRadius) {
-                this.shadowDiv.style.borderRadius = this.refService.current.style.borderRadius;
-            }
-        }
-
-        let parentDiv: HTMLElement;
-        if (Object.prototype.hasOwnProperty.call(this.props.refParent, 'current')) {
-            parentDiv = this.props.refParent.current;
-        } else {
-            parentDiv = this.props.refParent as any as HTMLElement;
-        }
-
-        if (this.widDiv) {
-            parentDiv.insertBefore(this.shadowDiv, this.widDiv);
-            this.widDiv.style.position = 'absolute';
-            this.widDiv.style.left = `${this.movement.left}px`;
-            this.widDiv.style.top = `${this.movement.top}px`;
-        } else {
-            parentDiv.insertBefore(this.shadowDiv, this.refService.current);
-            if (this.refService.current) {
-                this.refService.current.style.position = 'absolute';
-            }
-        }
-        if (this.refService.current) {
-            this.refService.current.style.left = `${this.movement.left}px`;
-            this.refService.current.style.top = `${this.movement.top}px`;
-        }
     }
 
     isResizable(): boolean {
@@ -701,14 +671,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         return this.state.resizable;
     }
 
-    onMove = (
-        x: number | undefined,
-        y: number | undefined,
-        save?: boolean,
-        calculateRelativeWidgetPosition?:
-            | null
-            | ((id: AnyWidgetId, left: string, top: string, shadowDiv: HTMLDivElement, order: AnyWidgetId[]) => void),
-    ): void => {
+    /**
+     * Note about relative widgets: they are not positioned by this at all. The view shows a copy of the widget
+     * under the cursor and a placeholder in the slot it will land in, and writes the new order when the gesture
+     * ends - see `VisView.createDragGhost()` and `VisView.updateRelativeDragOrder()`.
+     */
+    onMove = (x: number | undefined, y: number | undefined, save?: boolean): void => {
         if (this.state.multiViewWidget || !this.state.editMode) {
             return;
         }
@@ -722,6 +690,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             if (this.isResizable() === false) {
                 return;
             }
+
+            /** What this gesture changed, so that the same values are rendered, applied and finally saved */
+            let resizeStyle: GestureStyle = {};
 
             if (x === undefined) {
                 // start resizing
@@ -742,131 +713,39 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     item.style.opacity = '0.3';
                 });
             } else if (movement && y !== undefined /* && x !== undefined */) {
-                if (this.resize === 'top') {
-                    this.refService.current.style.top = `${movement.top + y}px`;
-                    this.refService.current.style.height = `${movement.height - y}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.width = this.refService.current.style.height;
-                    }
+                // Every handle changes exactly the edges it is named after. The geometry is computed once
+                // here instead of being written twice - to the service div and to the can.js div - in eight
+                // nearly identical branches.
+                const direction = typeof this.resize === 'string' ? this.resize : 'bottom-right';
 
-                    if (this.widDiv) {
-                        this.widDiv.style.top = `${movement.top + y}px`;
-                        this.widDiv.style.height = `${movement.height - y}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.width = this.widDiv.style.height;
-                        }
-                    }
-                } else if (this.resize === 'bottom') {
-                    this.widDiv && (this.widDiv.style.height = `${movement.height + y}px`);
-                    this.refService.current.style.height = `${movement.height + y}px`;
+                resizeStyle = {};
+                if (direction.includes('top')) {
+                    resizeStyle.top = movement.top + y;
+                    resizeStyle.height = movement.height - y;
+                } else if (direction.includes('bottom')) {
+                    resizeStyle.height = movement.height + y;
+                }
+                if (direction.includes('left')) {
+                    resizeStyle.left = movement.left + x;
+                    resizeStyle.width = movement.width - x;
+                } else if (direction.includes('right')) {
+                    resizeStyle.width = movement.width + x;
+                }
 
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.width = this.refService.current.style.height;
-                    }
-                    if (this.widDiv && this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.widDiv.style.width = this.widDiv.style.height;
-                    }
-                } else if (this.resize === 'left') {
-                    this.refService.current.style.left = `${movement.left + x}px`;
-                    this.refService.current.style.width = `${movement.width - x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-                    if (this.widDiv) {
-                        this.widDiv.style.left = `${movement.left + x}px`;
-                        this.widDiv.style.width = `${movement.width - x}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.height = this.widDiv.style.width;
-                        }
-                    }
-                } else if (this.resize === 'right') {
-                    this.widDiv && (this.widDiv.style.width = `${movement.width + x}px`);
-                    this.refService.current.style.width = `${movement.width + x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-                    if (this.widDiv && this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.widDiv.style.height = this.widDiv.style.width;
-                    }
-                } else if (this.resize === 'top-left') {
-                    this.refService.current.style.top = `${movement.top + y}px`;
-                    this.refService.current.style.left = `${movement.left + x}px`;
-                    this.refService.current.style.height = `${movement.height - y}px`;
-                    this.refService.current.style.width = `${movement.width - x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-
-                    if (this.widDiv) {
-                        this.widDiv.style.top = `${movement.top + y}px`;
-                        this.widDiv.style.left = `${movement.left + x}px`;
-                        this.widDiv.style.height = `${movement.height - y}px`;
-                        this.widDiv.style.width = `${movement.width - x}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.height = this.widDiv.style.width;
-                        }
-                    }
-                } else if (this.resize === 'top-right') {
-                    this.refService.current.style.top = `${movement.top + y}px`;
-                    this.refService.current.style.height = `${movement.height - y}px`;
-                    this.refService.current.style.width = `${movement.width + x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-                    if (this.widDiv) {
-                        this.widDiv.style.top = `${movement.top + y}px`;
-                        this.widDiv.style.height = `${movement.height - y}px`;
-                        this.widDiv.style.width = `${movement.width + x}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.height = this.widDiv.style.width;
-                        }
-                    }
-                } else if (this.resize === 'bottom-left') {
-                    this.refService.current.style.left = `${movement.left + x}px`;
-                    this.refService.current.style.height = `${movement.height + y}px`;
-                    this.refService.current.style.width = `${movement.width - x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-                    if (this.widDiv) {
-                        this.widDiv.style.left = `${movement.left + x}px`;
-                        this.widDiv.style.height = `${movement.height + y}px`;
-                        this.widDiv.style.width = `${movement.width - x}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.height = this.widDiv.style.width;
-                        }
-                    }
-                } else {
-                    // bottom-right
-                    this.refService.current.style.height = `${movement.height + y}px`;
-                    this.refService.current.style.width = `${movement.width + x}px`;
-                    if (this.resizeLocked) {
-                        // noinspection JSSuspiciousNameCombination
-                        this.refService.current.style.height = this.refService.current.style.width;
-                    }
-                    if (this.widDiv) {
-                        this.widDiv.style.height = `${movement.height + y}px`;
-                        this.widDiv.style.width = `${movement.width + x}px`;
-                        if (this.resizeLocked) {
-                            // noinspection JSSuspiciousNameCombination
-                            this.widDiv.style.height = this.widDiv.style.width;
-                        }
+                if (this.resizeLocked) {
+                    // the handles that only change the height let the width follow, all others the other way round
+                    if (resizeStyle.width === undefined) {
+                        resizeStyle.width = resizeStyle.height;
+                    } else {
+                        resizeStyle.height = resizeStyle.width;
                     }
                 }
+
+                // render() applies it to the service div, so a re-render during the gesture cannot reset it
+                this.setState({ gesture: { style: resizeStyle, base: { ...this.renderedBaseGeometry } } });
+
+                // the can.js div of a vis-1 widget is not rendered by React; VisCanWidget applies the same
+                // gesture geometry to it in its componentDidUpdate
             }
 
             // end of resize
@@ -880,16 +759,24 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     }
                 });
                 this.resize = false;
+
+                // The values this gesture changed must come from the computation and not from the DOM: this
+                // call carries the last position itself, so React has not rendered it yet and reading the
+                // service div back would save the position of the previous mouse move. The other values were
+                // not touched by the gesture, so the DOM still holds what the widget had before.
+                const savedStyle: Record<string, string> = {
+                    top: this.refService.current.style.top,
+                    left: this.refService.current.style.left,
+                    width: this.refService.current.style.width,
+                    height: this.refService.current.style.height,
+                };
+                Object.entries(resizeStyle).forEach(([attr, value]) => (savedStyle[attr] = `${value}px`));
+
                 this.props.context.onWidgetsChanged([
                     {
                         wid: this.props.id,
                         view: this.props.view,
-                        style: {
-                            top: this.refService.current.style.top,
-                            left: this.refService.current.style.left,
-                            width: this.refService.current.style.width,
-                            height: this.refService.current.style.height,
-                        },
+                        style: savedStyle,
                     },
                 ]);
 
@@ -900,44 +787,34 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 return;
             }
 
-            // initiate movement
+            // initiate movement. The size is measured because a relative widget is lifted out of the flow for
+            // the gesture: its `width: 100%` would otherwise stop meaning the column and start meaning the view.
+            const startRect = (this.widDiv || this.refService.current).getBoundingClientRect();
             this.movement = {
                 top: this.refService.current.offsetTop,
                 left: this.refService.current.offsetLeft,
                 order: [...this.props.relativeWidgetOrder],
-                width: 0,
-                height: 0,
+                width: startRect.width,
+                height: startRect.height,
             };
 
             // hide resizers
             const resizers: NodeListOf<HTMLDivElement> =
                 this.refService.current.querySelectorAll('.vis-editmode-resizer');
             resizers.forEach(item => (item.style.display = 'none'));
-
-            if (this.props.isRelative) {
-                // create shadow widget
-                this.createWidgetMovementShadow();
-            }
         } else if (this.movement && y !== undefined && x !== undefined) {
             // move widget
-            const left = `${this.movement.left + x}px`;
-            const top = `${this.movement.top + y}px`;
+            const leftPx = this.movement.left + x;
+            const topPx = this.movement.top + y;
 
-            if (this.refService.current) {
-                this.refService.current.style.left = left;
-                this.refService.current.style.top = top;
-            }
-
-            if (this.widDiv) {
-                this.widDiv.style.left = left;
-                this.widDiv.style.top = top;
-
-                this.widDiv._customHandlers?.onMove?.(this.widDiv, this.props.id);
-            }
-
-            if (this.props.isRelative && calculateRelativeWidgetPosition) {
-                // calculate widget position
-                calculateRelativeWidgetPosition(this.props.id, left, top, this.shadowDiv, this.movement.order);
+            // A relative widget is not positioned by itself: the view shows a copy under the cursor and a
+            // placeholder in its slot, and the order decides where it lands.
+            if (!this.props.isRelative) {
+                // render() is the only place that positions the widget; VisCanWidget applies the same geometry
+                // to the can.js div, which is not part of the React tree
+                this.setState({
+                    gesture: { style: { left: leftPx, top: topPx }, base: { ...this.renderedBaseGeometry } },
+                });
             }
 
             // End of movement
@@ -948,43 +825,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 resizers.forEach(item => (item.style.display = 'block'));
 
                 if (this.props.isRelative) {
-                    let parentDiv: HTMLElement;
-                    if (Object.prototype.hasOwnProperty.call(this.props.refParent, 'current')) {
-                        parentDiv = this.props.refParent.current;
-                    } else {
-                        parentDiv = this.props.refParent as any as HTMLElement;
-                    }
-                    // create shadow widget
-                    if (this.widDiv) {
-                        this.widDiv.style.position = 'relative';
-                        this.widDiv.style.top = '0';
-                        this.widDiv.style.left = '0';
-                        parentDiv.insertBefore(this.widDiv, this.shadowDiv);
-                        this.refService.current.style.top = `${this.widDiv.offsetTop}px`;
-                        this.refService.current.style.left = `${this.widDiv.offsetLeft}px`;
-                    } else {
-                        parentDiv.insertBefore(this.refService.current, this.shadowDiv);
-                        this.refService.current.style.position = 'relative';
-                        this.refService.current.style.top = '0';
-                        this.refService.current.style.left = '0';
-                    }
-                    this.shadowDiv.remove();
-                    this.shadowDiv = null;
-
-                    this.props.context.onWidgetsChanged(
-                        [
-                            {
-                                wid: this.props.id,
-                                view: this.props.view,
-                                style: {
-                                    left: null,
-                                    top: null,
-                                },
-                            },
-                        ],
-                        this.props.view,
-                        { order: this.movement.order },
-                    );
+                    // A relative widget carries no position of its own; where it lands is decided by the order,
+                    // and the view writes that when the gesture ends. Dropping the gesture puts the widget back
+                    // into the flow, at its new place.
+                    this.setState({ gesture: null });
                 } else {
                     this.props.context.onWidgetsChanged([
                         {
@@ -1034,7 +878,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     }
 
     getResizeHandlers(selected: boolean, widget: Widget, borderWidth: string): React.JSX.Element[] | null {
-        if (!this.state.editMode || !selected || this.props.selectedWidgets?.length !== 1) {
+        if (!this.state.editMode || !selected || this.props.selectedWidgets?.length !== 1 || this.state.stealMode) {
             return null;
         }
 
@@ -1378,34 +1222,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 <pre>{JSON.stringify(this.state.data, null, 2)}</pre>
             </div>
         );
-    }
-
-    changeOrder(e: React.MouseEvent, dir: number): void {
-        e.stopPropagation();
-        e.preventDefault();
-        if (this.state.multiViewWidget || !this.state.editMode) {
-            return;
-        }
-
-        const order = [...this.props.relativeWidgetOrder];
-
-        const pos = order.indexOf(this.props.id);
-        if (dir > 0) {
-            if (pos === order.length - 1) {
-                return;
-            }
-            const nextId = order[pos + 1];
-            order[pos + 1] = this.props.id;
-            order[pos] = nextId;
-        } else if (!pos) {
-            return;
-        } else {
-            const nextId = order[pos - 1];
-            order[pos - 1] = this.props.id;
-            order[pos] = nextId;
-        }
-
-        this.props.context.onWidgetsChanged(null, this.props.view, { order });
     }
 
     static formatValue(value: string | number, decimals: number | string, _format?: string): string {
@@ -1840,30 +1656,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         return value;
     }
 
-    renderRelativeMoveMenu(): React.JSX.Element | null {
-        if (this.props.context.runtime || !this.state.editMode) {
-            return null;
-        }
-
-        return (
-            <React.Suspense fallback={null}>
-                <VisOrderMenu
-                    anchorEl={this.state.showRelativeMoveMenu ? this.relativeMoveMenu : undefined}
-                    order={this.props.relativeWidgetOrder}
-                    wid={this.props.id}
-                    view={this.props.view}
-                    views={this.props.context.views}
-                    themeType={this.props.context.themeType}
-                    onClose={(order: AnyWidgetId[]) => {
-                        this.props.onIgnoreMouseEvents(false);
-                        this.setState({ showRelativeMoveMenu: false });
-                        order && this.props.context.onWidgetsChanged(null, this.props.view, { order });
-                    }}
-                />
-            </React.Suspense>
-        );
-    }
-
     render(): React.JSX.Element | null {
         const widget = this.props.context.views[this.props.view].widgets[this.props.id];
         if (!widget || typeof widget !== 'object') {
@@ -2038,7 +1830,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         classNames.push('vis-editmode-overlay');
 
         let widgetName = null;
-        let widgetMoveButtons = null;
         const borderWidth =
             (typeof style.borderWidth === 'number' ? `${style.borderWidth}px` : style.borderWidth) || '0px';
         if (
@@ -2133,86 +1924,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 </div>
             );
 
-            if (this.props.isRelative && !this.state.multiViewWidget && !widget.usedInWidget) {
-                const pos = this.props.relativeWidgetOrder.indexOf(this.props.id);
-                const showUp = !!pos;
-                let showDown = pos !== this.props.relativeWidgetOrder.length - 1;
-                if (showDown && this.props.selectedGroup) {
-                    // Check if the next widget is relative
-                    const widget__ =
-                        this.props.context.views[this.props.view].widgets[this.props.relativeWidgetOrder[pos + 1]];
-                    if (widget__.style.position === 'absolute') {
-                        showDown = false;
-                    }
-                }
-
-                if (showUp || showDown) {
-                    widgetMoveButtons = (
-                        <div
-                            className={Utils.clsx(
-                                'vis-editmode-widget-move-buttons',
-                                this.state.widgetHint,
-                                widgetNameBottom && 'vis-editmode-widget-name-bottom',
-                            )}
-                            style={{ width: !showUp || !showDown ? 30 : undefined }}
-                        >
-                            <div className="vis-editmode-widget-number">
-                                {this.props.relativeWidgetOrder.indexOf(this.props.id) + 1}
-                            </div>
-                            {showUp ? (
-                                <div
-                                    className="vis-editmode-move-button"
-                                    title={I18n.t('Move widget up or press longer to open re-order menu')}
-                                >
-                                    <UpIcon
-                                        onMouseDown={e => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            this.pressTimeout = setTimeout(
-                                                target => {
-                                                    this.props.onIgnoreMouseEvents(true);
-                                                    this.relativeMoveMenu = target;
-                                                    this.setState({ showRelativeMoveMenu: true });
-                                                    this.pressTimeout = undefined;
-                                                },
-                                                300,
-                                                e.currentTarget,
-                                            );
-                                        }}
-                                        onMouseUp={e => this.changeOrder(e, -1)}
-                                    />
-                                </div>
-                            ) : null}
-                            {showDown ? (
-                                <div
-                                    className="vis-editmode-move-button"
-                                    style={{ left: showUp ? 30 : undefined }}
-                                    title={I18n.t('Move widget down or press longer to open re-order menu')}
-                                >
-                                    <DownIcon
-                                        onMouseDown={e => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            this.pressTimeout = setTimeout(
-                                                target => {
-                                                    this.props.onIgnoreMouseEvents(true);
-                                                    this.relativeMoveMenu = target;
-                                                    this.setState({ showRelativeMoveMenu: true });
-                                                    this.pressTimeout = undefined;
-                                                },
-                                                300,
-                                                e.currentTarget,
-                                            );
-                                        }}
-                                        onMouseUp={e => this.changeOrder(e, 1)}
-                                    />
-                                </div>
-                            ) : null}
-                        </div>
-                    );
-                }
-            }
-
             calculateOverflow(style);
         }
 
@@ -2272,22 +1983,40 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
         const lastChange = this.renderLastChange?.(style) || null;
 
+        // Everything the editor puts on top of the widget itself: the position while it is being dragged and
+        // the crosshair of the steal mode. Both are state and are applied here instead of being written into
+        // the DOM, so that this render is the only thing that decides how the service div looks.
+        this.renderedBaseGeometry = {
+            left: parseFloat(style.left as string),
+            top: parseFloat(style.top as string),
+            width: parseFloat(style.width as string),
+            height: parseFloat(style.height as string),
+        };
+
+        let serviceStyle: React.CSSProperties = style;
+        if (this.state.gesture) {
+            serviceStyle = { ...serviceStyle, ...this.state.gesture.style };
+        }
+        if (this.state.stealMode) {
+            serviceStyle = { ...serviceStyle, cursor: 'crosshair' };
+        }
+
         return (
             <div
                 id={props.id}
-                className={props.className}
+                className={
+                    this.state.stealMode ? addClass(props.className, 'vis-editmode-steal-style') : props.className
+                }
                 ref={this.refService}
-                style={style}
+                style={serviceStyle}
             >
                 {signals}
                 {lastChange}
                 {widgetName}
-                {widgetMoveButtons}
                 {overlay}
                 {this.getResizeHandlers(selected, widget, borderWidth)}
                 {rxWidget}
                 {groupInstructions}
-                {this.state.showRelativeMoveMenu && this.renderRelativeMoveMenu()}
             </div>
         );
     }

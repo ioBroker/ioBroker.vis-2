@@ -448,6 +448,32 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         return result;
     }
 
+    /**
+     * The div of a vis-1 widget is built by can.js and lives outside the React tree, so the geometry of a
+     * running gesture cannot be rendered onto it - it is applied here, from the same `state.gesture` the
+     * service div is rendered from. That is what keeps the two in step without computing the rectangle twice.
+     */
+    componentDidUpdate(prevProps?: VisBaseWidgetProps, prevState?: Readonly<VisCanWidgetState>): void {
+        super.componentDidUpdate(prevProps, prevState);
+
+        const gesture = this.state.gesture;
+        if (!this.widDiv || !gesture) {
+            return;
+        }
+
+        const widDiv = this.widDiv;
+        Object.entries(gesture.style).forEach(([attr, value]) => {
+            // only the geometry is a length; `position` is a keyword and must not get a unit appended
+            (widDiv.style as unknown as Record<string, string>)[attr] =
+                typeof value === 'number' ? `${value}px` : String(value);
+        });
+
+        // the widget may want to know that it was moved, but only when it actually was
+        if (JSON.stringify(prevState?.gesture?.style) !== JSON.stringify(gesture.style)) {
+            widDiv._customHandlers?.onMove?.(widDiv, this.props.id);
+        }
+    }
+
     // following code is inactive
     // componentDidUpdate(/* prevProps, prevState, snapshot */) {
     //     if (this.state.legacyViewContainers.length) {

@@ -160,14 +160,7 @@ declare class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBase
     // eslint-disable-next-line react/no-unused-class-component-methods
     isResizable(): boolean;
     // eslint-disable-next-line react/no-unused-class-component-methods
-    onMove: (
-        x: number | undefined,
-        y: number | undefined,
-        save?: boolean,
-        calculateRelativeWidgetPosition?:
-            | null
-            | ((id: AnyWidgetId, left: string, top: string, shadowDiv: HTMLDivElement, order: AnyWidgetId[]) => void),
-    ) => void;
+    onMove: (x: number | undefined, y: number | undefined, save?: boolean) => void;
     // eslint-disable-next-line react/no-unused-class-component-methods
     onTempSelect: (selected?: boolean) => void;
     // eslint-disable-next-line react/no-unused-class-component-methods

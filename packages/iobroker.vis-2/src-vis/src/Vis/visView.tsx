@@ -109,6 +109,25 @@ interface VisViewState {
     themeCode: string;
     width: number;
     menuWidth: 'hidden' | 'full' | 'narrow';
+    /**
+     * A relative widget is being dragged to another place in the order.
+     *
+     * The grid of the relative widgets is a pure function of their order - they are distributed round-robin
+     * over the columns - so reordering is an operation on this array and not on the DOM. The dragged widget
+     * itself is lifted out of the flow and follows the cursor, and a placeholder of its size keeps the slot it
+     * would drop into, which is what makes the other widgets flow around it while the gesture runs.
+     */
+    relativeDrag: {
+        wid: AnyWidgetId;
+        order: AnyWidgetId[];
+        width: number;
+        height: number;
+        /**
+         * The widget has been dropped and sits in the flow again, but the order is still the tentative one: the
+         * project is written debounced, so letting go of it here would show the old order for a moment.
+         */
+        dropped?: boolean;
+    } | null;
 }
 
 class VisView extends React.Component<VisViewProps, VisViewState> {
@@ -118,9 +137,16 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         WIDGET_SERVICE_DIV: 1200,
     };
 
-    private calculateRelativeWidgetPosition?: null = null;
-
     static themeCache: Record<string, string> = {};
+
+    /** Order of the relative widgets as the last render used it - the drag gesture starts from it */
+    private lastRelativeOrder: AnyWidgetId[] = [];
+
+    /** Half transparent copy of a dragged relative widget, see createDragGhost() */
+    private dragGhost: HTMLElement | null = null;
+
+    /** Where inside the widget the drag started, so the copy stays under that point */
+    private dragGhostOffset: { x: number; y: number } = { x: 0, y: 0 };
 
     private readonly promiseToCollect: Promise<Record<string, VisRxWidget<any>>>;
 
@@ -175,6 +201,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             themeCode: '',
             width: 0,
             menuWidth: (window.localStorage.getItem('vis.menuWidth') as null | 'narrow' | 'full' | 'hidden') || 'full',
+            relativeDrag: null,
         };
 
         this.refView = React.createRef();
@@ -660,7 +687,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               const widgetsRefs = this.widgetsRefs;
 
               this.props.selectedWidgets.forEach((selectedWidget: AnyWidgetId) => {
-                  const widgetRect = widgetsRefs[selectedWidget].refService?.current?.getBoundingClientRect();
+                  const widgetRect = widgetsRefs[selectedWidget]?.refService?.current?.getBoundingClientRect();
                   if (
                       this.movement &&
                       widgetRect &&
@@ -670,9 +697,29 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                       e.pageY >= widgetRect.top
                   ) {
                       this.movement.startWidget =
-                          widgetsRefs[selectedWidget].refService?.current?.getBoundingClientRect();
+                          widgetsRefs[selectedWidget]?.refService?.current?.getBoundingClientRect();
                   }
               });
+
+              // A single relative widget can be dragged to another place in the order. Take the order it starts
+              // from and the size the placeholder has to reserve; both stay fixed for the whole gesture.
+              if (!isResize && this.props.selectedWidgets.length === 1 && !this.props.selectedGroup) {
+                  const draggedId = this.props.selectedWidgets[0];
+                  const order = this.getRelativeWidgetOrder();
+                  const element = widgetsRefs[draggedId]?.refService?.current;
+                  const rect = element?.getBoundingClientRect();
+                  if (order.includes(draggedId) && element && rect) {
+                      this.createDragGhost(element, rect, e.clientX, e.clientY);
+                      this.setState({
+                          relativeDrag: {
+                              wid: draggedId,
+                              order,
+                              width: rect.width,
+                              height: rect.height,
+                          },
+                      });
+                  }
+              }
 
               this.props.selectedWidgets.forEach((_wid: AnyWidgetId) => {
                   if (widgetsRefs[_wid]?.onMove) {
@@ -687,6 +734,116 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
               });
           };
+
+    /** The order of the relative widgets the last render used */
+    getRelativeWidgetOrder(): AnyWidgetId[] {
+        return [...this.lastRelativeOrder];
+    }
+
+    /**
+     * Build the half transparent copy that follows the cursor while a relative widget is dragged.
+     *
+     * It is a plain clone outside of React on purpose. The widget itself cannot be moved under the cursor: it
+     * would have to leave its column, and changing the parent in the React tree unmounts and remounts the
+     * component - it would lose its state in the middle of the gesture and a can.js widget would be rebuilt.
+     * The clone has no such problem, and it can be positioned directly because nothing else owns it.
+     *
+     * @param element the service div of the dragged widget
+     * @param rect its geometry, which the clone keeps for the whole gesture
+     * @param clientX cursor at the start of the gesture
+     * @param clientY cursor at the start of the gesture
+     */
+    createDragGhost(element: HTMLElement, rect: DOMRect, clientX: number, clientY: number): void {
+        this.removeDragGhost();
+
+        const ghost = element.cloneNode(true) as HTMLElement;
+        ghost.removeAttribute('id');
+        ghost.querySelectorAll('[id]').forEach(child => child.removeAttribute('id'));
+        // the editor decoration of the original does not belong on the copy
+        ghost.querySelectorAll('.vis-editmode-resizer, .vis-editmode-widget-move-buttons').forEach(d => d.remove());
+
+        // fixed, so no containing block has to be taken into account - the cursor is in client coordinates too
+        Object.assign(ghost.style, {
+            position: 'fixed',
+            left: `${rect.left}px`,
+            top: `${rect.top}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+            margin: '0',
+            opacity: '0.5',
+            pointerEvents: 'none',
+            zIndex: String(VisView.Z_INDEXES.WIDGET_SERVICE_DIV + 1),
+        });
+
+        this.dragGhost = ghost;
+        // where inside the widget it was grabbed, so the clone stays under that point
+        this.dragGhostOffset = { x: clientX - rect.left, y: clientY - rect.top };
+        window.document.body.appendChild(ghost);
+    }
+
+    /** Move the copy to the cursor */
+    moveDragGhost(clientX: number, clientY: number): void {
+        if (this.dragGhost) {
+            this.dragGhost.style.left = `${clientX - this.dragGhostOffset.x}px`;
+            this.dragGhost.style.top = `${clientY - this.dragGhostOffset.y}px`;
+        }
+    }
+
+    removeDragGhost(): void {
+        if (this.dragGhost) {
+            this.dragGhost.remove();
+            this.dragGhost = null;
+        }
+    }
+
+    /**
+     * Put the dragged widget where the cursor is.
+     *
+     * The widgets are hit-tested in their rendered order; the half of a widget the cursor is in decides whether
+     * the dragged one goes before or after it. Nothing happens while the cursor is over no widget at all, so
+     * the order does not flicker when the pointer crosses a gap between two columns.
+     *
+     * @param x client x of the cursor
+     * @param y client y of the cursor
+     */
+    updateRelativeDragOrder(x: number, y: number): void {
+        const drag = this.state.relativeDrag;
+        if (!drag) {
+            return;
+        }
+
+        let target: AnyWidgetId | null = null;
+        let after = false;
+
+        for (const wid of drag.order) {
+            if (wid === drag.wid) {
+                continue;
+            }
+            const ref = this.widgetsRefs[wid]?.widDiv || this.widgetsRefs[wid]?.refService?.current;
+            const rect = ref?.getBoundingClientRect();
+            if (rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                target = wid;
+                // the widgets are stacked in columns, so the vertical half is what decides
+                after = y > rect.top + rect.height / 2;
+                break;
+            }
+        }
+
+        if (!target) {
+            return;
+        }
+
+        const order = [...drag.order];
+        const from = order.indexOf(drag.wid);
+        order.splice(from, 1);
+        const targetPos = order.indexOf(target);
+        const to = after ? targetPos + 1 : targetPos;
+        order.splice(to, 0, drag.wid);
+
+        if (order.join(',') !== drag.order.join(',')) {
+            this.setState({ relativeDrag: { ...drag, order } });
+        }
+    }
 
     onIgnoreMouseEvents = (ignore: boolean): void => {
         if (this.props.editMode) {
@@ -785,10 +942,15 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               this.showRulers();
 
+              // let the other relative widgets flow around the dragged one. Client coordinates, because the hit
+              // test compares against getBoundingClientRect(), which is relative to the viewport.
+              this.moveDragGhost(e.clientX, e.clientY);
+              this.updateRelativeDragOrder(e.clientX, e.clientY);
+
               this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
                   const onMove = widgetsRefs[wid]?.onMove;
                   if (onMove && this.movement) {
-                      onMove(this.movement.x, this.movement.y, false, this.calculateRelativeWidgetPosition);
+                      onMove(this.movement.x, this.movement.y, false);
                   }
 
                   // If the widget has included widgets, so inform them about the new size or position.
@@ -825,7 +987,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           continue;
                       }
                       const baseRect =
-                          widgetsRefs[this.props.selectedWidgets[0]].refService?.current?.getBoundingClientRect();
+                          widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
                       const rect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
                       const onCommand = widgetsRefs[widgetId]?.onCommand;
                       // check if the widget can have other widgets inside
@@ -897,8 +1059,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         for (const wid of this.props.selectedWidgets) {
             const { widgets } = selectView(store.getState(), this.props.view);
             // check if not in a group
+            // a selected widget does not have to be rendered: a relative widget that is being dragged is
+            // replaced by its placeholder for the duration of the gesture, so it has no ref
             if (widgets[wid] && (!widgets[wid].grouped || this.props.selectedGroup)) {
-                const boundingRect = this.widgetsRefs[wid].refService?.current?.getBoundingClientRect();
+                const boundingRect = this.widgetsRefs[wid]?.refService?.current?.getBoundingClientRect();
                 if (boundingRect) {
                     selectedHorizontals.push(Math.round(boundingRect.top));
                     selectedHorizontals.push(Math.round(boundingRect.bottom));
@@ -933,6 +1097,23 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               e && e.stopPropagation();
               this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
               this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
+
+              this.removeDragGhost();
+
+              const relativeDrag = this.state.relativeDrag;
+              if (relativeDrag) {
+                  const changed =
+                      !!this.movement?.moved &&
+                      relativeDrag.order.join(',') !== this.getRelativeWidgetOrder().join(',');
+                  if (changed) {
+                      // the order the widget was dropped into becomes the order of the view
+                      this.props.context.onWidgetsChanged(null, this.props.view, { order: relativeDrag.order });
+                      // keep rendering from it until the project carries it, see componentDidUpdate
+                      this.setState({ relativeDrag: { ...relativeDrag, dropped: true } });
+                  } else {
+                      this.setState({ relativeDrag: null });
+                  }
+              }
 
               if (this.movement?.moved) {
                   this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
@@ -972,7 +1153,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           continue;
                       }
                       const baseRect =
-                          widgetsRefs[this.props.selectedWidgets[0]].refService?.current?.getBoundingClientRect();
+                          widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
                       const rect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
                       // check if the widget can have other widgets inside
                       if (
@@ -1188,6 +1369,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     componentDidUpdate(): void {
         this.registerEditorHandlers();
         this.updateViewWidth();
+
+        // The tentative order of a finished drag may go as soon as the project carries it - dropping it earlier
+        // would show the old order until the debounced save has been through.
+        const relativeDrag = this.state.relativeDrag;
+        if (relativeDrag?.dropped && this.lastRelativeOrder.join(',') === relativeDrag.order.join(',')) {
+            this.setState({ relativeDrag: null });
+        }
         // detect filter changes
         if (!this.props.editMode) {
             const newFilter = JSON.stringify(
@@ -1376,7 +1564,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             const widgetsRefs = this.widgetsRefs;
             const onMove = widgetsRefs[wid]?.onMove;
             if (onMove && this.movement) {
-                onMove(this.movement.x, this.movement.y, false, this.calculateRelativeWidgetPosition);
+                onMove(this.movement.x, this.movement.y, false);
             }
         });
 
@@ -1391,7 +1579,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
                 const onMove = this.widgetsRefs[wid]?.onMove;
                 if (onMove && this.movement) {
-                    onMove(this.movement.x, this.movement.y, true, this.calculateRelativeWidgetPosition); // indicate the end of movement
+                    onMove(this.movement.x, this.movement.y, true); // indicate the end of movement
                 }
             });
             this.movement = null;
@@ -1440,7 +1628,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             const widgetsRefs = this.widgetsRefs;
             const onMove = widgetsRefs[wid]?.onMove;
             if (onMove && this.movement) {
-                onMove(this.movement.x, this.movement.y, false, this.calculateRelativeWidgetPosition);
+                onMove(this.movement.x, this.movement.y, false);
             }
         });
 
@@ -1455,7 +1643,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 const onMove = this.widgetsRefs[wid]?.onMove;
                 // indicate the end of movement
                 if (onMove && this.movement) {
-                    onMove(this.movement.x, this.movement.y, true, this.calculateRelativeWidgetPosition);
+                    onMove(this.movement.x, this.movement.y, true);
                 }
             });
 
@@ -1900,6 +2088,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     }
                 }
 
+                // remembered for the drag: the gesture has to know the order without rebuilding it
+                this.lastRelativeOrder = listRelativeWidgetsOrder;
+
                 // sort relative widgets according to order
                 listRelativeWidgetsOrder.sort((a, b) => {
                     const posA = relativeWidgetOrder.indexOf(a);
@@ -1955,11 +2146,37 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 if (listRelativeWidgetsOrder.length) {
                     let columnIndex = 0;
 
-                    listRelativeWidgetsOrder.forEach((id, index) => {
+                    // While a relative widget is dragged, the tentative order decides the layout, so the other
+                    // widgets flow around it as the cursor moves.
+                    const relativeDrag = this.state.relativeDrag;
+                    const renderOrder = relativeDrag
+                        ? relativeDrag.order.filter(id => listRelativeWidgetsOrder.includes(id))
+                        : listRelativeWidgetsOrder;
+
+                    renderOrder.forEach((id, index) => {
                         const widget = store.getState().visProject[view].widgets[id];
                         // if newLine, start from the beginning
                         if (widget.style.newLine) {
                             columnIndex = 0;
+                        }
+
+                        // The copy under the cursor shows the widget itself, so its slot only has to show where
+                        // it will land: a box of its size, marked by its own background. The widget is not
+                        // rendered at all while it is dragged - putting it somewhere else in the tree would
+                        // unmount it, which is exactly what must not happen during a gesture.
+                        if (relativeDrag && !relativeDrag.dropped && id === relativeDrag.wid) {
+                            wColumns[columnIndex].push(
+                                <div
+                                    key={`placeholder_${id}`}
+                                    className="vis-editmode-widget-shadow"
+                                    style={{ width: relativeDrag.width, height: relativeDrag.height }}
+                                />,
+                            );
+                            columnIndex++;
+                            if (columnIndex >= columns) {
+                                columnIndex = 0;
+                            }
+                            return;
                         }
 
                         const w = VisView.getOneWidget(index, widget, {
