@@ -87,19 +87,6 @@ html {
     box-shadow: 0 0 15px 4px #0d72b8;
 }
 
-.vis-editmode-overlay-move-button {
-    position: absolute;
-    top: calc(50% - 8px);
-    font-size: 1.5em;
-    opacity: 0.7;
-    cursor: pointer;
-    z-index: 1204;
-}
-
-.vis-editmode-overlay-move-button:hover {
-    transform: scale(2);
-}
-
 .vis-editmode-overlay-absolute {
     position: absolute;
 }
@@ -114,14 +101,27 @@ html {
     background-color: #0d72b8;
 }
 
+/*
+ * The name plate above a widget. The icons are laid out in the flow next to the name, so the plate is as wide
+ * as its content - before that they were placed on fixed pixel positions and the plate reserved the room for
+ * them with padding, which left a gap whenever an icon was not shown.
+ */
 .vis-editmode-widget-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    /* fixed, so the plate matches the -14px it is placed at and never overlaps the widget */
+    height: 14px;
+    box-sizing: border-box;
     font-size: 10px !important;
     background: #002e4f;
-    border-radius: 3px 3px 0 0;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     position: absolute !important;
     top: -14px;
     left: 0 !important;
-    padding: 1px 16px 1px 3px;
+    padding: 0 5px;
     font-family: Arial, Helvetica, sans-serif !important;
     overflow: visible !important;
     text-shadow: none !important;
@@ -133,8 +133,13 @@ html {
     text-align: left !important;
     font-variant: unset !important;
 }
+/* the plate grows with its icons now, so no room has to be reserved for them */
 .vis-editmode-widget-name-long {
-    padding: 1px 50px 1px 3px;
+    padding: 0 5px;
+}
+/* a hair of air between the name and the buttons that follow it */
+.vis-editmode-widget-name > span {
+    margin-right: 2px;
 }
 .vis-editmode-widget-name.dark {
     background: black;
@@ -150,12 +155,10 @@ html {
     opacity: 0.5;
     z-index: 1002;
 }
-.vis-editmode-widget-name.vis-editmode-widget-name-selected.dark {
-    background: #ffc733;
-    color: black;
-}
+/* the same blue as the frame and the highlight, so a selected widget reads as one thing */
+.vis-editmode-widget-name.vis-editmode-widget-name-selected.dark,
 .vis-editmode-widget-name.vis-editmode-widget-name-selected.light {
-    background: #0064c0;
+    background: #0d72b8;
     color: #ffffff;
 }
 
@@ -171,78 +174,75 @@ html {
 }
 
 .vis-anchor {
-    position: absolute;
-    top: 0;
-    right: 2px;
-    /* font-size: 10px;*/
-    width: 13px;
-    height: 13px;
+    position: static;
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    color: inherit;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition:
+        transform 0.1s,
+        opacity 0.1s;
 }
 .vis-anchor:hover {
-    transform: scale(2);
-    color: #f00;
+    transform: scale(1.35);
 }
 .vis-anchor:active {
-    transform: scale(1.7);
-    color: #f00;
+    transform: scale(1.15);
 }
 .vis-anchor-enabled {
-    color: #0b9512;
+    opacity: 1;
 }
 .vis-anchor-disabled {
-    opacity: 0.7;
+    opacity: 0.45;
 }
 .vis-expand {
+    position: static;
+    flex: 0 0 auto;
     transform: rotate(90deg);
-    position: absolute;
-    top: 0;
-    right: 17px;
-    /* font-size: 10px;*/
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
+    color: inherit;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition:
+        transform 0.1s,
+        opacity 0.1s;
 }
 .vis-expand:hover {
-    transform: scale(2) rotate(90deg);
-    color: #f00;
+    transform: scale(1.35) rotate(90deg);
 }
 .vis-expand:active {
-    transform: scale(1.7) rotate(90deg);
-    color: #f00;
+    transform: scale(1.15) rotate(90deg);
 }
 .vis-expand-enabled {
-    color: #0b9512;
+    opacity: 1;
 }
 .vis-expand-disabled {
-    opacity: 0.7;
+    opacity: 0.45;
 }
 
 .vis-new-line {
-    position: absolute;
-    top: 0;
-    right: 34px;
-    /* font-size: 10px;*/
-    width: 13px;
-    height: 13px;
+    position: static;
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    color: inherit;
     cursor: pointer;
-    transition: transform 0.1s;
+    transition:
+        transform 0.1s,
+        opacity 0.1s;
 }
 .vis-new-line:hover {
-    transform: scale(2);
-    color: #f00;
+    transform: scale(1.35);
 }
 .vis-new-line:active {
-    transform: scale(1.7);
-    color: #7c7c7c;
+    transform: scale(1.15);
 }
 .vis-new-line-enabled {
-    color: #ed00ff;
+    opacity: 1;
 }
 .vis-new-line-disabled {
-    opacity: 0.7;
+    opacity: 0.45;
 }
 
 .vis-view-column {
@@ -256,61 +256,6 @@ html {
 .vis-view-column-edit {
     border: 1px dashed #888888;
     box-sizing: border-box;
-}
-
-.vis-editmode-widget-move-buttons {
-    background: #002e4f;
-    border-radius: 3px 3px 0 0;
-    position: absolute;
-    top: -13px;
-    right: 0;
-    overflow: visible;
-    height: 13px;
-    width: 45px;
-    font-size: 12px;
-}
-.vis-editmode-widget-move-buttons.dark {
-    background: black;
-    color: white;
-}
-.vis-editmode-widget-move-buttons.light {
-    background: white;
-    color: black;
-}
-.vis-editmode-widget-move-buttons.vis-editmode-widget-name-bottom {
-    top: -0;
-    border-radius: 0 0 3px 3px;
-    opacity: 0.5;
-    z-index: 1002;
-}
-
-.vis-editmode-move-button {
-    position: absolute;
-    top: 0;
-    left: 16px;
-    width: 13px;
-    height: 13px;
-    cursor: pointer;
-    transition: transform 0.1s;
-    display: inline-block;
-}
-.vis-editmode-move-button svg {
-    width: 13px;
-    height: 13px;
-}
-.vis-editmode-move-button:hover {
-    transform: scale(2);
-    color: #f00;
-}
-.vis-editmode-move-button:active {
-    transform: scale(1.7);
-    color: #f00;
-}
-.vis-editmode-widget-number {
-    position: absolute;
-    top: -1.5px;
-    left: 10px;
-    font-size: 11px;
 }
 
 .vis-signals-blink {

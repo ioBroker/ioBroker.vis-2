@@ -1918,6 +1918,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     </span>
                     {this.state.multiViewWidget || widget.usedInWidget ? null : (
                         <AnchorIcon
+                            titleAccess={I18n.t('Toggle relative position')}
                             onMouseDown={e => this.onToggleRelative(e)}
                             className={Utils.clsx(
                                 'vis-anchor',
@@ -1930,6 +1931,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     !resizable ||
                     widget.usedInWidget ? null : (
                         <ExpandIcon
+                            titleAccess={I18n.t('Toggle full width')}
                             onMouseDown={e => this.onToggleWidth(e)}
                             className={Utils.clsx(
                                 'vis-expand',
@@ -1939,6 +1941,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     )}
                     {this.state.multiViewWidget || !this.props.isRelative || widget.usedInWidget ? null : (
                         <KeyboardReturn
+                            titleAccess={I18n.t('Toggle line break')}
                             onMouseDown={e => this.onToggleLineBreak(e)}
                             className={Utils.clsx(
                                 'vis-new-line',

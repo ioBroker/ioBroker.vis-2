@@ -760,7 +760,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ghost.removeAttribute('id');
         ghost.querySelectorAll('[id]').forEach(child => child.removeAttribute('id'));
         // the editor decoration of the original does not belong on the copy
-        ghost.querySelectorAll('.vis-editmode-resizer, .vis-editmode-widget-move-buttons').forEach(d => d.remove());
+        ghost.querySelectorAll('.vis-editmode-resizer').forEach(d => d.remove());
 
         // fixed, so no containing block has to be taken into account - the cursor is in client coordinates too
         Object.assign(ghost.style, {
