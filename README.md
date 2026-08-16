@@ -312,7 +312,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.15.0 (2026-08-16)
 * (@GermanBluefox) Reworked the name plate of a widget in the editor: it is only as wide as its content, its buttons sit next to the name instead of on fixed positions that left a gap whenever a button was hidden, and the plate of a selected widget is drawn in the same blue as its frame
 * (@GermanBluefox) The three buttons of the name plate have a tooltip now and no longer turn red and double their size when the cursor is over them
 * (@GermanBluefox) The widget under the cursor is highlighted in blue instead of olive in the editor, in both themes
@@ -376,9 +376,6 @@ npm run start
 
 ### 2.13.19 (2026-04-27)
 * (@GermanBluefox) Refactoring
-
-### 2.13.17 (2026-03-29)
-* (@GermanBluefox) Removed debug code for theme
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
