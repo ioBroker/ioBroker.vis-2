@@ -2583,6 +2583,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     {this.renderMessageDialog()}
                     {this.renderLegacyFileSelectorDialog()}
                     {this.renderAskAboutIncludeDialog()}
+                    {this.renderIncompatibleWidgetSetsDialog()}
                     {this.state.marketplaceDialog ? (
                         <MarketplaceDialog
                             onClose={() => this.setState({ marketplaceDialog: false })}

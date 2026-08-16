@@ -19,6 +19,7 @@ import type {
 import type VisRxWidget from '@/Vis/visRxWidget';
 
 import { getRemoteWidgets, type VisRxWidgetWithInfo } from './visLoadWidgets';
+import type { IncompatibleWidgetSet } from './visWidgetSetCompatibility';
 import WIDGETS from './Widgets';
 
 const DEFAULT_SET_COLORS: Record<string, string> = {
@@ -428,6 +429,9 @@ export default class VisWidgetsCatalog {
     /** List of all collected icon sets from widget sets */
     static additionalSets: AdditionalIconSet | null = null;
 
+    /** Widget sets that were skipped because they were built for an older react and would crash while loading */
+    static incompatibleSets: IncompatibleWidgetSet[] = [];
+
     static getUsedWidgetSets(project: Project): string[] | false {
         let anyWithoutSet = false;
         const widgetSets: string[] = [];
@@ -527,6 +531,7 @@ export default class VisWidgetsCatalog {
                                 ] as VisRxWidgetWithInfo<any>[];
 
                                 VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
+                                VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
 
                                 collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>) => {
                                     if (!WidgetEl?.getWidgetInfo) {

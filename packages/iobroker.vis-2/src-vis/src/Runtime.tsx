@@ -47,6 +47,7 @@ import VisEngine from './Vis/visEngine';
 import { applyTitleAndIcon, extractBinding, findWidgetUsages, readFile } from './Vis/visUtils';
 import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
+import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -81,6 +82,8 @@ export interface RuntimeState extends GenericAppState {
     alert: boolean;
     alertType: 'info' | 'warning' | 'error' | 'success';
     alertMessage: string;
+    /** Widget sets that were skipped because they were built for an older react. Empty if the user acknowledged them */
+    incompatibleSets: IncompatibleWidgetSet[];
     runtime: boolean;
     projectName: string;
     selectedWidgets: AnyWidgetId[];
@@ -303,6 +306,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             alert: false,
             alertType: 'info',
             alertMessage: '',
+            incompatibleSets: [],
             runtime: true,
             projectName: 'main',
             selectedWidgets: [],
@@ -1048,6 +1052,37 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         />
     );
 
+    /** Key under which the acknowledgement of the incompatible widget sets is remembered */
+    static INCOMPATIBLE_SETS_ACK = 'Vis.incompatibleSetsAck';
+
+    /**
+     * Widget sets that were skipped and that the user has not acknowledged yet
+     *
+     * The acknowledgement is remembered by the names of the sets, so the dialog stays away on every further load
+     * but comes back as soon as another widget set is affected.
+     */
+    static getUnacknowledgedSets(): IncompatibleWidgetSet[] {
+        const sets = VisWidgetsCatalog.incompatibleSets;
+        if (!sets.length) {
+            return [];
+        }
+        const acknowledged = window.localStorage.getItem(Runtime.INCOMPATIBLE_SETS_ACK);
+        return acknowledged === Runtime.getSetsKey(sets) ? [] : sets;
+    }
+
+    /**
+     * Identity of a list of widget sets, independent of the order they were loaded in
+     *
+     * @param sets - the skipped widget sets
+     * @returns The adapter names, sorted and joined
+     */
+    static getSetsKey(sets: IncompatibleWidgetSet[]): string {
+        return sets
+            .map(set => set.adapter)
+            .sort()
+            .join(',');
+    }
+
     async onWidgetsLoaded(): Promise<void> {
         let widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_HTML_LOADED;
         if (this.socket.isConnected()) {
@@ -1058,7 +1093,55 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             );
             widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_ALL_LOADED;
         }
-        this.setState({ widgetsLoaded });
+        this.setState({ widgetsLoaded, incompatibleSets: Runtime.getUnacknowledgedSets() });
+    }
+
+    /**
+     * Tells that widget sets were skipped because they were built for an older react
+     *
+     * Without it the widgets of such a set are simply absent - the views render with holes and nothing says why.
+     */
+    renderIncompatibleWidgetSetsDialog(): React.JSX.Element | null {
+        if (!this.state.incompatibleSets.length) {
+            return null;
+        }
+
+        return (
+            <Dialog
+                open={!0}
+                maxWidth="sm"
+                fullWidth
+                onClose={() => this.acknowledgeIncompatibleSets()}
+            >
+                <DialogTitle>{I18n.t('Widget sets could not be loaded')}</DialogTitle>
+                <DialogContent>
+                    <div style={{ marginBottom: 12 }}>{I18n.t('widget_sets_incompatible_react')}</div>
+                    <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+                        {this.state.incompatibleSets.map(set => (
+                            <li key={set.adapter}>{set.adapter}</li>
+                        ))}
+                    </ul>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<IconClose />}
+                        onClick={() => this.acknowledgeIncompatibleSets()}
+                    >
+                        {I18n.t('Ok')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
+    acknowledgeIncompatibleSets(): void {
+        window.localStorage.setItem(
+            Runtime.INCOMPATIBLE_SETS_ACK,
+            Runtime.getSetsKey(VisWidgetsCatalog.incompatibleSets),
+        );
+        this.setState({ incompatibleSets: [] });
     }
 
     addProject = async (projectName: string, doNotLoad?: boolean): Promise<void> => {
@@ -1367,6 +1450,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                         : this.getVisEngine()}
                     {this.state.projectDoesNotExist ? this.renderProjectDoesNotExist() : null}
                     {this.state.showProjectsDialog ? this.showSmallProjectsDialog() : null}
+                    {this.renderIncompatibleWidgetSetsDialog()}
                 </ThemeProvider>
             </StyledEngineProvider>
         );
