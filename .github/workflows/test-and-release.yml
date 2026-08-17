@@ -43,6 +43,9 @@ jobs:
             - name: Test TypeScript
               run: npm run check-ts -w packages/iobroker.vis-2
 
+            - name: Run package and startup tests
+              run: npm run test -w packages/iobroker.vis-2
+
             - name: Run local tests
               run: npm run test-gui -w packages/iobroker.vis-2
 
