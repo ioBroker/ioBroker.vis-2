@@ -1346,9 +1346,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     }
 
     renderLoader(): React.JSX.Element | null {
-        if (window.loadingHideLogo === 'true') {
-            return null;
-        }
+        // the loader hides the logo by itself, but still shows the configured background
         return (
             <Loader
                 themeType={this.state.themeType}
