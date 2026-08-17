@@ -85,12 +85,15 @@ describe('vis', () => {
         // addWidget() applies the passed style last, so it wins over the default style of the template, and it
         // selects the new widget - which is what makes the resize handles appear
         const wid = await gPage.evaluate((type, style) => window.visAddWidget(type, 0, 0, {}, style), widgetType, START);
-        await gPage.waitForSelector(`#${wid}`, { timeout: 5_000 });
+        // The editor works on the service div "rx_<wid>": it carries the geometry, the frame and the resize
+        // handles. A vis-1 widget additionally has its own div with the plain widget ID, which is the one
+        // "document.getElementById(wid)" finds - that div is only the content and has no handles.
+        await gPage.waitForSelector(`#rx_${wid}`, { timeout: 5_000 });
         await new Promise(resolve => setTimeout(resolve, 1_000));
 
         const geometry = () =>
             gPage.evaluate(id => {
-                const el = document.getElementById(id);
+                const el = document.getElementById(`rx_${id}`);
                 const px = value => Math.round(parseFloat(value) || 0);
                 return {
                     left: px(el.style.left),
@@ -104,7 +107,7 @@ describe('vis', () => {
         // apart by where they sit inside the widget
         const handles = () =>
             gPage.evaluate(id => {
-                const el = document.getElementById(id);
+                const el = document.getElementById(`rx_${id}`);
                 const box = el.getBoundingClientRect();
                 return [...el.querySelectorAll(':scope > .vis-editmode-resizer')].map(handle => {
                     const b = handle.getBoundingClientRect();
@@ -139,7 +142,7 @@ describe('vis', () => {
 
         // --- moving: both edges of an axis travel together, the size stays ---
         const center = await gPage.evaluate(id => {
-            const b = document.getElementById(id).getBoundingClientRect();
+            const b = document.getElementById(`rx_${id}`).getBoundingClientRect();
             return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
         }, wid);
         await dragBy(center.x, center.y, 60, 40);
