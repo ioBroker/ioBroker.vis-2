@@ -285,51 +285,52 @@ class VisFormatUtils {
         if (!dateObj) {
             return '';
         }
-        let realDateObj: Date | undefined;
+        // a state may deliver the timestamp as string, and "1710500000000" is no date string
+        if (typeof dateObj === 'string' && dateObj.trim() && !isNaN(Number(dateObj))) {
+            dateObj = Number(dateObj);
+        }
+        let realDateObj: Date;
         const type = typeof dateObj;
         if (type === 'string') {
             realDateObj = new Date(dateObj);
         } else if (type !== 'object') {
-            const j = parseInt(dateObj as string, 10);
-            if (j === dateObj) {
-                // maybe this is an interval
-                if (j < 946681200) {
-                    isDuration = true;
-                    realDateObj = new Date(dateObj);
-                } else {
-                    // if less 2000.01.01 00:00:00
-                    realDateObj = j < 946681200000 ? new Date(j * 1000) : new Date(j);
-                }
+            const j = dateObj as number;
+            // maybe this is an interval
+            if (j < 946681200) {
+                isDuration = true;
+                realDateObj = new Date(j);
             } else {
-                realDateObj = new Date(dateObj);
+                // if less 2000.01.01 00:00:00
+                realDateObj = j < 946681200000 ? new Date(j * 1000) : new Date(j);
             }
+        } else {
+            realDateObj = dateObj as Date;
         }
+        if (isNaN(realDateObj.getTime())) {
+            // show the unparsable value instead of "NaN:NaN:NaN"
+            return type === 'string' ? (dateObj as string) : '';
+        }
+        const format = _format || this.vis.dateFormat || 'DD.MM.YYYY';
+
+        isDuration &&
+            realDateObj.setMilliseconds(realDateObj.getMilliseconds() + realDateObj.getTimezoneOffset() * 60 * 1000);
+
+        const validFormatChars = 'YJГMМDTДhSчmмsс';
         let result = '';
-        if (realDateObj) {
-            const format = _format || this.vis.dateFormat || 'DD.MM.YYYY';
+        let s = '';
 
-            isDuration &&
-                realDateObj.setMilliseconds(
-                    realDateObj.getMilliseconds() + realDateObj.getTimezoneOffset() * 60 * 1000,
-                );
-
-            const validFormatChars = 'YJГMМDTДhSчmмsс';
-            let s = '';
-
-            for (let i = 0; i < format.length; i++) {
-                if (validFormatChars.includes(format[i])) {
-                    // combine format character
-                    s += format[i];
-                } else {
-                    result = VisFormatUtils._put(s, realDateObj, result);
-                    s = '';
-                    result += format[i];
-                }
+        for (let i = 0; i < format.length; i++) {
+            if (validFormatChars.includes(format[i])) {
+                // combine format character
+                s += format[i];
+            } else {
+                result = VisFormatUtils._put(s, realDateObj, result);
+                s = '';
+                result += format[i];
             }
-            result = VisFormatUtils._put(s, realDateObj, result);
         }
 
-        return result;
+        return VisFormatUtils._put(s, realDateObj, result);
     }
 
     extractBinding(format: string): VisBinding[] | null {
