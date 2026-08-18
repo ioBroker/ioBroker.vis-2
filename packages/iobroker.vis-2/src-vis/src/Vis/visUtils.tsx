@@ -22,7 +22,6 @@ import type {
     StateID,
     VisBindingOperation,
     VisBindingOperationArgument,
-    GroupData,
     WidgetData,
     VisBinding,
     VisBindingOperationType,
@@ -74,6 +73,29 @@ export function replaceGroupAttr(
     }
 
     return { doesMatch: match, newString };
+}
+
+/**
+ * Replace the group attributes (`%attr%`, `groupAttr0`, …) in every string attribute of a group member.
+ *
+ * @param data data of the widget that belongs to the group
+ * @param groupData data of the group, which carries the values of the group attributes
+ * @returns the data with the replaced values, or the unchanged data if no attribute matched
+ */
+export function replaceGroupAttrs(data: WidgetData, groupData: WidgetData): WidgetData {
+    let newData: WidgetData | undefined;
+
+    Object.keys(data).forEach(attr => {
+        if (typeof data[attr] === 'string') {
+            const result = replaceGroupAttr(data[attr], groupData);
+            if (result.doesMatch) {
+                newData = newData || deepClone(data);
+                newData[attr] = result.newString || '';
+            }
+        }
+    });
+
+    return newData || data;
 }
 
 export function getWidgetGroup(views: Project, view: string, widget: AnyWidgetId): GroupWidgetId | undefined {
@@ -503,20 +525,7 @@ export function getUsedObjectIDsInWidget(
         if (widget.groupid) {
             const parentWidgetData = views[view].widgets[widget.groupid]?.data;
             if (parentWidgetData) {
-                let newGroupData: GroupData | undefined;
-
-                Object.keys(data).forEach(attr => {
-                    if (typeof data[attr] === 'string') {
-                        const result = replaceGroupAttr(data[attr], parentWidgetData);
-                        if (result.doesMatch) {
-                            newGroupData = newGroupData || (deepClone(data) as GroupData);
-                            newGroupData[attr] = result.newString || '';
-                        }
-                    }
-                });
-                if (newGroupData) {
-                    data = newGroupData;
-                }
+                data = replaceGroupAttrs(data, parentWidgetData);
             } else {
                 console.error(`Invalid group id "${widget.groupid}" in widget "${wid}"`);
             }
