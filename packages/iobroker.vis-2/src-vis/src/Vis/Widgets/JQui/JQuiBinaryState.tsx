@@ -765,7 +765,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         return (
             <div style={style}>
                 <Switch
-                    checked={false}
+                    checked={isOn}
                     onChange={() => this.onClick()}
                 />
             </div>
