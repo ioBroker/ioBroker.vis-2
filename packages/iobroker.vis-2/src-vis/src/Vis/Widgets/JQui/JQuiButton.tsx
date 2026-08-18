@@ -957,7 +957,7 @@ class JQuiButton<
                     <button
                         key="content"
                         className={
-                            this.state.rxData.nav_view && this.state.rxData.nav_view === window.location.hash.slice(1)
+                            this.state.rxData.nav_view && this.state.rxData.nav_view === this.props.context.activeView
                                 ? 'ui-state-active'
                                 : undefined
                         }
@@ -975,7 +975,7 @@ class JQuiButton<
                         ref={this.refButton}
                         style={buttonStyle}
                         color={
-                            this.state.rxData.nav_view && this.state.rxData.nav_view === window.location.hash.slice(1)
+                            this.state.rxData.nav_view && this.state.rxData.nav_view === this.props.context.activeView
                                 ? this.state.rxData.color === 'primary'
                                     ? 'secondary'
                                     : 'primary'
