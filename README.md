@@ -15,6 +15,7 @@ WEB visualization for ioBroker platform.
 - [Filters](#filters)
 - [Control interface](#control-interface)
 - [Default view](#default-view)
+- [Navigation](#navigation)
 - [Permissions System](#permissions-system)
 - [Settings](#settings)
 - [SVG and curentColor](#svg-and-currentcolor)
@@ -228,6 +229,17 @@ E.g., you can create two views "Landscape-Mobile" and "Portrait-Mobile" and thes
 
 There is a helper widget "basic - Screen Resolution" that shows actual screen resolution and the best suitable default view for this resolution. 
 
+## Navigation
+Every widget that leads to a view - the `Go to view` option of the jQui widgets, `basic - HTML navigation`, … - gets
+the CSS class `vis-nav-active` as long as the view it points to is the view that is shown. So the entry of the current
+view can be highlighted in the CSS of the project:
+
+```css
+.vis-nav-active button {
+    border: 1px solid #0d72b8;
+}
+```
+
 ## Permissions System
 ### Project
 In the project management dialog, you can configure `read` and `write` permissions for each ioBroker user.
@@ -312,6 +324,9 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) A widget that leads to the view that is shown gets the CSS class `vis-nav-active`, so the current entry of a self-built navigation can be highlighted. The jQui buttons mark themselves by the active view now instead of the address of the browser, which they never noticed changing
+
 ### 2.15.0 (2026-08-16)
 * (@GermanBluefox) Reworked the name plate of a widget in the editor: it is only as wide as its content, its buttons sit next to the name instead of on fixed positions that left a gap whenever a button was hidden, and the plate of a selected widget is drawn in the same blue as its frame
 * (@GermanBluefox) The three buttons of the name plate have a tooltip now and no longer turn red and double their size when the cursor is over them
