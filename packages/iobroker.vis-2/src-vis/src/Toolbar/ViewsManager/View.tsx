@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDrag } from 'react-dnd';
+import useConnectRef from '@/Utilities/useConnectRef';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
@@ -14,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import { BiImport, BiExport } from 'react-icons/bi';
 
-import { I18n, Utils } from '@iobroker/adapter-react-v5';
+import { I18n, Utils } from '@iobroker/gui-components';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
@@ -109,6 +110,8 @@ const View = (props: ViewProps): React.JSX.Element => {
         [visProject],
     );
 
+    const setDragRef = useConnectRef<HTMLDivElement>(dragRef);
+
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -138,7 +141,7 @@ const View = (props: ViewProps): React.JSX.Element => {
                 {props.hasPermissions ? (
                     <div
                         style={styles.icon}
-                        ref={dragRef}
+                        ref={setDragRef}
                         title={I18n.t('Drag me')}
                     >
                         <FileIcon />

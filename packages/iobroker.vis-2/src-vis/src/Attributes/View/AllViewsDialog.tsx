@@ -1,11 +1,11 @@
 import React from 'react';
-import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Tooltip } from '@mui/material';
 
 import { Close, DragHandle, FormatPaint } from '@mui/icons-material';
 
-import { I18n, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { Project, ViewSettings, VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
 import { getViewsWithDifferentValues } from '@/Attributes/View/ApplyProperties';
@@ -37,7 +37,7 @@ interface ShowAllViewsDialogProps {
     adapterName: string;
     instance: number;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     additionalSets: AdditionalIconSet;
 }
 

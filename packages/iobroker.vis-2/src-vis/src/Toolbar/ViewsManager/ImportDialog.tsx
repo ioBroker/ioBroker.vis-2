@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { TextField } from '@mui/material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import CustomEditor from '../../Components/CustomEditor';

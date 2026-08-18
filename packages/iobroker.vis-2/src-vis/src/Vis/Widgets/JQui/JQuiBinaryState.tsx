@@ -17,7 +17,7 @@ import React, { type CSSProperties } from 'react';
 
 import { Button, Fab, FormControlLabel, Tooltip, Checkbox, Switch, ButtonGroup } from '@mui/material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,

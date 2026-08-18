@@ -4,7 +4,7 @@ import type { Breakpoint } from '@mui/system';
 
 import { Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 interface IODialogProps {
     ActionIcon?: any;

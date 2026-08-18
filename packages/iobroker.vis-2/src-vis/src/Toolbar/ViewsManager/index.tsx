@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 import { BiImport } from 'react-icons/bi';
 
-import { I18n, type ThemeName, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { View as ViewType, AnyWidgetId, VisTheme } from '@iobroker/types-vis-2';

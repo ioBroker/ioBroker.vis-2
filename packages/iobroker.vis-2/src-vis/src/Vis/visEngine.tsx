@@ -30,7 +30,7 @@ import 'moment/locale/zh-cn';
 import { Button, Dialog, DialogContent, DialogTitle, DialogActions, LinearProgress } from '@mui/material';
 import { Close as CloseIcon, Check as CheckIcon, Warning as AlertIcon } from '@mui/icons-material';
 
-import { I18n, type LegacyConnection, type ThemeName, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import './css/vis.css';
 import './css/backgrounds.css';
@@ -122,7 +122,7 @@ function translate(text: string, arg1?: any, arg2?: any, arg3?: any): string {
 interface VisEngineProps {
     adapterName: string;
     instance: number;
-    socket: LegacyConnection;
+    socket: Connection;
     currentUser: ioBroker.UserObject;
     lang: ioBroker.Languages;
     projectName: string;
@@ -1394,14 +1394,10 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 if (this.props.socket.getObjectViewSystemCached) {
                     getObjectViewSystem = this.props.socket.getObjectViewSystemCached.bind(this.props.socket);
                 }
-                promises.push(
-                    getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.\u9999') as Promise<
-                        Record<string, ioBroker.Object>
-                    >,
-                );
-                promises.push(getObjectViewSystem('chart', '', '\u9999') as Promise<Record<string, ioBroker.Object>>);
-                promises.push(getObjectViewSystem('channel', '', '\u9999') as Promise<Record<string, ioBroker.Object>>);
-                promises.push(getObjectViewSystem('device', '', '\u9999') as Promise<Record<string, ioBroker.Object>>);
+                promises.push(getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.\u9999'));
+                promises.push(getObjectViewSystem('chart', '', '\u9999'));
+                promises.push(getObjectViewSystem('channel', '', '\u9999'));
+                promises.push(getObjectViewSystem('device', '', '\u9999'));
 
                 return Promise.all(promises).then(result => {
                     const objects = result[0] || {};

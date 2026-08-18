@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ThemeType } from '@iobroker/adapter-react-v5';
+import type { ThemeType } from '@iobroker/gui-components';
 import Editor from '@monaco-editor/react';
 
 interface MonacoEditorProps {

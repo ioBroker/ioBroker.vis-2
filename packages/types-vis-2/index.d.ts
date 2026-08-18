@@ -12,7 +12,7 @@ import type {
 } from '@mui/material/styles/createPalette';
 import type { Color, PaletteMode } from '@mui/material';
 
-import type { LegacyConnection, ThemeType, IobTheme, ThemeName } from '@iobroker/adapter-react-v5';
+import type { Connection, ThemeType, IobTheme, ThemeName } from '@iobroker/gui-components';
 
 interface VisView extends React.FC<VisViewProps> {
     getOneWidget(
@@ -158,7 +158,7 @@ export type PromiseName = `_promise_${WidgetSetName}`;
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 
 export interface RxWidgetInfoCustomComponentContext {
-    readonly socket: LegacyConnection;
+    readonly socket: Connection;
     readonly projectName: string;
     readonly instance: number;
     readonly adapterName: string;
@@ -204,7 +204,7 @@ export type RxWidgetInfoAttributesFieldText = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
     /** show clear button near the field */
@@ -274,7 +274,7 @@ export type RxWidgetInfoAttributesFieldHTML = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -338,7 +338,7 @@ export type RxWidgetInfoAttributesFieldID = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -377,7 +377,7 @@ export type RxWidgetInfoAttributesFieldInstance = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -414,7 +414,7 @@ export type RxWidgetInfoAttributesFieldSelect = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -449,7 +449,7 @@ export type RxWidgetInfoAttributesFieldCheckbox = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -488,7 +488,7 @@ export type RxWidgetInfoAttributesFieldNumber = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
     /** show clear button near the field */
@@ -534,7 +534,7 @@ export type RxWidgetInfoAttributesFieldSlider = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -580,7 +580,7 @@ export type RxWidgetInfoAttributesFieldWidget = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -615,7 +615,7 @@ export type RxWidgetInfoAttributesFieldSelectViews = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -656,7 +656,7 @@ export type RxWidgetInfoAttributesFieldCustom = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -704,7 +704,7 @@ export type RxWidgetInfoAttributesFieldSimple = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -735,7 +735,7 @@ export type RxWidgetInfoAttributesFieldDefault = {
         field: RxWidgetInfoAttributesField,
         data: WidgetData,
         changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void>;
 };
@@ -1429,7 +1429,7 @@ declare global {
         _: (word: string, ...args: (string | number | boolean)[]) => string;
         jQuery: JQuery;
 
-        VisMaterialIconSelector: React.ComponentType<MaterialIconSelectorState>;
+        VisMaterialIconSelector: React.ComponentType<MaterialIconSelectorProps>;
     }
 }
 
@@ -1726,7 +1726,7 @@ export interface VisContext {
     setTimeStart: (timeStart: string) => void;
     setValue: (id: string, value: string | boolean | number | null) => void;
     showWidgetNames: boolean;
-    socket: LegacyConnection;
+    socket: Connection;
     systemConfig: ioBroker.SystemConfigObject;
     theme: VisTheme;
     themeName: string;
@@ -1792,7 +1792,7 @@ export interface DetectorResult {
 }
 
 export interface CustomPaletteProperties {
-    socket: LegacyConnection;
+    socket: Connection;
     project: Project;
     changeProject: (project: Project, ignoreHistory?: boolean) => Promise<void>;
     selectedView: string;
@@ -1800,9 +1800,9 @@ export interface CustomPaletteProperties {
     themeType: 'dark' | 'light';
     helpers: {
         deviceIcons: Record<string, React.JSX.Element>;
-        detectDevices: (socket: LegacyConnection) => Promise<DetectorResult[]>;
+        detectDevices: (socket: Connection) => Promise<DetectorResult[]>;
         getObjectIcon: (obj: ioBroker.Object, id?: string, imagePrefix?: string) => string;
-        allObjects: (socket: LegacyConnection) => Promise<Record<string, ioBroker.Object>>;
+        allObjects: (socket: Connection) => Promise<Record<string, ioBroker.Object>>;
         getNewWidgetId: (project: Project, offset?: number) => SingleWidgetId;
         /** @deprecated use "getNewWidgetId" instead, it will give you the full wid like "w000001" */
         getNewWidgetIdNumber: (isWidgetGroup: boolean, project: Project, offset?: number) => number;
@@ -1868,7 +1868,7 @@ export interface RxWidgetInfo {
 
 export interface CustomWidgetProperties {
     context: {
-        socket: LegacyConnection;
+        socket: Connection;
         projectName: string;
         instance: number;
         adapterName: string;

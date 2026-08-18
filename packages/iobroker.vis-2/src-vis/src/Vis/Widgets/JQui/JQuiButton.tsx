@@ -29,7 +29,7 @@ import {
 
 import { Close, Check } from '@mui/icons-material';
 
-import { I18n, Icon, Utils, IconCopy } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, Utils, IconCopy } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,

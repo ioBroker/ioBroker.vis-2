@@ -16,13 +16,7 @@ import {
 
 import { ContentCopy, Save as SaveIcon, Refresh } from '@mui/icons-material';
 
-import {
-    I18n,
-    Utils,
-    type LegacyConnection,
-    SelectFile as SelectFileDialog,
-    type Connection,
-} from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type Connection, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -94,7 +88,7 @@ type SettingsField =
 interface SettingsProps {
     changeProject: Editor['changeProject'];
     onClose: () => void;
-    socket: LegacyConnection;
+    socket: Connection;
     adapterName: string;
     adapterInstance: number;
     projectName: string;
@@ -405,7 +399,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                             change(selected);
                                             setImageDialog(false);
                                         }}
-                                        socket={props.socket as any as Connection}
+                                        socket={props.socket}
                                     />
                                 ) : null}
                             </>

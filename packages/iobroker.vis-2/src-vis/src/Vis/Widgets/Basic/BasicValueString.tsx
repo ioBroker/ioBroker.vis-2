@@ -15,7 +15,7 @@
 
 import React from 'react';
 
-import { Icon } from '@iobroker/adapter-react-v5';
+import { Icon } from '@iobroker/gui-components';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';

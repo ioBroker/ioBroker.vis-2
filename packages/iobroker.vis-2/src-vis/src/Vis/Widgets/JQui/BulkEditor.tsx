@@ -32,10 +32,9 @@ import {
     I18n,
     Icon,
     SelectFile as SelectFileDialog,
-    type LegacyConnection,
     type Connection,
     type ThemeType,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import MaterialIconSelector from '@/Components/MaterialIconSelector';
 import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
@@ -72,7 +71,7 @@ export interface BulkEditorData {
 }
 
 interface BulkEditorProps {
-    socket: LegacyConnection;
+    socket: Connection;
     data: BulkEditorData;
     themeType: ThemeType;
     theme: VisTheme;
@@ -165,7 +164,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
             });
     }
 
-    static async generateFields(data: BulkEditorData, socket: LegacyConnection): Promise<BulkEditorData | false> {
+    static async generateFields(data: BulkEditorData, socket: Connection): Promise<BulkEditorData | false> {
         const oid: string | null | undefined = data.oid;
         if (!oid || oid === 'nothing_selected') {
             return false;
@@ -461,7 +460,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                 onOk={(selectedOrArray: string | string[] | undefined) =>
                     onChange(Array.isArray(selectedOrArray) ? selectedOrArray[0] : selectedOrArray, true)
                 }
-                socket={this.props.socket as any as Connection}
+                socket={this.props.socket}
             />
         );
     }
@@ -960,7 +959,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                                         label: '20',
                                     },
                                 ]}
-                                onChange={(_e, value) => this.setState({ steps: value as number })}
+                                onChange={(_e, value) => this.setState({ steps: value })}
                             />
                         </div>
                     </div>

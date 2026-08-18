@@ -15,7 +15,7 @@
 
 import React, { type CSSProperties } from 'react';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, RxWidgetInfoGroup, WidgetData } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';

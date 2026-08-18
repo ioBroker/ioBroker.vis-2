@@ -21,7 +21,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import FileIcon from '@mui/icons-material/InsertDriveFile';
 import { FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import type { Project, RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';

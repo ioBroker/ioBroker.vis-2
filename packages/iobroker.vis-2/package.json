@@ -41,7 +41,7 @@
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mime": "^3.0.4",
         "@types/mocha": "^10.0.10",
-        "@types/react": "^18.3.31",
+        "@types/react": "^19.2.18",
         "@types/unzipper": "^0.10.11",
         "dayjs": "^1.11.21",
         "iobroker.web": "*",

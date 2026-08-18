@@ -20,7 +20,7 @@ import {
 
 import { Search as SearchIcon, Close as ClearIcon, Check as CheckIcon, Delete as EraseIcon } from '@mui/icons-material';
 
-import { I18n, Utils, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { MaterialIconSelectorProps, VisTheme } from '@iobroker/types-vis-2';
 
 import UploadFile from './UploadFile';

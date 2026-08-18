@@ -4,7 +4,7 @@ import { TextField } from '@mui/material';
 
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import { useFocus } from '../../Utils';

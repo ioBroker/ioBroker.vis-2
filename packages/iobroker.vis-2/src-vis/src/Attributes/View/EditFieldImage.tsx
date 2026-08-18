@@ -1,15 +1,9 @@
-import React, { useRef, useState, type RefObject } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button, Fade, IconButton, Paper, Popper, TextField } from '@mui/material';
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
-import {
-    I18n,
-    SelectFile as SelectFileDialog,
-    type LegacyConnection,
-    type Connection,
-    type ThemeType,
-} from '@iobroker/adapter-react-v5';
+import { I18n, SelectFile as SelectFileDialog, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { Field } from '@/Attributes/View/Items';
 import commonStyles from '@/Utilities/styles';
@@ -25,7 +19,7 @@ interface EditFieldImageProps {
     instance: number;
     adapterName: string;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     theme: VisTheme;
 }
@@ -34,7 +28,8 @@ export default function EditFieldImage(props: EditFieldImageProps): React.JSX.El
     const [textDialogFocused, setTextDialogFocused] = useState(false);
     const [textDialogEnabled, setTextDialogEnabled] = useState(false);
     const [showDialog, setShowDialog] = useState(false);
-    const textRef: RefObject<HTMLDivElement> = useRef<HTMLInputElement>();
+    // the ref of a MUI TextField points at its root div, not at the input
+    const textRef = useRef<HTMLDivElement>(null);
 
     const urlPopper = !props.disabled ? (
         <Popper
@@ -117,7 +112,7 @@ export default function EditFieldImage(props: EditFieldImageProps): React.JSX.El
                     props.change(selected);
                     setShowDialog(false);
                 }}
-                socket={props.socket as any as Connection}
+                socket={props.socket}
             />
         );
     }

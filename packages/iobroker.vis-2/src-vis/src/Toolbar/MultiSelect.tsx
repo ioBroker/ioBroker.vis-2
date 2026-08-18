@@ -15,7 +15,7 @@ import {
 
 import { ArrowDropDown as IconArrowDown, ArrowDropUp as IconArrowUp } from '@mui/icons-material';
 
-import { Utils, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { Utils, I18n, type ThemeType } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 const styles: Record<string, any> = {

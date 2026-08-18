@@ -43,9 +43,8 @@ import {
     SelectFile as SelectFileDialog,
     Icon,
     type IobTheme,
-    type LegacyConnection,
     type ThemeName,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import type {
     AnyWidgetId,
@@ -75,6 +74,7 @@ import {
     pasteSingleWidget,
     safeParseLS,
 } from './Utilities/utils';
+import useConnectRef from './Utilities/useConnectRef';
 
 import Attributes from './Attributes';
 import Palette from './Palette';
@@ -201,7 +201,7 @@ interface ViewDropProps {
 }
 
 const ViewDrop: React.FC<ViewDropProps> = props => {
-    const targetRef = useRef<HTMLDivElement>();
+    const targetRef = useRef<HTMLDivElement>(null);
 
     const [{ CanDrop, isOver }, drop] = useDrop<
         {
@@ -242,9 +242,11 @@ const ViewDrop: React.FC<ViewDropProps> = props => {
         [props.editMode],
     );
 
+    const dropRef = useConnectRef<HTMLDivElement>(drop);
+
     return (
         <div
-            ref={drop}
+            ref={dropRef}
             style={
                 isOver && CanDrop
                     ? {
@@ -1981,7 +1983,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     selectedView={this.state.selectedView}
                     changeView={this.changeView}
                     changeProject={this.changeProject}
-                    socket={this.socket as unknown as LegacyConnection}
+                    socket={this.socket}
                     editMode={this.state.editMode}
                     themeType={this.state.themeType}
                 />
@@ -2067,7 +2069,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     themeType={this.state.themeType}
                     selectedWidgets={this.state.editMode ? this.state.selectedWidgets : []}
                     widgetsLoaded={this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED}
-                    socket={this.socket as unknown as LegacyConnection}
+                    socket={this.socket}
                     fonts={this.state.fonts}
                     adapterName={this.adapterName}
                     instance={this.instance}
@@ -2271,7 +2273,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 }}
                 openNewProjectOnCreate
                 projectName={this.state.projectName}
-                socket={this.socket as unknown as LegacyConnection}
+                socket={this.socket}
                 adapterName={this.adapterName}
                 instance={this.instance}
                 loadProject={this.loadProject}
@@ -2438,7 +2440,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             changeProject={this.changeProject}
                             openedViews={store.getState().visProject.___settings.openedViews}
                             toggleView={this.toggleView}
-                            socket={this.socket as unknown as LegacyConnection}
+                            socket={this.socket}
                             projects={this.state.projects}
                             loadProject={this.loadProject}
                             projectName={this.state.projectName}

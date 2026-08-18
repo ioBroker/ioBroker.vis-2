@@ -27,7 +27,7 @@ import {
     ContentCopy,
 } from '@mui/icons-material';
 
-import { I18n, Icon, Utils, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { store, recalculateFields, updateWidget, selectWidget } from '@/Store';
 
@@ -242,7 +242,7 @@ interface PaletteGroup extends WidgetAttributesGroupInfoStored {
 interface WidgetProps {
     selectedView: string;
     selectedWidgets: AnyWidgetId[];
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     theme: VisTheme;
     projectName: string;
@@ -1945,7 +1945,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         }
                     });
                 }}
-                TransitionProps={{ timeout: this.state.transitionTime }}
+                slotProps={{ transition: { timeout: this.state.transitionTime } }}
             >
                 {this.renderGroupHeader(group)}
                 {this.renderGroupBody(group)}

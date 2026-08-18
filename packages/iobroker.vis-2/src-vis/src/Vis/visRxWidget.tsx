@@ -16,7 +16,7 @@
 import React from 'react';
 import { Card, CardContent } from '@mui/material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 import type {
     AnyWidgetId,
     RxWidgetInfo,

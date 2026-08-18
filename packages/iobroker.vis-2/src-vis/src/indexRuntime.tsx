@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Utils } from '@iobroker/adapter-react-v5';
+import { Utils } from '@iobroker/gui-components';
 
 import type VisRxWidget from '@/Vis/visRxWidget';
 import './index.css';

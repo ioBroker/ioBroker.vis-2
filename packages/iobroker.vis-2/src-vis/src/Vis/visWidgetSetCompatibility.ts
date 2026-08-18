@@ -54,6 +54,10 @@ export interface IncompatibleWidgetSet {
     problem: WidgetSetIncompatibility;
 }
 
+// TEMPORARY, switched off on request to try whether the widget sets load anyway. Set back to `false` - with
+// `true` nothing is checked and a widget set built for react 18 takes the whole set down while it is loaded.
+const DETECTION_DISABLED = true;
+
 /** Major of the react this vis-2 was built with */
 const HOST_REACT_MAJOR = parseInt(reactVersion, 10);
 
@@ -103,7 +107,7 @@ async function readManifest(remoteEntryUrl: string): Promise<FederationManifest 
  */
 export function checkWidgetSetCompatibility(remoteEntryUrl: string): Promise<WidgetSetIncompatibility | null> {
     // widget sets built against react 18 run fine in a react 18 host, which is the only case that exists today
-    if (HOST_REACT_MAJOR < BREAKING_REACT_MAJOR) {
+    if (DETECTION_DISABLED || HOST_REACT_MAJOR < BREAKING_REACT_MAJOR) {
         return Promise.resolve(null);
     }
 

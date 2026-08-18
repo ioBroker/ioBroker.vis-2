@@ -5,7 +5,7 @@ import { CircularProgress } from '@mui/material';
 
 import { FolderZip } from '@mui/icons-material';
 
-import { I18n, Utils, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type ThemeType } from '@iobroker/gui-components';
 
 const IMAGE_TYPES = [
     '.png',

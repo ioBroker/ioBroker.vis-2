@@ -12,7 +12,7 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import type { ThemeType, LegacyConnection } from '@iobroker/adapter-react-v5';
+import type { ThemeType, Connection } from '@iobroker/gui-components';
 import type {
     Project,
     AnyWidgetId,
@@ -807,7 +807,7 @@ export function getUrlParameter(attr: string): string | true {
 }
 
 export async function readFile(
-    socket: LegacyConnection,
+    socket: Connection,
     id: string,
     fileName: string,
     withType?: boolean,
@@ -816,7 +816,7 @@ export async function readFile(
     let mimeType = '';
     let data: string;
     if (typeof file === 'object') {
-        // LegacyConnection returns the file in slightly different shapes depending on transport
+        // Connection returns the file in slightly different shapes depending on transport
         const f = file as { mimeType?: string; type?: string; file?: string; data?: string };
         if (withType) {
             mimeType = f.mimeType || f.type || '';

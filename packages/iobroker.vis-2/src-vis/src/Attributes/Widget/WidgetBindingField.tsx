@@ -28,7 +28,7 @@ import {
 
 import { Cancel, Check, Clear, Link as LinkIcon } from '@mui/icons-material';
 
-import { I18n, SelectID, type LegacyConnection, type Connection } from '@iobroker/adapter-react-v5';
+import { I18n, SelectID, type Connection } from '@iobroker/gui-components';
 
 import type { AnyWidgetId, Project, VisBindingOperationArgument, VisTheme } from '@iobroker/types-vis-2';
 
@@ -98,7 +98,7 @@ interface WidgetBindingFieldProps {
     widget: any;
     isStyle: boolean;
     changeProject: (project: Project) => void;
-    socket: LegacyConnection;
+    socket: Connection;
     selectedView: string;
     selectedWidgets: AnyWidgetId[];
     isDifferent?: boolean;
@@ -1316,7 +1316,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                         }));
                 }}
                 onClose={() => this.setState({ showSelectIdDialog: false })}
-                socket={this.props.socket as any as Connection}
+                socket={this.props.socket}
             />
         );
     }

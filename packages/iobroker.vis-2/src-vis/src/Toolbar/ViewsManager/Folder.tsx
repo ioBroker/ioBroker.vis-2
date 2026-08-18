@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import useConnectRef from '@/Utilities/useConnectRef';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
@@ -12,7 +13,7 @@ import {
 } from '@mui/icons-material';
 import { FaFolder as FolderClosedIcon, FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
 
-import { Utils, I18n } from '@iobroker/adapter-react-v5';
+import { Utils, I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
 
@@ -127,6 +128,8 @@ const Folder: React.FC<FolderProps> = props => {
         [visProject],
     );
 
+    const dropRef = useConnectRef<HTMLDivElement>(drop);
+
     const [{ isDraggingThisItem }, dragRef, preview] = useDrag(
         {
             type: 'folder',
@@ -148,6 +151,8 @@ const Folder: React.FC<FolderProps> = props => {
         [visProject],
     );
 
+    const setDragRef = useConnectRef<HTMLDivElement>(dragRef);
+
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +168,7 @@ const Folder: React.FC<FolderProps> = props => {
     return (
         <Box
             component="div"
-            ref={drop}
+            ref={dropRef}
             sx={Utils.getStyle(
                 props.theme,
                 styles.root,
@@ -175,7 +180,7 @@ const Folder: React.FC<FolderProps> = props => {
             <Box
                 component="div"
                 sx={styles.icon}
-                ref={dragRef}
+                ref={setDragRef}
                 title={I18n.t('Drag me')}
             >
                 {props.foldersCollapsed.includes(props.folder.id) ? (

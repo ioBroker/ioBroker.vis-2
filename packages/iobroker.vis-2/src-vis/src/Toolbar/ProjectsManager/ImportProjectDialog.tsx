@@ -3,19 +3,19 @@ import { TextField } from '@mui/material';
 
 import { BiImport } from 'react-icons/bi';
 
-import { I18n, Confirm as ConfirmDialog, type ThemeType, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, Confirm as ConfirmDialog, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import UploadFile from '../../Components/UploadFile';
 import IODialog from '../../Components/IODialog';
 
-export const getLiveHost = async (socket: LegacyConnection): Promise<string | null> => {
+export const getLiveHost = async (socket: Connection): Promise<string | null> => {
     const res = await socket.getObjectViewSystem('host', 'system.host.', 'system.host.\u9999');
     const hosts = Object.keys(res).map(id => `${id}.alive`);
     if (!hosts.length) {
         return null;
     }
-    const states = await socket.getForeignStates(hosts as unknown as string);
+    const states = await socket.getForeignStates(hosts);
     for (const h in states) {
         if (states[h]?.val) {
             return h.substring(0, h.length - '.alive'.length);
@@ -29,7 +29,7 @@ interface ImportProjectDialogProps {
     onClose: (isYes?: boolean, projectName?: string) => void;
     projectName: string;
     refreshProjects: Editor['refreshProjects'];
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     loadProject: Editor['loadProject'];
     adapterName: string;

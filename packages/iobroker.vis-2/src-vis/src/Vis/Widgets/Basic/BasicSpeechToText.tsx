@@ -2,7 +2,7 @@ import React from 'react';
 // @ts-expect-error fix import
 import type * as SpeechRecognition from 'dom-speech-recognition';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import VisRxWidget from '@/Vis/visRxWidget';
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';

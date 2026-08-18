@@ -23,7 +23,7 @@ import {
 import { TbVacuumCleaner } from 'react-icons/tb';
 
 import ChannelDetector, { Types, type DetectOptions } from '@iobroker/type-detector';
-import type { LegacyConnection } from '@iobroker/adapter-react-v5';
+import type { Connection } from '@iobroker/gui-components';
 
 import { getNewWidgetIdNumber, getNewWidgetId } from '@/Utilities/utils';
 
@@ -56,19 +56,26 @@ const deviceIcons = {
     unknown: <QuestionMark />,
 };
 
-const allObjects = async (socket: LegacyConnection): Promise<Record<string, ioBroker.Object>> => {
+const allObjects = async (socket: Connection): Promise<Record<string, ioBroker.Object>> => {
     const states = await socket.getObjectViewSystem('state', '', '\u9999');
     const channels = await socket.getObjectViewSystem('channel', '', '\u9999');
     const devices = await socket.getObjectViewSystem('device', '', '\u9999');
     const folders = await socket.getObjectViewSystem('folder', '', '\u9999');
     const enums = await socket.getObjectViewSystem('enum', '', '\u9999');
 
-    return Object.values(states)
-        .concat(Object.values(channels))
-        .concat(Object.values(devices))
-        .concat(Object.values(folders))
-        .concat(Object.values(enums))
-        .reduce((obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj), {});
+    // the object view is typed per requested type now, so the lists have to be widened before they are joined
+    const all: ioBroker.Object[] = [
+        ...Object.values(states),
+        ...Object.values(channels),
+        ...Object.values(devices),
+        ...Object.values(folders),
+        ...Object.values(enums),
+    ];
+
+    return all.reduce(
+        (obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj),
+        {},
+    );
 };
 
 function getObjectIcon(obj: ioBroker.Object, id: string, imagePrefix?: string): string {
@@ -140,7 +147,7 @@ interface DetectorResult {
     devices: DetectorDevice[];
 }
 
-const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]> => {
+const detectDevices = async (socket: Connection): Promise<DetectorResult[]> => {
     const devicesObject: Record<string, ObjectForDetector> = await allObjects(socket);
     const keys = Object.keys(devicesObject).sort();
     const detector = new ChannelDetector();

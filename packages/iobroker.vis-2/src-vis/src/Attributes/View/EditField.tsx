@@ -12,14 +12,7 @@ import {
     TextField,
 } from '@mui/material';
 
-import {
-    ColorPicker,
-    I18n,
-    IconPicker,
-    TextWithIcon,
-    type LegacyConnection,
-    type ThemeType,
-} from '@iobroker/adapter-react-v5';
+import { ColorPicker, I18n, IconPicker, TextWithIcon, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
@@ -46,7 +39,7 @@ interface EditFieldProps {
     adapterName: string;
     instance: number;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     disabled: boolean;
     project: Project;
     additionalSets: AdditionalIconSet;

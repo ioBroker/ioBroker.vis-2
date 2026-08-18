@@ -16,7 +16,7 @@
 import React from 'react';
 
 import { Tab, Tabs } from '@mui/material';
-import { Icon } from '@iobroker/adapter-react-v5';
+import { Icon } from '@iobroker/gui-components';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, WidgetData } from '@iobroker/types-vis-2';
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
@@ -273,9 +273,11 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                     }
                 >
                     <Tabs
-                        TabIndicatorProps={{
-                            style: {
-                                backgroundColor: this.state.rxData.color,
+                        slotProps={{
+                            indicator: {
+                                style: {
+                                    backgroundColor: this.state.rxData.color,
+                                },
                             },
                         }}
                         value={this.state.tabIndex || 0}

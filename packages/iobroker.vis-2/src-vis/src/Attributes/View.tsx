@@ -4,7 +4,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Tooltip, IconButton, Box
 
 import { ExpandMore as ExpandMoreIcon, FormatPaint, Info as InfoIcon, Visibility } from '@mui/icons-material';
 
-import { Utils, I18n, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { Utils, I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import type { Project, View, VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
@@ -156,7 +156,7 @@ interface ViewProps {
     theme: VisTheme;
     instance: number;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     additionalSets: AdditionalIconSet;
 }
 

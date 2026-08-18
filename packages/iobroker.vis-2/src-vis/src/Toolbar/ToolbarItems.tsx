@@ -18,7 +18,7 @@ import {
 
 import { Menu as MenuIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 import type { ViewSettings, VisTheme } from '@iobroker/types-vis-2';
 
 import { deepClone } from '@/Utilities/utils';
@@ -408,7 +408,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                 value={value}
                 type={item.type}
                 onChange={e => this.onAction(item, e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
                 label={this.props.toolbarHeight !== 'veryNarrow' ? I18n.t(item.name) : null}
                 style={styles.textInput}
             />

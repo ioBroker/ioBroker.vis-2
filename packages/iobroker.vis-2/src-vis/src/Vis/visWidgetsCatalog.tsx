@@ -1,6 +1,6 @@
 import type React from 'react';
 
-import type { LegacyConnection, ThemeType, ObjectBrowserCustomFilter } from '@iobroker/adapter-react-v5';
+import type { Connection, ThemeType, ObjectBrowserCustomFilter } from '@iobroker/gui-components';
 import type {
     GroupWidgetId,
     Project,
@@ -127,7 +127,7 @@ export type RxWidgetInfoAttributesFieldAll = {
         onDataChange: (newData: WidgetData) => void,
         props: {
             context: {
-                socket: LegacyConnection;
+                socket: Connection;
                 projectName: string;
                 instance: number;
                 adapterName: string;
@@ -163,7 +163,7 @@ export type RxWidgetInfoAttributesFieldAll = {
         field: RxWidgetInfoAttributesField,
         data: Record<string, any>,
         changeData: (newData: Record<string, any>) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void> | string;
 };
@@ -230,7 +230,7 @@ export interface WidgetType {
               context: {
                   views: Project;
                   view: string;
-                  socket: LegacyConnection;
+                  socket: Connection;
                   themeType: ThemeType;
                   projectName: string;
                   adapterName: string;
@@ -508,7 +508,7 @@ export default class VisWidgetsCatalog {
     }
 
     static collectRxInformation(
-        socket: LegacyConnection,
+        socket: Connection,
         project: Project,
         changeProject?: (newProject: Project) => void,
     ): Promise<Record<string, VisRxWidget<any>>> {

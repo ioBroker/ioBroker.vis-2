@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 import { Button } from '@mui/material';
 import { Close } from '@mui/icons-material';
 

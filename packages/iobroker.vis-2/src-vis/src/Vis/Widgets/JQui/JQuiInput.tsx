@@ -19,7 +19,7 @@ import { IconButton, TextField, InputAdornment, Button } from '@mui/material';
 
 import { KeyboardReturn } from '@mui/icons-material';
 
-import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection } from '@iobroker/gui-components';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 import type {
@@ -88,7 +88,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     const obj = await socket.getObject(data.oid);
@@ -250,7 +250,10 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
 
     async setValue(value: string): Promise<void> {
         if (this.object?._id !== this.state.rxData.oid) {
-            this.object = await this.props.context.socket.getObject(this.state.rxData.oid);
+            // the widget is bound to a state, but getObject() is generic on the id and cannot know that
+            this.object = (await this.props.context.socket.getObject(
+                this.state.rxData.oid,
+            )) as ioBroker.StateObject | null;
             if (!this.object) {
                 return;
             }

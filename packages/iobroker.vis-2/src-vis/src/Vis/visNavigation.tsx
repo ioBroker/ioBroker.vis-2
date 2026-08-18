@@ -16,7 +16,7 @@ import {
 
 import { ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
 
-import { Utils, Icon } from '@iobroker/adapter-react-v5';
+import { Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
 const MENU_WIDTH_FULL = 200;

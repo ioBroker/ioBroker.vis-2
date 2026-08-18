@@ -11,7 +11,7 @@ import { BiImport, BiExport, BiCut, BiCopy, BiPaste } from 'react-icons/bi';
 import { RiBringToFront, RiSendToBack } from 'react-icons/ri';
 import { AiOutlineGroup, AiOutlineUngroup } from 'react-icons/ai';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import type { AnyWidgetId, Project, GroupWidgetId, SingleWidgetId, View, Widget } from '@iobroker/types-vis-2';

@@ -9,7 +9,7 @@ import {
     ListAlt as IconAttributes,
 } from '@mui/icons-material';
 
-import { I18n, Utils, type ThemeType, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
@@ -48,7 +48,7 @@ interface AttributesProps {
     widgetsLoaded: boolean;
     selectedView: string;
     changeProject: Editor['changeProject'];
-    socket: LegacyConnection;
+    socket: Connection;
     fonts: string[];
     cssClone: Editor['cssClone'];
     onPxToPercent: Editor['onPxToPercent'];

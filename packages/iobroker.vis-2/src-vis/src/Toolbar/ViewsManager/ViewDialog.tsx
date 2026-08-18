@@ -3,7 +3,7 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, FileCopy as Fil
 
 import { TextField } from '@mui/material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';

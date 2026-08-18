@@ -21,7 +21,7 @@ import {
     Palette as IconPalette,
 } from '@mui/icons-material';
 
-import { I18n, Utils, Icon, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { Marketplace, MarketplaceWidgetRevision, VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
@@ -148,7 +148,7 @@ interface PaletteProps {
     setMarketplaceDialog: Editor['setMarketplaceDialog'];
     updateWidgets: Editor['updateWidgets'];
     widgetsLoaded: boolean;
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     theme: VisTheme;
     editMode: boolean;

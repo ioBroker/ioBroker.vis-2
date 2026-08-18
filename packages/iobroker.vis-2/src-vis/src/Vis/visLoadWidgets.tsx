@@ -12,7 +12,7 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection } from '@iobroker/gui-components';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import type VisRxWidget from '@/Vis/visRxWidget';
 import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
@@ -176,7 +176,7 @@ function fixCloudBundlerType(adapterName: string, visWidgetsCollection: ioBroker
  * @param onlyWidgetSets If array of names, load only these widget sets
  */
 function getRemoteWidgets(
-    socket: LegacyConnection,
+    socket: Connection,
     onlyWidgetSets?: false | string[],
 ): Promise<
     | undefined
@@ -198,9 +198,7 @@ function getRemoteWidgets(
             const additionalSets: AdditionalIconSet = {};
             const incompatibleSets: IncompatibleWidgetSet[] = [];
             const countRef = { count: 0, max: 0 };
-            const instances: ioBroker.InstanceObject[] = Object.values(
-                objects as Record<string, ioBroker.InstanceObject>,
-            );
+            const instances: ioBroker.InstanceObject[] = Object.values(objects);
             const dynamicWidgetInstances: ioBroker.InstanceObject[] = instances.filter(obj => {
                 if (!obj.common.visWidgets && !obj.common.visIconSets) {
                     return false;

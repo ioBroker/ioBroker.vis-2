@@ -31,7 +31,7 @@ import {
     List,
 } from '@mui/material';
 
-import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, type Connection } from '@iobroker/gui-components';
 
 import { deepClone } from '@/Utilities/utils';
 
@@ -134,7 +134,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid) {
                                     const { default: BulkEditorComponent } = await import('./BulkEditor');
@@ -246,7 +246,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 field: RxWidgetInfoAttributesField,
                                 data: Record<string, any>,
                                 changeData: (newData: Record<string, any>) => void,
-                                _socket: LegacyConnection,
+                                _socket: Connection,
                                 index?: number,
                             ): Promise<void> => {
                                 if (data[(field as RxWidgetInfoAttributesFieldCheckbox).name]) {

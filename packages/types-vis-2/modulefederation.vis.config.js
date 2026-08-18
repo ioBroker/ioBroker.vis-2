@@ -72,6 +72,9 @@ export function moduleFederationShared(packageJson) {
     const list = [
         '@emotion/react',
         '@emotion/styled',
+        // The predecessor of `@iobroker/gui-components`. vis-2 itself does not use it anymore, so the host does
+        // not provide it and the entry is simply left out of its manifest - but a widget set that still imports
+        // it has to keep declaring it shared, otherwise it bundles a copy nobody knows about
         '@iobroker/adapter-react-v5',
         '@iobroker/adapter-react-v5/i18n/de.json',
         '@iobroker/adapter-react-v5/i18n/en.json',
@@ -84,6 +87,18 @@ export function moduleFederationShared(packageJson) {
         '@iobroker/adapter-react-v5/i18n/ru.json',
         '@iobroker/adapter-react-v5/i18n/uk.json',
         '@iobroker/adapter-react-v5/i18n/zh-cn.json',
+        '@iobroker/gui-components',
+        '@iobroker/gui-components/i18n/de.json',
+        '@iobroker/gui-components/i18n/en.json',
+        '@iobroker/gui-components/i18n/es.json',
+        '@iobroker/gui-components/i18n/fr.json',
+        '@iobroker/gui-components/i18n/it.json',
+        '@iobroker/gui-components/i18n/nl.json',
+        '@iobroker/gui-components/i18n/pl.json',
+        '@iobroker/gui-components/i18n/pt.json',
+        '@iobroker/gui-components/i18n/ru.json',
+        '@iobroker/gui-components/i18n/uk.json',
+        '@iobroker/gui-components/i18n/zh-cn.json',
         '@iobroker/vis-2-widgets-react-dev',
         '@mui/icons-material',
         '@mui/material',
@@ -92,6 +107,9 @@ export function moduleFederationShared(packageJson) {
         // set that brought its own MUI major. Without it such a widget would silently fall back to the default
         // MUI theme, which is always the light one
         '@mui/private-theming',
+        // Does not exist beyond MUI 6 and is not used by vis-2, so the host never provides it. It stays in the
+        // list for the same reason as adapter-react-v5: a widget set built against MUI 6 has to keep declaring
+        // it, and falls back to its own copy
         '@mui/styles',
         '@mui/system',
         'prop-types',

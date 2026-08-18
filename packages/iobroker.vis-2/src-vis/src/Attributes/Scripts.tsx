@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { ThemeType } from '@iobroker/adapter-react-v5';
+import type { ThemeType } from '@iobroker/gui-components';
 import { store } from '@/Store';
 import type { Project } from '@iobroker/types-vis-2';
 import CustomEditor from '../Components/CustomEditor';

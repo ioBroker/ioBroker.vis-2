@@ -25,13 +25,13 @@ import { BiImport } from 'react-icons/bi';
 import {
     I18n,
     Loader,
-    LegacyConnection,
+    Connection,
     GenericApp,
     type GenericAppProps,
     type GenericAppState,
     type ThemeName,
     Utils,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import type {
     AnyWidgetId,
@@ -244,7 +244,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             'zh-cn': zhLang,
         };
 
-        extendedProps.Connection = LegacyConnection as unknown as LegacyConnection;
+        extendedProps.Connection = Connection as unknown as Connection;
         if (!window.disableDataReporting) {
             extendedProps.sentryDSN = window.sentryDSN;
         }
@@ -380,7 +380,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 this.checkTimeout = setTimeout(() => {
                     this.checkTimeout = null;
                     // compare last executed file with new one
-                    void readFile(this.socket as unknown as LegacyConnection, this.adapterId, fileName).then(file => {
+                    void readFile(this.socket as unknown as Connection, this.adapterId, fileName).then(file => {
                         try {
                             const ts = (JSON.parse((file as any).file || file) as Project).___settings.ts;
                             if (ts === store.getState().visProject.___settings.ts) {
@@ -652,7 +652,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         this.setLoadingText?.('Load project file...');
         try {
             const file: string | { file: string; mimeType: string } = await readFile(
-                this.socket as unknown as LegacyConnection,
+                this.socket,
                 this.adapterId,
                 `${projectName}/vis-views.json`,
             );
@@ -870,11 +870,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     async onConnectionReady(): Promise<void> {
         // preload all widgets first
         if (this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_HTML_LOADED) {
-            await VisWidgetsCatalog.collectRxInformation(
-                this.socket as unknown as LegacyConnection,
-                store.getState().visProject,
-                this.changeProject,
-            );
+            await VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, this.changeProject);
             await this.setStateAsync({ widgetsLoaded: Runtime.WIDGETS_LOADING_STEP_ALL_LOADED });
         }
 
@@ -1086,11 +1082,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     async onWidgetsLoaded(): Promise<void> {
         let widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_HTML_LOADED;
         if (this.socket.isConnected()) {
-            await VisWidgetsCatalog.collectRxInformation(
-                this.socket as unknown as LegacyConnection,
-                store.getState().visProject,
-                this.changeProject,
-            );
+            await VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, this.changeProject);
             widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_ALL_LOADED;
         }
         this.setState({ widgetsLoaded, incompatibleSets: Runtime.getUnacknowledgedSets() });
@@ -1376,7 +1368,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 activeView={this.state.selectedView || ''}
                 editMode={!this.state.runtime && this.state.editMode}
                 runtime={this.state.runtime}
-                socket={this.socket as unknown as LegacyConnection}
+                socket={this.socket}
                 visCommonCss={this.state.visCommonCss}
                 visUserCss={this.state.visUserCss}
                 lang={this.socket.systemLang}

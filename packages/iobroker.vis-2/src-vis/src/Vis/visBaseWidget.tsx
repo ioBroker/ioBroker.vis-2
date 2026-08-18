@@ -17,7 +17,7 @@ import React from 'react';
 
 import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui/icons-material';
 
-import { I18n, Utils } from '@iobroker/adapter-react-v5';
+import { I18n, Utils } from '@iobroker/gui-components';
 
 import { calculateOverflow, deepClone, isVarFinite } from '@/Utilities/utils';
 import type {

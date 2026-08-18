@@ -4,7 +4,7 @@ import { Tooltip } from '@mui/material';
 
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Menu as MenuIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeName, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { VisTheme } from '@iobroker/types-vis-2';

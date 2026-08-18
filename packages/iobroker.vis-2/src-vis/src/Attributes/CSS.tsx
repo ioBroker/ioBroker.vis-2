@@ -12,9 +12,9 @@ import {
     CircularProgress,
 } from '@mui/material';
 
-import { HelpOutline, Check as CheckIcon } from '@mui/icons-material';
+import { HelpOutlined as HelpOutline, Check as CheckIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import { readFile } from '@/Vis/visUtils';
 import { CustomEditor } from '@/Components/CustomEditor';
@@ -147,7 +147,7 @@ export default class CSS extends Component<CSSProps, CSSState> {
                         variant="standard"
                         value={this.state.type}
                         onChange={e => {
-                            this.setState({ type: e.target.value as 'global' | 'local' });
+                            this.setState({ type: e.target.value });
                             window.localStorage.setItem('CSS.type', e.target.value);
                         }}
                     >

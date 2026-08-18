@@ -20,10 +20,10 @@ import {
     Utils,
     I18n,
     ToggleThemeMenu,
-    type LegacyConnection,
+    type Connection,
     type ThemeName,
     type ThemeType,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { AnyWidgetId, GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
@@ -112,7 +112,7 @@ interface ToolbarProps {
     setSelectedWidgets: Editor['setSelectedWidgets'];
     setToolbarHeight: (value: 'narrow' | 'veryNarrow' | 'full') => void;
     setViewsManager: Editor['setViewsManager'];
-    socket: LegacyConnection;
+    socket: Connection;
     theme: VisTheme;
     themeName: ThemeName;
     themeType: ThemeType;

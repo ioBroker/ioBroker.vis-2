@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import useConnectRef from '@/Utilities/useConnectRef';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon, Update as UpdateIcon, Block as DeletedIcon } from '@mui/icons-material';
 
-import { I18n, Utils, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { MarketplaceWidgetRevision, Project } from '@iobroker/types-vis-2';
 
@@ -80,7 +81,7 @@ interface WidgetProps {
     widgetSet: string;
     widgetType: WidgetType;
     widgetTypeName: string;
-    socket?: LegacyConnection;
+    socket?: Connection;
     themeType: ThemeType;
     changeProject?: (project: Project, ignoreHistory?: boolean) => Promise<void>;
     changeView?: (view: string) => void;
@@ -97,7 +98,7 @@ interface WidgetProps {
 }
 
 const Widget = (props: WidgetProps): React.JSX.Element => {
-    const imageRef = useRef<HTMLSpanElement>();
+    const imageRef = useRef<HTMLSpanElement>(null);
     const style: React.CSSProperties = {};
 
     useEffect(() => {
@@ -241,7 +242,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
         </Tooltip>
     );
 
-    const widthRef = useRef<HTMLSpanElement>();
+    const widthRef = useRef<HTMLSpanElement>(null);
     const [, dragRef, preview] = useDrag(
         {
             type: 'widget',
@@ -257,6 +258,8 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
         },
         [props.widgetType],
     );
+
+    const setDragRef = useConnectRef<HTMLSpanElement>(dragRef);
 
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
@@ -280,7 +283,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
 
     return (
         <span
-            ref={props.editMode ? dragRef : null}
+            ref={props.editMode ? setDragRef : null}
             id={`widget_${props.widgetTypeName}`}
             className={`widget-${props.widgetSet}`}
         >

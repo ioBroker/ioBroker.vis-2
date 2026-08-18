@@ -17,7 +17,7 @@ import React from 'react';
 
 import { Button } from '@mui/material';
 
-import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, type Connection } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,
@@ -92,12 +92,14 @@ class JQuiWriteState<
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid && data.oid !== 'nothing_selected') {
-                                    const obj: ioBroker.StateObject | null | undefined = await socket.getObject(
-                                        data.oid,
-                                    );
+                                    // the field selects a state, but getObject() is generic on the id
+                                    const obj = (await socket.getObject(data.oid)) as
+                                        | ioBroker.StateObject
+                                        | null
+                                        | undefined;
                                     let changed = false;
                                     if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
                                         if (data.min !== obj.common.min) {

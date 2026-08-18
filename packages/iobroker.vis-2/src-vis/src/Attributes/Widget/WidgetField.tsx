@@ -40,10 +40,9 @@ import {
     SelectFile as SelectFileDialog,
     type ObjectBrowserCustomFilter,
     type Connection,
-    type LegacyConnection,
     type ThemeType,
     type SelectIDFilters,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import { findWidgetUsages } from '@/Vis/visUtils';
 import { store, recalculateFields, selectWidget } from '@/Store';
@@ -308,7 +307,7 @@ interface WidgetFieldProps {
     selectedView: string;
     isStyle: boolean;
     widgetType?: WidgetType;
-    socket: LegacyConnection;
+    socket: Connection;
     changeProject: (project: Project) => void;
     onPxToPercent: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
     onPercentToPx: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
@@ -396,7 +395,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     >([]);
 
     const cacheTimer = useRef<ReturnType<typeof setTimeout>>(null);
-    const refCustom = useRef<HTMLDivElement>();
+    const refCustom = useRef<HTMLDivElement>(null);
 
     let onChangeTimeout: ReturnType<typeof setTimeout>;
 
@@ -527,7 +526,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
     window.collectClassesValue ||= collectClasses();
 
-    const textRef = useRef();
+    // the ref of a MUI TextField points at its root div, not at the input
+    const textRef = useRef<HTMLDivElement>(null);
     const [textDialogFocused, setTextDialogFocused] = useState(false);
     const [textDialogEnabled, setTextDialogEnabled] = useState(true);
 
@@ -753,7 +753,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 <div style={{ ...commonStyles.fieldContent, fontStyle: 'italic' }}>
                     {objectCache
                         ? typeof objectCache.common.name === 'object'
-                            ? objectCache.common.name[I18n.lang]
+                            ? objectCache.common.name[I18n.getLanguage()]
                             : objectCache.common.name
                         : null}
                 </div>
@@ -764,7 +764,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         selected={value as string}
                         onOk={selected => change(selected)}
                         onClose={() => setIdDialog(false)}
-                        socket={props.socket as any as Connection}
+                        socket={props.socket}
                         types={
                             field.filter === 'chart' || field.filter === 'channel' || field.filter === 'device'
                                 ? ([field.filter] as ioBroker.ObjectType[])
@@ -873,7 +873,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             change(selected);
                             setIdDialog(false);
                         }}
-                        socket={props.socket as any as Connection}
+                        socket={props.socket}
                     />
                 ) : null}
             </>
@@ -933,7 +933,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             disabled={disabled}
                             slotProps={{
                                 input: {
-                                    ...params.InputProps,
+                                    ...params.slotProps.input,
                                     sx: { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
                                     endAdornment:
                                         !isDifferent && !customValue ? (

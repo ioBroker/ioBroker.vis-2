@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { v4 as uuid } from 'uuid';
-import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
+import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 
 import {
     Button,
@@ -23,7 +23,7 @@ import {
 
 import { Add, Check, Clear as ClearIcon, Close, Delete, DragHandle } from '@mui/icons-material';
 
-import { ColorPicker, I18n, Icon, SelectFile as SelectFileDialog, type Connection } from '@iobroker/adapter-react-v5';
+import { ColorPicker, I18n, Icon, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
 
 import type { RxWidgetInfoCustomComponentContext, VisTheme } from '@iobroker/types-vis-2';
 
@@ -254,7 +254,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                     this.updateItems(items);
                     this.setState({ selectImage: null });
                 }}
-                socket={this.props.context.socket as any as Connection}
+                socket={this.props.context.socket}
             />
         );
     }
@@ -301,7 +301,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                                     items[index].value = e.target.value;
                                     this.updateItems(items);
                                 }}
-                                InputLabelProps={{ shrink: true }}
+                                slotProps={{ inputLabel: { shrink: true } }}
                             />
                         </TableCell>
                         <TableCell style={styles.cellText}>
@@ -314,7 +314,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                                     items[index].label = e.target.value;
                                     this.updateItems(items);
                                 }}
-                                InputLabelProps={{ shrink: true }}
+                                slotProps={{ inputLabel: { shrink: true } }}
                             />
                         </TableCell>
                         <TableCell style={styles.cellImage}>

@@ -17,7 +17,7 @@ import React from 'react';
 
 import { FormControl, FormLabel, Slider, Stack, LinearProgress } from '@mui/material';
 
-import { Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { Icon, type Connection } from '@iobroker/gui-components';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 import type {
@@ -105,7 +105,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     const obj = await socket.getObject(data.oid);
@@ -626,8 +626,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                     spacing={1}
                     style={{ width: '100%', height: '100%' }}
                     direction={this.state.rxData.orientation === 'vertical' ? 'column' : 'row'}
-                    sx={{ mb: 1 }}
-                    alignItems="center"
+                    sx={{ mb: 1, alignItems: 'center' }}
                 >
                     {this.renderText(this.state.rxData.orientation === 'vertical')}
                     {this.renderIcon(this.state.rxData.orientation === 'vertical')}

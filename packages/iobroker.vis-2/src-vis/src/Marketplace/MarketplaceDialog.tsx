@@ -3,7 +3,7 @@ import React from 'react';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { Close } from '@mui/icons-material';
 
-import { I18n, type ThemeName } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeName } from '@iobroker/gui-components';
 import type {
     GroupWidgetId,
     MarketplaceWidgetRevision,
@@ -74,7 +74,7 @@ const MarketplaceDialog = (props: MarketplaceDialogProps): React.JSX.Element => 
             open={!0}
             fullScreen
             onClose={props.onClose}
-            PaperProps={{ color: 'primary' }}
+            slotProps={{ paper: { color: 'primary' } }}
         >
             <DialogTitle>
                 {props.addPage ? I18n.t('Add new or update existing widget') : I18n.t('Browse the widgeteria')}

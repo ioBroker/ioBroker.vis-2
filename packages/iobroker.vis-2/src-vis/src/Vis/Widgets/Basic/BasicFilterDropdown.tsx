@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 import { Button, ButtonGroup, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { Edit } from '@mui/icons-material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,

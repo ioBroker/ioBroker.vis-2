@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 import { BiImport, BiExport } from 'react-icons/bi';
 
-import { I18n, type ThemeType, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { VisTheme } from '@iobroker/types-vis-2';
@@ -73,7 +73,7 @@ interface ProjectsManagerProps {
     projects: string[];
     projectName: string;
     refreshProjects: Editor['refreshProjects'];
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     theme: VisTheme;
     adapterName: string;
