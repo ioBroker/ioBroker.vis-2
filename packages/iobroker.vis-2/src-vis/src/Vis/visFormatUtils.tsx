@@ -370,6 +370,10 @@ class VisFormatUtils {
         // only template literal index signatures and cannot be indexed with an arbitrary string.
         const _values: Record<string, any> = options.values || this.vis.states;
 
+        // the oid of a widget inside a group is written as a group attribute (%attr%) - only widgetData carries
+        // the value of that attribute, widget.data still holds the placeholder
+        const widgetOid: string = (widgetData?.oid as string) || widget?.data?.oid;
+
         const oids = this.extractBinding(options.format);
 
         for (const oid of oids) {
@@ -394,7 +398,7 @@ class VisFormatUtils {
 
                             if (value === undefined || value === null) {
                                 value = evalArgs[a].visOid.startsWith('widgetOid.')
-                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)]
+                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widgetOid}.`)]
                                     : _values[evalArgs[a].visOid];
                             }
                             if (value === null) {
