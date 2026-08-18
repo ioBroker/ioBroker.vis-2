@@ -798,11 +798,15 @@ class JQuiButton<
             overflowY: this.state.rxData.overflowY as any,
         };
 
+        // the widgets of the view are positioned absolutely, so the content must be their containing block.
+        // Without it they are placed in the paper of the dialog, which covers the title too
+        const contentStyle: CSSProperties = { ...dialogStyle, position: 'relative' };
+
         let content;
         if (this.state.rxData.contains_view) {
             content = (
                 <div
-                    style={dialogStyle}
+                    style={contentStyle}
                     className={this.state.rxData.dialog_class}
                 >
                     {super.getWidgetView(this.state.rxData.contains_view, undefined)}
@@ -811,7 +815,7 @@ class JQuiButton<
         } else {
             content = (
                 <div
-                    style={dialogStyle}
+                    style={contentStyle}
                     className={this.state.rxData.dialog_class}
                     dangerouslySetInnerHTML={{ __html: this.state.rxData.html_dialog }}
                 />
