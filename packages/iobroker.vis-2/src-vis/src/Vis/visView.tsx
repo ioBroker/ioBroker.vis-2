@@ -378,12 +378,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             }
         });
 
-        window.document.addEventListener('mousedown', this.onMouseWindowDown);
+        window.document.addEventListener('pointerdown', this.onMouseWindowDown);
     };
 
     cancelStealMode(result: string | number | boolean | null): void {
         if (this.nextClickIsSteal) {
-            window.document.removeEventListener('mousedown', this.onMouseWindowDown);
+            window.document.removeEventListener('pointerdown', this.onMouseWindowDown);
             this.nextClickIsSteal.cb(result);
             Object.keys(this.widgetsRefs).forEach(wid => {
                 const onCommand = this.widgetsRefs[wid as AnyWidgetId]?.onCommand;
@@ -413,8 +413,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               this.props.context.setSelectedWidgets([]);
 
-              this.onMouseViewMove && window.document.addEventListener('mousemove', this.onMouseViewMove);
-              this.onMouseViewUp && window.document.addEventListener('mouseup', this.onMouseViewUp);
+              this.onMouseViewMove && window.document.addEventListener('pointermove', this.onMouseViewMove);
+              this.onMouseViewUp && window.document.addEventListener('pointerup', this.onMouseViewUp);
+              this.onMouseViewUp && window.document.addEventListener('pointercancel', this.onMouseViewUp);
 
               const rect = this.refView.current?.getBoundingClientRect();
 
@@ -600,8 +601,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
               e && e.stopPropagation();
-              this.onMouseViewMove && window.document.removeEventListener('mousemove', this.onMouseViewMove);
-              this.onMouseViewUp && window.document.removeEventListener('mouseup', this.onMouseViewUp);
+              this.onMouseViewMove && window.document.removeEventListener('pointermove', this.onMouseViewMove);
+              this.onMouseViewUp && window.document.removeEventListener('pointerup', this.onMouseViewUp);
+              this.onMouseViewUp && window.document.removeEventListener('pointercancel', this.onMouseViewUp);
               if (this.selectDiv) {
                   this.selectDiv.remove();
                   this.selectDiv = null;
@@ -672,8 +674,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
 
-              this.onMouseWidgetMove && this.refView.current?.addEventListener('mousemove', this.onMouseWidgetMove);
-              this.onMouseWidgetUp && window.document.addEventListener('mouseup', this.onMouseWidgetUp);
+              this.onMouseWidgetMove && this.refView.current?.addEventListener('pointermove', this.onMouseWidgetMove);
+              this.onMouseWidgetUp && window.document.addEventListener('pointerup', this.onMouseWidgetUp);
+              this.onMouseWidgetUp && window.document.addEventListener('pointercancel', this.onMouseWidgetUp);
 
               this.movement = {
                   moved: false,
@@ -853,8 +856,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
             if (ignore && this.movement) {
                 this.onMouseWidgetMove &&
-                    this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
-                this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
+                    this.refView.current?.removeEventListener('pointermove', this.onMouseWidgetMove);
+                this.onMouseWidgetUp && window.document.removeEventListener('pointerup', this.onMouseWidgetUp);
+                this.onMouseWidgetUp && window.document.removeEventListener('pointercancel', this.onMouseWidgetUp);
                 this.movement = null;
             }
         }
@@ -1095,8 +1099,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ? (e: MouseEvent) => {
               const widgetsRefs = this.widgetsRefs;
               e && e.stopPropagation();
-              this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
-              this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
+              this.onMouseWidgetMove &&
+                  this.refView.current?.removeEventListener('pointermove', this.onMouseWidgetMove);
+              this.onMouseWidgetUp && window.document.removeEventListener('pointerup', this.onMouseWidgetUp);
+              this.onMouseWidgetUp && window.document.removeEventListener('pointercancel', this.onMouseWidgetUp);
 
               this.removeDragGhost();
 
@@ -2452,7 +2458,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 className={`${className} visview_${this.props.view.replace(/\s/g, '_')}`}
                 ref={this.refView}
                 id={`visview_${this.props.view.replace(/\s/g, '_')}`}
-                onMouseDown={
+                onPointerDown={
                     !this.props.context.runtime
                         ? e => this.props.editMode && this.mouseDownLocal && this.mouseDownLocal(e)
                         : undefined
