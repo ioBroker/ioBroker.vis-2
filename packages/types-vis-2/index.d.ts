@@ -1061,6 +1061,8 @@ export interface ViewSettings {
     limitScreenBackgroundColor?: string;
 
     navigation?: boolean;
+    /** The view shows the navigation menu, but has no entry of its own in it */
+    navigationHideEntry?: boolean;
     navigationTitle?: string;
     navigationOrder?: number;
     navigationIcon?: string;

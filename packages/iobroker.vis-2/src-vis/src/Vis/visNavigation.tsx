@@ -227,7 +227,8 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                 return;
             }
             const viewSettings = this.props.context.views[view].settings;
-            if (viewSettings.navigation) {
+            // a view can show the menu without being an entry of it
+            if (viewSettings.navigation && !viewSettings.navigationHideEntry) {
                 const item = {
                     text:
                         settings.navigationOrientation === 'horizontal' && viewSettings.navigationOnlyIcon
@@ -270,7 +271,8 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     }}
                 >
                     <Tabs
-                        value={this.props.activeView}
+                        // the active view has no tab if it hides its own entry, and MUI warns about an unknown value
+                        value={items.find(item => item.view === this.props.activeView) ? this.props.activeView : false}
                         // the standard variant squeezes the entries into the available width, so they overlap if the window is too narrow
                         variant="scrollable"
                         scrollButtons="auto"
