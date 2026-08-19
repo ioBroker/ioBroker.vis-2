@@ -42,6 +42,7 @@ import {
     Message as MessageDialog,
     SelectFile as SelectFileDialog,
     Icon,
+    ScrollbarStyles,
     type IobTheme,
     type ThemeName,
 } from '@iobroker/gui-components';
@@ -2356,6 +2357,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (this.state.projectDoesNotExist) {
             return (
                 <StyledEngineProvider injectFirst>
+                    <CssBaseline />
                     <ThemeProvider theme={this.state.theme}>{this.renderProjectDoesNotExist()}</ThemeProvider>
                 </StyledEngineProvider>
             );
@@ -2364,6 +2366,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (this.state.showProjectsDialog) {
             return (
                 <StyledEngineProvider injectFirst>
+                    <CssBaseline />
                     <ThemeProvider theme={this.state.theme}>{this.showSmallProjectsDialog()}</ThemeProvider>
                 </StyledEngineProvider>
             );
@@ -2373,6 +2376,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             return (
                 <StyledEngineProvider injectFirst>
                     <ThemeProvider theme={this.state.theme}>
+                        <CssBaseline />
                         {this.renderLoadingText()}
                         {this.renderLoader()}
                     </ThemeProvider>
@@ -2394,6 +2398,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
+                    <CssBaseline />
+                    <ScrollbarStyles />
                     <style>
                         {`
 @keyframes colorBlink {

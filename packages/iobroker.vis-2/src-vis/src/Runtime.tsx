@@ -17,6 +17,7 @@ import {
     TextField,
     Button,
     ListItemIcon,
+    CssBaseline,
 } from '@mui/material';
 
 import { Add as IconAdd, Close as IconClose, FileCopy as IconDocument } from '@mui/icons-material';
@@ -31,6 +32,7 @@ import {
     type GenericAppState,
     type ThemeName,
     Utils,
+    ScrollbarStyles,
 } from '@iobroker/gui-components';
 
 import type {
@@ -140,7 +142,7 @@ declare global {
     }
 }
 
-class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = RuntimeState> extends GenericApp<P, S> {
+export default class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = RuntimeState> extends GenericApp<P, S> {
     static WIDGETS_LOADING_STEP_NOT_STARTED = 0;
 
     static WIDGETS_LOADING_STEP_HTML_LOADED = 1;
@@ -1437,6 +1439,8 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
+                    <CssBaseline />
+                    <ScrollbarStyles />
                     {!this.state.loaded || !store.getState().visProject.___settings
                         ? this.renderLoader()
                         : this.getVisEngine()}
@@ -1448,5 +1452,3 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         );
     }
 }
-
-export default Runtime;
