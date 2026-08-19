@@ -8,7 +8,7 @@ const start = Date.now();
 
 describe('vis', () => {
     before(async function () {
-        this.timeout(180_000);
+        this.timeout(600_000);
 
         // install js-controller, web and vis-2
         await helper.startIoBroker({
@@ -101,10 +101,14 @@ describe('vis', () => {
             }, wid);
 
         // All eight resize handles carry the same class and no direction of their own, so they can only be told
-        // apart by where they sit inside the widget
+        // apart by where they sit inside the widget.
+        //
+        // They hang on the service div that VisBaseWidget renders, and that one carries the id with an `rx_`
+        // prefix. The plain id belongs to the element of the widget itself - for a vis-1 widget that is the div
+        // built by can.js, a sibling of the service div that never carries any editor decoration.
         const handles = () =>
             gPage.evaluate(id => {
-                const el = document.getElementById(id);
+                const el = document.getElementById(`rx_${id}`);
                 const box = el.getBoundingClientRect();
                 return [...el.querySelectorAll(':scope > .vis-editmode-resizer')].map(handle => {
                     const b = handle.getBoundingClientRect();
