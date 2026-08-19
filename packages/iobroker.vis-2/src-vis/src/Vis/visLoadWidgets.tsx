@@ -148,13 +148,26 @@ const cloudVersions: Record<string, undefined | 'module'> = {
     'vis-2-widgets-energy': undefined,
     'vis-2-widgets-gauges': 'module',
     'vis-2-widgets-jaeger-design': 'module',
-    'vis-2-widgets-material': undefined,
+    'vis-2-widgets-material': 'module',
 };
+/** Domains of the ioBroker cloud, where the widget sets are served by the cloud and not by the local installation */
+const CLOUD_DOMAINS = ['iobroker.pro', 'iobroker.net'];
+
+/**
+ * Check if vis-2 is running on the ioBroker cloud.
+ * A simple check for 'iobroker.' in the host name is not enough, as many local installations are reachable
+ * under names like 'iobroker.local' or 'iobroker.fritz.box', and their widget sets must not be patched.
+ */
+function isCloud(): boolean {
+    const hostname = window.location.hostname.toLowerCase();
+    return CLOUD_DOMAINS.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+}
+
 /**
  * We have a problem, that cloud have specific versions of widgets, and they must be loaded sometimes as bundlerType no matter what has the user
  */
 function fixCloudBundlerType(adapterName: string, visWidgetsCollection: ioBroker.VisWidget): void {
-    if (window.location.hostname.includes('iobroker.')) {
+    if (isCloud()) {
         // fix possible wrong bundlerType
         if (adapterName in cloudVersions) {
             visWidgetsCollection.bundlerType = cloudVersions[adapterName];
