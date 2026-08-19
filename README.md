@@ -312,7 +312,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.15.4 (2026-08-19)
 * (@GermanBluefox) Fixed the loading of the vis-2-widgets-material widget set on the cloud: it is built as an ES module and was still forced to be loaded as a global script, which ended in `remoteEntryExports is undefined`
 * (@GermanBluefox) The bundler type of the widget sets is only patched on the real cloud domains now. Local installations reachable under a name like `iobroker.local` or `iobroker.fritz.box` were treated as cloud before and could not load their widget sets
 * (@GermanBluefox) Removed the fixed table of bundler types for the cloud. It existed because the declaration was read from the `io-package.json` of the locally installed adapter while the cloud serves its own copy of the widget set, so a very old installation could describe the delivered file wrongly. Those versions are history, and the table had gone stale in the meantime: it forced `echarts`, `openweathermap`, `fullcalendar` and `vis-2-widgets-energy` to be loaded as a global script although they are ES modules, which ended in `remoteEntryExports is undefined`. Every widget set is loaded by what it declares itself now
