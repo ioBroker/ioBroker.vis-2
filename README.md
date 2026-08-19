@@ -312,7 +312,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.15.2 (2026-08-19)
 * (@GermanBluefox) Fixed the loading of the vis-2-widgets-material widget set on the cloud: it is built as an ES module and was still forced to be loaded as a global script, which ended in `remoteEntryExports is undefined`
 * (@GermanBluefox) The bundler type of the widget sets is only patched on the real cloud domains now. Local installations reachable under a name like `iobroker.local` or `iobroker.fritz.box` were treated as cloud before and could not load their widget sets
 
