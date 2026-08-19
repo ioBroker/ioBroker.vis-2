@@ -20,6 +20,7 @@ import {
     DialogContent,
     DialogContentText,
     Box,
+    CssBaseline,
 } from '@mui/material';
 
 import {
@@ -2354,6 +2355,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (this.state.projectDoesNotExist) {
             return (
                 <StyledEngineProvider injectFirst>
+                    <CssBaseline />
                     <ThemeProvider theme={this.state.theme}>{this.renderProjectDoesNotExist()}</ThemeProvider>
                 </StyledEngineProvider>
             );
@@ -2362,6 +2364,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (this.state.showProjectsDialog) {
             return (
                 <StyledEngineProvider injectFirst>
+                    <CssBaseline />
                     <ThemeProvider theme={this.state.theme}>{this.showSmallProjectsDialog()}</ThemeProvider>
                 </StyledEngineProvider>
             );
@@ -2371,6 +2374,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             return (
                 <StyledEngineProvider injectFirst>
                     <ThemeProvider theme={this.state.theme}>
+                        <CssBaseline />
                         {this.renderLoadingText()}
                         {this.renderLoader()}
                     </ThemeProvider>
@@ -2392,6 +2396,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
+                    <CssBaseline />
                     <style>
                         {`
 @keyframes colorBlink {
