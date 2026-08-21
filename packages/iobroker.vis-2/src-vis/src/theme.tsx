@@ -17,7 +17,32 @@ export default function createTheme(
     const success = '#73b6a8';
     let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
     if (cssVariables) {
-        theme = muiCreateTheme({ ...theme, cssVariables: true }) as VisTheme;
+        theme = muiCreateTheme({
+            ...theme,
+            // `color-scheme: dark` on `:root` makes the browser paint an opaque background behind an iframe
+            // whose document does not carry the same scheme, so an `iFrame` or `echarts` widget lost its
+            // transparency in the dark mode
+            cssVariables: { disableCssColorScheme: true },
+            components: {
+                ...theme.components,
+                MuiCssBaseline: {
+                    styleOverrides: {
+                        // `CssBaseline` switches the whole document to `border-box`. The widgets - the built-in
+                        // ones and those of other adapters alike - are laid out for the default `content-box`
+                        // and get their content cut off by it
+                        '*, *::before, *::after': { boxSizing: 'initial' },
+                    },
+                },
+                MuiFab: {
+                    styleOverrides: {
+                        // MUI writes `var(--mui-palette-text-primary)` as soon as the CSS variables are
+                        // generated - white in the dark mode - while the background stays `grey[300]`.
+                        // Without the variables it is the contrast text of that background.
+                        root: { '&.MuiFab-default': { color: 'rgba(0, 0, 0, 0.87)' } },
+                    },
+                },
+            },
+        }) as VisTheme;
     }
     theme.palette.text.danger = {
         color: danger,
