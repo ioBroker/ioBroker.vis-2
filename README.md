@@ -312,6 +312,11 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) An `iFrame` or `echarts` widget is transparent again in the dark mode. The CSS variables put `color-scheme: dark` on `:root`, and a browser paints an opaque background behind an iframe whose document does not carry the same scheme (#661)
+* (@typhosj) The content of a widget that is wrapped in a card is not cut off anymore. `CssBaseline` switched the whole document to `border-box`, while the widgets - the built-in ones and those of other adapters alike - are laid out for the default `content-box` (#661)
+* (@typhosj) The text of a `Fab` button is readable again in the dark mode. MUI writes `text.primary` into it as soon as the CSS variables are generated, which is white, although the background of the button stays light grey in both themes (#661)
+
 ### 2.15.4 (2026-08-19)
 * (@GermanBluefox) Fixed the loading of the vis-2-widgets-material widget set on the cloud: it is built as an ES module and was still forced to be loaded as a global script, which ended in `remoteEntryExports is undefined`
 * (@GermanBluefox) The bundler type of the widget sets is only patched on the real cloud domains now. Local installations reachable under a name like `iobroker.local` or `iobroker.fritz.box` were treated as cloud before and could not load their widget sets
