@@ -81,7 +81,6 @@ export default class BasicBar extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicBar.getWidgetInfo();
     }
@@ -92,7 +91,6 @@ export default class BasicBar extends VisRxWidget<RxData> {
      * @param css the border css attribute
      * @param multiplier number of borders, normally 2
      */
-    // eslint-disable-next-line class-methods-use-this
     extractWidth(css: string, multiplier: number): number | string | undefined {
         // extract from "2px solid #aabbcc" => 2px
         const m = css.match(/([0-9]+)(px|em)?/);

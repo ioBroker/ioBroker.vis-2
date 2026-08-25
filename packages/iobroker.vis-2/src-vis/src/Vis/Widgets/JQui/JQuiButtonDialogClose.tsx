@@ -17,7 +17,7 @@ import React, { type CSSProperties } from 'react';
 
 import { Autocomplete, Button, Fab, TextField } from '@mui/material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import type {
     AnyWidgetId,
@@ -87,7 +87,7 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                                 Object.keys(options.context.views).forEach(id => {
                                     const widgets = options.context.views[id].widgets;
                                     widgets &&
-                                        Object.keys(widgets).forEach((widget: AnyWidgetId) => {
+                                        (Object.keys(widgets) as AnyWidgetId[]).forEach(widget => {
                                             if (
                                                 widgets[widget].data?.html_dialog ||
                                                 widgets[widget].data?.contains_view ||
@@ -239,7 +239,6 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
         } as const;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiButtonDialogClose.getWidgetInfo();
     }

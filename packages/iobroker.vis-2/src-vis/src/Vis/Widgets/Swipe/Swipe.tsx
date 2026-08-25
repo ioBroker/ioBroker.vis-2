@@ -15,7 +15,7 @@
 
 import React from 'react';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 import type { RxRenderWidgetProps, RxWidgetInfo, WidgetData } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 import InstallSwipe from './InstallSwipe';
@@ -93,12 +93,11 @@ class Swipe extends VisRxWidget<RxData> {
             });
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return Swipe.getWidgetInfo();
     }
 
-    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
+    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | null {
         super.renderWidgetBody(props);
 
         if (this.props.editMode) {

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { createTheme as muiCreateTheme } from '@mui/material/styles';
-import { Theme, type ThemeName } from '@iobroker/adapter-react-v5';
+import { Theme, type ThemeName } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 export default function createTheme(

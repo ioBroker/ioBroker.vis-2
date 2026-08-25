@@ -82,7 +82,6 @@ export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicNote.getWidgetInfo();
     }
@@ -171,7 +170,7 @@ export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
                         bottom: -10,
                         width: 20,
                         height: 20,
-                        backgroundColor: this.state.rxStyle['border-color'],
+                        backgroundColor: this.state.rxStyle?.['border-color'] as string | undefined,
                         transform: 'rotate(45deg)',
                     }}
                 />

@@ -18,5 +18,7 @@
   "Load widgets...": "Chargement des widgets...",
   "Loading objects...": "Chargement d'objets...",
   "Cannot render widget %s": "Impossible d'afficher le widget %s",
-  "Retry": "Réessayer"
+  "Retry": "Réessayer",
+  "Widget sets could not be loaded": "Les ensembles de widgets n'ont pas pu être chargés",
+  "widget_sets_incompatible_react": "Les ensembles de widgets suivants ont été compilés pour une version plus ancienne de React et ne peuvent pas être chargés. Veuillez mettre à jour les adaptateurs correspondants."
 }

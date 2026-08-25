@@ -23,7 +23,7 @@ import {
 import { TbVacuumCleaner } from 'react-icons/tb';
 
 import ChannelDetector, { Types, type DetectOptions } from '@iobroker/type-detector';
-import type { LegacyConnection } from '@iobroker/adapter-react-v5';
+import type { Connection } from '@iobroker/gui-components';
 
 import { getNewWidgetIdNumber, getNewWidgetId } from '@/Utilities/utils';
 
@@ -56,22 +56,33 @@ const deviceIcons = {
     unknown: <QuestionMark />,
 };
 
-const allObjects = async (socket: LegacyConnection): Promise<Record<string, ioBroker.Object>> => {
+const allObjects = async (socket: Connection): Promise<Record<string, ioBroker.Object>> => {
     const states = await socket.getObjectViewSystem('state', '', '\u9999');
     const channels = await socket.getObjectViewSystem('channel', '', '\u9999');
     const devices = await socket.getObjectViewSystem('device', '', '\u9999');
     const folders = await socket.getObjectViewSystem('folder', '', '\u9999');
     const enums = await socket.getObjectViewSystem('enum', '', '\u9999');
 
-    return Object.values(states)
-        .concat(Object.values(channels))
-        .concat(Object.values(devices))
-        .concat(Object.values(folders))
-        .concat(Object.values(enums))
-        .reduce((obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj), {});
+    // the object view is typed per requested type now, so the lists have to be widened before they are joined
+    const all: ioBroker.Object[] = [
+        ...Object.values(states),
+        ...Object.values(channels),
+        ...Object.values(devices),
+        ...Object.values(folders),
+        ...Object.values(enums),
+    ];
+
+    return all.reduce(
+        (obj: Record<string, ioBroker.Object>, item: ioBroker.Object) => ((obj[item._id] = item), obj),
+        {},
+    );
 };
 
-function getObjectIcon(obj: ioBroker.Object, id: string, imagePrefix?: string): string {
+function getObjectIconOrUndefined(obj: ioBroker.Object, id?: string, imagePrefix?: string): string | undefined {
+    return getObjectIcon(obj, id, imagePrefix) ?? undefined;
+}
+
+function getObjectIcon(obj: ioBroker.Object, id?: string, imagePrefix?: string): string | null {
     imagePrefix ||= '.'; // http://localhost:8081';
     let src = '';
     const common = obj?.common;
@@ -97,7 +108,7 @@ function getObjectIcon(obj: ioBroker.Object, id: string, imagePrefix?: string): 
                         }
                         src = `${imagePrefix}/adapter/${instance[2]}`;
                     } else {
-                        instance = id.split('.', 2);
+                        instance = (id || '').split('.', 2);
                         if (cIcon[0] === '/') {
                             instance[0] += cIcon;
                         } else {
@@ -140,7 +151,7 @@ interface DetectorResult {
     devices: DetectorDevice[];
 }
 
-const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]> => {
+const detectDevices = async (socket: Connection): Promise<DetectorResult[]> => {
     const devicesObject: Record<string, ObjectForDetector> = await allObjects(socket);
     const keys = Object.keys(devicesObject).sort();
     const detector = new ChannelDetector();
@@ -196,7 +207,10 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
 
         if (controls) {
             controls.forEach(control => {
-                const stateId = control.states.find(state => state.id).id;
+                const stateId = control.states.find(state => state.id)?.id;
+                if (!stateId) {
+                    return;
+                }
                 // if not yet added
                 if (results.find(item => item.devices.find(st => st._id === stateId))) {
                     return;
@@ -216,8 +230,8 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                 };
 
                 const parts = stateId.split('.');
-                let channelId: string;
-                let deviceId: string;
+                let channelId: string | null;
+                let deviceId: string | null;
                 if (devicesObject[stateId].type === 'channel' || devicesObject[stateId].type === 'state') {
                     parts.pop();
                     channelId = parts.join('.');
@@ -239,18 +253,20 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                 }
                 // try to detect room
                 const room = rooms.find(roomId => {
-                    if ((devicesObject[roomId].common as ioBroker.EnumCommon).members.includes(stateId)) {
+                    if ((devicesObject[roomId].common as ioBroker.EnumCommon).members?.includes(stateId)) {
                         return true;
                     }
                     if (
                         channelId &&
-                        (devicesObject[roomId].common as ioBroker.EnumCommon).members.includes(channelId)
+                        (devicesObject[roomId].common as ioBroker.EnumCommon).members?.includes(channelId)
                     ) {
                         return true;
                     }
-                    return deviceId && (devicesObject[roomId].common as ioBroker.EnumCommon).members.includes(deviceId);
+                    return (
+                        deviceId && (devicesObject[roomId].common as ioBroker.EnumCommon).members?.includes(deviceId)
+                    );
                 });
-                let roomObj: DetectorResult;
+                let roomObj: DetectorResult | undefined;
                 if (room) {
                     roomObj = results.find(obj => obj._id === room);
                     if (!roomObj) {
@@ -298,7 +314,7 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                 ) {
                     deviceObj.common.name = parentObject.common?.name || deviceObj.common.name;
                     if (parentObject.common.icon) {
-                        deviceObj.common.icon = getObjectIcon(
+                        deviceObj.common.icon = getObjectIconOrUndefined(
                             parentObject as ioBroker.Object,
                             parentObject._id,
                             '../..',
@@ -309,7 +325,7 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                     const grandParentObject = devicesObject[idArray.join('.')];
                     if (grandParentObject?.type === 'device' && grandParentObject.common?.icon) {
                         deviceObj.common.name = grandParentObject.common.name || deviceObj.common.name;
-                        deviceObj.common.icon = getObjectIcon(
+                        deviceObj.common.icon = getObjectIconOrUndefined(
                             grandParentObject as ioBroker.Object,
                             grandParentObject._id,
                             '../..',
@@ -318,7 +334,7 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                 } else {
                     deviceObj.common.name = parentObject?.common?.name || deviceObj.common.name;
                     if (parentObject?.common?.icon) {
-                        deviceObj.common.icon = getObjectIcon(
+                        deviceObj.common.icon = getObjectIconOrUndefined(
                             parentObject as ioBroker.Object,
                             parentObject._id,
                             '../..',
@@ -326,7 +342,11 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
                     }
                 }
             } else {
-                deviceObj.common.icon = getObjectIcon(deviceObj as any as ioBroker.Object, deviceObj._id, '../..');
+                deviceObj.common.icon = getObjectIconOrUndefined(
+                    deviceObj as any as ioBroker.Object,
+                    deviceObj._id,
+                    '../..',
+                );
             }
         }
     }
@@ -336,7 +356,7 @@ const detectDevices = async (socket: LegacyConnection): Promise<DetectorResult[]
 const funcs = {
     deviceIcons,
     detectDevices,
-    getObjectIcon,
+    getObjectIcon: getObjectIconOrUndefined,
     allObjects,
     getNewWidgetId,
     /** @deprecated use "getNewWidgetId" instead, it will give you the full wid like "w000001" */
