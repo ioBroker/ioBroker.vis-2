@@ -21,6 +21,13 @@ import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
 
+/**
+ * Prefix a widget set's url gets for `registerRemotes`, which resolves it against the application
+ * root. `fetch` does not: it resolves against the current document, which already sits under
+ * `/vis-2/`, so anything reading the url back has to strip this first.
+ */
+const VIS2_URL_PREFIX = './vis-2/';
+
 export interface VisRxWidgetWithInfo<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
@@ -211,7 +218,7 @@ function getRemoteWidgets(
                         }
 
                         if (!visWidgetsCollection.url?.startsWith('http')) {
-                            visWidgetsCollection.url = `./vis-2/widgets/${visWidgetsCollection.url}`;
+                            visWidgetsCollection.url = `${VIS2_URL_PREFIX}widgets/${visWidgetsCollection.url}`;
                         }
 
                         registerRemotes(
@@ -233,13 +240,20 @@ function getRemoteWidgets(
                                     // 1. Load language file ------------------
                                     // instance.common.visWidgets.i18n is deprecated
                                     if (collection.url && collection.i18n === true) {
-                                        // load i18n from files
-                                        const pos = collection.url.lastIndexOf('/');
+                                        // load i18n from files.
+                                        // `collection.url` carries VIS2_URL_PREFIX for registerRemotes, which resolves
+                                        // it against the application root. `fetch` resolves against the current
+                                        // document instead, and that already sits under /vis-2/ - keeping the prefix
+                                        // asked for /vis-2/vis-2/widgets/<set>/i18n/<lang>.json and always answered 404.
+                                        const baseUrl = collection.url.startsWith(VIS2_URL_PREFIX)
+                                            ? collection.url.substring(VIS2_URL_PREFIX.length)
+                                            : collection.url;
+                                        const pos = baseUrl.lastIndexOf('/');
                                         let i18nURL: string;
                                         if (pos !== -1) {
-                                            i18nURL = collection.url.substring(0, pos);
+                                            i18nURL = baseUrl.substring(0, pos);
                                         } else {
-                                            i18nURL = collection.url;
+                                            i18nURL = baseUrl;
                                         }
                                         const lang = I18n.getLanguage();
 
