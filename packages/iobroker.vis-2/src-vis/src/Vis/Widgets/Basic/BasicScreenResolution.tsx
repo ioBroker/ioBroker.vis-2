@@ -34,7 +34,12 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
         this.essentialData = JSON.stringify(this.buildEssentialProjectData());
     }
 
-    buildEssentialProjectData(): { id: string; sizex: number; sizey: number; useAsDefault: boolean }[] {
+    buildEssentialProjectData(): {
+        id: string;
+        sizex: number | undefined;
+        sizey: number | undefined;
+        useAsDefault: boolean | undefined;
+    }[] {
         return Object.keys(this.props.context.views)
             .sort()
             .filter(f => f !== '___settings')
@@ -80,7 +85,6 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicScreenResolution.getWidgetInfo();
     }

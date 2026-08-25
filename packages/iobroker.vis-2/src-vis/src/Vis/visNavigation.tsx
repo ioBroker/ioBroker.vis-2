@@ -211,9 +211,9 @@ interface VisNavigationProps {
 
 interface MenuItem {
     text: string;
-    color: string;
-    icon: string;
-    noText: boolean;
+    color?: string;
+    icon?: string;
+    noText?: boolean;
     order: number;
     view: string;
 }
@@ -231,7 +231,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                 const item = {
                     text:
                         settings.navigationOrientation === 'horizontal' && viewSettings.navigationOnlyIcon
-                            ? null
+                            ? ''
                             : viewSettings.navigationTitle || view,
                     color: viewSettings.navigationColor,
                     icon: viewSettings.navigationIcon || viewSettings.navigationImage,
@@ -475,7 +475,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
         }
         style.opacity = this.props.editMode ? 0.4 : 1;
 
-        let icon: string = settings.navigationBarIcon || settings.navigationBarImage;
+        let icon: string | undefined = settings.navigationBarIcon || settings.navigationBarImage;
         if (icon?.startsWith('_PRJ_NAME/')) {
             icon = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
         }

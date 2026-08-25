@@ -57,10 +57,8 @@ interface AttributesProps {
     additionalSets: AdditionalIconSet;
 }
 
-const Attributes = (props: AttributesProps): React.JSX.Element => {
-    const [selected, setSelected] = useState(
-        window.localStorage.getItem('Attributes') ? window.localStorage.getItem('Attributes') : 'View',
-    );
+const Attributes = (props: AttributesProps): React.JSX.Element | null => {
+    const [selected, setSelected] = useState(window.localStorage.getItem('Attributes') || 'View');
     const [isAllOpened, setIsAllOpened] = useState(false);
     const [isAllClosed, setIsAllClosed] = useState(true);
     const [triggerAllOpened, setTriggerAllOpened] = useState(0);
@@ -75,7 +73,6 @@ const Attributes = (props: AttributesProps): React.JSX.Element => {
         if (prevSelectedWidgets && !prevSelectedWidgets.length && props.selectedWidgets.length) {
             setSelected('Widget');
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.selectedWidgets]);
 
     if (!props.openedViews.length) {
@@ -176,10 +173,10 @@ const Attributes = (props: AttributesProps): React.JSX.Element => {
                 {selected === 'Widget' &&
                 !(props.widgetsLoaded && props.selectedView && props.selectedWidgets?.length) ? null : (
                     <TabContent
-                        adapterId={props.adapterId}
-                        adapterName={props.adapterName}
                         key={selected}
                         {...props}
+                        adapterId={props.adapterId}
+                        adapterName={props.adapterName}
                         classes={{}}
                         setIsAllOpened={setIsAllOpened}
                         setIsAllClosed={setIsAllClosed}

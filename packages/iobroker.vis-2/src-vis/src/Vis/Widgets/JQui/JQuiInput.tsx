@@ -52,7 +52,7 @@ interface JQuiInputState extends VisRxWidgetState {
 
 class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputState> extends VisRxWidget<P, S> {
     private focused: boolean = false;
-    private readonly inputRef: React.RefObject<HTMLInputElement>;
+    private readonly inputRef: React.RefObject<HTMLInputElement | null>;
     private jQueryDone: boolean = false;
     private object: ioBroker.StateObject | null = null;
 
@@ -193,7 +193,6 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
         };
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiInput.getWidgetInfo();
     }
@@ -215,7 +214,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                 this.setState({ input: input.val });
             }
         } catch (error) {
-            console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+            console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
         }
 
         if (
@@ -224,12 +223,14 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
             !this.props.editMode &&
             (this.state.rxData.jquery_style || this.state.rxData.no_style)
         ) {
-            setTimeout(() => this.inputRef.current.focus(), 100);
+            setTimeout(() => this.inputRef.current?.focus(), 100);
         }
     }
 
-    onStateUpdated(id: string, state: ioBroker.State | null | undefined): void {
-        super.onStateUpdated(id, state);
+    onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
+        if (state) {
+            super.onStateUpdated(id, state);
+        }
         if (state?.val || state?.val === 0) {
             if (id === this.state.rxData.oid && !this.focused) {
                 if (state.val.toString() !== this.state.input.toString()) {

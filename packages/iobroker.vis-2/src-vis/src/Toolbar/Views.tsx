@@ -7,7 +7,7 @@ import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Menu as MenuIco
 import { I18n, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
-import type { VisTheme } from '@iobroker/types-vis-2';
+import type { GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import ViewsManager from './ViewsManager';
 
 import ToolbarItems, { type ToolbarItem } from './ToolbarItems';
@@ -32,7 +32,7 @@ interface ViewsProps {
     selectedView: string;
     setViewsManager: Editor['setViewsManager'];
     viewsManager: boolean;
-    selectedGroup: string;
+    selectedGroup?: GroupWidgetId;
     editMode: boolean;
     setProjectsDialog: Editor['setProjectsDialog'];
     changeProject: Editor['changeProject'];
@@ -46,16 +46,16 @@ interface ViewsProps {
 }
 
 const Views = (props: ViewsProps): React.JSX.Element => {
-    const [dialog, setDialog] = useState(null);
-    const [dialogCallback, setDialogCallback] = useState<{ cb: (dialogName: string) => void }>(null);
+    const [dialog, setDialog] = useState<'add' | 'rename' | 'delete' | 'copy' | null>(null);
+    const [dialogCallback, setDialogCallback] = useState<{ cb: (dialogName: string) => void } | null>(null);
     const [dialogName, setDialogName] = useState('');
-    const [dialogView, setDialogView] = useState(null);
-    const [dialogParentId, setDialogParentId] = useState(null);
+    const [dialogView, setDialogView] = useState<string | undefined>(undefined);
+    const [dialogParentId, setDialogParentId] = useState<string | undefined>(undefined);
 
     const showDialog = (
         type: 'add' | 'rename' | 'delete' | 'copy',
-        view?: string,
-        parentId?: string,
+        view?: string | null,
+        parentId?: string | null,
         cb?: (dialogName: string) => void,
     ): void => {
         view = view || props.selectedView;
@@ -67,8 +67,8 @@ const Views = (props: ViewsProps): React.JSX.Element => {
         };
 
         setDialog(type);
-        setDialogView(view);
-        setDialogParentId(parentId);
+        setDialogView(view || undefined);
+        setDialogParentId(parentId || undefined);
         setDialogName(dialogDefaultName[type]);
         setDialogCallback(cb ? { cb } : null);
     };

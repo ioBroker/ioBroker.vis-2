@@ -161,7 +161,6 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
         this.setState({ tabIndex });
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return TabsSliderTabs.getWidgetInfo();
     }
@@ -240,7 +239,7 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
                                 src={image}
                                 style={{ width: size, height: size }}
                             />
-                        ) : null
+                        ) : undefined
                     }
                     iconPosition="start"
                     value={t}

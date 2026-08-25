@@ -28,7 +28,7 @@ interface IODialogProps {
 
 const IODialog = (props: IODialogProps): React.JSX.Element => (
     <Dialog
-        onClose={props.closeDisabled ? null : props.onClose}
+        onClose={props.closeDisabled ? undefined : props.onClose}
         open={!0}
         fullScreen={!!props.fullScreen}
         maxWidth={props.maxWidth || 'md'}
@@ -40,7 +40,7 @@ const IODialog = (props: IODialogProps): React.JSX.Element => (
                 if (props.action) {
                     if (!props.actionDisabled && !props.keyboardDisabled) {
                         if (e.key === 'Enter') {
-                            props.action();
+                            props.action?.();
                             if (!props.actionNoClose) {
                                 props.onClose();
                             }
@@ -57,7 +57,7 @@ const IODialog = (props: IODialogProps): React.JSX.Element => (
                 <Button
                     variant="contained"
                     onClick={() => {
-                        props.action();
+                        props.action?.();
                         if (!props.actionNoClose) {
                             props.onClose();
                         }

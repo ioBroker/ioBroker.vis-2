@@ -42,7 +42,6 @@ const Root: React.FC<RootProps> = props => {
 
     useEffect(() => {
         props.setIsOverRoot(isOver && canDrop);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOver, canDrop]);
 
     const dropRef = useConnectRef<HTMLDivElement>(drop);

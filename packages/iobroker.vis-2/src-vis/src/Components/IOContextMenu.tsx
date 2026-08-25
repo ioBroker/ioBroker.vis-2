@@ -17,7 +17,7 @@ interface MenuItem {
     style?: React.CSSProperties;
 }
 
-const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void): React.JSX.Element[] =>
+const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void): (React.JSX.Element | null)[] =>
     items.map((item, key: number) => {
         if (!item || item.hide) {
             return null;

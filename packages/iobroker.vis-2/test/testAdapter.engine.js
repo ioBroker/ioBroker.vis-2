@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { assert } = require('node:assert');
+const assert = require('node:assert');
 const setup = require('@iobroker/legacy-testing');
 
 let objects = null;
@@ -26,6 +26,7 @@ function checkConnectionOfAdapter(cb, counter) {
         }
     });
 }
+
 
 describe(`Test ${adapterShortName} adapter`, function () {
     before(`Test ${adapterShortName} adapter: Start js-controller`, function (_done) {
@@ -70,7 +71,9 @@ describe(`Test ${adapterShortName} adapter`, function () {
     it(`Test ${adapterShortName} adapter: Check if adapter started`, function (done) {
         this.timeout(60000);
         checkConnectionOfAdapter(res => {
-            if (res) console.log(res);
+            if (res) {
+                console.log(res);
+            }
             if (runningMode === 'daemon') {
                 assert(res !== 'Cannot check connection');
             } else {

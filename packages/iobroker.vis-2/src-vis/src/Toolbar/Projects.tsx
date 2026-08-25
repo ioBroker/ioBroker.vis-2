@@ -131,7 +131,7 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
                     notEditable={false}
                     theme={props.theme}
                     onOk={_selected => {
-                        const selected: string = Array.isArray(_selected) ? _selected[0] : _selected;
+                        const selected = (Array.isArray(_selected) ? _selected[0] : _selected) || '';
                         Utils.copyToClipboard(selected);
                         setObjectsDialog(false);
                         window.alert(I18n.t('Copied'));
@@ -157,7 +157,7 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
                     selected=""
                     showTypeSelector
                     onOk={_selected => {
-                        let selected: string = Array.isArray(_selected) ? _selected[0] : _selected;
+                        let selected = (Array.isArray(_selected) ? _selected[0] : _selected) || '';
 
                         const projectPrefix = `${props.adapterName}.${props.instance}/${props.projectName}/`;
                         if (selected.startsWith(projectPrefix)) {

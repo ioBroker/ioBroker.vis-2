@@ -197,12 +197,12 @@ export interface WidgetAttributeIterable {
 }
 
 export interface WidgetAttributesGroupInfoStored {
-    name?: string;
+    name: string;
     label?: string;
     singleName?: string;
     index?: number;
     hidden?: string | ((data: Record<string, any>, index: number, style: React.CSSProperties) => boolean) | boolean;
-    fields?: RxWidgetInfoAttributesFieldAll[];
+    fields: RxWidgetInfoAttributesFieldAll[];
     indexFrom?: number | string;
     indexTo?: number | string;
     iterable?: WidgetAttributeIterable;
@@ -283,7 +283,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                 }
                 // only if RX widget with the same name not found
                 let info;
-                if (VisWidgetsCatalog.rxWidgets[name]?.getWidgetInfo) {
+                if (VisWidgetsCatalog.rxWidgets?.[name]) {
                     info = VisWidgetsCatalog.rxWidgets[name].getWidgetInfo();
                     if (info?.visAttrs && typeof info.visAttrs !== 'string') {
                         return null;
@@ -466,7 +466,7 @@ export default class VisWidgetsCatalog {
 
     static setUsedWidgetSets(project: Project): Project {
         // provide for all widgets the widget set and set
-        let views: Project;
+        let views: Project = project;
         const widgetTypes = window.visWidgetTypes; // getWidgetTypes();
         const viewKeys = Object.keys(project);
 
@@ -570,7 +570,7 @@ export default class VisWidgetsCatalog {
                                     }
                                 }
 
-                                resolve(VisWidgetsCatalog.rxWidgets);
+                                resolve(VisWidgetsCatalog.rxWidgets || {});
                             },
                         ),
                     0,
@@ -630,7 +630,7 @@ export interface CommonGroups {
  * optional there, so anything that is not a number stays undefined instead of becoming NaN.
  */
 function parseNumberOption(option: string | undefined): number | undefined {
-    const value = parseFloat(option);
+    const value = parseFloat(option || '');
     return Number.isFinite(value) ? value : undefined;
 }
 
@@ -708,14 +708,14 @@ export const parseAttributes = (
                 }
 
                 const repeats = match[2];
-                let type: RxWidgetAttributeType | null;
+                let type: RxWidgetAttributeType | undefined;
                 let onChangeFunc: string | undefined;
                 if (match[4]) {
                     const parts = match[4].substring(1).split('/');
                     type = parts[0] as RxWidgetAttributeType;
                     onChangeFunc = parts[1];
                 } else {
-                    type = null;
+                    type = undefined;
                 }
                 const field: WidgetAttributeInfoStored = {
                     name: match[1],
@@ -938,7 +938,7 @@ export const parseAttributes = (
 
             for (let i = from; i <= to; i++) {
                 const indexedGroup: WidgetAttributesGroupInfoStored = {
-                    ...deepCloneRx(group),
+                    ...(deepCloneRx(group) as WidgetAttributesGroupInfoStored),
                     index: i,
                     name: `${group.singleName}-${i}`,
                     hidden: group.hidden,

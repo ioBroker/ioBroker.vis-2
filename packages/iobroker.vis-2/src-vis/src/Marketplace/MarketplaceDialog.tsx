@@ -33,7 +33,7 @@ export interface MarketplaceDialogProps {
 const MarketplaceDialog = (props: MarketplaceDialogProps): React.JSX.Element => {
     const VisMarketplace = window.VisMarketplace?.default;
 
-    let installWidget: (marketplace: MarketplaceWidgetRevision) => void;
+    let installWidget: ((marketplace: MarketplaceWidgetRevision) => void) | undefined;
 
     if (props.installWidget) {
         installWidget = async marketplace => {
@@ -46,7 +46,7 @@ const MarketplaceDialog = (props: MarketplaceDialogProps): React.JSX.Element => 
                         name: view,
                         widgets: [],
                     };
-                    Object.keys(project[view].widgets).forEach((wid: GroupWidgetId | SingleWidgetId) => {
+                    (Object.keys(project[view].widgets) as (GroupWidgetId | SingleWidgetId)[]).forEach(wid => {
                         const widget: Widget = project[view].widgets[wid];
                         if (
                             widget.marketplace?.widget_id === marketplace.widget_id &&

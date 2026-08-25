@@ -53,7 +53,7 @@ const WidgetExportDialog: React.FC<WidgetExportDialogProps> = props => {
                 widget.data.members = members as AnyWidgetId[];
             }
             widget._id = newId;
-        } else if (widget._id.startsWith('w')) {
+        } else if (widget._id?.startsWith('w')) {
             if (widget.grouped) {
                 delete widget.grouped;
                 delete widget.groupid;

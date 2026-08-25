@@ -393,8 +393,8 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                 key="iconDialog"
                 additionalSets={this.props.additionalSets}
                 themeType={this.props.themeType}
-                value={this.state.icons[this.state.iconDialog]}
-                onClose={(icon: string) => {
+                value={this.state.icons[this.state.iconDialog] || undefined}
+                onClose={icon => {
                     this.setState({ iconDialog: null });
                     if (icon !== null) {
                         const icons = [...this.state.icons];
@@ -535,14 +535,15 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                         label={I18n.t('Value')}
                         value={this.state.editDialog.value}
                         onChange={e => {
-                            if (this.state.editDialog) {
-                                this.setState(prevState => ({
+                            const editDialog = this.state.editDialog;
+                            if (editDialog) {
+                                this.setState({
                                     editDialog: {
                                         value: e.target.value,
-                                        add: prevState.editDialog.add,
-                                        index: prevState.editDialog.index,
+                                        add: editDialog.add,
+                                        index: editDialog.index,
                                     },
-                                }));
+                                });
                             }
                         }}
                     />
@@ -1171,7 +1172,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
         );
     }
 
-    render(): React.JSX.Element[] {
+    render(): (React.JSX.Element | null)[] {
         return [
             <Button
                 fullWidth

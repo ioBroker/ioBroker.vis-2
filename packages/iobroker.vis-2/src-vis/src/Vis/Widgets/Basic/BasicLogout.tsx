@@ -76,7 +76,6 @@ export default class BasicLogout extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicLogout.getWidgetInfo();
     }
@@ -123,13 +122,13 @@ export default class BasicLogout extends VisRxWidget<RxData> {
                         width: '100%',
                         height: '100%',
                         minWidth: 30,
-                        background: this.state.rxStyle.background || undefined,
-                        backgroundColor: this.state.rxStyle['background-color'] || undefined,
-                        color: this.state.rxStyle.color || undefined,
-                        borderStyle: this.state.rxStyle['border-style'] || undefined,
-                        borderWidth: this.state.rxStyle['border-width'] || undefined,
-                        borderColor: this.state.rxStyle['border-color'] || undefined,
-                        borderRadius: this.state.rxStyle['border-radius'] || undefined,
+                        background: this.state.rxStyle?.background || undefined,
+                        backgroundColor: this.state.rxStyle?.['background-color'] || undefined,
+                        color: this.state.rxStyle?.color || undefined,
+                        borderStyle: this.state.rxStyle?.['border-style'] || undefined,
+                        borderWidth: this.state.rxStyle?.['border-width'] || undefined,
+                        borderColor: this.state.rxStyle?.['border-color'] || undefined,
+                        borderRadius: this.state.rxStyle?.['border-radius'] || undefined,
                         // buttons of material UI are upper cased by default, but vis widgets show the text as entered
                         textTransform: 'none',
                     }}

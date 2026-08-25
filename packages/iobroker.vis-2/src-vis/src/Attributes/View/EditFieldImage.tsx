@@ -11,7 +11,7 @@ import type { VisTheme } from '@iobroker/types-vis-2';
 
 interface EditFieldImageProps {
     value: string;
-    change: (newValue: string) => void;
+    change: (newValue: string | null) => void;
     disabled?: boolean;
     error?: boolean;
     editMode: boolean;
@@ -70,7 +70,7 @@ export default function EditFieldImage(props: EditFieldImageProps): React.JSX.El
         </Popper>
     ) : null;
 
-    let showDialogControl: React.JSX.Element;
+    let showDialogControl: React.JSX.Element | null = null;
     if (showDialog) {
         let _value: string;
         _value = props.value;

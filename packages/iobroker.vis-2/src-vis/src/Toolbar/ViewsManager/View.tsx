@@ -114,12 +114,10 @@ const View = (props: ViewProps): React.JSX.Element => {
 
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visProject]);
 
     useEffect(() => {
         props.setIsDragging(isDraggingThisItem ? props.name : '');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDraggingThisItem]);
 
     const selectView = (): void => {

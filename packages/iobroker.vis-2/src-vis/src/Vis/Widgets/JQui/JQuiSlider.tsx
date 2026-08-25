@@ -296,7 +296,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 const state = await this.props.context.socket.getState(this.state.rxData.oid);
                 this.onStateUpdated(this.state.rxData.oid, state);
             } catch (error) {
-                console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+                console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
             }
         }
         if (
@@ -308,7 +308,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 const state = await this.props.context.socket.getState(this.state.rxData['oid-2']);
                 this.onStateUpdated(this.state.rxData['oid-2'], state);
             } catch (error) {
-                console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+                console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
             }
         }
     }
@@ -328,12 +328,11 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiSlider.getWidgetInfo();
     }
 
-    onStateUpdated(id: string, state: ioBroker.State | null): void {
+    onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
         if (id === this.state.rxData.oid && state) {
             let value = parseFloat(state.val === null || state.val === undefined ? '0' : (state.val as string)) || 0;
             if (this.state.rxData.inverted) {
@@ -394,8 +393,8 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 ? parseFloat(this.state.rxData.min_distance as unknown as string) || 0
                 : 0;
 
-        let valueMax: number;
-        let _value: number;
+        let valueMax: number | undefined;
+        let _value: number | undefined;
 
         if (isMax) {
             if (Array.isArray(value)) {
@@ -418,12 +417,12 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                         }
                     } else if (this.state.rxData.shift_min_distance) {
                         _value = Math.min(_value, parseFloat(this.state.rxData.max as unknown as string) - minDistance);
-                        valueMax = this.state.valueMax;
+                        valueMax = this.state.valueMax ?? 0;
                         if (valueMax - minDistance < _value) {
                             valueMax = _value + minDistance;
                         }
                     } else {
-                        _value = Math.min(_value, this.state.valueMax - minDistance);
+                        _value = Math.min(_value, (this.state.valueMax ?? 0) - minDistance);
                     }
                 }
                 console.log(`Set ${_value} - ${valueMax}`);
@@ -453,18 +452,18 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
             if (minDistance) {
                 if (this.state.rxData.shift_min_distance) {
                     _value = Math.min(_value, parseFloat(this.state.rxData.max as unknown as string) - minDistance);
-                    valueMax = this.state.valueMax;
+                    valueMax = this.state.valueMax ?? 0;
                     if (valueMax - minDistance < _value) {
                         valueMax = _value + minDistance;
                     }
                 } else {
-                    _value = Math.min(_value, this.state.valueMax - minDistance);
+                    _value = Math.min(_value, (this.state.valueMax ?? 0) - minDistance);
                 }
             }
             console.log(`Set ${_value} - (${valueMax || this.state.valueMax})`);
         }
-        this.newState.valueMax = valueMax;
-        this.newState.value = _value.toString();
+        this.newState.valueMax = valueMax ?? this.state.valueMax;
+        this.newState.value = (_value ?? parseFloat(this.state.value)).toString();
 
         if (this.controlTimeout) {
             clearTimeout(this.controlTimeout);
@@ -498,7 +497,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 if (newState.valueMax !== undefined) {
                     const oidMax = this.getControlOid(true);
                     if (oidMax) {
-                        let val = newState.valueMax;
+                        let val = newState.valueMax ?? 0;
                         if (this.state.rxData['inverted-2']) {
                             val =
                                 parseFloat(this.state.rxData.max as unknown as string) -
@@ -578,8 +577,10 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                     step={step === 0 ? undefined : step}
                     disableSwap={this.state.rxData.type === 'range' ? true : undefined}
                     marks={step === 0 ? undefined : true}
-                    onChangeCommitted={(_e, value: number) => this.onChange(value, true, true)}
-                    onChange={(_e, value: number[], activeThumb) => this.onChange(value[activeThumb], !!activeThumb)}
+                    onChangeCommitted={(_e, value) => this.onChange(value, true, true)}
+                    onChange={(_e, value, activeThumb) =>
+                        this.onChange(Array.isArray(value) ? value[activeThumb] : value, !!activeThumb)
+                    }
                 />
             );
         } else {

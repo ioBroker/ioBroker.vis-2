@@ -9,7 +9,7 @@ import { store } from '@/Store';
 import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
 import { useFocus } from '@/Utils';
 import IODialog from '@/Components/IODialog';
-import type { Project, SingleWidgetId, View } from '@iobroker/types-vis-2';
+import type { Project, SingleWidgetId } from '@iobroker/types-vis-2';
 
 interface ViewDialogProps {
     changeProject: (project: Project) => Promise<void>;
@@ -17,18 +17,18 @@ interface ViewDialogProps {
     dialog: string;
     /** Name of view */
     dialogName: string;
-    dialogView: string;
-    dialogCallback?: { cb: (dialogName: string) => void };
+    dialogView?: string;
+    dialogCallback?: { cb: (dialogName: string) => void } | null;
     selectedView: string;
     closeDialog: () => void;
     setDialogName: (dialogName: string) => void;
-    setDialogView: (action: null) => void;
+    setDialogView: (view?: string) => void;
     dialogParentId?: string;
     noTranslation: boolean;
-    setDialogParentId: (action: null) => void;
+    setDialogParentId: (parentId?: string) => void;
 }
 
-const ViewDialog = (props: ViewDialogProps): React.JSX.Element => {
+const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
     const inputField = useFocus(!!props.dialog && props.dialog !== 'delete', props.dialog === 'add');
 
     const deleteView = async (): Promise<void> => {
@@ -50,7 +50,9 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element => {
             },
             widgets: {},
             activeWidgets: [],
-        } as View;
+            filterList: [],
+            rerender: false,
+        };
         await props.changeProject(project);
         await props.changeView(props.dialogName.trim());
         props.closeDialog(); // close dialog
@@ -192,8 +194,8 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element => {
             actionTitle={dialogButtons[props.dialog]}
             onClose={() => {
                 props.closeDialog();
-                props.setDialogView(null);
-                props.setDialogParentId(null);
+                props.setDialogView(undefined);
+                props.setDialogParentId(undefined);
             }}
             ActionIcon={DialogIcon || null}
             action={dialogActions[props.dialog]}

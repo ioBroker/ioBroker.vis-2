@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Menu, MenuItem } from '@mui/material';
 import { ArrowRight as ArrowRightIcon } from '@mui/icons-material';
 
@@ -25,7 +25,10 @@ interface NestedMenuItemProps {
  * soon as the pointer tries to travel into the sub menu.
  */
 export default function NestedMenuItem(props: NestedMenuItemProps): React.JSX.Element {
-    const itemRef = useRef<HTMLLIElement>(null);
+    // the anchor is held in state and not in a ref: the sub menu needs it while it renders, and reading
+    // `ref.current` during render is exactly what react 19 forbids - a callback ref that sets state gives
+    // the element and a render to use it in
+    const [anchor, setAnchor] = useState<HTMLLIElement | null>(null);
     const [open, setOpen] = useState(false);
 
     const isOpen = open && props.parentMenuOpen;
@@ -33,7 +36,7 @@ export default function NestedMenuItem(props: NestedMenuItemProps): React.JSX.El
     return (
         <>
             <MenuItem
-                ref={itemRef}
+                ref={setAnchor}
                 disabled={props.disabled}
                 onMouseEnter={() => setOpen(true)}
                 onMouseLeave={() => setOpen(false)}
@@ -53,7 +56,7 @@ export default function NestedMenuItem(props: NestedMenuItemProps): React.JSX.El
             </MenuItem>
             <Menu
                 open={isOpen}
-                anchorEl={itemRef.current}
+                anchorEl={anchor}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'left' }}
                 // the sub menu must not steal the focus or close the menu it belongs to

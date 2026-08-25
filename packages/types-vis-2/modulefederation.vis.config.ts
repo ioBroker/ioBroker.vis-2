@@ -125,15 +125,14 @@ export function moduleFederationShared(packageJson?: Record<string, any> | strin
         // MUI theme, which is always the light one
         '@mui/private-theming',
         '@mui/system',
-        'prop-types',
         'react',
         'react-dom',
         'react-dom/client',
         // The JSX runtime must be shared together with react itself. A component that bundles its own copy
-        // creates its elements with the element symbol of ITS react version, and since React 19 renamed that
+        // creates its elements with the element symbol of ITS React version, and since React 19 renamed that
         // symbol (`react.element` -> `react.transitional.element`) to detect exactly this situation, the host
         // does not accept those elements anymore. Sharing it makes every component use the JSX runtime of the
-        // host, no matter which react version it was built against.
+        // host, no matter which React version it was built against.
         'react/jsx-runtime',
         // Development builds of a component (the widget development mode loads them from localhost:4173) use
         // the dev variant instead

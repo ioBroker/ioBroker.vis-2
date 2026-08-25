@@ -140,7 +140,7 @@ interface WidgetBindingFieldState {
 }
 
 class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindingFieldState> {
-    private readonly inputRef: React.RefObject<HTMLInputElement>;
+    private readonly inputRef: React.RefObject<HTMLInputElement | null>;
 
     private visFormatUtils: VisFormatUtils | undefined;
 
@@ -217,7 +217,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                 oid.systemOid = newOid;
                 oid.token = oid.token.replace(/:widgetOid;/g, `:${newOid};`);
                 oid.format = oid.format.replace(/:widgetOid;/g, `:${newOid};`);
-                for (const operation of oid.operations) {
+                for (const operation of oid.operations || []) {
                     if (Array.isArray(operation.arg)) {
                         for (const arg of operation.arg) {
                             if (typeof operation.arg === 'object') {
@@ -272,10 +272,10 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                             oids.find(
                                 it =>
                                     it.visOid === name ||
-                                    it.operations?.find(
-                                        op =>
-                                            Array.isArray(op?.arg) &&
-                                            op?.arg.find((arg: VisBindingOperationArgument) => arg.visOid === name),
+                                    it.operations?.find(op =>
+                                        Array.isArray(op?.arg)
+                                            ? op.arg.find(arg => typeof arg !== 'string' && arg.visOid === name)
+                                            : false,
                                     ),
                             )
                         ) {
@@ -920,7 +920,11 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     }
 
     getSelectedText(): string {
-        return this.state.editValue.substring(this.inputRef.current.selectionStart, this.inputRef.current.selectionEnd);
+        const input = this.inputRef.current;
+        if (!input) {
+            return '';
+        }
+        return this.state.editValue.substring(input.selectionStart ?? 0, input.selectionEnd ?? 0);
     }
 
     renderEditBindDialog(): React.JSX.Element | null {
@@ -996,8 +1000,8 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                                 this.setState({
                                     showSelectIdDialog: true,
                                     selectionValue: this.getSelectedText(),
-                                    selectionStart: this.inputRef.current.selectionStart,
-                                    selectionEnd: this.inputRef.current.selectionEnd,
+                                    selectionStart: this.inputRef.current?.selectionStart ?? undefined,
+                                    selectionEnd: this.inputRef.current?.selectionEnd ?? undefined,
                                 });
                             }}
                         >
@@ -1092,8 +1096,11 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                         color="grey"
                         onClick={() => {
                             const options = this.state.askToModify;
+                            if (!options) {
+                                return;
+                            }
                             options.modify = true;
-                            this.setState({ askToModify: null }, () => this.insertInText(options.text, options));
+                            this.setState({ askToModify: null }, () => this.insertInText(options.text || '', options));
                         }}
                     >
                         {I18n.t('Modify')}
@@ -1103,8 +1110,11 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                         color="grey"
                         onClick={() => {
                             const options = this.state.askToModify;
+                            if (!options) {
+                                return;
+                            }
                             options.modify = false;
-                            this.setState({ askToModify: null }, () => this.insertInText(options.text, options));
+                            this.setState({ askToModify: null }, () => this.insertInText(options.text || '', options));
                         }}
                     >
                         {I18n.t('Just use without modification')}
@@ -1115,9 +1125,12 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     }
 
     renderDialogArguments(): React.JSX.Element | null {
-        if (!this.state.askForArguments) {
+        const askForArguments = this.state.askForArguments;
+        if (!askForArguments) {
             return null;
         }
+        const args = askForArguments.args || [];
+
         return (
             <Dialog
                 open={!0}
@@ -1128,33 +1141,31 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
             >
                 <DialogTitle>{I18n.t('Arguments')}</DialogTitle>
                 <DialogContent>
-                    <div>{this.state.askForArguments.desc}</div>
-                    {this.state.askForArguments.args[0] ? (
+                    <div>{askForArguments.desc}</div>
+                    {args[0] ? (
                         <div>
                             <TextField
                                 variant="standard"
-                                label={this.state.askForArguments.args[0].label}
-                                value={
-                                    this.state.askForArguments.arg1 === undefined ? '' : this.state.askForArguments.arg1
-                                }
+                                label={args[0].label}
+                                value={askForArguments.arg1 === undefined ? '' : askForArguments.arg1}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter') {
-                                        const options = this.state.askForArguments;
-                                        options.args = null;
+                                        const options = askForArguments;
+                                        options.args = undefined;
                                         this.setState({ askForArguments: null }, () =>
-                                            this.insertInText(options.text, options),
+                                            this.insertInText(options.text || '', options),
                                         );
                                     }
                                 }}
                                 slotProps={{
                                     input: {
-                                        endAdornment: this.state.askForArguments.arg1 ? (
+                                        endAdornment: askForArguments.arg1 ? (
                                             <InputAdornment position="end">
                                                 <IconButton
                                                     onClick={() =>
                                                         this.setState({
                                                             askForArguments: {
-                                                                ...this.state.askForArguments,
+                                                                ...askForArguments,
                                                                 arg1: '',
                                                             },
                                                         })
@@ -1170,23 +1181,23 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                                 autoFocus
                                 onChange={e =>
                                     this.setState({
-                                        askForArguments: { ...this.state.askForArguments, arg1: e.target.value },
+                                        askForArguments: { ...askForArguments, arg1: e.target.value },
                                     })
                                 }
                             />
                         </div>
                     ) : null}
-                    {this.state.askForArguments.args[1] ? (
+                    {args[1] ? (
                         <div>
                             <FormControlLabel
-                                label={this.state.askForArguments.args[1].label}
+                                label={args[1].label}
                                 control={
                                     <Checkbox
-                                        checked={!!this.state.askForArguments.arg2}
+                                        checked={!!askForArguments.arg2}
                                         onChange={e =>
                                             this.setState({
                                                 askForArguments: {
-                                                    ...this.state.askForArguments,
+                                                    ...askForArguments,
                                                     arg2: e.target.checked,
                                                 },
                                             })
@@ -1202,9 +1213,11 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                         variant="contained"
                         color="grey"
                         onClick={() => {
-                            const options = this.state.askForArguments;
-                            options.args = null;
-                            this.setState({ askForArguments: null }, () => this.insertInText(options.text, options));
+                            const options = askForArguments;
+                            options.args = undefined;
+                            this.setState({ askForArguments: null }, () =>
+                                this.insertInText(options.text || '', options),
+                            );
                         }}
                     >
                         {I18n.t('Apply')}
@@ -1224,9 +1237,11 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     async insertInText(text: string, options?: ModifyOptions): Promise<void> {
         options = options || {};
         const selectionStart =
-            options.selectionStart === undefined ? this.inputRef.current.selectionStart : options.selectionStart;
+            options.selectionStart === undefined
+                ? (this.inputRef.current?.selectionStart ?? 0)
+                : options.selectionStart;
         const selectionEnd =
-            options.selectionEnd === undefined ? this.inputRef.current.selectionEnd : options.selectionEnd;
+            options.selectionEnd === undefined ? (this.inputRef.current?.selectionEnd ?? 0) : options.selectionEnd;
 
         const isInBrackets = WidgetBindingField.isInBrackets(this.state.editValue, selectionStart);
         if (!options.oldStyle && options.modify === undefined && !isInBrackets) {
@@ -1276,8 +1291,8 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
 
         this.setState({ editValue, calculatedEditValue, values }, () => {
             // set cursor on the same position
-            this.inputRef.current.focus();
-            if (this.inputRef.current.setSelectionRange) {
+            this.inputRef.current?.focus();
+            if (this.inputRef.current?.setSelectionRange) {
                 this.inputRef.current.setSelectionRange(selectionStart, selectionStart);
                 // @ts-expect-error deprecated, but here because of IE
             } else if (this.inputRef.current?.createTextRange) {
@@ -1321,14 +1336,14 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
         );
     }
 
-    render(): React.JSX.Element[] {
+    render(): (React.JSX.Element | null)[] {
         return [
             <TextField
                 key="text"
                 variant="standard"
                 sx={styles.fieldContent}
                 fullWidth
-                placeholder={this.props.isDifferent ? I18n.t('different') : null}
+                placeholder={this.props.isDifferent ? I18n.t('different') : undefined}
                 slotProps={{
                     input: {
                         sx: { ...styles.clearPadding, ...styles.fieldContent },

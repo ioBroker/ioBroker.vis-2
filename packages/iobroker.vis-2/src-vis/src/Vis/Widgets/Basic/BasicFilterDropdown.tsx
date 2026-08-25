@@ -131,7 +131,7 @@ const ItemsEditor = (props: ItemsEditorProps): React.JSX.Element => {
                         context={props.context}
                         items={items || []}
                         multiple={props.data.multiple}
-                        onClose={(newItems: Item[]) => {
+                        onClose={newItems => {
                             if (newItems) {
                                 const data = JSON.parse(JSON.stringify(props.data));
                                 data.items = JSON.stringify(newItems);
@@ -286,7 +286,6 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
         };
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicFilterDropdown.getWidgetInfo();
     }
@@ -320,7 +319,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
     }
 
     renderDropdown(items: Item[]): React.JSX.Element {
-        const viewsActiveFilter: string[] = this.props.viewsActiveFilter[this.props.view] || [];
+        const viewsActiveFilter: string[] = this.props.viewsActiveFilter?.[this.props.view] || [];
         let value;
         if (this.state.rxData.multiple) {
             value = viewsActiveFilter;
@@ -410,7 +409,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
     }
 
     renderButtons(items: Item[]): React.JSX.Element {
-        const viewsActiveFilter: string[] = this.props.viewsActiveFilter[this.props.view] || [];
+        const viewsActiveFilter: string[] = this.props.viewsActiveFilter?.[this.props.view] || [];
         return (
             <ButtonGroup
                 variant={this.state.rxData.buttonsVariant || 'contained'}

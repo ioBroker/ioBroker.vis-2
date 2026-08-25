@@ -19,7 +19,7 @@ interface WidgetCSSProps {
 
 const WidgetCSS = (props: WidgetCSSProps): React.JSX.Element => {
     const [value, setValue] = useState(props.widget.css || '');
-    const timeout = useRef(null);
+    const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     return (
         <Dialog

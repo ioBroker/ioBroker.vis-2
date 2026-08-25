@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useDropzone, type FileError } from 'react-dropzone';
+import { useDropzone, type FileRejection } from 'react-dropzone';
 
 import { CircularProgress } from '@mui/material';
 
@@ -33,18 +33,12 @@ interface UploadFileProps {
 
 const UploadFile = (props: UploadFileProps): React.JSX.Element => {
     const [fileName, setFileName] = useState('');
-    const [fileData, setFileData] = useState(null);
+    const [fileData, setFileData] = useState<string | ArrayBuffer | null>(null);
     const [working, setWorking] = useState(false);
     const [error, setError] = useState('');
 
     const onDrop = useCallback(
-        (
-            acceptedFiles: File[],
-            fileRejections: {
-                file: File;
-                errors: FileError[];
-            }[],
-        ) => {
+        <T extends File>(acceptedFiles: T[], fileRejections: FileRejection[]) => {
             if (acceptedFiles?.length) {
                 setWorking(true);
                 if (error) {
@@ -55,8 +49,12 @@ const UploadFile = (props: UploadFileProps): React.JSX.Element => {
 
                 reader.onload = (evt: ProgressEvent<FileReader>): void => {
                     setWorking(false);
-                    setFileData(evt.target.result);
-                    props.onUpload(acceptedFiles[0].name, evt.target.result);
+                    const result = evt.target?.result;
+                    if (result === null || result === undefined) {
+                        return;
+                    }
+                    setFileData(result);
+                    props.onUpload(acceptedFiles[0].name, result);
                 };
 
                 reader.readAsDataURL(acceptedFiles[0]);
@@ -79,7 +77,6 @@ const UploadFile = (props: UploadFileProps): React.JSX.Element => {
                 });
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [error],
     );
 
@@ -123,7 +120,7 @@ const UploadFile = (props: UploadFileProps): React.JSX.Element => {
                             {fileName.endsWith('.zip') ? <FolderZip /> : null}
                             {IMAGE_TYPES.find(ext => fileName.toLowerCase().endsWith(ext)) ? (
                                 <img
-                                    src={fileData}
+                                    src={(fileData as string) || undefined}
                                     alt="uploaded"
                                     style={{
                                         maxWidth: 100,
@@ -132,7 +129,9 @@ const UploadFile = (props: UploadFileProps): React.JSX.Element => {
                                 />
                             ) : null}
                             {fileData ? (
-                                <div style={{ fontSize: 10, opacity: 0.5 }}>({Utils.formatBytes(fileData.length)})</div>
+                                <div style={{ fontSize: 10, opacity: 0.5 }}>
+                                    ({Utils.formatBytes((fileData as string).length)})
+                                </div>
                             ) : null}
                         </>
                     ) : (

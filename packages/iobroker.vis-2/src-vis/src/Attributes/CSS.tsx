@@ -61,7 +61,7 @@ export default class CSS extends Component<CSSProps, CSSState> {
             )) as string;
         } catch (e) {
             if (e !== 'Not exists') {
-                console.warn(`Cannot loading global CSS: ${e}`);
+                console.warn(`Cannot loading global CSS: ${e as Error}`);
             }
         }
         try {
@@ -72,7 +72,7 @@ export default class CSS extends Component<CSSProps, CSSState> {
             )) as string;
         } catch (e) {
             if (e !== 'Not exists') {
-                console.warn(`Cannot load project CSS: ${e}`);
+                console.warn(`Cannot load project CSS: ${e as Error}`);
             }
         }
         if (window.localStorage.getItem('CSS.type')) {

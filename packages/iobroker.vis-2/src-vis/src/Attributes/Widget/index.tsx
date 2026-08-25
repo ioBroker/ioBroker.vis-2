@@ -259,8 +259,8 @@ interface WidgetProps {
     triggerAllClosed: number;
     fonts: string[];
     cssClone: (attr: string, cb: (value: string | number | boolean | null) => void) => void;
-    onPxToPercent: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
-    onPercentToPx: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
+    onPxToPercent: (widgets: string[], attr: string, cb: (newValues: (string | null)[]) => void) => void;
+    onPercentToPx: (widgets: string[], attr: string, cb: (newValues: (string | null)[]) => void) => void;
     userGroups: ioBroker.UserGroup[];
     additionalSets: AdditionalIconSet;
 }
@@ -277,11 +277,11 @@ interface WidgetState {
     widgetTypes: WidgetType[] | null;
     fields: PaletteGroup[] | null;
     transitionTime: number;
-    bindFields: string[];
-    customFields: WidgetAttributesGroupInfoStored[];
-    isDifferent: { [fieldName: string]: boolean };
-    commonValues: { data?: WidgetData; style?: WidgetStyle };
-    widgetType: WidgetType | undefined;
+    bindFields: string[] | null;
+    customFields: WidgetAttributesGroupInfoStored[] | null;
+    isDifferent: { [fieldName: string]: boolean } | null;
+    commonValues: { data?: WidgetData; style?: WidgetStyle } | null;
+    widgetType: WidgetType | null;
 }
 
 class Widget extends Component<WidgetProps, WidgetState> {
@@ -289,7 +289,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
     private readonly fieldsSignals: PaletteGroup[];
 
-    private readonly imageRef: React.RefObject<HTMLImageElement>;
+    private readonly imageRef: React.RefObject<HTMLImageElement | null>;
 
     private recalculateTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -807,7 +807,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 ],
             },
         ];
-        if (widget.style.position === 'relative' || widget.style.position === 'sticky') {
+        if (widget.style?.position === 'relative' || widget.style?.position === 'sticky') {
             groups[0].fields = groups[0].fields.filter(f => f.name !== 'left' && f.name !== 'top');
         }
 
@@ -819,14 +819,13 @@ class Widget extends Component<WidgetProps, WidgetState> {
         project: Project,
         selectedView: string,
         selectedWidgets: AnyWidgetId[],
-        index: number,
+        index?: number,
     ): boolean {
         try {
             let _func;
             if (typeof funcText === 'function') {
                 _func = funcText;
             } else {
-                // eslint-disable-next-line no-new-func
                 _func = new Function('data', 'index', 'style', `return ${funcText}`);
             }
             const isHidden = [];
@@ -849,7 +848,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 return true;
             }
         } catch (e) {
-            console.error(`Cannot execute hidden on "${funcText}": ${e}`);
+            console.error(`Cannot execute hidden on "${funcText.toString()}": ${e as Error}`);
         }
         return false;
     }
@@ -874,12 +873,13 @@ class Widget extends Component<WidgetProps, WidgetState> {
     }
 
     recalculateFields(): void {
-        if (!this.state.widgetTypes) {
+        const widgetTypes = this.state.widgetTypes;
+        if (!widgetTypes) {
             return;
         }
         const widgets = store.getState().visProject[this.props.selectedView]?.widgets;
 
-        let widget: SingleGroupWidget;
+        let widget: SingleGroupWidget | undefined;
         let widgetType: WidgetType | undefined;
         const commonFields: Record<string, number> = {};
         const commonGroups: { common: number; [groupName: string]: number } = {
@@ -889,23 +889,28 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         widgets &&
             this.props.selectedWidgets.forEach((wid, widgetIndex) => {
-                widget = widgets[wid];
-                if (!widget) {
+                const currentWidget = widgets[wid];
+                if (!currentWidget) {
                     return;
                 }
+                widget = currentWidget;
 
-                widgetType = this.state.widgetTypes.find(type => type.name === widget.tpl);
+                widgetType = widgetTypes.find(type => type.name === currentWidget.tpl);
                 if (!widgetType) {
                     return;
                 }
 
                 let params: string | RxWidgetInfoGroup[];
-                if (widget.tpl === '_tplGroup') {
+                if (currentWidget.tpl === '_tplGroup') {
                     // The attributes of a group are built from the placeholders used by its members,
                     // so they cannot be taken from the static widget info.
-                    params = BasicGroup._visAttrs(widget.data, store.getState().visProject, this.props.selectedView);
+                    params = BasicGroup._visAttrs(
+                        currentWidget.data,
+                        store.getState().visProject,
+                        this.props.selectedView,
+                    );
                 } else if (typeof widgetType.params === 'function') {
-                    params = widgetType.params(widget.data, null, {
+                    params = widgetType.params(currentWidget.data, null, {
                         views: store.getState().visProject,
                         view: this.props.selectedView,
                         socket: this.props.socket,
@@ -914,7 +919,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         adapterName: this.props.adapterName,
                         instance: this.props.instance,
                         id: wid,
-                        widget,
+                        widget: currentWidget,
                     });
                 } else {
                     params = widgetType.params as string | RxWidgetInfoGroup[];
@@ -926,7 +931,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     commonGroups,
                     commonFields,
                     widgetType.set,
-                    widget.data,
+                    currentWidget.data,
                 );
 
                 fields && selectedWidgetsFields.push(fields);
@@ -959,9 +964,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     commonValues.data = { ...currentWidget.data };
                     commonValues.style = { ...currentWidget.style };
                 } else {
-                    Object.keys(commonValues.data).forEach(field => {
-                        if (commonValues.data[field] !== currentWidget.data[field]) {
-                            commonValues.data[field] = null;
+                    // set in the widgetIndex === 0 branch above
+                    const commonData = commonValues.data || {};
+                    Object.keys(commonData).forEach(field => {
+                        if (commonData[field] !== currentWidget.data[field]) {
+                            commonData[field] = null;
                             isDifferent[field] = true;
                         }
                     });
@@ -1000,13 +1007,14 @@ class Widget extends Component<WidgetProps, WidgetState> {
         newState.customFields = fields;
         newState.isDifferent = isDifferent;
         newState.commonValues = commonValues;
-        newState.widgetType = widgetType;
+        newState.widgetType = widgetType ?? null;
 
         const maxSignalsCount = this.fieldsSignals.length - 1;
         let signalsCount = 3;
 
         if (this.props.selectedWidgets.length === 1) {
-            const widgetData = widgets[this.props.selectedWidgets[0]].data;
+            const singleWidget = widgets[this.props.selectedWidgets[0]];
+            const widgetData = singleWidget.data;
             signalsCount = 0;
             // detect signals count
             if (!widgetData['signals-count']) {
@@ -1020,7 +1028,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         updateWidget({
                             widgetId: this.props.selectedWidgets[0],
                             viewId: this.props.selectedView,
-                            data: { ...widget, data: { ...widget.data, 'signals-count': signalsCount } },
+                            data: { ...singleWidget, data: { ...widgetData, 'signals-count': signalsCount } },
                         }),
                     );
                 }
@@ -1033,7 +1041,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         }
 
         const fieldsAfter = Widget.getFieldsAfter(
-            this.props.selectedWidgets.length === 1 ? widget : commonValues,
+            this.props.selectedWidgets.length === 1 && widget ? widget : commonValues,
             this.props.fonts,
         );
         const fieldsSignals = this.fieldsSignals[signalsCount];
@@ -1081,11 +1089,12 @@ class Widget extends Component<WidgetProps, WidgetState> {
     }
 
     renderHeader(widgets: Record<string, SingleGroupWidget>): React.JSX.Element {
+        const widgetTypes = this.state.widgetTypes || [];
         let list;
         // If selected only one widget, show its icon
         if (this.props.selectedWidgets.length === 1) {
             const tpl = widgets[this.props.selectedWidgets[0]].tpl;
-            const _widgetType = this.state.widgetTypes.find(foundWidgetType => foundWidgetType.name === tpl);
+            const _widgetType = widgetTypes.find(foundWidgetType => foundWidgetType.name === tpl);
             let widgetLabel = _widgetType?.title || '';
             let widgetColor = _widgetType?.setColor;
             if (_widgetType?.label) {
@@ -1100,14 +1109,15 @@ class Widget extends Component<WidgetProps, WidgetState> {
             if (_widgetType?.setLabel) {
                 setLabel = I18n.t(_widgetType.setLabel);
             } else if (setLabel) {
-                const widgetWithSetLabel = this.state.widgetTypes.find(w => w.set === setLabel && w.setLabel);
-                if (widgetWithSetLabel) {
+                const widgetWithSetLabel = widgetTypes.find(w => w.set === setLabel && w.setLabel);
+                if (widgetWithSetLabel?.setLabel) {
                     widgetColor = widgetWithSetLabel.setColor;
                     setLabel = I18n.t(widgetWithSetLabel.setLabel);
                 }
             }
 
-            let widgetIcon = _widgetType?.preview || '';
+            const preview = _widgetType?.preview;
+            let widgetIcon = preview || '';
             if (widgetIcon.startsWith('<img')) {
                 const prev = widgetIcon.match(/src="([^"]+)"/);
                 if (prev && prev[1]) {
@@ -1127,10 +1137,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         />
                     );
                 }
-            } else if (
-                _widgetType?.preview &&
-                IMAGE_TYPES.find(ext => _widgetType.preview.toLowerCase().endsWith(ext))
-            ) {
+            } else if (preview && IMAGE_TYPES.find(ext => preview.toLowerCase().endsWith(ext))) {
                 img = (
                     <img
                         src={_widgetType?.preview}
@@ -1145,7 +1152,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     <span
                         style={styles.widgetImage}
                         ref={this.imageRef}
-                        dangerouslySetInnerHTML={{ __html: _widgetType?.preview }}
+                        dangerouslySetInnerHTML={{ __html: preview || '' }}
                     />
                 );
             }
@@ -1162,9 +1169,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
             if (tpl === '_tplGroup') {
                 widgetLabel = I18n.t('group');
             }
-            if (widgets[this.props.selectedWidgets[0]].marketplace) {
-                setLabel = `${widgets[this.props.selectedWidgets[0]].marketplace.name}`;
-                widgetLabel = `${I18n.t('version')} ${widgets[this.props.selectedWidgets[0]].marketplace.version}`;
+            const marketplace = widgets[this.props.selectedWidgets[0]].marketplace;
+            if (marketplace) {
+                setLabel = `${marketplace.name}`;
+                widgetLabel = `${I18n.t('version')} ${marketplace.version}`;
             }
             list = (
                 <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -1277,17 +1285,28 @@ class Widget extends Component<WidgetProps, WidgetState> {
     onGroupMove(e: React.MouseEvent, index: number, iterable: WidgetAttributeIterable, direction: GroupAction): void {
         e.stopPropagation();
         const project = deepClone(store.getState().visProject);
-        const oldGroup = this.state.fields.find(f => f.name === `${iterable.group}-${index}`);
+        const fields = this.state.fields;
+        if (!fields) {
+            return;
+        }
+        const indexTo = iterable.indexTo;
+        const oldGroup = fields.find(f => f.name === `${iterable.group}-${index}`);
         const _widgets = project[this.props.selectedView].widgets;
         const accordionOpen = { ...this.state.accordionOpen };
 
         // if deletion
         if (direction === 'delete') {
-            if (iterable.indexTo) {
-                const lastGroup = this.state.fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+            if (indexTo) {
+                const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+                if (!lastGroup || lastGroup.index === undefined) {
+                    return;
+                }
                 for (let idx = index; idx < lastGroup.index; idx++) {
-                    const idxGroup = this.state.fields.find(f => f.name === `${iterable.group}-${idx}`);
-                    const idxGroupPlus = this.state.fields.find(f => f.name === `${iterable.group}-${idx + 1}`);
+                    const idxGroup = fields.find(f => f.name === `${iterable.group}-${idx}`);
+                    const idxGroupPlus = fields.find(f => f.name === `${iterable.group}-${idx + 1}`);
+                    if (!idxGroup || !idxGroupPlus) {
+                        continue;
+                    }
                     // for every selected widget
                     this.props.selectedWidgets.forEach(wid => {
                         const widgetData = _widgets[wid].data;
@@ -1320,7 +1339,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
                     // delete the opened flag
                     delete accordionOpen[`${iterable.group}-${lastGroup.index}`];
-                    widgetData[iterable.indexTo]--;
+                    widgetData[indexTo]--;
                 });
 
                 this.setAccordionState(accordionOpen, () => {
@@ -1332,7 +1351,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
         }
 
         if (direction === 'clone') {
-            const lastGroup = this.state.fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+            const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+            if (!lastGroup || lastGroup.index === undefined || indexTo === undefined) {
+                return;
+            }
             // move all indexes after the current one
             // add one line
             const maxIndex = lastGroup.index;
@@ -1362,7 +1384,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
                 // enable the opened flag
                 accordionOpen[`${iterable.group}-${index + 1}`] = 1; // open
-                widgetData[iterable.indexTo] = maxIndex + 1;
+                widgetData[indexTo] = maxIndex + 1;
             });
             this.setAccordionState(accordionOpen, () => {
                 this.props.changeProject(project);
@@ -1372,7 +1394,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
         }
 
         if (direction === 'add') {
-            const lastGroup = this.state.fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+            const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
+            if (!lastGroup || lastGroup.index === undefined || indexTo === undefined) {
+                return;
+            }
             // add one line
             const newIndex = lastGroup.index + 1;
             this.props.selectedWidgets.forEach(wid => {
@@ -1389,7 +1414,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
                 // enable the opened flag
                 accordionOpen[`${iterable.group}-${newIndex}`] = 1; // open
-                widgetData[iterable.indexTo] = newIndex;
+                widgetData[indexTo] = newIndex;
             });
             this.setAccordionState(accordionOpen, () => {
                 this.props.changeProject(project);
@@ -1397,7 +1422,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
             });
         } else {
             const newIndex = index + (direction === 'up' ? -1 : 1);
-            const newGroup = this.state.fields.find(f => f.name === `${iterable.group}-${newIndex}`);
+            const newGroup = fields.find(f => f.name === `${iterable.group}-${newIndex}`);
+            if (!oldGroup || !newGroup) {
+                return;
+            }
 
             // for every selected widget
             this.props.selectedWidgets.forEach(wid => {
@@ -1438,6 +1466,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
     }
 
     renderGroupHeader(group: PaletteGroup): React.JSX.Element {
+        // locals, because the narrowing of group.iterable/group.index would not survive
+        // into the onClick closures below
+        const iterable = group.iterable;
+        const groupIndex = group.index;
+
         return (
             <AccordionSummary
                 sx={{
@@ -1476,10 +1509,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
                             : window.vis._(`group_${group.singleName || group.name}`) +
                               (group.index !== undefined ? ` [${group.index}]` : '')}
                     </div>
-                    {group.iterable ? (
+                    {iterable && groupIndex !== undefined ? (
                         <>
                             <div style={styles.grow} />
-                            {group.iterable.indexTo ? (
+                            {iterable.indexTo ? (
                                 <Tooltip
                                     title={I18n.t('Clone')}
                                     slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -1487,13 +1520,13 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                     <IconButton
                                         style={styles.groupButton}
                                         size="small"
-                                        onClick={e => this.onGroupMove(e, group.index, group.iterable, 'clone')}
+                                        onClick={e => this.onGroupMove(e, groupIndex, iterable, 'clone')}
                                     >
                                         <ContentCopy />
                                     </IconButton>
                                 </Tooltip>
                             ) : null}
-                            {group.iterable.indexTo ? (
+                            {iterable.indexTo ? (
                                 <Tooltip
                                     title={I18n.t('Delete')}
                                     slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -1501,13 +1534,13 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                     <IconButton
                                         style={styles.groupButton}
                                         size="small"
-                                        onClick={e => this.onGroupMove(e, group.index, group.iterable, 'delete')}
+                                        onClick={e => this.onGroupMove(e, groupIndex, iterable, 'delete')}
                                     >
                                         <Delete />
                                     </IconButton>
                                 </Tooltip>
                             ) : null}
-                            {group.iterable.isFirst ? (
+                            {iterable.isFirst ? (
                                 <div style={styles.groupButton} />
                             ) : (
                                 <Tooltip
@@ -1517,14 +1550,14 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                     <IconButton
                                         style={styles.groupButton}
                                         size="small"
-                                        onClick={e => this.onGroupMove(e, group.index, group.iterable, 'up')}
+                                        onClick={e => this.onGroupMove(e, groupIndex, iterable, 'up')}
                                     >
                                         <ArrowUpward />
                                     </IconButton>
                                 </Tooltip>
                             )}
-                            {group.iterable.isLast ? (
-                                group.iterable.indexTo ? (
+                            {iterable.isLast ? (
+                                iterable.indexTo ? (
                                     <Tooltip
                                         title={I18n.t('Add')}
                                         slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -1532,7 +1565,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                         <IconButton
                                             style={styles.groupButton}
                                             size="small"
-                                            onClick={e => this.onGroupMove(e, group.index, group.iterable, 'add')}
+                                            onClick={e => this.onGroupMove(e, groupIndex, iterable, 'add')}
                                         >
                                             <Add />
                                         </IconButton>
@@ -1548,7 +1581,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                     <IconButton
                                         style={styles.groupButton}
                                         size="small"
-                                        onClick={e => this.onGroupMove(e, group.index, group.iterable, 'down')}
+                                        onClick={e => this.onGroupMove(e, groupIndex, iterable, 'down')}
                                     >
                                         <ArrowDownward />
                                     </IconButton>
@@ -1627,10 +1660,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
         const type = isStyle ? 'style' : 'data';
         for (const wid of this.props.selectedWidgets) {
             const widget = project[this.props.selectedView].widgets[wid];
-            if (widget[type].bindings.includes(attr)) {
-                widget[type].bindings.splice(widget[type].bindings.indexOf(attr), 1);
+            const bindings = (widget[type].bindings ||= []);
+            if (bindings.includes(attr)) {
+                bindings.splice(bindings.indexOf(attr), 1);
             } else {
-                widget[type].bindings.push(attr);
+                bindings.push(attr);
             }
         }
 
@@ -1650,7 +1684,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         const selectedWidget = selectWidget(store.getState(), this.props.selectedView, this.props.selectedWidgets[0]);
 
         let error;
-        let disabled;
+        let disabled = false;
         if (field.hidden) {
             if (field.hidden === true) {
                 return null;
@@ -1680,7 +1714,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         sx={styles.fieldHelp}
                         style={field.style}
                     >
-                        {field.noTranslation ? field.text : I18n.t(field.text)}
+                        {field.noTranslation ? field.text : I18n.t(field.text || '')}
                     </Box>
                 </Box>
             );
@@ -1739,16 +1773,16 @@ class Widget extends Component<WidgetProps, WidgetState> {
         const labelStyle: React.CSSProperties = {};
 
         if (label.trim().startsWith('<b')) {
-            label = label.match(/<b>(.*?)<\/b>/)[1];
+            label = label.match(/<b>(.*?)<\/b>/)?.[1] ?? label;
             labelStyle.fontWeight = 'bold';
             labelStyle.color = '#4dabf5';
         }
         if (label.trim().startsWith('<i')) {
-            label = label.match(/<i>(.*?)<\/i>/)[1];
+            label = label.match(/<i>(.*?)<\/i>/)?.[1] ?? label;
             labelStyle.fontStyle = 'italic';
         }
 
-        const isBoundField = this.state.bindFields.includes(
+        const isBoundField = (this.state.bindFields || []).includes(
             group.isStyle ? `style_${field.name}` : `data_${field.name}`,
         );
 
@@ -1766,13 +1800,13 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         disabled && styles.fieldTitleDisabled,
                         error && styles.fieldTitleError,
                     )}
-                    title={field.tooltip ? I18n.t(field.tooltip) : null}
+                    title={field.tooltip ? I18n.t(field.tooltip) : undefined}
                     style={labelStyle}
                 >
                     {ICONS[field.singleName || field.name] ? ICONS[field.singleName || field.name] : null}
                     {label}
                     {field.type === 'image' &&
-                    !this.state.isDifferent[field.name] &&
+                    !this.state.isDifferent?.[field.name] &&
                     selectedWidget?.data[field.name] ? (
                         <div style={styles.smallImageDiv}>
                             <Icon
@@ -1803,7 +1837,9 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                 title={I18n.t('Deactivate binding and use field as standard input')}
                             >
                                 <LinkOff
-                                    onClick={() => this.props.editMode && this.changeBinding(group.isStyle, field.name)}
+                                    onClick={() =>
+                                        this.props.editMode && this.changeBinding(!!group.isStyle, field.name)
+                                    }
                                     style={{ ...styles.bindIcon, cursor: disabled ? 'default' : undefined }}
                                 />
                             </span>
@@ -1814,7 +1850,9 @@ class Widget extends Component<WidgetProps, WidgetState> {
                             >
                                 <LinkIcon
                                     style={{ ...styles.bindIcon, cursor: disabled ? 'default' : undefined }}
-                                    onClick={() => this.props.editMode && this.changeBinding(group.isStyle, field.name)}
+                                    onClick={() =>
+                                        this.props.editMode && this.changeBinding(!!group.isStyle, field.name)
+                                    }
                                 />
                             </span>
                         )
@@ -1863,16 +1901,16 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                 widget={
                                     this.props.selectedWidgets.length > 1 ? this.state.commonValues : selectedWidget
                                 }
-                                isStyle={group.isStyle}
+                                isStyle={!!group.isStyle}
                                 selectedView={this.props.selectedView}
                                 selectedWidgets={this.props.selectedWidgets}
-                                isDifferent={this.state.isDifferent[field.name]}
+                                isDifferent={this.state.isDifferent?.[field.name]}
                                 socket={this.props.socket}
                                 changeProject={this.props.changeProject}
                             />
                         ) : (
                             <WidgetField
-                                widgetType={this.state.widgetType}
+                                widgetType={this.state.widgetType || undefined}
                                 themeType={this.props.themeType}
                                 theme={this.props.theme}
                                 disabled={disabled}
@@ -1883,9 +1921,9 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                         : selectedWidget
                                 }
                                 widgetId={this.props.selectedWidgets.length > 1 ? null : this.props.selectedWidgets[0]}
-                                isStyle={group.isStyle}
+                                isStyle={!!group.isStyle}
                                 index={group.index}
-                                isDifferent={this.state.isDifferent[field.name]}
+                                isDifferent={this.state.isDifferent?.[field.name]}
                                 selectedView={this.props.selectedView}
                                 socket={this.props.socket}
                                 changeProject={this.props.changeProject}
@@ -1907,7 +1945,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         );
     }
 
-    renderGroupBody(group: PaletteGroup): React.JSX.Element {
+    renderGroupBody(group: PaletteGroup): React.JSX.Element | null {
         if (this.state.accordionOpen[group.name] === 0 || !group.hasValues) {
             return null;
         }
@@ -1967,7 +2005,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         store.dispatch(recalculateFields(true));
     }
 
-    render(): React.JSX.Element | React.JSX.Element[] | null {
+    render(): React.JSX.Element | (React.JSX.Element | null)[] | null {
         if (store.getState().recalculateFields && !this.recalculateTimer) {
             this.recalculateTimer = setTimeout(() => {
                 this.recalculateTimer = null;
@@ -1986,7 +2024,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             this.props.selectedWidgets.forEach(selectedWidget => {
                 if (
                     widgets[selectedWidget] &&
-                    this.state.widgetTypes.find(type => type.name === widgets[selectedWidget].tpl)
+                    this.state.widgetTypes?.find(type => type.name === widgets[selectedWidget].tpl)
                 ) {
                     widgetsExist++;
                 }
@@ -2063,7 +2101,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         <IODialog
                             title="Are you sure"
                             onClose={() => this.setState({ clearGroup: null })}
-                            action={() => this.onGroupDelete(this.state.clearGroup)}
+                            action={() => this.state.clearGroup && this.onGroupDelete(this.state.clearGroup)}
                             actionTitle="Clear"
                         >
                             {I18n.t('Fields of group will be cleaned')}

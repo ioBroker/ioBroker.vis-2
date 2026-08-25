@@ -32,6 +32,8 @@ import type {
     GroupWidget,
     AskViewCommand,
     WidgetReference,
+    ViewCommand,
+    ViewCommandOptions,
 } from '@iobroker/types-vis-2';
 import { hasWidgetAccess, isVarFinite } from '@/Utilities/utils';
 import { recalculateFields, selectView, store } from '@/Store';
@@ -45,10 +47,7 @@ import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
 
 const MAX_COLUMNS = 8;
 
-export type ViewCommand = 'updateContainers' | 'changeFilter' | 'closeDialog' | 'openDialog' | 'collectFilters';
-export type ViewCommandOptions = {
-    filter?: string[];
-} | null;
+export type { ViewCommand, ViewCommandOptions };
 
 declare global {
     interface Window {
@@ -91,10 +90,10 @@ interface CreateWidgetOptions {
     moveAllowed: boolean;
     ignoreMouseEvents?: boolean | undefined;
     onIgnoreMouseEvents?: (ignore: boolean) => void;
-    refParent: React.RefObject<HTMLElement>;
+    refParent: React.RefObject<HTMLElement | null>;
     askView: (command: AskViewCommand, props?: WidgetReference) => any;
     relativeWidgetOrder: AnyWidgetId[];
-    selectedGroup: GroupWidgetId;
+    selectedGroup: GroupWidgetId | null;
     selectedWidgets: AnyWidgetId[];
     view: string;
     viewsActiveFilter: Record<string, string[]>;
@@ -139,6 +138,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     static themeCache: Record<string, string> = {};
 
+    /** Selected widgets. Only the editor passes them, in the runtime nothing is selected. */
+    private get selectedWidgets(): AnyWidgetId[] {
+        return this.props.selectedWidgets || [];
+    }
+
     /** Order of the relative widgets as the last render used it - the drag gesture starts from it */
     private lastRelativeOrder: AnyWidgetId[] = [];
 
@@ -150,14 +154,14 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     private readonly promiseToCollect: Promise<Record<string, VisRxWidget<any>>>;
 
-    private readonly refView: React.RefObject<ViewElement>;
+    private readonly refView: React.RefObject<ViewElement | null>;
 
-    private readonly refRelativeView: React.RefObject<HTMLDivElement>;
+    private readonly refRelativeView: React.RefObject<HTMLDivElement | null>;
 
     /** The div with the limited screen size, that contains all widgets if the view is limited */
-    private readonly refLimitScreen: React.RefObject<HTMLDivElement>;
+    private readonly refLimitScreen: React.RefObject<HTMLDivElement | null>;
 
-    private readonly refRelativeColumnsView: React.RefObject<HTMLDivElement>[];
+    private readonly refRelativeColumnsView: React.RefObject<HTMLDivElement | null>[];
 
     private widgetsRefs: Record<AnyWidgetId, WidgetReference>;
 
@@ -236,7 +240,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
         if (this.refView.current?._originalParent) {
             this.refView.current._originalParent.appendChild(this.refView.current);
-            this.refView.current._originalParent = null;
+            this.refView.current._originalParent = undefined;
         }
 
         if (this.selectDiv) {
@@ -253,7 +257,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             // send to all widgets the command
             Object.keys(this.widgetsRefs).forEach(wid => {
                 if (this.widgetsRefs[wid as AnyWidgetId]?.onCommand) {
-                    this.widgetsRefs[wid as AnyWidgetId].onCommand('updateContainers');
+                    this.widgetsRefs[wid as AnyWidgetId].onCommand?.('updateContainers');
                 }
             });
 
@@ -266,8 +270,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
 
         if (command === 'closeDialog' || command === 'openDialog') {
-            if (this.widgetsRefs[options as AnyWidgetId]?.onCommand) {
-                this.widgetsRefs[options as AnyWidgetId].onCommand(command);
+            if (this.widgetsRefs[options as unknown as AnyWidgetId]?.onCommand) {
+                this.widgetsRefs[options as unknown as AnyWidgetId].onCommand?.(command);
             }
             return null;
         }
@@ -280,9 +284,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 let filterValues: string[] | string;
                 if (this.widgetsRefs[wid as AnyWidgetId]?.onCommand) {
                     // take bound information
-                    filterValues = this.widgetsRefs[wid as AnyWidgetId]?.onCommand('collectFilters') as string[];
+                    filterValues = this.widgetsRefs[wid as AnyWidgetId]?.onCommand?.('collectFilters') as string[];
                 } else {
-                    filterValues = widgets[wid as AnyWidgetId]?.data?.filterkey;
+                    filterValues = widgets[wid as AnyWidgetId]?.data?.filterkey || '';
                 }
                 if (filterValues) {
                     if (filterValues && typeof filterValues === 'string') {
@@ -301,28 +305,32 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     };
 
     changeFilter(options?: ViewCommandOptions): null {
-        options = { filter: [], ...options };
+        const rawFilter = options && 'filter' in options ? options.filter : [];
 
-        // if (typeof options.filter === 'string') {
-        //     options.filter = options.filter.split(',').map(f => f.trim()).filter(f => f);
-        // }
+        // a single filter may arrive as a plain string
+        let filter: string[] | undefined;
+        if (Array.isArray(rawFilter)) {
+            filter = rawFilter;
+        } else if (rawFilter) {
+            filter = [rawFilter];
+        }
 
-        if (options.filter) {
-            this.props.viewsActiveFilter[this.props.view] = options.filter;
+        if (filter) {
+            this.props.viewsActiveFilter[this.props.view] = filter;
 
             // inform every widget about the changed filter
             Object.keys(this.widgetsRefs).forEach(wid => {
                 if (this.widgetsRefs[wid as AnyWidgetId]?.onCommand) {
-                    this.widgetsRefs[wid as AnyWidgetId].onCommand('changeFilter');
+                    this.widgetsRefs[wid as AnyWidgetId].onCommand?.('changeFilter');
                 }
             });
 
             // inform bars about changed filter
             if (window.vis.binds.bars && window.vis.binds.bars.filterChanged) {
                 try {
-                    window.vis.binds.bars.filterChanged(this.props.view, options.filter.join(','));
+                    window.vis.binds.bars.filterChanged(this.props.view, filter.join(','));
                 } catch (error) {
-                    console.error(`Cannot change filter: ${error}`);
+                    console.error(`Cannot change filter: ${error as Error}`);
                 }
             }
         }
@@ -374,7 +382,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         };
         Object.keys(this.widgetsRefs).forEach(wid => {
             if (this.widgetsRefs[wid as AnyWidgetId]?.onCommand) {
-                this.widgetsRefs[wid as AnyWidgetId].onCommand('startStealMode');
+                this.widgetsRefs[wid as AnyWidgetId].onCommand?.('startStealMode');
             }
         });
 
@@ -411,7 +419,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
 
-              this.props.context.setSelectedWidgets([]);
+              this.props.context.setSelectedWidgets?.([]);
 
               this.onMouseViewMove && window.document.addEventListener('mousemove', this.onMouseViewMove);
               this.onMouseViewUp && window.document.addEventListener('mouseup', this.onMouseViewUp);
@@ -438,10 +446,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     doubleClickOnView = (): void => {
         if (
             this.props.editMode &&
-            this.props.selectedWidgets?.length === 1 &&
-            store.getState().visProject[this.props.view].widgets[this.props.selectedWidgets[0]].tpl === '_tplGroup'
+            this.selectedWidgets?.length === 1 &&
+            store.getState().visProject[this.props.view].widgets[this.selectedWidgets[0]].tpl === '_tplGroup'
         ) {
-            this.props.context.setSelectedGroup(this.props.selectedWidgets[0]);
+            this.props.context.setSelectedGroup?.(this.selectedWidgets[0] as GroupWidgetId);
         }
     };
 
@@ -609,7 +617,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               // deselect widgets
               this.movement?.selectedWidgetsWithRectangle &&
-                  this.props.context.setSelectedWidgets(this.movement.selectedWidgetsWithRectangle);
+                  this.props.context.setSelectedWidgets?.(this.movement.selectedWidgetsWithRectangle);
 
               this.movement = null;
           }
@@ -643,7 +651,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               if (
                   this.props.context.disableInteraction ||
                   this.props.context.lockDragging ||
-                  this.props.selectedWidgets
+                  this.selectedWidgets
                       .map(
                           (selectedWidget: AnyWidgetId) =>
                               store.getState().visProject[this.props.view].widgets[selectedWidget],
@@ -657,18 +665,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               if ((this.lastClick && Date.now() - this.lastClick < 250) || isDoubleClick) {
                   this.lastClick = Date.now();
                   if (
-                      this.props.selectedWidgets.length === 1 &&
-                      store.getState().visProject[this.props.view].widgets[this.props.selectedWidgets[0]].tpl ===
-                          '_tplGroup'
+                      this.selectedWidgets.length === 1 &&
+                      store.getState().visProject[this.props.view].widgets[this.selectedWidgets[0]].tpl === '_tplGroup'
                   ) {
-                      this.props.context.setSelectedGroup(this.props.selectedWidgets[0]);
+                      this.props.context.setSelectedGroup?.(this.selectedWidgets[0] as GroupWidgetId);
                   }
                   return;
               }
 
               this.lastClick = Date.now();
 
-              if (this.props.selectedWidgets.includes(this.props.selectedGroup) && !isResize) {
+              if (this.props.selectedGroup && this.selectedWidgets.includes(this.props.selectedGroup) && !isResize) {
                   return;
               }
 
@@ -686,7 +693,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               const widgetsRefs = this.widgetsRefs;
 
-              this.props.selectedWidgets.forEach((selectedWidget: AnyWidgetId) => {
+              this.selectedWidgets.forEach((selectedWidget: AnyWidgetId) => {
                   const widgetRect = widgetsRefs[selectedWidget]?.refService?.current?.getBoundingClientRect();
                   if (
                       this.movement &&
@@ -703,8 +710,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               // A single relative widget can be dragged to another place in the order. Take the order it starts
               // from and the size the placeholder has to reserve; both stay fixed for the whole gesture.
-              if (!isResize && this.props.selectedWidgets.length === 1 && !this.props.selectedGroup) {
-                  const draggedId = this.props.selectedWidgets[0];
+              if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup) {
+                  const draggedId = this.selectedWidgets[0];
                   const order = this.getRelativeWidgetOrder();
                   const element = widgetsRefs[draggedId]?.refService?.current;
                   const rect = element?.getBoundingClientRect();
@@ -721,7 +728,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
               }
 
-              this.props.selectedWidgets.forEach((_wid: AnyWidgetId) => {
+              this.selectedWidgets.forEach((_wid: AnyWidgetId) => {
                   if (widgetsRefs[_wid]?.onMove) {
                       widgetsRefs[_wid].onMove(); // indicate the start of movement
                   }
@@ -730,7 +737,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               // Indicate about movement start
               Object.keys(widgetsRefs).forEach(_wid => {
                   if (widgetsRefs[_wid as AnyWidgetId]?.onCommand) {
-                      widgetsRefs[_wid as AnyWidgetId].onCommand('startMove');
+                      widgetsRefs[_wid as AnyWidgetId].onCommand?.('startMove');
                   }
               });
           };
@@ -849,7 +856,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         if (this.props.editMode) {
             this.ignoreMouseEvents = ignore;
 
-            this.props.context.onIgnoreMouseEvents(ignore);
+            this.props.context.onIgnoreMouseEvents?.(ignore);
 
             if (ignore && this.movement) {
                 this.onMouseWidgetMove &&
@@ -865,7 +872,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               if (
                   !this.movement ||
                   !this.refView.current ||
-                  (this.props.selectedWidgets.includes(this.props.selectedGroup) && !this.movement.isResize)
+                  (!!this.props.selectedGroup &&
+                      this.selectedWidgets.includes(this.props.selectedGroup) &&
+                      !this.movement.isResize)
               ) {
                   return;
               }
@@ -898,7 +907,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   for (const wid in widgetsRefs) {
                       const widgetId = wid as AnyWidgetId;
                       // do not snap to itself
-                      if (this.props.selectedWidgets.includes(widgetId)) {
+                      if (this.selectedWidgets.includes(widgetId)) {
                           continue;
                       }
                       const widgetRect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
@@ -947,7 +956,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               this.moveDragGhost(e.clientX, e.clientY);
               this.updateRelativeDragOrder(e.clientX, e.clientY);
 
-              this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+              this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                   const onMove = widgetsRefs[wid]?.onMove;
                   if (onMove && this.movement) {
                       onMove(this.movement.x, this.movement.y, false);
@@ -968,16 +977,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               });
 
               // if only one widget selected => check if it can be added to the other widget
-              if (
-                  this.props.selectedWidgets.length === 1 &&
-                  widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current
-              ) {
+              if (this.selectedWidgets.length === 1 && widgetsRefs[this.selectedWidgets[0]]?.refService?.current) {
                   let found = false;
                   for (const wid in widgetsRefs) {
                       const widgetId = wid as AnyWidgetId;
                       // do not snap to itself
                       if (
-                          this.props.selectedWidgets.includes(widgetId) ||
+                          this.selectedWidgets.includes(widgetId) ||
                           !widgetsRefs[widgetId] ||
                           !widgetsRefs[widgetId].canHaveWidgets ||
                           widgetsRefs[widgetId].doNotWantIncludeWidgets ||
@@ -987,7 +993,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           continue;
                       }
                       const baseRect =
-                          widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
+                          widgetsRefs[this.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
                       const rect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
                       const onCommand = widgetsRefs[widgetId]?.onCommand;
                       // check if the widget can have other widgets inside
@@ -1034,7 +1040,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             const widgetId = wid as AnyWidgetId;
             const { widgets } = selectView(store.getState(), this.props.view);
             if (
-                !this.props.selectedWidgets.includes(widgetId) &&
+                !this.selectedWidgets.includes(widgetId) &&
                 widgets[widgetId] &&
                 ((this.props.selectedGroup && widgets[this.props.selectedGroup].data.members.includes(widgetId)) ||
                     !this.props.selectedGroup) &&
@@ -1056,7 +1062,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
         const selectedHorizontals: number[] = [];
         const selectedVerticals: number[] = [];
-        for (const wid of this.props.selectedWidgets) {
+        for (const wid of this.selectedWidgets) {
             const { widgets } = selectView(store.getState(), this.props.view);
             // check if not in a group
             // a selected widget does not have to be rendered: a relative widget that is being dragged is
@@ -1107,7 +1113,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                       relativeDrag.order.join(',') !== this.getRelativeWidgetOrder().join(',');
                   if (changed) {
                       // the order the widget was dropped into becomes the order of the view
-                      this.props.context.onWidgetsChanged(null, this.props.view, { order: relativeDrag.order });
+                      this.props.context.onWidgetsChanged?.(null, this.props.view, { order: relativeDrag.order });
                       // keep rendering from it until the project carries it, see componentDidUpdate
                       this.setState({ relativeDrag: { ...relativeDrag, dropped: true } });
                   } else {
@@ -1116,7 +1122,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               }
 
               if (this.movement?.moved) {
-                  this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+                  this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                       const onMove = widgetsRefs[wid]?.onMove;
                       if (onMove && this.movement) {
                           onMove(this.movement.x, this.movement.y, true); // indicate the end of movement
@@ -1135,15 +1141,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               });
 
               // if only one widget selected => check if it can be added to another widget
-              if (
-                  this.props.selectedWidgets.length === 1 &&
-                  widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current
-              ) {
+              if (this.selectedWidgets.length === 1 && widgetsRefs[this.selectedWidgets[0]]?.refService?.current) {
                   for (const wid in widgetsRefs) {
                       const widgetId = wid as AnyWidgetId;
                       // do not add to itself
                       if (
-                          this.props.selectedWidgets.includes(widgetId) ||
+                          this.selectedWidgets.includes(widgetId) ||
                           !widgetsRefs[widgetId] ||
                           !widgetsRefs[widgetId].canHaveWidgets ||
                           widgetsRefs[widgetId].doNotWantIncludeWidgets ||
@@ -1153,7 +1156,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           continue;
                       }
                       const baseRect =
-                          widgetsRefs[this.props.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
+                          widgetsRefs[this.selectedWidgets[0]]?.refService?.current?.getBoundingClientRect();
                       const rect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
                       // check if the widget can have other widgets inside
                       if (
@@ -1164,8 +1167,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           baseRect.right <= rect.right &&
                           baseRect.bottom <= rect.bottom
                       ) {
-                          this.props.context.askAboutInclude(
-                              this.props.selectedWidgets[0],
+                          this.props.context.askAboutInclude?.(
+                              this.selectedWidgets[0],
                               widgetId,
                               (_wid: AnyWidgetId, toWid: AnyWidgetId) => {
                                   const onCommand = widgetsRefs[toWid]?.onCommand;
@@ -1388,7 +1391,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
     }
 
-    static renderGitter(step: number, color: string): React.JSX.Element {
+    static renderGitter(step?: number, color?: string): React.JSX.Element {
         color = color || '#D0D0D0';
         step = step || 10;
         const bigWidth = step * 5;
@@ -1471,7 +1474,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 ignoreNotLoaded={options.context.views.___settings?.ignoreNotLoaded}
                 onSelect={
                     options.context.setSelectedWidgets
-                        ? () => options.context.setSelectedWidgets([options.id], options.view)
+                        ? () => options.context.setSelectedWidgets?.([options.id], options.view)
                         : undefined
                 }
             >
@@ -1504,7 +1507,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
                 this.setState({ loadedjQueryTheme: jQueryTheme, themeCode: data });
             } catch (e) {
-                console.warn(`Cannot load jQueryUI theme "${jQueryTheme}": ${e.stack}`);
+                console.warn(`Cannot load jQueryUI theme "${jQueryTheme}": ${(e as Error).stack}`);
             }
         }
 
@@ -1512,7 +1515,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     getJQueryThemeName(): string {
-        const settings = this.props.view && store.getState().visProject[this.props.view]?.settings;
+        const settings = this.props.view ? store.getState().visProject[this.props.view]?.settings : undefined;
 
         return settings?.theme || 'redmond';
     }
@@ -1531,14 +1534,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
     }
 
-    // eslint-disable-next-line react/no-unused-class-component-methods
     moveWidgets = (leftShift: number, topShift: number): void => {
         if (!this.moveTimer) {
             this.movement = {
                 x: 0,
                 y: 0,
             };
-            this.props.selectedWidgets.forEach((_wid: AnyWidgetId) => {
+            this.selectedWidgets.forEach((_wid: AnyWidgetId) => {
                 const onMove = this.widgetsRefs[_wid]?.onMove;
                 if (onMove) {
                     onMove(); // indicate the start of movement
@@ -1560,7 +1562,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.movement.x += leftShift;
         this.movement.y += topShift;
 
-        this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+        this.selectedWidgets.forEach((wid: AnyWidgetId) => {
             const widgetsRefs = this.widgetsRefs;
             const onMove = widgetsRefs[wid]?.onMove;
             if (onMove && this.movement) {
@@ -1576,7 +1578,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.showRulers(true);
             store.dispatch(recalculateFields(true));
 
-            this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+            this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                 const onMove = this.widgetsRefs[wid]?.onMove;
                 if (onMove && this.movement) {
                     onMove(this.movement.x, this.movement.y, true); // indicate the end of movement
@@ -1594,7 +1596,6 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }, 800);
     };
 
-    // eslint-disable-next-line react/no-unused-class-component-methods
     resizeWidgets = (widthShift: number, heightShift: number): void => {
         if (!this.moveTimer) {
             this.movement = {
@@ -1610,7 +1611,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 }
             });
 
-            this.props.selectedWidgets.forEach((_wid: AnyWidgetId) => {
+            this.selectedWidgets.forEach((_wid: AnyWidgetId) => {
                 const onMove = this.widgetsRefs[_wid]?.onMove;
                 if (onMove) {
                     onMove(); // indicate the start of resizing
@@ -1624,7 +1625,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.movement.x += widthShift;
         this.movement.y += heightShift;
 
-        this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+        this.selectedWidgets.forEach((wid: AnyWidgetId) => {
             const widgetsRefs = this.widgetsRefs;
             const onMove = widgetsRefs[wid]?.onMove;
             if (onMove && this.movement) {
@@ -1639,7 +1640,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.moveTimer = null;
             this.showRulers(true);
 
-            this.props.selectedWidgets.forEach((wid: AnyWidgetId) => {
+            this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                 const onMove = this.widgetsRefs[wid]?.onMove;
                 // indicate the end of movement
                 if (onMove && this.movement) {
@@ -1663,7 +1664,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return;
         }
         if (document.activeElement?.tagName === 'BODY') {
-            if (this.props.selectedWidgets.length) {
+            if (this.selectedWidgets.length) {
                 if (e.key === 'ArrowLeft') {
                     e.preventDefault();
                     this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](e.ctrlKey ? -10 : -1, 0);
@@ -1743,7 +1744,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ];
     }
 
-    getRelativeStyle(settings: ViewSettings, groupId: GroupWidgetId, limitScreenSize?: boolean): React.CSSProperties {
+    getRelativeStyle(settings: ViewSettings, groupId?: GroupWidgetId, limitScreenSize?: boolean): React.CSSProperties {
         const relativeStyle: React.CSSProperties = {};
         if (groupId) {
             const groupWidgetStyle = store.getState().visProject[this.props.view].widgets[groupId].style;
@@ -1843,7 +1844,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         // re-calculate the width of the view
                         setTimeout(() => {
                             this.updateViewWidth();
-                            resolve(null);
+                            resolve();
                         }, 400);
                     });
                 }}
@@ -1887,7 +1888,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         );
     }
 
-    render(): React.JSX.Element {
+    render(): React.JSX.Element | null {
         let rxAbsoluteWidgets: (React.JSX.Element | null)[] = [];
         let rxRelativeWidgets: React.JSX.Element[] | null = [];
         let rxGroupWidget;
@@ -1959,8 +1960,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 const absoluteWidgets = [];
                 const unknownWidgets = [];
 
-                if (this.props.editMode && this.props.selectedWidgets?.length) {
-                    this.props.selectedWidgets.forEach((id: AnyWidgetId) => {
+                if (this.props.editMode && this.selectedWidgets?.length) {
+                    this.selectedWidgets.forEach((id: AnyWidgetId) => {
                         const widget = contextView.widgets[id];
                         if (!widget || (widget.groupid && !this.props.selectedGroup)) {
                             return;
@@ -2135,8 +2136,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                               : this.refView,
                         askView: this.askView,
                         relativeWidgetOrder,
-                        selectedGroup: this.props.selectedGroup,
-                        selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.props.selectedWidgets,
+                        selectedGroup: this.props.selectedGroup || null,
+                        selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
                         view,
                         viewsActiveFilter: this.props.viewsActiveFilter,
                         customSettings: this.props.customSettings,
@@ -2196,8 +2197,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             relativeWidgetOrder: this.props.selectedGroup
                                 ? relativeWidgetOrder
                                 : listRelativeWidgetsOrder,
-                            selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.props.selectedWidgets,
-                            selectedGroup: this.props.selectedGroup,
+                            selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
+                            selectedGroup: this.props.selectedGroup || null,
                             view,
                             customSettings: this.props.customSettings,
                             viewsActiveFilter: this.props.viewsActiveFilter,
@@ -2246,7 +2247,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         askView: this.askView,
                         relativeWidgetOrder,
                         selectedGroup: this.props.selectedGroup,
-                        selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.props.selectedWidgets,
+                        selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
                         view,
                         viewsActiveFilter: this.props.viewsActiveFilter,
                         customSettings: this.props.customSettings,
@@ -2412,7 +2413,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             style.display = 'flex';
             style.justifyContent = 'center';
             style.alignItems = 'center';
-            style.backgroundColor = bgColor;
+            style.backgroundColor = bgColor || undefined;
         }
 
         if (this.props.selectedGroup) {

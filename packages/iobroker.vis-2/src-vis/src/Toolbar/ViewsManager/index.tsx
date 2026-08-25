@@ -65,8 +65,8 @@ interface ViewsManagerProps {
     onClose: () => void;
     showDialog: (
         type: 'add' | 'rename' | 'delete' | 'copy',
-        view?: string,
-        parentId?: string,
+        view?: string | null,
+        parentId?: string | null,
         cb?: (dialogName: string) => void,
     ) => void;
     themeName: ThemeName;
@@ -81,10 +81,10 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
     const [exportDialog, setExportDialog] = useState<string | false>(false);
     const [importDialog, setImportDialog] = useState<string | false>(false);
 
-    const [folderDialog, setFolderDialog] = useState<'add' | 'rename' | 'delete'>(null);
+    const [folderDialog, setFolderDialog] = useState<'add' | 'rename' | 'delete' | null>(null);
     const [folderDialogName, setFolderDialogName] = useState('');
-    const [folderDialogId, setFolderDialogId] = useState(null);
-    const [folderDialogParentId, setFolderDialogParentId] = useState(null);
+    const [folderDialogId, setFolderDialogId] = useState<string | null>(null);
+    const [folderDialogParentId, setFolderDialogParentId] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState('');
     const [isOverRoot, setIsOverRoot] = useState(false);
 
@@ -100,7 +100,10 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
 
     const moveFolder = (id: string, parentId: string): void => {
         const project = deepClone(visProject);
-        project.___settings.folders.find(folder => folder.id === id).parentId = parentId;
+        const folder = project.___settings.folders?.find(f => f.id === id);
+        if (folder) {
+            folder.parentId = parentId;
+        }
         void props.changeProject(project);
     };
 
@@ -164,10 +167,10 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
                         moveView={moveView}
                         setExportDialog={setExportDialog}
                         setImportDialog={setImportDialog}
-                        selectedView={props.selectedView}
-                        theme={props.theme}
                         openedViews={store.getState().visProject.___settings.openedViews}
                         {...props}
+                        selectedView={props.selectedView}
+                        theme={props.theme}
                         hasPermissions={hasViewAccess({
                             view: name,
                             user: activeUser,

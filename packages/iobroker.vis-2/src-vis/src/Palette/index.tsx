@@ -161,8 +161,8 @@ interface PaletteState {
     marketplaceDeleted: string[] | null;
     marketplaceLoading: boolean;
     accordionOpen: Record<string, boolean>;
-    widgetsList: Record<string, WidgetType[]>;
-    widgetSetProps: Record<string, WidgetSetProps>;
+    widgetsList: Record<string, WidgetType[]> | null;
+    widgetSetProps: Record<string, WidgetSetProps> | null;
 }
 
 class Palette extends Component<PaletteProps, PaletteState> {
@@ -244,10 +244,10 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         updates.push(data);
                                     }
                                 } catch (e) {
-                                    if (e.statusCode === 404) {
+                                    if ((e as { statusCode?: number }).statusCode === 404) {
                                         deleted.push(widget.widget_id);
                                     } else {
-                                        console.error(`Cannot check updates for ${widget.widget_id}: ${e}`);
+                                        console.error(`Cannot check updates for ${widget.widget_id}: ${e as Error}`);
                                     }
                                 }
                             }
@@ -278,7 +278,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
 
         const widgetTypes = getWidgetTypes();
         widgetTypes.forEach(widgetType => {
-            const widgetTypeName: string = widgetType.set;
+            const widgetTypeName: string = widgetType.set || '';
             if (widgetType.developerMode) {
                 widgetSetProps[widgetTypeName] ||= {};
                 widgetSetProps[widgetTypeName].developerMode = true;
@@ -311,7 +311,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 widgetSetProps[widgetTypeName].version = widgetType.version;
             }
 
-            const title = widgetType.label ? I18n.t(widgetType.label) : window.vis._(widgetType.title) || '';
+            const title = widgetType.label ? I18n.t(widgetType.label) : window.vis._(widgetType.title || '') || '';
             if (
                 widgetType.hidden ||
                 (this.state.filter && !title.toLowerCase().includes(this.state.filter.toLowerCase()))
@@ -362,7 +362,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
         Object.keys(_widgetsList).forEach(widgetType => {
             widgetsList[widgetType] = Object.values(_widgetsList[widgetType]);
             // sort items
-            widgetsList[widgetType].sort((a, b) => a.order - b.order);
+            widgetsList[widgetType].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         });
 
         this.setState({ widgetsList, widgetSetProps }, () => {
@@ -428,8 +428,8 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         themeType={this.props.themeType}
                                         selectedView={this.props.selectedView}
                                         marketplace={item}
-                                        marketplaceDeleted={this.state.marketplaceDeleted}
-                                        marketplaceUpdates={this.state.marketplaceUpdates}
+                                        marketplaceDeleted={this.state.marketplaceDeleted || undefined}
+                                        marketplaceUpdates={this.state.marketplaceUpdates || undefined}
                                         uninstallWidget={this.props.uninstallWidget}
                                         updateWidgets={this.props.updateWidgets}
                                         widgetSet="__marketplace"
@@ -462,22 +462,18 @@ class Palette extends Component<PaletteProps, PaletteState> {
 
         // find widgetSet
         const wSetObj = instances.find(obj => obj.common.visWidgets && obj.common.name === category);
-        if (this.state.widgetSetProps[category].developerMode) {
-            if (wSetObj) {
+        if (this.state.widgetSetProps?.[category]?.developerMode) {
+            const setWidgets = wSetObj?.common.visWidgets;
+            if (wSetObj && setWidgets) {
                 // find any set with http://localhost:4173/customWidgets.js
-                if (
-                    Object.keys(wSetObj.common.visWidgets).find(key =>
-                        wSetObj.common.visWidgets[key].url?.startsWith('http'),
-                    )
-                ) {
-                    Object.keys(wSetObj.common.visWidgets).forEach(key => {
+                if (Object.keys(setWidgets).find(key => setWidgets[key].url?.startsWith('http'))) {
+                    Object.keys(setWidgets).forEach(key => {
                         const name: ioBroker.StringOrTranslated = wSetObj.common.name;
                         if (name && typeof name === 'object') {
                             const multiName: ioBroker.Translated = name;
-                            wSetObj.common.visWidgets[key].url =
-                                `${multiName[this.lang] || multiName.en}/customWidgets.js`;
+                            setWidgets[key].url = `${multiName[this.lang] || multiName.en}/customWidgets.js`;
                         } else {
-                            wSetObj.common.visWidgets[key].url = `${name}/customWidgets.js`;
+                            setWidgets[key].url = `${name}/customWidgets.js`;
                         }
                     });
                     await this.props.socket.setObject(wSetObj._id, wSetObj);
@@ -488,7 +484,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
             const dynamicWidgetInstances = instances.filter(obj => obj.common.visWidgets);
             // disable all widget sets
             for (let i = 0; i < dynamicWidgetInstances.length; i++) {
-                const visWidgets = dynamicWidgetInstances[i].common.visWidgets;
+                const visWidgets = dynamicWidgetInstances[i].common.visWidgets || {};
                 if (dynamicWidgetInstances[i] !== wSetObj) {
                     // find any set with http://localhost:4173/customWidgets.js
                     if (Object.keys(visWidgets).find(key => visWidgets[key].url?.startsWith('http'))) {
@@ -512,7 +508,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                         Object.keys(visWidgets).forEach(
                             key => (visWidgets[key].url = 'http://localhost:4173/customWidgets.js'),
                         );
-                        await this.props.socket.setObject(wSetObj._id, wSetObj);
+                        wSetObj && (await this.props.socket.setObject(wSetObj._id, wSetObj));
                         reload = true;
                     } catch {
                         window.alert(`Please start the widget development of ${wSetObj._id.split('.')[2]} first`);
@@ -550,8 +546,8 @@ class Palette extends Component<PaletteProps, PaletteState> {
             return null;
         }
 
-        const allOpened = !Object.keys(this.state.widgetsList).find(group => !this.state.accordionOpen[group]);
-        const allClosed = !Object.keys(this.state.widgetsList).find(group => this.state.accordionOpen[group]);
+        const allOpened = !Object.keys(this.state.widgetsList || {}).find(group => !this.state.accordionOpen[group]);
+        const allClosed = !Object.keys(this.state.widgetsList || {}).find(group => this.state.accordionOpen[group]);
 
         return (
             <>
@@ -575,7 +571,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                     // save the state of marketplace and do not open it if it is not opened
                                     const __marketplace = this.state.accordionOpen.__marketplace;
                                     const accordionOpen: Record<string, boolean> = {};
-                                    Object.keys(this.state.widgetsList).forEach(group => (accordionOpen[group] = true));
+                                    Object.keys(this.state.widgetsList || {}).forEach(
+                                        group => (accordionOpen[group] = true),
+                                    );
                                     accordionOpen.__marketplace = __marketplace;
                                     window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
                                     this.setState({ accordionOpen });
@@ -601,7 +599,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                 size="small"
                                 onClick={() => {
                                     const accordionOpen: Record<string, boolean> = {};
-                                    Object.keys(this.state.widgetsList).forEach(
+                                    Object.keys(this.state.widgetsList || {}).forEach(
                                         group => (accordionOpen[group] = false),
                                     );
                                     accordionOpen.__marketplace = false;
@@ -673,30 +671,30 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     {/* gap on the very top */}
                     <div style={{ width: '100%' }} />
                     {this.renderMarketplace()}
-                    {Object.keys(this.state.widgetsList).map((category, categoryKey) => {
+                    {Object.keys(this.state.widgetsList || {}).map((category, categoryKey) => {
                         let version = null;
-                        if (this.state.widgetSetProps[category]?.version) {
+                        if (this.state.widgetSetProps?.[category]?.version) {
                             if (DEVELOPER_MODE) {
                                 version = (
                                     <div
                                         style={{
                                             ...styles.version,
                                             cursor: 'pointer',
-                                            color: this.state.widgetSetProps[category].developerMode
+                                            color: this.state.widgetSetProps?.[category].developerMode
                                                 ? '#ff4242'
                                                 : 'inherit',
-                                            fontWeight: this.state.widgetSetProps[category].developerMode
+                                            fontWeight: this.state.widgetSetProps?.[category].developerMode
                                                 ? 'bold'
                                                 : 'inherit',
                                         }}
                                         onClick={() => this.toggleDebugVersion(category)}
                                     >
-                                        {this.state.widgetSetProps[category]?.version}
+                                        {this.state.widgetSetProps?.[category]?.version}
                                     </div>
                                 );
                             } else {
                                 version = (
-                                    <div style={styles.version}>{this.state.widgetSetProps[category]?.version}</div>
+                                    <div style={styles.version}>{this.state.widgetSetProps?.[category]?.version}</div>
                                 );
                             }
                         }
@@ -742,23 +740,23 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         },
                                     }}
                                 >
-                                    {this.state.widgetSetProps[category]?.icon ? (
+                                    {this.state.widgetSetProps?.[category]?.icon ? (
                                         <Icon
                                             style={styles.groupIcon}
-                                            src={this.state.widgetSetProps[category].icon}
+                                            src={this.state.widgetSetProps?.[category].icon}
                                         />
                                     ) : null}
-                                    {this.state.widgetSetProps[category]?.label
-                                        ? this.state.widgetSetProps[category].label.startsWith('Vis 2 - ')
-                                            ? this.state.widgetSetProps[category].label.substring(8)
-                                            : this.state.widgetSetProps[category].label
+                                    {this.state.widgetSetProps?.[category]?.label
+                                        ? this.state.widgetSetProps?.[category].label.startsWith('Vis 2 - ')
+                                            ? this.state.widgetSetProps?.[category].label.substring(8)
+                                            : this.state.widgetSetProps?.[category].label
                                         : I18n.t(category)}
                                 </AccordionSummary>
                                 <AccordionDetails sx={styles.accordionDetails}>
                                     {version}
                                     <div>
                                         {this.state.accordionOpen[category]
-                                            ? this.state.widgetsList[category].map(widgetItem =>
+                                            ? this.state.widgetsList?.[category].map(widgetItem =>
                                                   widgetItem.name === '_tplGroup' ? null : (
                                                       <Widget
                                                           changeProject={this.props.changeProject}
@@ -769,7 +767,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                                           socket={this.props.socket}
                                                           themeType={this.props.themeType}
                                                           widgetSet={category}
-                                                          widgetSetProps={this.state.widgetSetProps[category]}
+                                                          widgetSetProps={this.state.widgetSetProps?.[category]}
                                                           widgetType={widgetItem}
                                                           widgetTypeName={widgetItem.name}
                                                       />

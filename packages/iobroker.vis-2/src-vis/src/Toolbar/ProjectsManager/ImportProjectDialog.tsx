@@ -40,7 +40,7 @@ interface ImportProjectDialogProps {
 
 const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
     const [projectName, setProjectName] = useState('');
-    const [projectData, setProjectData] = useState<string>(null);
+    const [projectData, setProjectData] = useState<string | null>(null);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [askOpenProject, setAskOpenProject] = useState(false);
     const [working, setWorking] = useState(false);
@@ -60,7 +60,7 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
                 return;
             }
 
-            let timeout = setTimeout(() => {
+            let timeout: ReturnType<typeof setTimeout> | null = setTimeout(() => {
                 timeout = null;
                 setWorking(false);
                 window.alert(I18n.t('Cannot upload project: timeout'));
@@ -73,7 +73,7 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
                 {
                     id: `${props.adapterName}.${props.instance}`,
                     name: projectName || 'main',
-                    data: projectData.split(',')[1],
+                    data: projectData?.split(',')[1] || '',
                 },
                 async (result: { error?: string }) => {
                     setWorking(false);

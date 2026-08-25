@@ -97,7 +97,6 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
         } as const;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicViewInWidget.getWidgetInfo();
     }
@@ -105,7 +104,7 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
     getViewOptions(
         project: Project,
         options: BasicViewInWidgetOptions[],
-        parentId: string = null,
+        parentId: string | null = null,
         level = 0,
     ): BasicViewInWidgetOptions[] {
         project.___settings.folders
@@ -135,7 +134,7 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
         return options;
     }
 
-    renderViewSelector(): React.JSX.Element[] {
+    renderViewSelector(): (React.JSX.Element | null)[] {
         const options = this.getViewOptions(this.props.context.views, [], null, 0).filter(
             option => option.type === 'folder' || option.view !== this.props.view,
         );
@@ -176,7 +175,7 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
                                         this.setState({ showViewSelector: false }, () => {
                                             // Say to view to cancel ignoring clicks
                                             this.props.onIgnoreMouseEvents(false);
-                                            this.props.context.onWidgetsChanged([
+                                            this.props.context.onWidgetsChanged?.([
                                                 {
                                                     wid: this.props.id,
                                                     view: this.props.view,
@@ -257,19 +256,19 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
         const style: CSSProperties = {
             position: 'absolute',
         };
-        if (this.state.rxStyle['overflow-x'] && this.state.rxStyle['overflow-y']) {
+        if (this.state.rxStyle?.['overflow-x'] && this.state.rxStyle?.['overflow-y']) {
             delete props.style.overflow;
-            if (this.state.rxStyle['overflow-y'] === this.state.rxStyle['overflow-x']) {
-                style.overflow = this.state.rxStyle['overflow-x'];
+            if (this.state.rxStyle?.['overflow-y'] === this.state.rxStyle?.['overflow-x']) {
+                style.overflow = this.state.rxStyle?.['overflow-x'];
             } else {
-                style.overflowX = this.state.rxStyle['overflow-x'];
-                style.overflowY = this.state.rxStyle['overflow-y'];
+                style.overflowX = this.state.rxStyle?.['overflow-x'];
+                style.overflowY = this.state.rxStyle?.['overflow-y'];
             }
-        } else if (this.state.rxStyle['overflow-x']) {
-            style.overflowX = this.state.rxStyle['overflow-x'];
+        } else if (this.state.rxStyle?.['overflow-x']) {
+            style.overflowX = this.state.rxStyle?.['overflow-x'];
             delete props.style.overflow;
-        } else if (this.state.rxStyle['overflow-y']) {
-            style.overflowY = this.state.rxStyle['overflow-y'];
+        } else if (this.state.rxStyle?.['overflow-y']) {
+            style.overflowY = this.state.rxStyle?.['overflow-y'];
             delete props.style.overflow;
         } else if ((this.state.rxStyle as any).overflow) {
             style.overflow = (this.state.rxStyle as any).overflow;

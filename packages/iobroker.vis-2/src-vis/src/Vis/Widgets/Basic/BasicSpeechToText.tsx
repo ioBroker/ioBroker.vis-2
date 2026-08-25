@@ -71,7 +71,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicSpeechToText.getWidgetInfo();
     }

@@ -124,12 +124,12 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
             <MaterialIconSelector
                 themeType={this.props.context.theme.palette.mode}
                 theme={this.props.context.theme}
-                value={this.state.items[this.state.selectIcon]}
+                value={this.state.items[this.state.selectIcon ?? 0]}
                 additionalSets={this.props.context.additionalSets}
                 onClose={(icon: string | null) => {
                     if (icon !== null) {
                         const items = JSON.parse(JSON.stringify(this.state.items));
-                        items[this.state.selectIcon].icon = icon;
+                        items[this.state.selectIcon ?? 0].icon = icon;
                         this.updateItems(items);
                     }
                     this.setState({ selectIcon: null });
@@ -209,7 +209,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
             return null;
         }
 
-        let _value = this.state.items[this.state.selectImage].image || '';
+        let _value = this.state.items[this.state.selectImage ?? 0].image || '';
         if (_value.startsWith('../')) {
             _value = _value.substring(3);
         } else if (_value.startsWith('_PRJ_NAME/')) {
@@ -250,7 +250,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                         selected = `../${selected}`;
                     }
                     const items = JSON.parse(JSON.stringify(this.state.items));
-                    items[this.state.selectImage].image = selected;
+                    items[this.state.selectImage ?? 0].image = selected;
                     this.updateItems(items);
                     this.setState({ selectImage: null });
                 }}

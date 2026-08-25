@@ -24,13 +24,13 @@ const styles: { draggableItem: React.CSSProperties } = {
 
 interface ShowAllViewsDialogProps {
     project: Project;
-    field: Field;
+    field: Field | null;
     changeProject: (newProject: Project) => void;
     onClose: () => void;
     themeType: ThemeType;
     theme: VisTheme;
     checkFunction: (
-        funcText: boolean | string | ((settings: ViewSettings) => boolean),
+        funcText: boolean | string | ((settings: ViewSettings) => boolean) | undefined,
         settings: ViewSettings,
     ) => boolean;
     userGroups: Record<string, ioBroker.GroupObject>;
@@ -42,7 +42,8 @@ interface ShowAllViewsDialogProps {
 }
 
 export default function showAllViewsDialog(props: ShowAllViewsDialogProps): React.JSX.Element | null {
-    if (!props.field) {
+    const field = props.field;
+    if (!field) {
         return null;
     }
 
@@ -51,18 +52,18 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
     const items: { control: React.JSX.Element; view: string; order: number }[] = viewList
         .map(view => {
             let disabled = false;
-            if (props.field.disabled !== undefined) {
-                if (props.field.disabled === true) {
+            if (field.disabled !== undefined) {
+                if (field.disabled === true) {
                     disabled = true;
-                } else if (props.field.disabled === false) {
+                } else if (field.disabled === false) {
                     disabled = false;
                 } else {
-                    disabled = !!props.checkFunction(props.field.disabled, props.project[view].settings || {});
+                    disabled = !!props.checkFunction(field.disabled, props.project[view].settings || {});
                 }
             }
 
             const control = getEditField({
-                field: props.field,
+                field: field,
                 disabled,
                 view,
                 editMode: true,
@@ -88,7 +89,7 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
                 order: parseInt((props.project[view].settings.navigationOrder as any as string) ?? '0'),
             };
         })
-        .filter(it => it);
+        .filter(it => !!it);
 
     items.sort((prevItem, nextItem) =>
         prevItem.order === nextItem.order ? 0 : prevItem.order < nextItem.order ? -1 : 1,
@@ -96,8 +97,7 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
     const viewOrderList = items.map(item => item.view);
 
     const applyToAllButtonVisible =
-        props.field.applyToAll &&
-        getViewsWithDifferentValues(props.project, props.field, items[0].view, null, props.checkFunction);
+        field.applyToAll && getViewsWithDifferentValues(props.project, field, items[0].view, null, props.checkFunction);
 
     return (
         <Dialog
@@ -105,7 +105,7 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
             onClose={props.onClose}
             maxWidth="md"
         >
-            <DialogTitle>{I18n.t(props.field.label)}</DialogTitle>
+            <DialogTitle>{I18n.t(field.label)}</DialogTitle>
             <DialogContent>
                 <DragDropContext
                     onDragEnd={data => {
@@ -114,6 +114,9 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
                         viewOrderList.forEach((view, index) => {
                             newProject[view].settings.navigationOrder = index;
                         });
+                        if (!data.destination) {
+                            return;
+                        }
                         const index = newProject[viewOrderList[data.destination.index]].settings.navigationOrder;
 
                         newProject[viewOrderList[data.destination.index]].settings.navigationOrder =
@@ -185,20 +188,20 @@ export default function showAllViewsDialog(props: ShowAllViewsDialogProps): Reac
                                                                 const _viewsToChange =
                                                                     getViewsWithDifferentValues(
                                                                         props.project,
-                                                                        props.field,
+                                                                        field,
                                                                         item.view,
                                                                         null,
                                                                         props.checkFunction,
                                                                     ) || [];
                                                                 _viewsToChange?.forEach(_view => {
                                                                     (newProject[_view].settings as Record<string, any>)[
-                                                                        props.field.attr
+                                                                        field.attr
                                                                     ] = (
                                                                         newProject[item.view].settings as Record<
                                                                             string,
                                                                             any
                                                                         >
-                                                                    )[props.field.attr];
+                                                                    )[field.attr];
                                                                 });
                                                                 props.changeProject(newProject);
                                                             }}

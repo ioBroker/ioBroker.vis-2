@@ -8,9 +8,9 @@ export function getViewsWithDifferentValues(
     project: Project,
     field: Field,
     selectedView: string,
-    views: string[],
+    views: string[] | null,
     checkFunction: (
-        funcText: boolean | string | ((settings: Record<string, any>) => boolean),
+        funcText: boolean | string | ((settings: Record<string, any>) => boolean) | undefined,
         settings: Record<string, any>,
     ) => boolean,
 ): string[] | null {
@@ -70,7 +70,7 @@ interface RenderApplyDialogProps {
     field: ApplyField | null;
     changeProject: (newProject: Project) => void;
     checkFunction: (
-        funcText: boolean | string | ((settings: Record<string, any>) => boolean),
+        funcText: boolean | string | ((settings: Record<string, any>) => boolean) | undefined,
         settings: Record<string, any>,
     ) => boolean;
 }

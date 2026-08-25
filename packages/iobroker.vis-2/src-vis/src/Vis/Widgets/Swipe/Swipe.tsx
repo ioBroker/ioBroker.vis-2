@@ -93,12 +93,11 @@ class Swipe extends VisRxWidget<RxData> {
             });
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return Swipe.getWidgetInfo();
     }
 
-    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
+    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | null {
         super.renderWidgetBody(props);
 
         if (this.props.editMode) {

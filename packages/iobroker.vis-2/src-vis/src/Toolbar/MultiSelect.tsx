@@ -81,7 +81,7 @@ const styles: Record<string, any> = {
 interface MultiSelectProps {
     value: string[];
     options: { value: string; name: string; subName?: string; color?: string; icon?: string }[];
-    label: string;
+    label?: string;
     width: number;
     onChange: (value: string[]) => void;
     setSelectedWidgets: (widgets: string[]) => void;
@@ -107,8 +107,8 @@ class MultiSelect extends Component<MultiSelectProps, MultiSelectState> {
         const value = props.value || [];
 
         let text: string | React.JSX.Element;
-        let subText: string | null = null;
-        let color: string;
+        let subText: string | null | undefined = null;
+        let color: string | undefined;
         let icon: React.JSX.Element | undefined;
         if (value.length === 1) {
             const item = props.options.find(foundItem => foundItem.value === value[0]);
@@ -122,7 +122,7 @@ class MultiSelect extends Component<MultiSelectProps, MultiSelectState> {
                         style={styles.icon}
                         alt={item.name}
                     />
-                ) : null;
+                ) : undefined;
             } else {
                 text = value[0];
             }

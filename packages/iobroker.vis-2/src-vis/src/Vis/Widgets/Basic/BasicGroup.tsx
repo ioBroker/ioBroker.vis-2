@@ -238,7 +238,7 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
                     askView: this.props.askView,
                     refParent: props.refService,
                     relativeWidgetOrder: groupWidgets,
-                    viewsActiveFilter: this.props.viewsActiveFilter,
+                    viewsActiveFilter: this.props.viewsActiveFilter || {},
                     customSettings: this.props.customSettings,
                 });
             });

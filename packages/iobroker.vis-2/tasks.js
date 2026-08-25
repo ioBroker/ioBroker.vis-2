@@ -72,14 +72,12 @@ async function generateSvgFiles() {
     if (!existsSync(`${__dirname}/knx-uf-iconset/master.zip`)) {
         let res;
         try {
-            res = await axios(
-                'https://github.com/OpenAutomationProject/knx-uf-iconset/archive/refs/heads/master.zip',
-                { responseType: 'arraybuffer', timeout: 30_000 },
-            );
+            res = await axios('https://github.com/OpenAutomationProject/knx-uf-iconset/archive/refs/heads/master.zip', {
+                responseType: 'arraybuffer',
+                timeout: 30_000,
+            });
         } catch (e) {
-            console.warn(
-                `Could not download knx-uf-iconset (skipping): ${e.code || e.message || e}`,
-            );
+            console.warn(`Could not download knx-uf-iconset (skipping): ${e.code || e.message || e}`);
             return;
         }
         !existsSync(`${__dirname}/knx-uf-iconset`) && mkdirSync(`${__dirname}/knx-uf-iconset`);
@@ -127,20 +125,20 @@ async function generateSvgFiles() {
     }
 }
 
-function syncFiles(target, dest) {
-    let dataSource = readFileSync(dest).toString('utf8');
-    // remove all CR/LF
-    dataSource = dataSource.replace(/\r\n/g, '\n');
-    if (existsSync(target)) {
-        let dataTarget = readFileSync(target).toString('utf8');
-        dataTarget = dataTarget.replace(/\r\n/g, '\n');
-        if (dataTarget !== dataSource) {
-            writeFileSync(target, dataSource);
-        }
-    } else {
-        writeFileSync(target, dataSource);
-    }
-}
+// function syncFiles(target, dest) {
+//     let dataSource = readFileSync(dest).toString('utf8');
+//     // remove all CR/LF
+//     dataSource = dataSource.replace(/\r\n/g, '\n');
+//     if (existsSync(target)) {
+//         let dataTarget = readFileSync(target).toString('utf8');
+//         dataTarget = dataTarget.replace(/\r\n/g, '\n');
+//         if (dataTarget !== dataSource) {
+//             writeFileSync(target, dataSource);
+//         }
+//     } else {
+//         writeFileSync(target, dataSource);
+//     }
+// }
 
 function buildEditor() {
     // synchronise i18n: copy all new words from runtime into src

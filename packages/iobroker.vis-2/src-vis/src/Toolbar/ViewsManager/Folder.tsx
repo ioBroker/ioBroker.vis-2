@@ -65,7 +65,7 @@ interface FolderProps {
     editMode?: boolean;
     foldersCollapsed: string[];
     setFoldersCollapsed: (foldersCollapsed: string[]) => void;
-    showDialog?: (dialog: string, view: string, parentId: string) => void;
+    showDialog?: (dialog: 'add' | 'rename' | 'delete' | 'copy', view?: string | null, parentId?: string | null) => void;
     theme: VisTheme;
 }
 
@@ -115,7 +115,7 @@ const Folder: React.FC<FolderProps> = props => {
                             return true;
                         }
                         const parentId = currentFolder.parentId;
-                        currentFolder = folders.find(foundFolder => foundFolder.id === parentId);
+                        currentFolder = folders.find(foundFolder => foundFolder.id === parentId) as FolderType;
                     }
                 }
                 return false;
@@ -155,12 +155,10 @@ const Folder: React.FC<FolderProps> = props => {
 
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [visProject]);
+    }, [visProject, preview]);
 
     useEffect(() => {
         props.setIsDragging(isDraggingThisItem ? props.folder.id : '');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDraggingThisItem]);
 
     console.log(`${props.folder.name} ${props.isDragging} ${canDrop}`);
@@ -238,7 +236,7 @@ const Folder: React.FC<FolderProps> = props => {
                     >
                         <IconButton
                             size="small"
-                            onClick={() => props.showDialog('add', null, props.folder.id)}
+                            onClick={() => props.showDialog?.('add', null, props.folder.id)}
                         >
                             <AddIcon />
                         </IconButton>

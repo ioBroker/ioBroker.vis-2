@@ -365,7 +365,7 @@ function getRemoteWidgets(
                                         try {
                                             I18n.extendTranslations(collection.i18n);
                                         } catch (error) {
-                                            console.error(`Cannot import i18n: ${error}`);
+                                            console.error(`Cannot import i18n: ${error as Error}`);
                                         }
                                     }
 

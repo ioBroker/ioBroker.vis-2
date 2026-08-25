@@ -97,9 +97,7 @@ class JQuiWriteState<
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     // the field selects a state, but getObject() is generic on the id
                                     const obj = (await socket.getObject(data.oid)) as
-                                        | ioBroker.StateObject
-                                        | null
-                                        | undefined;
+                                        ioBroker.StateObject | null | undefined;
                                     let changed = false;
                                     if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
                                         if (data.min !== obj.common.min) {
@@ -118,7 +116,7 @@ class JQuiWriteState<
                                                 changed = true;
                                             }
                                         } else if (data.minmax !== obj.common.min) {
-                                            data.minmax = obj.common.min;
+                                            data.minmax = obj.common.min as number;
                                             changed = true;
                                         }
                                     }
@@ -285,7 +283,7 @@ class JQuiWriteState<
                 const state = await this.props.context.socket.getState(this.state.rxData.oid);
                 this.onStateUpdated(this.state.rxData.oid, state);
             } catch (e) {
-                console.error(`Cannot get state ${this.state.rxData.oid}: ${e}`);
+                console.error(`Cannot get state ${this.state.rxData.oid}: ${e as Error}.`);
             }
         }
     }
@@ -297,12 +295,11 @@ class JQuiWriteState<
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiWriteState.getWidgetInfo();
     }
 
-    onStateUpdated(id: string, state: ioBroker.State | null): void {
+    onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
         if (id === this.state.rxData.oid && state) {
             const value = state.val === null || state.val === undefined ? '' : state.val;
 
@@ -384,7 +381,7 @@ class JQuiWriteState<
             icon = this.state.rxData.icon || this.state.rxData.src;
             invertIcon = this.state.rxData.invert_icon;
         }
-        const color = this.state.rxStyle.color;
+        const color = this.state.rxStyle?.color;
 
         if (icon) {
             if (icon.startsWith('_PRJ_NAME/')) {
@@ -411,7 +408,7 @@ class JQuiWriteState<
 
     renderText(): React.JSX.Element | null {
         let text = this.state.rxData.text;
-        const color = this.state.rxStyle.color;
+        const color = this.state.rxStyle?.color;
 
         if (!text) {
             if (this.state.rxData.type === 'oid') {

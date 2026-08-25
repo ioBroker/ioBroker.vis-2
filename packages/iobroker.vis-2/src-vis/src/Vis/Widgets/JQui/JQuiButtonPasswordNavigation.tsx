@@ -44,25 +44,34 @@ class JQuiButtonPasswordNavigation extends JQuiButton {
         });
 
         const modal = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'modal');
-        delete modal.default;
+        if (modal) {
+            delete modal.default;
+        }
 
         const text = JQuiButton.findField<RxWidgetInfoAttributesFieldText>(newWidgetInfo, 'buttontext');
-        text.default = 'Password';
+        if (text) {
+            text.default = 'Password';
+        }
 
         const navView = JQuiButton.findField<RxWidgetInfoAttributesFieldDefault>(newWidgetInfo, 'nav_view');
-        navView.default = '';
+        if (navView) {
+            navView.default = '';
+        }
 
         const password = JQuiButton.findField<RxWidgetInfoAttributesFieldText>(newWidgetInfo, 'Password');
-        password.default = '';
+        if (password) {
+            password.default = '';
+        }
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         return newWidgetInfo as RxWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiButtonPasswordNavigation.getWidgetInfo();
     }
