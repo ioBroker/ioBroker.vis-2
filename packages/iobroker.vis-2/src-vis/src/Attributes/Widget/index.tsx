@@ -878,6 +878,9 @@ class Widget extends Component<WidgetProps, WidgetState> {
             return;
         }
         const widgets = store.getState().visProject[this.props.selectedView]?.widgets;
+        if (!widgets || !this.props.selectedWidgets.length || this.props.selectedWidgets.find(wid => !widgets[wid])) {
+            return;
+        }
 
         let widget: SingleGroupWidget | undefined;
         let widgetType: WidgetType | undefined;
@@ -1272,7 +1275,16 @@ class Widget extends Component<WidgetProps, WidgetState> {
         setTimeout(() => this.setState({ transitionTime: 200 }), 500);
     }
 
-    componentDidUpdate(): void {
+    componentDidUpdate(prevProps: WidgetProps): void {
+        // the attributes are calculated for the selected widgets of the selected view,
+        // so a view change must rebuild them even if the selection itself was restored from the localStorage
+        if (
+            prevProps.selectedView !== this.props.selectedView ||
+            prevProps.selectedWidgets.join(',') !== this.props.selectedWidgets.join(',')
+        ) {
+            this.recalculateFields();
+        }
+
         // scale the old style HTML widget icon
         if (this.imageRef.current?.children[0]) {
             const height = this.imageRef.current.children[0].clientHeight;
