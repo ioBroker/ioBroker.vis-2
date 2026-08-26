@@ -39,7 +39,9 @@ class JQuiRadioList extends JQuiState {
         };
 
         const type = JQuiState.findField<RxWidgetInfoAttributesFieldSelect>(newWidgetInfo, 'type');
-        type.default = 'radio';
+        if (type) {
+            type.default = 'radio';
+        }
 
         // Add note
         (newWidgetInfo.visAttrs[0].fields as Writeable<RxWidgetInfoAttributesField[]>).unshift({
@@ -51,7 +53,6 @@ class JQuiRadioList extends JQuiState {
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiRadioList.getWidgetInfo();
     }

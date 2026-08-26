@@ -43,12 +43,13 @@ class JQuiIconInc extends JQuiWriteState {
         });
 
         const target = JQuiWriteState.findField<RxWidgetInfoAttributesFieldSelect>(newWidgetInfo, 'type');
-        target.default = 'change';
+        if (target) {
+            target.default = 'change';
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconInc.getWidgetInfo();
     }

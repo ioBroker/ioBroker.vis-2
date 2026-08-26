@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ThemeType } from '@iobroker/adapter-react-v5';
+import type { ThemeType } from '@iobroker/gui-components';
 import Editor from '@monaco-editor/react';
 
 interface MonacoEditorProps {
@@ -36,7 +36,7 @@ export function CustomEditor(props: MonacoEditorProps): React.JSX.Element {
                 language={type}
                 // value={value}
                 defaultValue={defaultValue}
-                onChange={onChange ? (value: string): void => onChange(value || '') : undefined}
+                onChange={onChange ? (value?: string): void => onChange(value || '') : undefined}
                 className={props.error ? 'vis-monaco-error' : 'vis-monaco'}
                 options={{
                     readOnly: !onChange,

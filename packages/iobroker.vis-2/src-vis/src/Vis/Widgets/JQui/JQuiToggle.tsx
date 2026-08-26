@@ -45,7 +45,7 @@ class JQuiToggle extends JQuiBinaryState {
             text: 'jqui_button_binary_control_note',
         });
 
-        const iconFalse: Writeable<RxWidgetInfoAttributesFieldSimple> =
+        const iconFalse: Writeable<RxWidgetInfoAttributesFieldSimple> | null =
             JQuiBinaryState.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'icon_false');
         if (iconFalse) {
             iconFalse.default =
@@ -61,7 +61,6 @@ class JQuiToggle extends JQuiBinaryState {
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiToggle.getWidgetInfo();
     }

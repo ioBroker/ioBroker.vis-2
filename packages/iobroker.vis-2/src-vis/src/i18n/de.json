@@ -773,5 +773,7 @@
     "vis_2_widgets_widgets_tabs_variant_full_width": "Gesamtbreite",
     "vis_2_widgets_widgets_tabs_vertical": "Vertikal",
     "welcome_message": "Es existiert noch kein Projekt.",
-    "word-spacing": "Wortabstand"
+    "word-spacing": "Wortabstand",
+    "Widget sets could not be loaded": "Widget-Sets konnten nicht geladen werden",
+    "widget_sets_incompatible_react": "Die folgenden Widget-Sets wurden für eine ältere React-Version gebaut und können nicht geladen werden. Bitte aktualisiere die zugehörigen Adapter."
 }
