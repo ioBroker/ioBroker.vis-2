@@ -45,20 +45,28 @@ class JQuiDialog extends JQuiButton {
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         const html = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html');
-        html.default = '<div>HTML</div>';
+        if (html) {
+            html.default = '<div>HTML</div>';
+        }
 
         const buttonText = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'buttontext');
-        delete buttonText.default;
+        if (buttonText) {
+            delete buttonText.default;
+        }
 
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html_dialog');
-        htmlDialog.default = '<div>HTML Dialog</div>';
+        if (htmlDialog) {
+            htmlDialog.default = '<div>HTML Dialog</div>';
+        }
 
         // visDefaultStyle is readonly, so the cast is required to overwrite it. ESLint resolves the type
         // differently than the tsconfig of the build and reports the cast as unnecessary.
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
         (newWidgetInfo.visDefaultStyle as Writeable<WidgetStyle>) = {
             'border-width': '1px',
             'border-style': 'solid',
@@ -71,7 +79,6 @@ class JQuiDialog extends JQuiButton {
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiDialog.getWidgetInfo();
     }

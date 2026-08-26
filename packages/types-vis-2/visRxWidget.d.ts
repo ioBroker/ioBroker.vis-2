@@ -12,7 +12,8 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import type React, { type Component, type JSX } from 'react';
+import type React from 'react';
+import type { Component, JSX } from 'react';
 import type {
     AnyWidgetId,
     RxWidgetInfo,
@@ -52,9 +53,9 @@ declare class VisRxWidget<
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
 > extends VisBaseWidget<
     VisRxWidgetState &
-    TState & {
-    rxData: TRxData;
-}
+        TState & {
+            rxData: TRxData;
+        }
 > {
     static POSSIBLE_MUI_STYLES: string[];
     private linkContext;
@@ -67,12 +68,12 @@ declare class VisRxWidget<
     private mouseDownOnView?:
         | null
         | ((
-        e: React.MouseEvent,
-        wid: AnyWidgetId,
-        isRelative: boolean,
-        isResize?: boolean,
-        isDoubleClick?: boolean,
-    ) => void);
+              e: React.MouseEvent,
+              wid: AnyWidgetId,
+              isRelative: boolean,
+              isResize?: boolean,
+              isDoubleClick?: boolean,
+          ) => void);
     private bindingsTimer?: ReturnType<typeof setTimeout>;
     private informIncludedWidgets?: ReturnType<typeof setTimeout>;
     private filterDisplay?: '' | 'none' | 'block' | 'inline' | 'inline-block';
@@ -100,9 +101,9 @@ declare class VisRxWidget<
         doNotApplyState?: boolean,
     ): Partial<
         VisRxWidgetState &
-        TState & {
-        rxData: TRxData;
-    }
+            TState & {
+                rxData: TRxData;
+            }
     > | null;
     applyBinding(stateId: string, newState: typeof this.state): void;
     componentDidMount(): void;
@@ -154,8 +155,9 @@ declare class VisRxWidget<
     renderSignals(): React.ReactNode;
     render(): React.JSX.Element | null;
     /**
-     * Get information about specific widget, needs to be implemented by widget class
+     * Get information about a specific widget, needs to be implemented by widget class
      */
     getWidgetInfo(): Readonly<RxWidgetInfo>;
 }
+
 export default VisRxWidget;

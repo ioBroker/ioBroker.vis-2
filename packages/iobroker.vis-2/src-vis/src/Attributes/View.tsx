@@ -4,7 +4,7 @@ import { Accordion, AccordionDetails, AccordionSummary, Tooltip, IconButton, Box
 
 import { ExpandMore as ExpandMoreIcon, FormatPaint, Info as InfoIcon, Visibility } from '@mui/icons-material';
 
-import { Utils, I18n, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { Utils, I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import type { Project, View, VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';
@@ -58,7 +58,7 @@ const styles: Record<string, any> = {
 };
 
 const checkFunction = (
-    funcText: boolean | string | ((settings: Record<string, any>) => boolean),
+    funcText: boolean | string | ((settings: Record<string, any>) => boolean) | undefined,
     settings: Record<string, any>,
 ): boolean => {
     if (funcText === true) {
@@ -77,7 +77,7 @@ const checkFunction = (
         }
         return _func(settings);
     } catch (e) {
-        console.error(`Cannot execute hidden on "${funcText}": ${e}`);
+        console.error(`Cannot execute hidden on "${funcText.toString()}": ${e as Error}`);
     }
     return false;
 };
@@ -156,7 +156,7 @@ interface ViewProps {
     theme: VisTheme;
     instance: number;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     additionalSets: AdditionalIconSet;
 }
 
@@ -169,9 +169,16 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
     const project: Project = store.getState().visProject;
 
     const view: View | null = project[props.selectedView];
-    let resolutionSelect = view?.settings?.resolution || 'none';
+    let resolutionSelect = `${view?.settings?.sizex}x${view?.settings?.sizey}`;
+    if (!view?.settings || (view.settings.sizex === undefined && view.settings.sizey === undefined)) {
+        resolutionSelect = 'none';
+    } else if (!resolution.find(item => item.value === resolutionSelect)) {
+        resolutionSelect = 'user';
+    }
+
     const fields = useMemo(
         () => (view ? getFields(resolutionSelect, view, props.selectedView, props.editMode, props.changeProject) : []),
+        // sizex/sizey are listed explicitly, so the fields are rebuilt if only the view size changed
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             view,
@@ -224,18 +231,10 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
             window.localStorage.setItem('attributesView', JSON.stringify(newAccordionOpen));
             setAccordionOpen(newAccordionOpen);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.triggerAllOpened, props.triggerAllClosed, fields]);
+    }, [props.triggerAllOpened, props.triggerAllClosed, fields, triggerAllOpened, triggerAllClosed]);
 
     if (!project?.[props.selectedView]) {
         return null;
-    }
-
-    resolutionSelect = `${view.settings.sizex}x${view.settings.sizey}`;
-    if (!view.settings || (view.settings.sizex === undefined && view.settings.sizey === undefined)) {
-        resolutionSelect = 'none';
-    } else if (!resolution.find(item => item.value === resolutionSelect)) {
-        resolutionSelect = 'user';
     }
 
     const allOpened = !fields.find((_group, key) => accordionOpen[key] === 0 || accordionOpen[key] === 2);
@@ -409,7 +408,7 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                                                             field.attr
                                                         ]
                                                         ? () => setShowAllViewDialog({ ...field, group })
-                                                        : null,
+                                                        : undefined,
                                                 );
                                             } else if (field.attr?.startsWith('navigation')) {
                                                 result = addButton(result, !props.editMode || disabled, () =>

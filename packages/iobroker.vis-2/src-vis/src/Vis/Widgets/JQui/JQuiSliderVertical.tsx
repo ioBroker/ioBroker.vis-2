@@ -44,12 +44,13 @@ class JQuiSliderVertical extends JQuiSlider {
         });
 
         const orientation = JQuiSlider.findField<RxWidgetInfoAttributesFieldSelect>(newWidgetInfo, 'orientation');
-        orientation.default = 'vertical';
+        if (orientation) {
+            orientation.default = 'vertical';
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiSliderVertical.getWidgetInfo();
     }

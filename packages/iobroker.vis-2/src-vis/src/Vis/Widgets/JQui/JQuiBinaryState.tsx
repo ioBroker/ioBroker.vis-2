@@ -17,7 +17,7 @@ import React, { type CSSProperties } from 'react';
 
 import { Button, Fab, FormControlLabel, Tooltip, Checkbox, Switch, ButtonGroup } from '@mui/material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,
@@ -364,7 +364,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             if (this.props.context.onWidgetsChanged) {
                 setTimeout(
                     () =>
-                        this.props.context.onWidgetsChanged([
+                        this.props.context.onWidgetsChanged?.([
                             {
                                 wid: this.props.id,
                                 view: this.props.view,
@@ -379,9 +379,11 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
             try {
                 const state = await this.props.context.socket.getState(this.state.rxData.oid);
-                this.onStateUpdated(this.state.rxData.oid, state);
+                if (state) {
+                    this.onStateUpdated(this.state.rxData.oid, state);
+                }
             } catch (error) {
-                console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+                console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
             }
         }
     }
@@ -393,7 +395,6 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiBinaryState.getWidgetInfo();
     }
@@ -674,7 +675,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         );
     }
 
-    renderHtml(isOn: boolean): React.JSX.Element[] {
+    renderHtml(isOn: boolean): (React.JSX.Element | null)[] {
         let html;
         if (isOn) {
             html = this.state.rxData.html_true;
@@ -765,7 +766,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         return (
             <div style={style}>
                 <Switch
-                    checked={false}
+                    checked={isOn}
                     onChange={() => this.onClick()}
                 />
             </div>

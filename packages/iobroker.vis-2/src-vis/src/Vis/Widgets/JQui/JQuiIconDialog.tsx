@@ -45,18 +45,23 @@ class JQuiIconDialog extends JQuiButton {
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         const buttonText = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'buttontext');
-        buttonText.default = 'Icon Dialog';
+        if (buttonText) {
+            buttonText.default = 'Icon Dialog';
+        }
 
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html_dialog');
-        htmlDialog.default = '<div>HTML Dialog</div>';
+        if (htmlDialog) {
+            htmlDialog.default = '<div>HTML Dialog</div>';
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconDialog.getWidgetInfo();
     }
