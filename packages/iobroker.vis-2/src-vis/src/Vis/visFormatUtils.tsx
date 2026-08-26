@@ -370,9 +370,13 @@ class VisFormatUtils {
         // only template literal index signatures and cannot be indexed with an arbitrary string.
         const _values: Record<string, any> = options.values || this.vis.states;
 
+        // the oid of a widget inside a group is written as a group attribute (%attr%) - only widgetData carries
+        // the value of that attribute, widget.data still holds the placeholder
+        const widgetOid: string = (widgetData?.oid as string) || widget?.data?.oid;
+
         const oids = this.extractBinding(options.format);
 
-        for (const oid of oids) {
+        for (const oid of oids || []) {
             let value: any;
             if (oid.visOid) {
                 value = this.getSpecialValues(oid.visOid, view, wid, widgetData);
@@ -394,7 +398,7 @@ class VisFormatUtils {
 
                             if (value === undefined || value === null) {
                                 value = evalArgs[a].visOid.startsWith('widgetOid.')
-                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widget.data.oid}.`)]
+                                    ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widgetOid}.`)]
                                     : _values[evalArgs[a].visOid];
                             }
                             if (value === null) {
@@ -438,7 +442,6 @@ class VisFormatUtils {
 
                         // string += '}())';
                         try {
-                            // eslint-disable-next-line no-new-func
                             value = new Function(string)();
 
                             if (value && typeof value === 'object') {
@@ -447,16 +450,12 @@ class VisFormatUtils {
                         } catch (e) {
                             console.error(`Error in eval[value]: ${shortenForLog(format)}`);
                             console.error(`Error in eval[script]: ${shortenForLog(string)}`);
-                            console.error(`Error in eval[error]: ${e}`);
+                            console.error(`Error in eval[error]: ${e as Error}`);
                             value = 0;
                         }
                     } else {
                         const operationArg: string | number | undefined | null | string[] = operation.arg as
-                            | string
-                            | number
-                            | undefined
-                            | null
-                            | string[];
+                            string | number | undefined | null | string[];
 
                         switch (operation.op) {
                             case '*':
@@ -548,11 +547,17 @@ class VisFormatUtils {
                                 break;
                             case 'min':
                                 value = parseFloat(value);
-                                value = value < operationArg ? operationArg : value;
+                                value =
+                                    operationArg !== undefined && operationArg !== null && value < operationArg
+                                        ? operationArg
+                                        : value;
                                 break;
                             case 'max':
                                 value = parseFloat(value);
-                                value = value > operationArg ? operationArg : value;
+                                value =
+                                    operationArg !== undefined && operationArg !== null && value > operationArg
+                                        ? operationArg
+                                        : value;
                                 break;
                             case 'random':
                                 if (operationArg === undefined) {

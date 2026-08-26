@@ -356,6 +356,9 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.13.19 (2026-04-27)
+* (@GermanBluefox) Refactoring
+
 ## 2.13.17 (2026-03-29)
 * (@GermanBluefox) Removed debug code for theme
 

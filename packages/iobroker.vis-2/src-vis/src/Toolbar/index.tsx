@@ -20,10 +20,10 @@ import {
     Utils,
     I18n,
     ToggleThemeMenu,
-    type LegacyConnection,
+    type Connection,
     type ThemeName,
     type ThemeType,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { AnyWidgetId, GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
@@ -85,7 +85,7 @@ interface ToolbarProps {
     changeView: Editor['changeView'];
     cloneWidgets: Editor['cloneWidgets'];
     copyWidgets: Editor['copyWidgets'];
-    currentUser: Record<string, any>;
+    currentUser: ioBroker.UserObject | null;
     cutWidgets: Editor['cutWidgets'];
     deleteProject: Editor['deleteProject'];
     deleteWidgets: Editor['deleteWidgets'];
@@ -105,14 +105,14 @@ interface ToolbarProps {
     redo: Editor['redo'];
     refreshProjects: Editor['refreshProjects'];
     renameProject: Editor['renameProject'];
-    selectedGroup: GroupWidgetId;
+    selectedGroup?: GroupWidgetId;
     selectedView: string;
     selectedWidgets: AnyWidgetId[];
     setProjectsDialog: Editor['setProjectsDialog'];
     setSelectedWidgets: Editor['setSelectedWidgets'];
     setToolbarHeight: (value: 'narrow' | 'veryNarrow' | 'full') => void;
     setViewsManager: Editor['setViewsManager'];
-    socket: LegacyConnection;
+    socket: Connection;
     theme: VisTheme;
     themeName: ThemeName;
     themeType: ThemeType;
@@ -136,7 +136,7 @@ interface ToolbarState {
 }
 
 export default class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
-    private readonly rightRef: React.RefObject<HTMLButtonElement>;
+    private readonly rightRef: React.RefObject<HTMLButtonElement | null>;
     private readonly lang: ioBroker.Languages;
     private readonly runtimeURL: string;
 
@@ -278,7 +278,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
             );
         }
 
-        const currentUser: React.JSX.Element = this.props.currentUser ? (
+        const currentUser: React.JSX.Element | null = this.props.currentUser ? (
             <div style={styles.rightBlock}>
                 {this.props.currentUser?.common?.icon ? (
                     <Icon
@@ -316,7 +316,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
             </div>
         ) : null;
 
-        let lastCommandButton: React.JSX.Element;
+        let lastCommandButton: React.JSX.Element | undefined;
         if (this.state.lastCommand === 'close') {
             lastCommandButton = (
                 <Tooltip

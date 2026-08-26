@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import type { RxRenderWidgetProps, VisLegacy, RxWidgetInfo, VisRxWidgetProps } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
@@ -34,7 +34,12 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
         this.essentialData = JSON.stringify(this.buildEssentialProjectData());
     }
 
-    buildEssentialProjectData(): { id: string; sizex: number; sizey: number; useAsDefault: boolean }[] {
+    buildEssentialProjectData(): {
+        id: string;
+        sizex: number | undefined;
+        sizey: number | undefined;
+        useAsDefault: boolean | undefined;
+    }[] {
         return Object.keys(this.props.context.views)
             .sort()
             .filter(f => f !== '___settings')
@@ -80,7 +85,6 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicScreenResolution.getWidgetInfo();
     }

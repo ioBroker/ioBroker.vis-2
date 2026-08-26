@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import type { ThemeType } from '@iobroker/adapter-react-v5';
+import type { ThemeType } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import CustomEditor from '../../Components/CustomEditor';
