@@ -35,6 +35,7 @@ import type { AnyWidgetId, Project, VisBindingOperationArgument, VisTheme } from
 import { store, recalculateFields } from '@/Store';
 
 import VisFormatUtils from '../../Vis/visFormatUtils';
+import { replaceGroupAttrs } from '../../Vis/visUtils';
 
 const styles: Record<string, any> = {
     dialog: {
@@ -208,11 +209,20 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
             return value;
         }
 
+        const selectedWidget =
+            store.getState().visProject[this.props.selectedView].widgets[this.props.selectedWidgets[0]];
+        // a widget inside a group holds the group attributes (%attr%) in its data, so replace them before the
+        // values are read - otherwise widgetOid would be the name of the attribute and not an object ID
+        const groupData = selectedWidget?.groupid
+            ? store.getState().visProject[this.props.selectedView].widgets[selectedWidget.groupid]?.data
+            : null;
+        const widgetData = groupData ? replaceGroupAttrs(selectedWidget.data, groupData) : selectedWidget.data;
+
         // read all states
         const stateOids: string[] = [];
         oids.forEach(oid => {
             if (oid.systemOid === 'widgetOid') {
-                const newOid: string = this.props.widget.data.oid;
+                const newOid: string = widgetData.oid;
                 oid.visOid = oid.visOid.replace(/^widgetOid\./g, `${newOid}.`);
                 oid.systemOid = newOid;
                 oid.token = oid.token.replace(/:widgetOid;/g, `:${newOid};`);
@@ -290,9 +300,8 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                 format: value,
                 view: this.props.selectedView,
                 wid: this.props.selectedWidgets[0],
-                widget: store.getState().visProject[this.props.selectedView].widgets[this.props.selectedWidgets[0]],
-                widgetData:
-                    store.getState().visProject[this.props.selectedView].widgets[this.props.selectedWidgets[0]].data,
+                widget: selectedWidget,
+                widgetData,
                 values,
                 moment,
             }),
