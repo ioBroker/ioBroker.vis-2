@@ -22,7 +22,7 @@ import type {
     Writeable,
 } from '@iobroker/types-vis-2';
 
-class JQuiIconHttpGet extends JQuiButton {
+export default class JQuiIconHttpGet extends JQuiButton {
     static getWidgetInfo(): RxWidgetInfo {
         const widgetInfo = JQuiButton.getWidgetInfo();
 
@@ -44,22 +44,25 @@ class JQuiIconHttpGet extends JQuiButton {
         });
 
         const url = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'url');
-        url.default = 'http://';
+        if (url) {
+            url.default = 'http://';
+        }
 
         const text = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'buttontext');
-        text.default = 'URL Backend';
+        if (text) {
+            text.default = 'URL Backend';
+        }
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconHttpGet.getWidgetInfo();
     }
 }
-
-export default JQuiIconHttpGet;

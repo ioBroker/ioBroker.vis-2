@@ -9,7 +9,7 @@ import CardContent from '@mui/material/CardContent';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Collapse from '@mui/material/Collapse';
-import { type LegacyConnection, I18n } from '@iobroker/adapter-react-v5';
+import { type Connection, I18n } from '@iobroker/gui-components';
 import type { AnyWidgetId, Permissions, Project, Widget } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
 import { deepClone, DEFAULT_PERMISSIONS } from '@/Utilities/utils';
@@ -21,7 +21,7 @@ interface PermissionsDialogProps {
     /** Modify the active project */
     changeProject: (project: Project) => void;
     /** The socket connection */
-    socket: LegacyConnection;
+    socket: Connection;
 }
 
 /** Permissions assignment to username */

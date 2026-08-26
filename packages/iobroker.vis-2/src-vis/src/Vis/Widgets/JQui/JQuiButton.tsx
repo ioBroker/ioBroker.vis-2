@@ -29,7 +29,7 @@ import {
 
 import { Close, Check } from '@mui/icons-material';
 
-import { I18n, Icon, Utils, IconCopy } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, Utils, IconCopy } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,
@@ -101,13 +101,13 @@ class JQuiButton<
     P extends JQuiButtonDataProps = JQuiButtonDataProps,
     S extends JQuiButtonState = JQuiButtonState,
 > extends VisRxWidget<P, S> {
-    refButton: React.RefObject<HTMLButtonElement>;
+    refButton: React.RefObject<HTMLButtonElement | null>;
 
-    refDialog: React.RefObject<HTMLDivElement>;
+    refDialog: React.RefObject<HTMLDivElement | null>;
 
-    hideTimeout: ReturnType<typeof setTimeout>;
+    hideTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    setObjectType: string;
+    setObjectType: string | undefined;
 
     constructor(props: VisBaseWidgetProps) {
         super(props);
@@ -435,7 +435,6 @@ class JQuiButton<
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiButton.getWidgetInfo();
     }
@@ -591,7 +590,7 @@ class JQuiButton<
                 this.setObjectType = obj?.common?.type || 'string';
                 await this.setObjectWithState(oid, value);
             } catch (error) {
-                console.warn(`Object ${oid} not found: ${error}`);
+                console.warn(`Object ${oid} not found: ${error as Error}`);
             }
             return;
         }

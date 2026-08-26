@@ -9,8 +9,6 @@ export default [
                     allow: ['*.js', '*.mjs'],
                 },
                 tsconfigRootDir: import.meta.dirname,
-                project: './tsconfig.json',
-                // projectService: true,
             },
         },
     },
@@ -22,6 +20,6 @@ export default [
         },
     },
     {
-        ignores: ['build/**/*', 'lib/**/*'],
+        ignores: ['build/**/*', 'lib/**/*', 'src-vis/**/*', 'tmp/**/*', 'www/**/*', 'knx-uf-iconset/**/*', 'test/**/*'],
     },
 ];

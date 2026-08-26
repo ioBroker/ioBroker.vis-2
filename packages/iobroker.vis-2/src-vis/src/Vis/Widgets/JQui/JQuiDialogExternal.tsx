@@ -46,15 +46,18 @@ class JQuiDialogExternal extends JQuiButton {
             newWidgetInfo,
             'externalDialog',
         );
-        externalDialog.default = true;
+        if (externalDialog) {
+            externalDialog.default = true;
+        }
 
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'html_dialog');
-        htmlDialog.default = '<div>HTML Dialog</div>';
+        if (htmlDialog) {
+            htmlDialog.default = '<div>HTML Dialog</div>';
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiDialogExternal.getWidgetInfo();
     }

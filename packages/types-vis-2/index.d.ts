@@ -9,10 +9,10 @@ import type {
     TypeBackground,
     TypeDivider,
     TypeText,
-} from '@mui/material/styles/createPalette';
+} from '@mui/material/styles';
 import type { Color, PaletteMode } from '@mui/material';
 
-import type { LegacyConnection, ThemeType, IobTheme, ThemeName } from '@iobroker/adapter-react-v5';
+import type { Connection, ThemeType, IobTheme, ThemeName } from '@iobroker/gui-components';
 
 interface VisView extends React.FC<VisViewProps> {
     getOneWidget(
@@ -45,7 +45,7 @@ export type WidgetReference = {
     id: AnyWidgetId;
     uuid?: string;
     widDiv?: HTMLDivElement | null;
-    refService?: React.RefObject<HTMLElement>;
+    refService?: React.RefObject<HTMLElement | null>;
     onMove?: (x?: number, y?: number, save?: boolean) => void;
     onResize?: undefined | (() => void);
     onTempSelect?: (selected?: boolean) => void;
@@ -101,7 +101,7 @@ export interface VisBaseWidgetProps {
         isResize?: boolean,
         isDoubleClick?: boolean,
     ) => void;
-    refParent: React.RefObject<HTMLElement>;
+    refParent: React.RefObject<HTMLElement | null>;
     customSettings: Record<string, any>;
 }
 
@@ -158,7 +158,7 @@ export type PromiseName = `_promise_${WidgetSetName}`;
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 
 export interface RxWidgetInfoCustomComponentContext {
-    readonly socket: LegacyConnection;
+    readonly socket: Connection;
     readonly projectName: string;
     readonly instance: number;
     readonly adapterName: string;
@@ -173,6 +173,33 @@ export interface RxWidgetInfoCustomComponentProperties {
     readonly selectedWidgets: AnyWidgetId[];
     readonly selectedWidget: AnyWidgetId;
 }
+
+/**
+ * Condition of an attribute field (`hidden`, `disabled`, `error`): either the source of a JS
+ * expression or a predicate over the widget data.
+ *
+ * Declared as a method so the parameter is checked bivariantly: widget sets narrow `data` to their
+ * own `RxData` type, which a strictly contravariant function parameter would reject.
+ */
+/**
+ * Callback of an attribute field that runs when the value changed.
+ *
+ * Declared as a method so the parameters are checked bivariantly: widget sets narrow `data` to their
+ * own `RxData` type, which strictly contravariant function parameters would reject.
+ */
+export type RxWidgetInfoFieldChangeHandler = {
+    bivarianceHack(
+        field: RxWidgetInfoAttributesField,
+        data: WidgetData,
+        changeData: (newData: WidgetData) => void,
+        socket: Connection,
+        index?: number,
+    ): Promise<void>;
+}['bivarianceHack'];
+
+export type RxWidgetInfoFieldPredicate = {
+    bivarianceHack(data: WidgetData, index?: number): boolean;
+}['bivarianceHack'];
 
 export type RxWidgetInfoAttributesFieldText = {
     /** Field type */
@@ -190,23 +217,17 @@ export type RxWidgetInfoAttributesFieldText = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
     /** show clear button near the field */
     readonly clearButton?: boolean;
 };
@@ -217,7 +238,7 @@ export type RxWidgetInfoAttributesFieldDelimiter = {
     /** It is not required here */
     readonly name: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
 
     /** Used by counted fields */
     readonly index?: number;
@@ -241,7 +262,7 @@ export type RxWidgetInfoAttributesFieldHelp = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
 };
 
 export type RxWidgetInfoAttributesFieldHTML = {
@@ -260,23 +281,17 @@ export type RxWidgetInfoAttributesFieldHTML = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldID = {
@@ -324,23 +339,17 @@ export type RxWidgetInfoAttributesFieldID = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldInstance = {
@@ -363,23 +372,17 @@ export type RxWidgetInfoAttributesFieldInstance = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldSelect = {
@@ -400,23 +403,17 @@ export type RxWidgetInfoAttributesFieldSelect = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldCheckbox = {
@@ -435,23 +432,17 @@ export type RxWidgetInfoAttributesFieldCheckbox = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldNumber = {
@@ -474,23 +465,17 @@ export type RxWidgetInfoAttributesFieldNumber = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
     /** show clear button near the field */
     readonly clearButton?: boolean;
 };
@@ -520,23 +505,17 @@ export type RxWidgetInfoAttributesFieldSlider = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldWidget = {
@@ -566,23 +545,17 @@ export type RxWidgetInfoAttributesFieldWidget = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldSelectViews = {
@@ -601,23 +574,17 @@ export type RxWidgetInfoAttributesFieldSelectViews = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldCustom = {
@@ -642,23 +609,17 @@ export type RxWidgetInfoAttributesFieldCustom = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldSimple = {
@@ -690,23 +651,17 @@ export type RxWidgetInfoAttributesFieldSimple = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesFieldDefault = {
@@ -721,23 +676,17 @@ export type RxWidgetInfoAttributesFieldDefault = {
     /** Field label (i18n) */
     readonly label?: string;
     /** JS Function for conditional visibility */
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
     /** Tooltip (i18n) */
     readonly tooltip?: string;
     /** JS Function for conditional disability */
-    readonly disabled?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly disabled?: string | RxWidgetInfoFieldPredicate;
     /** JS Function for error */
-    readonly error?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly error?: string | RxWidgetInfoFieldPredicate;
     /** Do not show binding symbol fot this field */
     readonly noBinding?: boolean;
     /** Callback called if the field value changed */
-    readonly onChange?: (
-        field: RxWidgetInfoAttributesField,
-        data: WidgetData,
-        changeData: (newData: WidgetData) => void,
-        socket: LegacyConnection,
-        index?: number,
-    ) => Promise<void>;
+    readonly onChange?: RxWidgetInfoFieldChangeHandler;
 };
 
 export type RxWidgetInfoAttributesField =
@@ -911,17 +860,7 @@ export interface WidgetStyle {
 
     'border-width'?: string | null;
     'border-style'?:
-        | ''
-        | 'dotted'
-        | 'dashed'
-        | 'solid'
-        | 'double'
-        | 'groove'
-        | 'ridge'
-        | 'inset'
-        | 'outset'
-        | 'hidden'
-        | null;
+        '' | 'dotted' | 'dashed' | 'solid' | 'double' | 'groove' | 'ridge' | 'inset' | 'outset' | 'hidden' | null;
     'border-color'?: string | null;
     'border-radius'?: string | null;
 
@@ -1104,7 +1043,7 @@ export interface View {
     name?: string;
     /** parent folder */
     parentId?: string;
-    settings?: ViewSettings;
+    settings: ViewSettings;
     /** Widgets on this view */
     widgets: {
         [groupId: GroupWidgetId]: GroupWidget;
@@ -1125,7 +1064,7 @@ export interface RxRenderWidgetProps {
     overlayClassNames: string[];
     style: React.CSSProperties;
     id: string;
-    refService: React.RefObject<HTMLElement>;
+    refService: React.RefObject<HTMLElement | null>;
     widget: Widget;
 }
 
@@ -1305,20 +1244,22 @@ export interface VisLegacy {
     getHttp: (url: string, callback: (data?: any) => string) => void;
     formatDate: (dateObj: Date | string | number, isDuration?: boolean, _format?: string) => string;
     widgets: any;
-    editSelect: (
-        widAttr: string,
-        values: any,
-        notTranslate: boolean,
-        init: () => void,
-        onchange: () => void,
-    ) =>
-        | string
-        | {
-              input: string;
-              init?: () => void;
-              onchange?: () => void;
-          }
-        | null;
+    editSelect:
+        | null
+        | ((
+              widAttr: string,
+              values: any,
+              notTranslate: boolean,
+              init: () => void,
+              onchange: () => void,
+          ) =>
+              | string
+              | {
+                    input: string;
+                    init?: () => void;
+                    onchange?: () => void;
+                }
+              | null);
     isWidgetHidden: (
         view: string,
         widget: AnyWidgetId,
@@ -1429,7 +1370,7 @@ declare global {
         _: (word: string, ...args: (string | number | boolean)[]) => string;
         jQuery: JQuery;
 
-        VisMaterialIconSelector: React.ComponentType<MaterialIconSelectorState>;
+        VisMaterialIconSelector: React.ComponentType<MaterialIconSelectorProps>;
     }
 }
 
@@ -1560,13 +1501,13 @@ export interface VisLinkContext extends VisStateUsage {
     registerChangeHandler: (wid: AnyWidgetId, cb: VisChangeHandlerCallback) => void;
     subscribe: (stateId: string | string[]) => void;
     unsubscribe: (stateId: string | string[]) => void;
-    getViewRef: (view: string) => React.RefObject<HTMLDivElement> | null;
+    getViewRef: (view: string) => React.RefObject<HTMLDivElement | null> | null;
     registerViewRef: (
         view: string,
-        ref: React.RefObject<HTMLDivElement>,
+        ref: React.RefObject<HTMLDivElement | null>,
         onCommand: (command: ViewCommand, options?: ViewCommandOptions) => any,
     ) => void;
-    unregisterViewRef: (view: string, ref: React.RefObject<HTMLDivElement>) => void;
+    unregisterViewRef: (view: string, ref: React.RefObject<HTMLDivElement | null>) => void;
 }
 
 export interface VisFormatUtils {
@@ -1649,7 +1590,7 @@ export type CanObservable<T> = T & {
     attr: (
         id: VisRxWidgetStateValues | string,
         val?: string | number | boolean,
-    ) => string | number | boolean | undefined | null | void;
+    ) => string | number | boolean | undefined | null;
     removeAttr: (id: string) => void;
 };
 
@@ -1660,7 +1601,7 @@ export interface VisContext {
     adapterName: string;
     additionalSets: AdditionalIconSet;
     allWidgets: Record<string, CanWidgetStore>;
-    askAboutInclude: (
+    askAboutInclude?: (
         wid: AnyWidgetId,
         toWid: AnyWidgetId,
         cb: (_wid: AnyWidgetId, _toWid: AnyWidgetId) => void,
@@ -1720,13 +1661,13 @@ export interface VisContext {
               cb?: (...args: any) => any,
           ) => void);
     runtime: boolean;
-    setSelectedGroup: null | ((groupId: string) => void);
+    setSelectedGroup: null | ((groupId: GroupWidgetId) => void);
     setSelectedWidgets: null | ((widgets: AnyWidgetId[], view?: string, cb?: () => void) => void);
     setTimeInterval: (timeInterval: string) => void;
     setTimeStart: (timeStart: string) => void;
     setValue: (id: string, value: string | boolean | number | null) => void;
     showWidgetNames: boolean;
-    socket: LegacyConnection;
+    socket: Connection;
     systemConfig: ioBroker.SystemConfigObject;
     theme: VisTheme;
     themeName: string;
@@ -1792,7 +1733,7 @@ export interface DetectorResult {
 }
 
 export interface CustomPaletteProperties {
-    socket: LegacyConnection;
+    socket: Connection;
     project: Project;
     changeProject: (project: Project, ignoreHistory?: boolean) => Promise<void>;
     selectedView: string;
@@ -1800,9 +1741,9 @@ export interface CustomPaletteProperties {
     themeType: 'dark' | 'light';
     helpers: {
         deviceIcons: Record<string, React.JSX.Element>;
-        detectDevices: (socket: LegacyConnection) => Promise<DetectorResult[]>;
-        getObjectIcon: (obj: ioBroker.Object, id?: string, imagePrefix?: string) => string;
-        allObjects: (socket: LegacyConnection) => Promise<Record<string, ioBroker.Object>>;
+        detectDevices: (socket: Connection) => Promise<DetectorResult[]>;
+        getObjectIcon: (obj: ioBroker.Object, id?: string, imagePrefix?: string) => string | undefined;
+        allObjects: (socket: Connection) => Promise<Record<string, ioBroker.Object>>;
         getNewWidgetId: (project: Project, offset?: number) => SingleWidgetId;
         /** @deprecated use "getNewWidgetId" instead, it will give you the full wid like "w000001" */
         getNewWidgetIdNumber: (isWidgetGroup: boolean, project: Project, offset?: number) => number;
@@ -1818,7 +1759,7 @@ export interface RxWidgetInfoGroup {
     readonly label?: string;
     readonly indexFrom?: number;
     readonly indexTo?: string;
-    readonly hidden?: string | ((data: WidgetData) => boolean) | ((data: WidgetData, index: number) => boolean);
+    readonly hidden?: string | RxWidgetInfoFieldPredicate;
 }
 
 export interface RxWidgetInfo {
@@ -1868,7 +1809,7 @@ export interface RxWidgetInfo {
 
 export interface CustomWidgetProperties {
     context: {
-        socket: LegacyConnection;
+        socket: Connection;
         projectName: string;
         instance: number;
         adapterName: string;

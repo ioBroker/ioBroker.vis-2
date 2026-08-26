@@ -6,7 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import React from 'react';
@@ -18,9 +18,9 @@ import { store } from '../../Store';
 interface FolderDialogProps {
     changeProject: Editor['changeProject'];
     dialog: 'add' | 'rename' | 'delete';
-    dialogFolder: string;
+    dialogFolder: string | null;
     dialogName: string;
-    dialogParentId: string;
+    dialogParentId: string | null;
     closeDialog: () => void;
     setDialogFolder: (folder: string | null) => void;
     setDialogName: (name: string) => void;
@@ -35,7 +35,7 @@ const FolderDialog: React.FC<FolderDialogProps> = (props: FolderDialogProps): Re
 
     const folderObject = store
         .getState()
-        .visProject.___settings.folders.find(folder => folder.id === props.dialogFolder);
+        .visProject.___settings.folders?.find(folder => folder.id === props.dialogFolder);
 
     const dialogTitles = {
         delete: `${I18n.t('Do you want to delete folder "%s"', folderObject?.name)}?`,
@@ -54,7 +54,7 @@ const FolderDialog: React.FC<FolderDialogProps> = (props: FolderDialogProps): Re
         project.___settings.folders.push({
             id: uuidv4(),
             name: props.dialogName,
-            parentId: props.dialogParentId,
+            parentId: props.dialogParentId || '',
         });
         void props.changeProject(project);
     };
@@ -70,7 +70,10 @@ const FolderDialog: React.FC<FolderDialogProps> = (props: FolderDialogProps): Re
 
     const renameFolder = (): void => {
         const project = deepClone(store.getState().visProject);
-        project.___settings.folders.find(folder => folder.id === props.dialogFolder).name = props.dialogName;
+        const folder = project.___settings.folders?.find(f => f.id === props.dialogFolder);
+        if (folder) {
+            folder.name = props.dialogName;
+        }
         void props.changeProject(project);
     };
 

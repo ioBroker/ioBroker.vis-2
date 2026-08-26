@@ -18,7 +18,7 @@ import {
 
 import { Menu as MenuIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 import type { ViewSettings, VisTheme } from '@iobroker/types-vis-2';
 
 import { deepClone } from '@/Utilities/utils';
@@ -134,9 +134,9 @@ export type ToolbarItem =
     | TextFieldToolbarItem;
 
 export interface ToolbarGroup {
-    name: string | React.JSX.Element;
+    name?: string | React.JSX.Element;
     doNotTranslateName?: boolean;
-    items: (ToolbarItem[][] | ToolbarItem[] | ToolbarItem)[];
+    items: (ToolbarItem[][] | ToolbarItem[] | ToolbarItem | null)[];
     compact?: { tooltip: 'Projects'; icon: React.JSX.Element } | undefined;
 }
 
@@ -189,7 +189,9 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                 key={key}
                 style={{ margin: '0px 10px' }}
             >
-                {this.props.toolbarHeight !== 'veryNarrow' ? <InputLabel shrink>{I18n.t(item.name)}</InputLabel> : null}
+                {this.props.toolbarHeight !== 'veryNarrow' ? (
+                    <InputLabel shrink>{I18n.t(item.name || '')}</InputLabel>
+                ) : null}
                 <Select
                     variant="standard"
                     style={{ width: item.width }}
@@ -220,13 +222,13 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                     this.props.toolbarHeight !== 'veryNarrow'
                         ? item.doNotTranslateName
                             ? item.name
-                            : I18n.t(item.name)
-                        : null
+                            : I18n.t(item.name || '')
+                        : undefined
                 }
                 width={item.width}
                 value={item.value ? item.value : value}
                 onChange={_value => this.onAction(item, _value)}
-                setSelectedWidgets={this.props.setSelectedWidgets}
+                setSelectedWidgets={this.props.setSelectedWidgets as (widgets: string[]) => void}
                 options={item.items.map(option => ({
                     name: option.name as string,
                     subname: option.subName,
@@ -239,7 +241,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         );
         /*
         return <FormControl variant="standard" key={key} style={{ margin: '0px 10px' }}>
-            {props.toolbarHeight !== 'veryNarrow' ? <InputLabel shrink>{I18n.t(item.name)}</InputLabel> : null}
+            {props.toolbarHeight !== 'veryNarrow' ? <InputLabel shrink>{I18n.t(item.name || '')}</InputLabel> : null}
             <Select
                 variant="standard"
                 style={{ width: item.width }}
@@ -285,7 +287,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                         size="small"
                     />
                 }
-                label={I18n.t(item.name)}
+                label={I18n.t(item.name || '')}
             />
         );
     }
@@ -312,14 +314,14 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                     <div>
                         <item.Icon fontSize={item.size ? item.size : 'small'} />
                     </div>
-                    <div>{I18n.t(item.name)}</div>
+                    <div>{I18n.t(item.name || '')}</div>
                     {item.subName ? <div style={{ fontSize: 10, opacity: 0.6 }}>{item.subName}</div> : null}
                 </ButtonBase>
             </div>
         ) : (
             <Tooltip
                 key={key}
-                title={I18n.t(item.name)}
+                title={I18n.t(item.name || '')}
                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
             >
                 <div>
@@ -329,7 +331,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                         key={key}
                         disabled={item.disabled}
                         onClick={() => this.onAction(item)}
-                        style={{ height: full ? '100%' : null, color: item.color }}
+                        style={{ height: full ? '100%' : undefined, color: item.color }}
                     >
                         <item.Icon fontSize={(item.size ? item.size : 'small') as any} />
                     </IconButton>
@@ -364,7 +366,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         }
 
         if (item.type === 'icon-button') {
-            return this.getItemIconButton(item, key, full);
+            return this.getItemIconButton(item, key, !!full);
         }
 
         if (item.type === 'text') {
@@ -385,7 +387,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                     size="small"
                     style={styles.button}
                 >
-                    {I18n.t(item.name)}
+                    {I18n.t(item.name || '')}
                 </Button>
             );
         }
@@ -408,8 +410,8 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                 value={value}
                 type={item.type}
                 onChange={e => this.onAction(item, e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                label={this.props.toolbarHeight !== 'veryNarrow' ? I18n.t(item.name) : null}
+                slotProps={{ inputLabel: { shrink: true } }}
+                label={this.props.toolbarHeight !== 'veryNarrow' ? I18n.t(item.name || '') : null}
                 style={styles.textInput}
             />
         );
@@ -432,7 +434,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                             _items.push(_item);
                         }
                     });
-                } else {
+                } else if (item) {
                     _items.push(item);
                 }
             });
@@ -460,7 +462,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                                 </div>
                             );
                         }
-                        return this.getItem(item, key, true);
+                        return item ? this.getItem(item, key, true) : null;
                     })}
                 </div>
                 {this.props.toolbarHeight === 'full' ? (
