@@ -15,6 +15,7 @@ WEB visualization for ioBroker platform.
 - [Filters](#filters)
 - [Control interface](#control-interface)
 - [Default view](#default-view)
+- [Navigation](#navigation)
 - [Permissions System](#permissions-system)
 - [Settings](#settings)
 - [SVG and curentColor](#svg-and-currentcolor)
@@ -228,6 +229,17 @@ E.g., you can create two views "Landscape-Mobile" and "Portrait-Mobile" and thes
 
 There is a helper widget "basic - Screen Resolution" that shows actual screen resolution and the best suitable default view for this resolution. 
 
+## Navigation
+Every widget that leads to a view - the `Go to view` option of the jQui widgets, `basic - HTML navigation`, … - gets
+the CSS class `vis-nav-active` as long as the view it points to is the view that is shown. So the entry of the current
+view can be highlighted in the CSS of the project:
+
+```css
+.vis-nav-active button {
+    border: 1px solid #0d72b8;
+}
+```
+
 ## Permissions System
 ### Project
 In the project management dialog, you can configure `read` and `write` permissions for each ioBroker user.
@@ -314,6 +326,7 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) A timestamp that arrives as a string is shown as a date again instead of `NaN:NaN:NaN`, and a value that cannot be parsed at all is shown as it is
+* (@typhosj) A widget that leads to the view that is shown gets the CSS class `vis-nav-active`, so the current entry of a self-built navigation can be highlighted. The jQui buttons mark themselves by the active view now instead of the address of the browser, which they never noticed changing
 * (@typhosj) The project setting `States Debounce Time` is applied again: the commands for one object ID are collected during that period. It had no effect at all, as the value was never read from the project
 * (@typhosj) The switch of the `binary control` widget shows the state of the object again if no text and no icon are defined
 * (@typhosj) `widgetOid` delivers the object ID of a widget inside a group again instead of the name of the group attribute
