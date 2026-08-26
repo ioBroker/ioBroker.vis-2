@@ -17,7 +17,28 @@ export default function createTheme(
     const success = '#73b6a8';
     let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
     if (cssVariables) {
-        theme = muiCreateTheme({ ...theme, cssVariables: true }) as VisTheme;
+        // With CSS variables MUI resolves the text color of a `color="default"` Fab from the palette
+        // (`--mui-palette-grey-900` resp. `--mui-palette-text-primary`) instead of contrasting it against
+        // the grey[300] background the Fab paints for itself. In the dark theme that is light on light.
+        // The button variants of the ioBroker theme already contrast explicitly, the Fab did not. See #661.
+        const greyBackground = theme.palette.grey?.[300];
+        const defaultFabColor = greyBackground ? theme.palette.getContrastText(greyBackground) : undefined;
+
+        theme = muiCreateTheme(
+            { ...theme, cssVariables: true },
+            {
+                components: {
+                    MuiFab: {
+                        styleOverrides: {
+                            root: ({ ownerState }: { ownerState?: { color?: string } }) =>
+                                defaultFabColor && (!ownerState?.color || ownerState.color === 'default')
+                                    ? { color: defaultFabColor }
+                                    : {},
+                        },
+                    },
+                },
+            },
+        ) as VisTheme;
     }
     theme.palette.text.danger = {
         color: danger,

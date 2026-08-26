@@ -15,7 +15,6 @@ import {
     TextField,
     Button,
     ListItemIcon,
-    CssBaseline,
 } from '@mui/material';
 
 import { Add as IconAdd, Close as IconClose, FileCopy as IconDocument } from '@mui/icons-material';
@@ -1454,7 +1453,6 @@ export default class Runtime<
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
-                    <CssBaseline />
                     <ScrollbarStyles theme={this.state.theme} />
                     {!this.state.loaded || !store.getState().visProject.___settings
                         ? this.renderLoader()
