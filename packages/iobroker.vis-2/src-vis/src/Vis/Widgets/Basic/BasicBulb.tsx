@@ -234,8 +234,13 @@ export default class BasicBulb extends VisRxWidget<RxData> {
      * @param max max value
      */
     isFalse(val: any, min?: string | number, max?: string | number): boolean {
+        // a state that was never written has the value null, and that is "off" for every configuration
+        if (val === undefined || val === null) {
+            return true;
+        }
+
         if (min !== undefined && min !== null && min !== '') {
-            if (val !== undefined && typeof val !== 'string') {
+            if (typeof val !== 'string') {
                 val = val.toString();
             }
 
@@ -247,8 +252,6 @@ export default class BasicBulb extends VisRxWidget<RxData> {
         }
 
         if (
-            val === undefined ||
-            val === null ||
             val === false ||
             val === 'false' ||
             val === 'FALSE' ||
