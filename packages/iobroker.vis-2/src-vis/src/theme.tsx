@@ -25,7 +25,14 @@ export default function createTheme(
         const defaultFabColor = greyBackground ? theme.palette.getContrastText(greyBackground) : undefined;
 
         theme = muiCreateTheme(
-            { ...theme, cssVariables: true },
+            {
+                ...theme,
+                // `color-scheme: dark` on `:root` makes the browser paint an opaque canvas (#121212) behind a
+                // document that declares itself transparent, so an `iFrame` or `echarts` widget - and the whole
+                // runtime embedded in an app - loses its transparency in the dark mode. Measured: with the
+                // scheme the embedded document shows #121212, without it the parent shines through. See #661.
+                cssVariables: { disableCssColorScheme: true },
+            },
             {
                 components: {
                     MuiFab: {
