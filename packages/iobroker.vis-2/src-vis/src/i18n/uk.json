@@ -774,5 +774,7 @@
     "vis_2_widgets_widgets_tabs_variant_full_width": "повна ширина",
     "vis_2_widgets_widgets_tabs_vertical": "Вертикальний",
     "welcome_message": "Жодного проекту ще немає.",
-    "word-spacing": "міжсловний інтервал"
+    "word-spacing": "міжсловний інтервал",
+    "Widget sets could not be loaded": "Не вдалося завантажити набори віджетів",
+    "widget_sets_incompatible_react": "Наведені набори віджетів зібрані для старішої версії React і не можуть бути завантажені. Оновіть відповідні адаптери."
 }

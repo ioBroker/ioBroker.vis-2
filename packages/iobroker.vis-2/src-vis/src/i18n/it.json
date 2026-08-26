@@ -774,5 +774,7 @@
     "vis_2_widgets_widgets_tabs_variant_full_width": "intera larghezza",
     "vis_2_widgets_widgets_tabs_vertical": "Verticale",
     "welcome_message": "Non esiste ancora un progetto.",
-    "word-spacing": "spaziatura delle parole"
+    "word-spacing": "spaziatura delle parole",
+    "Widget sets could not be loaded": "Non è stato possibile caricare i set di widget",
+    "widget_sets_incompatible_react": "I seguenti set di widget sono stati compilati per una versione precedente di React e non possono essere caricati. Aggiorna i relativi adattatori."
 }

@@ -32,7 +32,6 @@ export default class BasicBulb extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicBulb.getWidgetInfo();
     }
@@ -234,10 +233,14 @@ export default class BasicBulb extends VisRxWidget<RxData> {
      * @param min min value
      * @param max max value
      */
-    // eslint-disable-next-line class-methods-use-this
     isFalse(val: any, min?: string | number, max?: string | number): boolean {
+        // a state that was never written has the value null, and that is "off" for every configuration
+        if (val === undefined || val === null) {
+            return true;
+        }
+
         if (min !== undefined && min !== null && min !== '') {
-            if (val !== undefined && typeof val !== 'string') {
+            if (typeof val !== 'string') {
                 val = val.toString();
             }
 
@@ -249,8 +252,6 @@ export default class BasicBulb extends VisRxWidget<RxData> {
         }
 
         if (
-            val === undefined ||
-            val === null ||
             val === false ||
             val === 'false' ||
             val === 'FALSE' ||

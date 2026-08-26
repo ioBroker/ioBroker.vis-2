@@ -1,7 +1,7 @@
 {
     "name": "iobroker.vis-2",
     "description": "Next generation graphical user interface for ioBroker.",
-    "version": "2.15.0",
+    "version": "2.15.4",
     "author": {
         "name": "bluefox",
         "email": "dogafox@gmail.com"
@@ -36,14 +36,14 @@
         "@iobroker/db-states-redis": "^7.2.2",
         "@iobroker/vis-2-widgets-testing": "^1.0.6",
         "@material-icons/svg": "^1.0.33",
-        "@tsconfig/node18": "^18.2.6",
-        "@types/jquery": "^3.5.33",
+        "@tsconfig/node22": "^22.0.6",
+        "@types/jquery": "^3.5.34",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mime": "^3.0.4",
         "@types/mocha": "^10.0.10",
-        "@types/react": "^18.3.31",
+        "@types/react": "^19.2.18",
         "@types/unzipper": "^0.10.11",
-        "dayjs": "^1.11.21",
+        "dayjs": "^1.11.23",
         "iobroker.web": "*",
         "jquery-ui": "^1.14.2",
         "mocha": "^11.8.0",
@@ -67,6 +67,7 @@
     "scripts": {
         "check-ts": "cd src-vis && tsc --noEmit -p tsconfig.json && cd .. && tsc --noEmit -p tsconfig.json",
         "start": "cd src-vis && npm run start",
+        "lint": "eslint -c eslint.config.mjs",
         "test": "mocha ./test/*.engine.js --exit",
         "test-gui": "mocha ./test/*.gui.js --exit",
         "tsc": "tsc --project tsconfig.build.json && npm run copy-backend",

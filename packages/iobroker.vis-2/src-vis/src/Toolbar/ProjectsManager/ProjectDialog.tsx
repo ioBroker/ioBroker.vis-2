@@ -4,14 +4,14 @@ import { TextField } from '@mui/material';
 
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import { useFocus } from '../../Utils';
 
 interface ProjectDialogProps {
     dialog: 'delete' | 'rename' | 'add';
-    dialogProject: string;
+    dialogProject?: string;
     dialogName: string;
     projects: string[];
     closeDialog: () => void;
@@ -43,9 +43,9 @@ const ProjectDialog: React.FC<ProjectDialogProps> = (props: ProjectDialogProps):
 
     const addProject = (): void => props.addProject(props.dialogName);
 
-    const deleteProject = (): void => props.deleteProject(props.dialogProject);
+    const deleteProject = (): void => props.deleteProject(props.dialogProject || '');
 
-    const renameProject = (): void => props.renameProject(props.dialogProject, props.dialogName);
+    const renameProject = (): void => props.renameProject(props.dialogProject || '', props.dialogName);
 
     const dialogActions = {
         delete: deleteProject,

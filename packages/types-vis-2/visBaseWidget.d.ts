@@ -132,7 +132,7 @@ declare class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBase
         | null
         | {
               default: boolean;
-              desiredSize:
+              desiredSize?:
                   | {
                         width: number;
                         height: number;
@@ -166,7 +166,7 @@ declare class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBase
     // eslint-disable-next-line react/no-unused-class-component-methods
     onResizeStart(e: React.MouseEvent, type: Resize): void;
     // eslint-disable-next-line react/no-unused-class-component-methods
-    getResizeHandlers(selected: boolean, widget: Widget, borderWidth: string): React.JSX.Element[] | null;
+    getResizeHandlers(selected: boolean, widget: Widget, borderWidth: string): (React.JSX.Element | null)[] | null;
     // eslint-disable-next-line react/no-unused-class-component-methods
     isUserMemberOfGroup(user: string, userGroups: string[]): boolean;
     static isWidgetFilteredOutStatic(
@@ -182,7 +182,7 @@ declare class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBase
     static isWidgetHidden(widgetData: WidgetData | GroupData, states: VisRxWidgetStateValues, id: string): boolean;
     /** Render the widget body */
     // eslint-disable-next-line react/no-unused-class-component-methods
-    renderWidgetBody(_props: RxRenderWidgetProps): React.JSX.Element | React.JSX.Element[] | null;
+    renderWidgetBody(_props: RxRenderWidgetProps): React.JSX.Element | (React.JSX.Element | null)[] | null;
     // eslint-disable-next-line react/no-unused-class-component-methods
     changeOrder(e: React.MouseEvent, dir: number): void;
     static formatValue(value: string | number, decimals: number | string, _format?: string): string;
@@ -206,10 +206,11 @@ declare class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBase
     onToggleWidth(e: React.MouseEvent): void;
     // eslint-disable-next-line react/no-unused-class-component-methods
     onToggleLineBreak(e: React.MouseEvent): void;
-    static correctStylePxValue(value: string | number): string | number;
+    static correctStylePxValue(value?: string | number | null): string | number | undefined;
     // eslint-disable-next-line react/no-unused-class-component-methods
     renderRelativeMoveMenu(): React.JSX.Element | null;
 
     render(): React.JSX.Element | null;
 }
+
 export default VisBaseWidget;
