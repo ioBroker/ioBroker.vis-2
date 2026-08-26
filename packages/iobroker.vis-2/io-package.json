@@ -182,7 +182,6 @@
         }
       }
     },
-    "license": "CC-BY-NC-4.0",
     "dependencies": [
       {
         "web": ">=5.4.0"
