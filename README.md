@@ -314,6 +314,7 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) A resize of the window does not leave the opened view anymore, unless that view offers itself for a resolution
+* (@typhosj) Fixed the widget attributes keeping the groups of the previously selected widget after a view change
 * (@typhosj) The view of a jQui dialog is drawn inside the dialog again and no longer over its title
 * (@typhosj) Fixed the crash of the `bulb on/off` widget if the value of its object is `null`
 * (@typhosj) An `iFrame` or `echarts` widget is transparent again in the dark mode. The CSS variables put `color-scheme: dark` on `:root`, and a browser paints an opaque canvas behind an iframe whose document declares itself transparent (#661)
