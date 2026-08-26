@@ -262,8 +262,6 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         }
     >;
 
-    statesDebounceTime: number | undefined;
-
     vis: VisLegacy;
 
     instance: string | undefined;
@@ -1751,10 +1749,17 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             return;
         }
 
+        // collect the commands for one ID during this period (project setting "States Debounce Time")
+        const statesDebounceTime = Number(store.getState().visProject?.___settings?.statesDebounceTime) || 0;
+
         // if no debounce running
         if (!this.statesDebounce[id]) {
             // send control command
             this._setValue(id, val);
+
+            if (!statesDebounceTime) {
+                return;
+            }
 
             // Start timeout
             this.statesDebounce[id] = {
@@ -1768,7 +1773,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                             delete this.statesDebounce[id];
                         }
                     },
-                    this.statesDebounceTime,
+                    statesDebounceTime,
                     id,
                 ),
                 state: null,
