@@ -512,6 +512,14 @@ export function getFields(
                     groupApply: true,
                 },
                 {
+                    // The view shows the menu, but is not offered in it
+                    type: 'checkbox',
+                    label: 'Hide this view in the menu',
+                    attr: 'navigationHideEntry',
+                    notStyle: true,
+                    hidden: '!data.navigation',
+                },
+                {
                     type: 'text',
                     label: 'Title',
                     attr: 'navigationTitle',

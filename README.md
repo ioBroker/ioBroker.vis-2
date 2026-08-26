@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) A view can show the navigation menu without being an entry of it: the new view setting `Hide this view in the menu`
 * (@typhosj) A resize of the window does not leave the opened view anymore, unless that view offers itself for a resolution
 * (@typhosj) Fixed the widget attributes keeping the groups of the previously selected widget after a view change
 * (@typhosj) The view of a jQui dialog is drawn inside the dialog again and no longer over its title
