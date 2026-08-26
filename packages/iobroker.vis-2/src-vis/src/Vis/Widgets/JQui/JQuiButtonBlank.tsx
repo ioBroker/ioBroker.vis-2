@@ -42,18 +42,23 @@ class JQuiButtonBlank extends JQuiButton {
             text: 'jqui_button_link_blank_note',
         });
         const target = JQuiButton.findField<RxWidgetInfoAttributesFieldSelect>(newWidgetInfo, 'target');
-        target.default = '_blank';
+        if (target) {
+            target.default = '_blank';
+        }
 
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = false;
+        if (visResizable) {
+            visResizable.default = false;
+        }
 
         const text = JQuiButton.findField<RxWidgetInfoAttributesFieldText>(newWidgetInfo, 'buttontext');
-        text.default = 'URL Browser';
+        if (text) {
+            text.default = 'URL Browser';
+        }
 
         return newWidgetInfo as RxWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiButtonBlank.getWidgetInfo();
     }

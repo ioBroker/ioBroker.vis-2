@@ -4,7 +4,7 @@ import { type SelectChangeEvent, TextField } from '@mui/material';
 
 import { Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import { background, theme as ViewTheme } from '@/Attributes/ViewData';
 import { store } from '@/Store';

@@ -3,15 +3,15 @@ interface SwipeElement extends HTMLElement {
 }
 
 export default class InstallSwipe {
-    private el: SwipeElement;
+    private el!: SwipeElement;
 
     private locked = false;
 
     private x0: null | number = null;
 
-    private readonly onSwipeLeft: null | (() => void) = null;
+    private readonly onSwipeLeft: null | undefined | (() => void) = null;
 
-    private readonly onSwipeRight: null | (() => void) = null;
+    private readonly onSwipeRight: null | undefined | (() => void) = null;
 
     private hideIndication = false;
 
@@ -77,7 +77,7 @@ export default class InstallSwipe {
         e.preventDefault();
 
         if (this.locked) {
-            const dx = InstallSwipe.unify(e).clientX - this.x0;
+            const dx = InstallSwipe.unify(e).clientX - (this.x0 ?? 0);
             if (dx > 0 && this.onSwipeRight && this.indicationRight) {
                 this.el.style.transform = `translateX(${dx}px)`;
             } else if (dx < 0 && this.onSwipeLeft && this.indicationLeft) {
@@ -115,7 +115,7 @@ export default class InstallSwipe {
     private moveEnd = (e: MouseEvent | TouchEvent): void => {
         if (this.locked) {
             // calculate X distance
-            const dx = InstallSwipe.unify(e).clientX - this.x0;
+            const dx = InstallSwipe.unify(e).clientX - (this.x0 ?? 0);
 
             this.removeIndicator();
 
@@ -160,7 +160,7 @@ export default class InstallSwipe {
             this.indicatorNode.style.top = 'calc(50% - 16px)';
             this.indicatorNode.style.zIndex = '2000';
             this.indicatorNode.style.fontSize = '32px';
-            this.el.parentNode.appendChild(this.indicatorNode);
+            this.el.parentNode?.appendChild(this.indicatorNode);
         }
 
         if (dx > this.swipeThreshold) {

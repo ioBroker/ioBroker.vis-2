@@ -2,7 +2,7 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "sourceMap": true,
-        "esModuleInterop": true,
+        "rootDir": "./",
         "inlineSources": true,
         "lib": ["es2018", "DOM"],
         "types": ["@iobroker/types"],

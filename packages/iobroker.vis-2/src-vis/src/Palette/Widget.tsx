@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useDrag } from 'react-dnd';
+import useConnectRef from '@/Utilities/useConnectRef';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon, Update as UpdateIcon, Block as DeletedIcon } from '@mui/icons-material';
 
-import { I18n, Utils, type LegacyConnection, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { MarketplaceWidgetRevision, Project } from '@iobroker/types-vis-2';
 
@@ -80,7 +81,7 @@ interface WidgetProps {
     widgetSet: string;
     widgetType: WidgetType;
     widgetTypeName: string;
-    socket?: LegacyConnection;
+    socket?: Connection;
     themeType: ThemeType;
     changeProject?: (project: Project, ignoreHistory?: boolean) => Promise<void>;
     changeView?: (view: string) => void;
@@ -96,8 +97,8 @@ interface WidgetProps {
     marketplaceDeleted?: string[];
 }
 
-const Widget = (props: WidgetProps): React.JSX.Element => {
-    const imageRef = useRef<HTMLSpanElement>();
+const Widget = (props: WidgetProps): React.JSX.Element | null => {
+    const imageRef = useRef<HTMLSpanElement>(null);
     const style: React.CSSProperties = {};
 
     useEffect(() => {
@@ -140,7 +141,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
         }
     } else if (
         props.widgetType.preview &&
-        (IMAGE_TYPES.find(ext => props.widgetType.preview.toLowerCase().endsWith(ext)) ||
+        (IMAGE_TYPES.find(ext => (props.widgetType.preview || '').toLowerCase().endsWith(ext)) ||
             props.widgetSet === '__marketplace')
     ) {
         img = (
@@ -164,12 +165,12 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
             <span
                 style={styles.widgetImage}
                 ref={imageRef}
-                dangerouslySetInnerHTML={{ __html: props.widgetType.preview }}
+                dangerouslySetInnerHTML={{ __html: props.widgetType.preview || '' }}
             />
         );
     }
 
-    let label = props.widgetType.label ? I18n.t(props.widgetType.label) : window.vis._(props.widgetType.title);
+    let label = props.widgetType.label ? I18n.t(props.widgetType.label) : window.vis._(props.widgetType.title || '');
     // remove legacy stuff
     label = label.split('<br')[0];
     label = label.split('<span')[0];
@@ -178,8 +179,8 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
     let marketplaceUpdate: MarketplaceWidgetRevision | null = null;
     let marketplaceDeleted;
     if (props.widgetSet === '__marketplace') {
-        marketplaceUpdate = props.marketplaceUpdates?.find(u => u.widget_id === props.widgetMarketplaceId);
-        marketplaceDeleted = props.marketplaceDeleted?.includes(props.widgetMarketplaceId);
+        marketplaceUpdate = props.marketplaceUpdates?.find(u => u.widget_id === props.widgetMarketplaceId) || null;
+        marketplaceDeleted = props.marketplaceDeleted?.includes(props.widgetMarketplaceId || '');
     }
 
     const result = (
@@ -212,7 +213,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
                             title={I18n.t('Uninstall')}
                             slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
                         >
-                            <IconButton onClick={() => props.uninstallWidget(props.widgetType.name)}>
+                            <IconButton onClick={() => props.uninstallWidget?.(props.widgetType.name)}>
                                 <DeleteIcon />
                             </IconButton>
                         </Tooltip>
@@ -221,7 +222,9 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
                                 title={`${I18n.t('Update to version')} ${marketplaceUpdate.version}`}
                                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
                             >
-                                <IconButton onClick={() => props.updateWidgets(marketplaceUpdate)}>
+                                <IconButton
+                                    onClick={() => marketplaceUpdate && props.updateWidgets?.(marketplaceUpdate)}
+                                >
                                     <UpdateIcon />
                                 </IconButton>
                             </Tooltip>
@@ -241,7 +244,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
         </Tooltip>
     );
 
-    const widthRef = useRef<HTMLSpanElement>();
+    const widthRef = useRef<HTMLSpanElement>(null);
     const [, dragRef, preview] = useDrag(
         {
             type: 'widget',
@@ -258,9 +261,10 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
         [props.widgetType],
     );
 
+    const setDragRef = useConnectRef<HTMLSpanElement>(dragRef);
+
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.widgetType]);
 
     if (typeof props.widgetType.customPalette === 'function') {
@@ -268,11 +272,11 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
             return null;
         }
         return props.widgetType.customPalette({
-            socket: props.socket,
+            socket: props.socket!,
             project: store.getState().visProject,
-            changeProject: props.changeProject,
+            changeProject: props.changeProject!,
             selectedView: props.selectedView,
-            changeView: props.changeView,
+            changeView: props.changeView!,
             themeType: props.themeType,
             helpers,
         });
@@ -280,7 +284,7 @@ const Widget = (props: WidgetProps): React.JSX.Element => {
 
     return (
         <span
-            ref={props.editMode ? dragRef : null}
+            ref={props.editMode ? setDragRef : null}
             id={`widget_${props.widgetTypeName}`}
             className={`widget-${props.widgetSet}`}
         >

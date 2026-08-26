@@ -391,8 +391,8 @@ window.visAdapterInstance = ${this.instance};
 window.vendorPrefix = '${this.vendorPrefix}';
 window.disableDataReporting = ${(this.common as any)?.disableDataReporting ? 'true' : 'false'};
 window.loadingBackgroundColor = '${this.visConfig.loadingBackgroundColor || ''}';
-window.loadingBackgroundImage = '${this.visConfig.loadingBackgroundImage ? `files/${this.namespace}/loading-bg.png` : ''}';
-window.loadingHideLogo = ${this.visConfig.loadingHideLogo ? 'true' : 'false'};
+window.loadingBackgroundImage = '${this.visConfig.loadingBackgroundImage ? `../${this.namespace}/loading-bg.png` : ''}';
+window.loadingHideLogo = '${this.visConfig.loadingHideLogo ? 'true' : ''}';
 // for back compatibility with vis.1 on cloud
 window.visConfig = {
     "widgetSets": ${JSON.stringify(widgetSets)}

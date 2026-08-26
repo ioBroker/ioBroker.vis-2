@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import useConnectRef from '@/Utilities/useConnectRef';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
@@ -12,7 +13,7 @@ import {
 } from '@mui/icons-material';
 import { FaFolder as FolderClosedIcon, FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
 
-import { Utils, I18n } from '@iobroker/adapter-react-v5';
+import { Utils, I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
 
@@ -64,7 +65,7 @@ interface FolderProps {
     editMode?: boolean;
     foldersCollapsed: string[];
     setFoldersCollapsed: (foldersCollapsed: string[]) => void;
-    showDialog?: (dialog: string, view: string, parentId: string) => void;
+    showDialog?: (dialog: 'add' | 'rename' | 'delete' | 'copy', view?: string | null, parentId?: string | null) => void;
     theme: VisTheme;
 }
 
@@ -114,7 +115,7 @@ const Folder: React.FC<FolderProps> = props => {
                             return true;
                         }
                         const parentId = currentFolder.parentId;
-                        currentFolder = folders.find(foundFolder => foundFolder.id === parentId);
+                        currentFolder = folders.find(foundFolder => foundFolder.id === parentId) as FolderType;
                     }
                 }
                 return false;
@@ -126,6 +127,8 @@ const Folder: React.FC<FolderProps> = props => {
         }),
         [visProject],
     );
+
+    const dropRef = useConnectRef<HTMLDivElement>(drop);
 
     const [{ isDraggingThisItem }, dragRef, preview] = useDrag(
         {
@@ -148,14 +151,14 @@ const Folder: React.FC<FolderProps> = props => {
         [visProject],
     );
 
+    const setDragRef = useConnectRef<HTMLDivElement>(dragRef);
+
     useEffect(() => {
         preview(getEmptyImage(), { captureDraggingState: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [visProject]);
+    }, [visProject, preview]);
 
     useEffect(() => {
         props.setIsDragging(isDraggingThisItem ? props.folder.id : '');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isDraggingThisItem]);
 
     console.log(`${props.folder.name} ${props.isDragging} ${canDrop}`);
@@ -163,7 +166,7 @@ const Folder: React.FC<FolderProps> = props => {
     return (
         <Box
             component="div"
-            ref={drop}
+            ref={dropRef}
             sx={Utils.getStyle(
                 props.theme,
                 styles.root,
@@ -175,7 +178,7 @@ const Folder: React.FC<FolderProps> = props => {
             <Box
                 component="div"
                 sx={styles.icon}
-                ref={dragRef}
+                ref={setDragRef}
                 title={I18n.t('Drag me')}
             >
                 {props.foldersCollapsed.includes(props.folder.id) ? (
@@ -233,7 +236,7 @@ const Folder: React.FC<FolderProps> = props => {
                     >
                         <IconButton
                             size="small"
-                            onClick={() => props.showDialog('add', null, props.folder.id)}
+                            onClick={() => props.showDialog?.('add', null, props.folder.id)}
                         >
                             <AddIcon />
                         </IconButton>
