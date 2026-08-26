@@ -43,9 +43,6 @@ jobs:
             - name: Test TypeScript
               run: npm run check-ts -w packages/iobroker.vis-2
 
-            - name: Run package and startup tests
-              run: npm run test -w packages/iobroker.vis-2
-
             - name: Run local tests
               run: npm run test-gui -w packages/iobroker.vis-2
 
@@ -57,9 +54,34 @@ jobs:
                   path: packages/iobroker.vis-2/tmp/screenshots/**/*.png
                   retention-days: 3
 
+    # Own job on purpose: the engine test and the GUI test both drive an ioBroker in
+    # packages/iobroker.vis-2/tmp, and the second one cannot clean up after the first - it fails with
+    # "EISDIR: illegal operation on a directory, unlink .../files/vis-2.0" and web.0 then terminates
+    # with INVALID_ADAPTER_CONFIG. They must not share a runner.
+    adapter-tests:
+        if: contains(github.event.head_commit.message, '[skip ci]') == false
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Use Node.js 24.15.0
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24.15.0
+
+            - name: Install Monorepo
+              run: npm run install-monorepo
+
+            - name: Build
+              run: NODE_OPTIONS=--max_old_space_size=8192 npm run build
+
+            - name: Run package and startup tests
+              run: npm run test -w packages/iobroker.vis-2
+
     # Deploys the final package to NPM
     deploy:
-        needs: [adapter-tests-gui]
+        needs: [adapter-tests-gui, adapter-tests]
 
         # Trigger this step only when a commit on master is tagged with a version number
         if: |
