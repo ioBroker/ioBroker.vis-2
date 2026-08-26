@@ -1,6 +1,6 @@
 import { FileCopy as FileCopyIcon } from '@mui/icons-material';
 
-import { Utils, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { Utils, I18n, type ThemeType } from '@iobroker/gui-components';
 
 import type { AnyWidgetId, GroupWidgetId, Widget } from '@iobroker/types-vis-2';
 import React from 'react';
@@ -53,7 +53,7 @@ const WidgetExportDialog: React.FC<WidgetExportDialogProps> = props => {
                 widget.data.members = members as AnyWidgetId[];
             }
             widget._id = newId;
-        } else if (widget._id.startsWith('w')) {
+        } else if (widget._id?.startsWith('w')) {
             if (widget.grouped) {
                 delete widget.grouped;
                 delete widget.groupid;

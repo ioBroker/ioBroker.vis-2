@@ -4,7 +4,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/
 
 import { Close } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import type { Widget } from '@iobroker/types-vis-2';
 import CustomEditor from '../../Components/CustomEditor';
@@ -19,7 +19,7 @@ interface WidgetJSProps {
 
 const WidgetJS = (props: WidgetJSProps): React.JSX.Element => {
     const [value, setValue] = useState(props.widget.js || '');
-    const timeout = useRef(null);
+    const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     return (
         <Dialog

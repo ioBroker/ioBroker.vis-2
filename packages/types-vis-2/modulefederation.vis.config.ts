@@ -84,24 +84,38 @@ function isSharedEntryUsed(sharedEntry: string, isUsed: (packageName: string) =>
  * @param packageJson - package.json or list of modules that used in component
  * @returns Object with shared modules for "federation"
  */
+/**
+ * Every entry has to be resolvable from vis-2 itself: the federation plugin reads the package.json of each
+ * shared module while it builds the host, and a name that is not installed aborts the build with
+ * `Cannot find module '<name>/package.json'`. So a package that vis-2 dropped has to leave this list, even if
+ * old widget sets still use it - they simply keep their own copy, which is what happens anyway once the host
+ * stops providing it.
+ */
 export function moduleFederationShared(packageJson?: Record<string, any> | string[]): {
     [packageName: string]: VisSharedModuleConfig;
 } {
     const list = [
+        // Holds the ThemeContext that `styled()` reads, so it has to be shared for the theme of vis-2 to reach
+        // a widget set that brought its own MUI major.
+        //
+        // `@emotion/styled` on the other hand must NOT be shared: prebundled by @module-federation/vite it
+        // reaches `@mui/system` with the wrong interop shape, and MUI 9 dies while it builds its `Box` with
+        // `(0 , import_styled.default) is not a function` - the whole editor stays black. It is only the styled
+        // factory, every MUI copy may have its own as long as they all read the theme from the shared
+        // `@emotion/react` above.
         '@emotion/react',
-        '@emotion/styled',
-        '@iobroker/adapter-react-v5',
-        '@iobroker/adapter-react-v5/i18n/de.json',
-        '@iobroker/adapter-react-v5/i18n/en.json',
-        '@iobroker/adapter-react-v5/i18n/es.json',
-        '@iobroker/adapter-react-v5/i18n/fr.json',
-        '@iobroker/adapter-react-v5/i18n/it.json',
-        '@iobroker/adapter-react-v5/i18n/nl.json',
-        '@iobroker/adapter-react-v5/i18n/pl.json',
-        '@iobroker/adapter-react-v5/i18n/pt.json',
-        '@iobroker/adapter-react-v5/i18n/ru.json',
-        '@iobroker/adapter-react-v5/i18n/uk.json',
-        '@iobroker/adapter-react-v5/i18n/zh-cn.json',
+        '@iobroker/gui-components',
+        '@iobroker/gui-components/i18n/de.json',
+        '@iobroker/gui-components/i18n/en.json',
+        '@iobroker/gui-components/i18n/es.json',
+        '@iobroker/gui-components/i18n/fr.json',
+        '@iobroker/gui-components/i18n/it.json',
+        '@iobroker/gui-components/i18n/nl.json',
+        '@iobroker/gui-components/i18n/pl.json',
+        '@iobroker/gui-components/i18n/pt.json',
+        '@iobroker/gui-components/i18n/ru.json',
+        '@iobroker/gui-components/i18n/uk.json',
+        '@iobroker/gui-components/i18n/zh-cn.json',
         '@iobroker/vis-2-widgets-react-dev',
         '@mui/icons-material',
         '@mui/material',
@@ -110,17 +124,15 @@ export function moduleFederationShared(packageJson?: Record<string, any> | strin
         // set that brought its own MUI major. Without it such a widget would silently fall back to the default
         // MUI theme, which is always the light one
         '@mui/private-theming',
-        '@mui/styles',
         '@mui/system',
-        'prop-types',
         'react',
         'react-dom',
         'react-dom/client',
         // The JSX runtime must be shared together with react itself. A component that bundles its own copy
-        // creates its elements with the element symbol of ITS react version, and since React 19 renamed that
+        // creates its elements with the element symbol of ITS React version, and since React 19 renamed that
         // symbol (`react.element` -> `react.transitional.element`) to detect exactly this situation, the host
         // does not accept those elements anymore. Sharing it makes every component use the JSX runtime of the
-        // host, no matter which react version it was built against.
+        // host, no matter which React version it was built against.
         'react/jsx-runtime',
         // Development builds of a component (the widget development mode loads them from localhost:4173) use
         // the dev variant instead

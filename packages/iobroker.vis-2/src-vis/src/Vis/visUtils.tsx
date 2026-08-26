@@ -12,7 +12,7 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import type { ThemeType, LegacyConnection } from '@iobroker/adapter-react-v5';
+import type { ThemeType, Connection } from '@iobroker/gui-components';
 import type {
     Project,
     AnyWidgetId,
@@ -22,7 +22,6 @@ import type {
     StateID,
     VisBindingOperation,
     VisBindingOperationArgument,
-    GroupData,
     WidgetData,
     VisBinding,
     VisBindingOperationType,
@@ -74,6 +73,29 @@ export function replaceGroupAttr(
     }
 
     return { doesMatch: match, newString };
+}
+
+/**
+ * Replace the group attributes (`%attr%`, `groupAttr0`, …) in every string attribute of a group member.
+ *
+ * @param data data of the widget that belongs to the group
+ * @param groupData data of the group, which carries the values of the group attributes
+ * @returns the data with the replaced values, or the unchanged data if no attribute matched
+ */
+export function replaceGroupAttrs(data: WidgetData, groupData: WidgetData): WidgetData {
+    let newData: WidgetData | undefined;
+
+    Object.keys(data).forEach(attr => {
+        if (typeof data[attr] === 'string') {
+            const result = replaceGroupAttr(data[attr], groupData);
+            if (result.doesMatch) {
+                newData = newData || deepClone(data);
+                newData[attr] = result.newString || '';
+            }
+        }
+    });
+
+    return newData || data;
 }
 
 export function getWidgetGroup(views: Project, view: string, widget: AnyWidgetId): GroupWidgetId | undefined {
@@ -503,20 +525,7 @@ export function getUsedObjectIDsInWidget(
         if (widget.groupid) {
             const parentWidgetData = views[view].widgets[widget.groupid]?.data;
             if (parentWidgetData) {
-                let newGroupData: GroupData | undefined;
-
-                Object.keys(data).forEach(attr => {
-                    if (typeof data[attr] === 'string') {
-                        const result = replaceGroupAttr(data[attr], parentWidgetData);
-                        if (result.doesMatch) {
-                            newGroupData = newGroupData || (deepClone(data) as GroupData);
-                            newGroupData[attr] = result.newString || '';
-                        }
-                    }
-                });
-                if (newGroupData) {
-                    data = newGroupData;
-                }
+                data = replaceGroupAttrs(data, parentWidgetData);
             } else {
                 console.error(`Invalid group id "${widget.groupid}" in widget "${wid}"`);
             }
@@ -803,11 +812,11 @@ export function getUrlParameter(attr: string): string | true {
 
     const sParameterName = sURLVariables.get(attr);
 
-    return typeof sParameterName === 'undefined' ? true : decodeURIComponent(sParameterName);
+    return sParameterName === null || sParameterName === undefined ? true : decodeURIComponent(sParameterName);
 }
 
 export async function readFile(
-    socket: LegacyConnection,
+    socket: Connection,
     id: string,
     fileName: string,
     withType?: boolean,
@@ -816,12 +825,12 @@ export async function readFile(
     let mimeType = '';
     let data: string;
     if (typeof file === 'object') {
-        // LegacyConnection returns the file in slightly different shapes depending on transport
+        // Connection returns the file in slightly different shapes depending on transport
         const f = file as { mimeType?: string; type?: string; file?: string; data?: string };
         if (withType) {
             mimeType = f.mimeType || f.type || '';
         }
-        data = f.file || f.data;
+        data = f.file || f.data || '';
     } else {
         data = file;
     }
@@ -878,7 +887,7 @@ export function parseDimension(field: string | number | null | undefined): { val
 
 export function findWidgetUsages(
     views: Project,
-    view: string,
+    view: string | null,
     widgetId: AnyWidgetId,
     _result?: { view: string; wid: AnyWidgetId; attr: string }[],
 ): { view: string; wid: AnyWidgetId; attr: string }[] {
@@ -894,7 +903,7 @@ export function findWidgetUsages(
             const attrs = Object.keys(oWidget.data);
             attrs.forEach(attr => {
                 if (attr.startsWith('widget') && oWidget.data[attr] === widgetId) {
-                    _result.push({ view, wid: wid as AnyWidgetId, attr });
+                    _result?.push({ view, wid: wid as AnyWidgetId, attr });
                 }
             });
         });
@@ -908,8 +917,8 @@ export function findWidgetUsages(
 }
 
 export function applyTitleAndIcon(
-    title: string,
-    icon: string,
+    title: string | undefined,
+    icon: string | undefined,
     options: { themeType: ThemeType; adapterName: string; instance: number; projectName: string },
 ): void {
     title ||= window.location.pathname.includes('edit.html') ? 'Editor.vis' : 'ioBroker.vis';
@@ -952,5 +961,5 @@ export function applyTitleAndIcon(
     const stringManifest = JSON.stringify(manifestJSON);
     const blob = new Blob([stringManifest], { type: 'application/json' });
     const manifestURL = URL.createObjectURL(blob);
-    document.querySelector('#vis-manifest').setAttribute('href', manifestURL);
+    document.querySelector('#vis-manifest')?.setAttribute('href', manifestURL);
 }

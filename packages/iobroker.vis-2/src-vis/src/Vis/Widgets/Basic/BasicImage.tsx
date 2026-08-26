@@ -66,7 +66,6 @@ export default class BasicImage extends BasicImageGeneric<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicImage.getWidgetInfo();
     }

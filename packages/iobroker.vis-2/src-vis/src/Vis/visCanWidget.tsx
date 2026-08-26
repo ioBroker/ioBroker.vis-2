@@ -112,9 +112,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     readonly isCanWidget = true;
 
-    private bindings: Record<StateID, VisLinkContextBinding[]>;
+    private bindings: Record<StateID, VisLinkContextBinding[]> = {};
 
-    private IDs: StateID[];
+    private IDs: StateID[] = [];
 
     /** object IDs that were subscribed because a binding delivered them, by widget attribute */
     private boundIds: Record<string, StateID> = {};
@@ -194,7 +194,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             this.renderWidget(undefined, undefined, undefined, undefined, () => {
                 const newState = { mounted: true };
 
-                if (this.props.context.allWidgets[this.props.id]) {
+                if (this.widDiv && this.props.context.allWidgets[this.props.id]) {
                     // try to read resize handlers
                     analyzeDraggableResizable(
                         this.widDiv,
@@ -254,7 +254,15 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         this.destroy();
     }
 
-    static applyStyle(el: HTMLDivElement, style: WidgetStyle | string, isSelected?: boolean, editMode?: boolean): void {
+    static applyStyle(
+        el: HTMLDivElement | null,
+        style: WidgetStyle | string,
+        isSelected?: boolean,
+        editMode?: boolean,
+    ): void {
+        if (!el) {
+            return;
+        }
         if (typeof style === 'string') {
             // style is a string
             // "height: 10; width: 20"
@@ -327,7 +335,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
                 const zIndex = parseInt(el.style.zIndex, 10) || 0;
                 // apply zIndex to parent
-                const overlay: HTMLDivElement = el.parentNode.querySelector(`#rx_${el.id}`);
+                const overlay = el.parentNode?.querySelector<HTMLDivElement>(`#rx_${el.id}`);
                 if (overlay) {
                     overlay.style.zIndex = (zIndex + 1).toString();
                 }
@@ -363,8 +371,8 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 }
             } else if (command === 'updateContainers') {
                 // try to find 'vis-view-container' in it
-                const containers = this.widDiv.querySelectorAll('.vis-view-container');
-                if (containers.length) {
+                const containers = this.widDiv?.querySelectorAll('.vis-view-container');
+                if (containers?.length) {
                     const legacyViewContainers: string[] = [];
                     for (let v = 0; v < containers.length; v++) {
                         const view = ((containers[v] as HTMLDivElement).dataset.visContains || '').trim();
@@ -547,14 +555,14 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             } else if (type === 'lastChange') {
                 this.updateLastChange();
             } else if (type === 'binding') {
-                this.applyBinding(stateId);
+                this.applyBinding(stateId || '');
             }
         }
     };
 
     updateSignal(item: VisLinkContextSignalItem): void {
         if (this.widDiv) {
-            const signalDiv: HTMLDivElement = this.widDiv.querySelector(`.vis-signal[data-index="${item.index}"]`);
+            const signalDiv = this.widDiv.querySelector<HTMLDivElement>(`.vis-signal[data-index="${item.index}"]`);
             if (signalDiv) {
                 if (this.isSignalVisible(item.index)) {
                     signalDiv.style.display = '';
@@ -811,7 +819,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             if (val === 'null' && condition !== 'exist' && condition !== 'not exist' && value !== 'null') {
                 return false;
             }
-            let valNotNull: string | number | boolean = val as string | number | boolean;
+            let valNotNull: string | number | boolean = val;
 
             const t = typeof valNotNull;
             if (t === 'boolean' || val === 'false' || val === 'true') {
@@ -885,7 +893,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         }
     }
 
-    addSignalIcon(widgetData?: WidgetData, index?: number): void {
+    addSignalIcon(widgetData?: WidgetData, index = 0): void {
         widgetData ||= this.props.context.allWidgets[this.props.id]?.data;
         if (!widgetData) {
             return;
@@ -925,19 +933,14 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         const text = widgetData[`signals-text-${index}`];
         if (text) {
             const divText = window.document.createElement('div');
-            const val = this.props.context.canStates.attr(`${widgetData[`signals-oid-${index}`]}.val`) as
-                | string
-                | number
-                | boolean
-                | null
-                | undefined;
+            const val = this.props.context.canStates.attr(`${widgetData[`signals-oid-${index}`]}.val`);
             divText.className = 'vis-signal-text';
             VisCanWidget.applyStyle(divText, widgetData[`signals-text-style-${index}`]);
             divText.innerHTML = text.replace('%s', (val ?? '').toString());
             divSignal.appendChild(divText);
         }
 
-        this.widDiv.appendChild(divSignal);
+        this.widDiv?.appendChild(divSignal);
     }
 
     addLastChange(widgetData: WidgetData): void {
@@ -1033,11 +1036,16 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 ]),
         );
 
-        this.widDiv.prepend(divLastChange);
-        calculateOverflow(this.widDiv.style);
+        if (this.widDiv) {
+            this.widDiv.prepend(divLastChange);
+            calculateOverflow(this.widDiv.style);
+        }
     }
 
     addChart(widgetData: WidgetData): void {
+        if (!this.widDiv) {
+            return;
+        }
         this.widDiv.onclick = () => {
             // not yet implemented
             console.log(`[${this.props.id}] Show dialog with chart for ${widgetData['echart-oid']}`);
@@ -1241,7 +1249,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 }
             }
         } catch (e) {
-            console.warn(`[${wid}] Cannot bind data of widget: ${e}`);
+            console.warn(`[${wid}] Cannot bind data of widget: ${e as Error}`);
             return { widgetData: null, widgetStyle: null, isRelative: false };
         }
 
@@ -1257,8 +1265,8 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
     ): void {
         _count = _count || 0;
         // console.log(`[${Date.now()}] Render widget`);
-        const parentDivRef: React.RefObject<HTMLElement> = this.props.refParent;
-        let parentDiv: HTMLElement;
+        const parentDivRef: React.RefObject<HTMLElement | null> = this.props.refParent;
+        let parentDiv: HTMLElement | null;
         if (Object.prototype.hasOwnProperty.call(parentDivRef, 'current')) {
             parentDiv = parentDivRef.current;
         } else {
@@ -1314,7 +1322,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             const newData = JSON.stringify(widgetData);
             const newStyle = JSON.stringify(widgetStyle);
             // detect if update required
-            if (this.widDiv) {
+            if (this.widDiv && widgetData && widgetStyle) {
                 if (this.oldEditMode === this.state.editMode) {
                     if (this.oldData === newData && !update) {
                         if (this.oldStyle === newStyle || widgetData._no_style) {
@@ -1379,6 +1387,10 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
         // calculate new widgetData and widgetStyle
         const { isRelative, widgetData, widgetStyle } = this.calcData(wid, widget, newWidgetStyle);
+        if (!widgetData || !widgetStyle) {
+            // calcData() already logged why
+            return;
+        }
 
         const newData = JSON.stringify(widgetData);
         const newStyle = JSON.stringify(widgetStyle);
@@ -1411,7 +1423,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         try {
             // Append html element to view
             if (this.props.tpl) {
-                if (!this.widDiv || !update || !widget?.data?.members.length) {
+                if (!this.widDiv || !update || !widget?.data?.members?.length) {
                     const options: {
                         data: CanWidgetStore['data'];
                         viewDiv: string;
@@ -1427,9 +1439,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
                     if (widgetData?.oid) {
                         options.val = this.props.context.canStates.attr(`${widgetData.oid}.val`) as
-                            | string
-                            | number
-                            | boolean;
+                            string | number | boolean;
                     }
                     const widgetFragment = this.props.context.can.view(this.props.tpl, options);
 
@@ -1439,7 +1449,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                         const script = scripts[i];
                         const newScript = document.createElement('script');
                         newScript.innerHTML = script.innerHTML;
-                        script.parentNode.replaceChild(newScript, script);
+                        script.parentNode?.replaceChild(newScript, script);
                     }
 
                     if (isRelative) {
@@ -1499,10 +1509,10 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
                 // add template classes to div
                 const tplEl = window.document.getElementById(this.props.tpl);
-                const visName = tplEl.dataset.visName || (wid[0] === 'g' ? 'group' : 'noname');
-                const visSet = tplEl.dataset.visSet || 'noset';
-                this.updateOnStyle = tplEl.dataset.visUpdateStyle === 'true';
-                this.resizeLocked = tplEl.dataset.visResizeLocked === 'true';
+                const visName = tplEl?.dataset.visName || (wid[0] === 'g' ? 'group' : 'noname');
+                const visSet = tplEl?.dataset.visSet || 'noset';
+                this.updateOnStyle = tplEl?.dataset.visUpdateStyle === 'true';
+                this.resizeLocked = tplEl?.dataset.visResizeLocked === 'true';
                 this.widDiv.className = addClass(
                     this.widDiv.className,
                     `vis-tpl-${visSet}-${visName.replace(/\s/g, '-')}`,
@@ -1584,13 +1594,13 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     onCommand: this.onCommandBound,
                 });
         } catch (e) {
-            const lines = (e.toString() + e.stack.toString()).split('\n');
+            const lines = ((e as Error).toString() + (e as Error).stack?.toString()).split('\n');
             const error = `can't render ${this.props.tpl} ${wid} on "${this.props.view}": `;
-            this.props.context.socket.log(error, 'error');
+            this.props.context.socket.log(error, 'error').catch(e => console.error(`Cannot log error: ${e}`));
             console.error(error);
             for (let l = 0; l < lines.length; l++) {
                 const line = `${l} - ${lines[l]}`;
-                this.props.context.socket.log(line, 'error');
+                this.props.context.socket.log(line, 'error').catch(e => console.error(`Cannot log error: ${e}`));
                 console.error(line);
             }
         }
@@ -1613,7 +1623,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         return false;
     }
 
-    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | React.JSX.Element[] | null {
+    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | (React.JSX.Element | null)[] | null {
         if (this.state.applyBindings && !this.bindingsTimer) {
             this.bindingsTimer = setTimeout(() => {
                 this.bindingsTimer = null;
@@ -1655,7 +1665,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         props.style.position = 'absolute';
 
         // this code is used only to represent containers, but sometime all of them should be rewritten in React
-        const legacyViewContainers = this.state.legacyViewContainers.length
+        const legacyViewContainers = this.state.legacyViewContainers?.length
             ? this.state.legacyViewContainers.map(view => {
                   const context = this.props.context;
                   const VisView = context.VisView;
@@ -1680,7 +1690,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                               view={view}
                               visInWidget
                               theme={this.props.context.theme}
-                              viewsActiveFilter={this.props.viewsActiveFilter}
+                              viewsActiveFilter={this.props.viewsActiveFilter || {}}
                           />
                       );
                   }

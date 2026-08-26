@@ -23,7 +23,7 @@ import {
     VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 import type { AnyWidgetId, GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
 import { store } from '../Store';
@@ -40,7 +40,7 @@ interface WidgetsProps {
     selectedView: string;
     selectedWidgets: AnyWidgetId[];
     setSelectedWidgets: Editor['setSelectedWidgets'];
-    selectedGroup: GroupWidgetId;
+    selectedGroup?: GroupWidgetId;
     editMode: boolean;
     lockDragging: boolean;
     widgetHint: string;
@@ -71,7 +71,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
 
     const viewSettings = store.getState().visProject?.[props.selectedView];
 
-    const toolbar = useMemo<ToolbarGroup>(() => {
+    const toolbar = useMemo<ToolbarGroup | null>(() => {
         if (!props.widgetsLoaded) {
             return null;
         }
@@ -85,7 +85,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
         const widgetTypes = getWidgetTypes();
         const widgets = viewSettings.widgets;
 
-        const shownWidgets = Object.keys(widgets).filter((widget: AnyWidgetId) =>
+        const shownWidgets = (Object.keys(widgets) as AnyWidgetId[]).filter(widget =>
             props.selectedGroup
                 ? widgets[widget].groupid === props.selectedGroup || widget === props.selectedGroup
                 : !widgets[widget].groupid,
@@ -128,7 +128,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             const widgetWithSetLabel = widgetTypes.find(w => w.set === setLabel && w.setLabel);
                             if (widgetWithSetLabel) {
                                 widgetColor = widgetWithSetLabel.setColor;
-                                setLabel = I18n.t(widgetWithSetLabel.setLabel);
+                                setLabel = I18n.t(widgetWithSetLabel.setLabel || '');
                             }
                         }
 
@@ -409,7 +409,6 @@ const Widgets: React.FC<WidgetsProps> = props => {
                 ],
             ],
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         props.selectedGroup,
         props.selectedWidgets,
@@ -437,7 +436,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
         <>
             <ToolbarItems
                 theme={props.theme}
-                group={toolbar}
+                group={toolbar!}
                 changeProject={props.changeProject}
                 selectedView={props.selectedView}
                 setSelectedWidgets={props.setSelectedWidgets}

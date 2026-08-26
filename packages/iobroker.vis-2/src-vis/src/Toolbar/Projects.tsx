@@ -14,8 +14,7 @@ import {
     Utils,
     type Connection,
     type ThemeType,
-    type LegacyConnection,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
@@ -38,7 +37,7 @@ interface ToolsProps {
     selectedView: string;
     setProjectsDialog: Editor['setProjectsDialog'];
     setSelectedWidgets: Editor['setSelectedWidgets'];
-    socket: LegacyConnection;
+    socket: Connection;
     theme: VisTheme;
     themeType: ThemeType;
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
@@ -126,13 +125,13 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
                 <SelectID
                     imagePrefix="../"
                     onClose={() => setObjectsDialog(false)}
-                    socket={props.socket as any as Connection}
+                    socket={props.socket}
                     title={I18n.t('Browse objects')}
                     columns={['role', 'func', 'val', 'name']}
                     notEditable={false}
                     theme={props.theme}
                     onOk={_selected => {
-                        const selected: string = Array.isArray(_selected) ? _selected[0] : _selected;
+                        const selected = (Array.isArray(_selected) ? _selected[0] : _selected) || '';
                         Utils.copyToClipboard(selected);
                         setObjectsDialog(false);
                         window.alert(I18n.t('Copied'));
@@ -158,7 +157,7 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
                     selected=""
                     showTypeSelector
                     onOk={_selected => {
-                        let selected: string = Array.isArray(_selected) ? _selected[0] : _selected;
+                        let selected = (Array.isArray(_selected) ? _selected[0] : _selected) || '';
 
                         const projectPrefix = `${props.adapterName}.${props.instance}/${props.projectName}/`;
                         if (selected.startsWith(projectPrefix)) {
@@ -172,7 +171,7 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
                         setFilesDialog(false);
                         window.alert(I18n.t('ra_Copied %s', selected));
                     }}
-                    socket={props.socket as any as Connection}
+                    socket={props.socket}
                     ok={I18n.t('Copy to clipboard')}
                     cancel={I18n.t('ra_Close')}
                 />
