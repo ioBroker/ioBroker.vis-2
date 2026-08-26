@@ -97,6 +97,10 @@
             } else {
                 window.document.body.className = 'body-light';
             }
+            // the configured color must be visible before the loader is rendered
+            if (window.loadingBackgroundColor) {
+                window.document.body.style.backgroundColor = window.loadingBackgroundColor;
+            }
         }
 
         window.visConfigLoaded
@@ -106,6 +110,10 @@
                 window.loadingBackgroundColor ||= '@@loadingBackgroundColor@@';
                 window.loadingBackgroundImage ||= '@@loadingBackgroundImage@@';
                 window.loadingHideLogo ||= '@@loadingHideLogo@@';
+                // the placeholders are only replaced if the page is delivered by a vendor
+                ['loadingBackgroundColor', 'loadingBackgroundImage', 'loadingHideLogo'].forEach(name => {
+                    window[name] = `${window[name]}`.startsWith('@@') ? '' : `${window[name]}`;
+                });
                 // set background as early as possible
                 setBackgroundColor();
             });

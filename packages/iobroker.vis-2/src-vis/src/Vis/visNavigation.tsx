@@ -16,7 +16,7 @@ import {
 
 import { ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
 
-import { Utils, Icon } from '@iobroker/adapter-react-v5';
+import { Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
 const MENU_WIDTH_FULL = 200;
@@ -211,9 +211,9 @@ interface VisNavigationProps {
 
 interface MenuItem {
     text: string;
-    color: string;
-    icon: string;
-    noText: boolean;
+    color?: string;
+    icon?: string;
+    noText?: boolean;
     order: number;
     view: string;
 }
@@ -227,11 +227,12 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                 return;
             }
             const viewSettings = this.props.context.views[view].settings;
-            if (viewSettings.navigation) {
+            // a view can show the menu without being an entry of it
+            if (viewSettings.navigation && !viewSettings.navigationHideEntry) {
                 const item = {
                     text:
                         settings.navigationOrientation === 'horizontal' && viewSettings.navigationOnlyIcon
-                            ? null
+                            ? ''
                             : viewSettings.navigationTitle || view,
                     color: viewSettings.navigationColor,
                     icon: viewSettings.navigationIcon || viewSettings.navigationImage,
@@ -270,7 +271,8 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     }}
                 >
                     <Tabs
-                        value={this.props.activeView}
+                        // the active view has no tab if it hides its own entry, and MUI warns about an unknown value
+                        value={items.find(item => item.view === this.props.activeView) ? this.props.activeView : false}
                         // the standard variant squeezes the entries into the available width, so they overlap if the window is too narrow
                         variant="scrollable"
                         scrollButtons="auto"
@@ -475,7 +477,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
         }
         style.opacity = this.props.editMode ? 0.4 : 1;
 
-        let icon: string = settings.navigationBarIcon || settings.navigationBarImage;
+        let icon: string | undefined = settings.navigationBarIcon || settings.navigationBarImage;
         if (icon?.startsWith('_PRJ_NAME/')) {
             icon = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
         }

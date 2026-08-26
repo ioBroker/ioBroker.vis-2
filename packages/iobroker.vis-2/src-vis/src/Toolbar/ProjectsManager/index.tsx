@@ -21,7 +21,7 @@ import {
 } from '@mui/icons-material';
 import { BiImport, BiExport } from 'react-icons/bi';
 
-import { I18n, type ThemeType, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { VisTheme } from '@iobroker/types-vis-2';
@@ -73,7 +73,7 @@ interface ProjectsManagerProps {
     projects: string[];
     projectName: string;
     refreshProjects: Editor['refreshProjects'];
-    socket: LegacyConnection;
+    socket: Connection;
     themeType: ThemeType;
     theme: VisTheme;
     adapterName: string;
@@ -113,8 +113,8 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
         setDialogName(dialogDefaultName[type]);
     };
 
-    const exportProject = async (projectName: string | false, isAnonymize?: boolean): Promise<void> => {
-        setWorking(projectName);
+    const exportProject = async (projectName: string | false | null, isAnonymize?: boolean): Promise<void> => {
+        setWorking(projectName || false);
         const host = await getLiveHost(props.socket);
 
         if (!host) {
@@ -148,8 +148,8 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
                     (window.$ as any)('body').append(
                         `<a id="zip_download" href="data: application/zip;base64,${data.data}" download="${date}${projectName}.zip"></a>`,
                     );
-                    document.getElementById('zip_download').click();
-                    document.getElementById('zip_download').remove();
+                    document.getElementById('zip_download')?.click();
+                    document.getElementById('zip_download')?.remove();
                 }
             },
         );
@@ -325,7 +325,7 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
             {dialog ? (
                 <ProjectDialog
                     dialog={dialog}
-                    dialogProject={dialogProject}
+                    dialogProject={dialogProject || undefined}
                     dialogName={dialogName}
                     closeDialog={() => setDialog(null)}
                     setDialogProject={setDialogProject}

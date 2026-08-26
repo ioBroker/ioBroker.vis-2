@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 function usePrevious(value: string[]): string[] {
-    const ref = useRef<any>();
+    const ref = useRef<any>(undefined);
 
     useEffect(() => {
         ref.current = value; // assign the value of ref to the argument

@@ -4,7 +4,7 @@ import { Dialog, Button, DialogActions, DialogContent, DialogTitle } from '@mui/
 
 import { ContentCopy as IconCopy, Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeType, Utils } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType, Utils } from '@iobroker/gui-components';
 
 import CustomEditor from './CustomEditor';
 

@@ -18,5 +18,7 @@
   "Load widgets...": "Widgets laden...",
   "Loading objects...": "Objecten laden...",
   "Cannot render widget %s": "Widget %s kan niet worden weergegeven",
-  "Retry": "Opnieuw proberen"
+  "Retry": "Opnieuw proberen",
+  "Widget sets could not be loaded": "Widgetsets konden niet worden geladen",
+  "widget_sets_incompatible_react": "De volgende widgetsets zijn gebouwd voor een oudere versie van React en kunnen niet worden geladen. Werk de bijbehorende adapters bij."
 }

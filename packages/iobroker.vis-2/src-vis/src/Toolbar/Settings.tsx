@@ -16,13 +16,7 @@ import {
 
 import { ContentCopy, Save as SaveIcon, Refresh } from '@mui/icons-material';
 
-import {
-    I18n,
-    Utils,
-    type LegacyConnection,
-    SelectFile as SelectFileDialog,
-    type Connection,
-} from '@iobroker/adapter-react-v5';
+import { I18n, Utils, type Connection, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -94,7 +88,7 @@ type SettingsField =
 interface SettingsProps {
     changeProject: Editor['changeProject'];
     onClose: () => void;
-    socket: LegacyConnection;
+    socket: Connection;
     adapterName: string;
     adapterInstance: number;
     projectName: string;
@@ -121,12 +115,11 @@ export function Settings(props: SettingsProps): React.JSX.Element {
         void props.socket.readDir(`${props.adapterName}.${props.adapterInstance}`, props.projectName).then(files => {
             const file = files.find(f => f.file === 'vis-views.json');
             if ((file as any)?.mode || file?.acl?.permissions) {
-                setProjectMode((file as any).mode || file.acl.permissions);
+                setProjectMode((file as any).mode || file?.acl?.permissions);
             }
         });
 
         setSettings(_settings);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fields: SettingsField[] = [
@@ -287,11 +280,11 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                         );
                     }
 
-                    const value = settings[field.field];
+                    const value = field.field ? settings[field.field] : undefined;
 
                     const change = (changeValue: any): void => {
                         const newSettings = deepClone(settings);
-                        (newSettings as Record<string, any>)[field.field] = changeValue;
+                        field.field && ((newSettings as Record<string, any>)[field.field] = changeValue);
                         setSettings(newSettings);
                         applyTitleAndIcon(newSettings.title, newSettings.favicon, {
                             themeType: props.theme.palette.mode,
@@ -310,7 +303,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                         onChange={e => change(e.target.checked)}
                                     />
                                 }
-                                label={I18n.t(field.name)}
+                                label={I18n.t(field.name || '')}
                             />
                         );
                     } else if (field.type === 'select') {
@@ -320,7 +313,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                 style={{ marginBottom: 10 }}
                                 fullWidth
                             >
-                                <InputLabel>{I18n.t(field.name)}</InputLabel>
+                                <InputLabel>{I18n.t(field.name || '')}</InputLabel>
                                 <Select
                                     variant="standard"
                                     value={value || ''}
@@ -339,7 +332,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                             </FormControl>
                         );
                     } else if (field.type === 'image') {
-                        let _value: string;
+                        let _value = '';
                         if (imageDialog) {
                             _value = (value as string) || '';
                             if (_value.startsWith('../')) {
@@ -372,7 +365,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                             ),
                                         },
                                     }}
-                                    label={I18n.t(field.name)}
+                                    label={I18n.t(field.name || '')}
                                     value={value || ''}
                                     onChange={e => change(e.target.value)}
                                 />
@@ -394,6 +387,9 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                         theme={props.theme}
                                         onOk={_selected => {
                                             let selected = Array.isArray(_selected) ? _selected[0] : _selected;
+                                            if (!selected) {
+                                                return;
+                                            }
                                             const projectPrefix = `${props.adapterName}.${props.adapterInstance}/${props.projectName}/`;
                                             if (selected.startsWith(projectPrefix)) {
                                                 selected = `_PRJ_NAME/${selected.substring(projectPrefix.length)}`;
@@ -405,7 +401,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                             change(selected);
                                             setImageDialog(false);
                                         }}
-                                        socket={props.socket as any as Connection}
+                                        socket={props.socket}
                                     />
                                 ) : null}
                             </>
@@ -418,7 +414,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                 fullWidth
                                 value={value || ''}
                                 onChange={e => change(e.target.value)}
-                                label={I18n.t(field.name)}
+                                label={I18n.t(field.name || '')}
                                 helperText={field.help ? I18n.t(field.help) : null}
                                 type={field.type}
                             />
@@ -471,20 +467,17 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                 );
                             const instances = Object.values(objects);
                             for (let i = 0; i < instances.length; i++) {
-                                if (instances[i].common?.visWidgets) {
-                                    if (
-                                        Object.keys(instances[i].common.visWidgets).find(key =>
-                                            instances[i].common.visWidgets[key].url?.startsWith('http'),
-                                        )
-                                    ) {
-                                        Object.keys(instances[i].common.visWidgets).forEach(key => {
+                                const visWidgets = instances[i].common?.visWidgets;
+                                if (visWidgets) {
+                                    if (Object.keys(visWidgets).find(key => visWidgets[key].url?.startsWith('http'))) {
+                                        Object.keys(visWidgets).forEach(key => {
                                             const name: ioBroker.StringOrTranslated = instances[i].common.name;
                                             if (name && typeof name === 'object') {
                                                 const translatedName: ioBroker.Translated = name;
-                                                instances[i].common.visWidgets[key].url =
+                                                visWidgets[key].url =
                                                     `${translatedName[I18n.getLanguage()] && translatedName.en}/customWidgets.js`;
                                             } else {
-                                                instances[i].common.visWidgets[key].url = `${name}/customWidgets.js`;
+                                                visWidgets[key].url = `${name}/customWidgets.js`;
                                             }
                                         });
                                         await props.socket.setObject(instances[i]._id, instances[i]);
