@@ -815,6 +815,12 @@ export class VisRxWidget<
             props.className = addClass(props.className, 'vis-user-disabled');
         }
 
+        // a navigation widget that leads to the view that is shown is the active entry of the navigation
+        const navView = (this.state.rxData as unknown as { nav_view?: string }).nav_view;
+        if (navView && navView === this.props.context.activeView) {
+            props.className = addClass(props.className, 'vis-nav-active');
+        }
+
         Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
             if (value !== null && value !== undefined) {
