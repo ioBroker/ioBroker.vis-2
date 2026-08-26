@@ -1495,7 +1495,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
         let dateObj: Date;
         const text = typeof value;
-        if (text === 'object') {
+        // the comparison has to sit on the expression itself, a variable does not narrow the type
+        if (typeof value === 'object') {
             dateObj = value instanceof Date ? value : new Date(value);
         } else if (isVarFinite(value)) {
             // a state may deliver the timestamp as string, and "1710500000000" is no date string - it has to

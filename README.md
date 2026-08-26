@@ -313,6 +313,7 @@ npm run start
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) A timestamp that arrives as a string is shown as a date again instead of `NaN:NaN:NaN`, and a value that cannot be parsed at all is shown as it is
 * (@typhosj) The project setting `States Debounce Time` is applied again: the commands for one object ID are collected during that period. It had no effect at all, as the value was never read from the project
 * (@typhosj) The switch of the `binary control` widget shows the state of the object again if no text and no icon are defined
 * (@typhosj) `widgetOid` delivers the object ID of a widget inside a group again instead of the name of the group attribute
