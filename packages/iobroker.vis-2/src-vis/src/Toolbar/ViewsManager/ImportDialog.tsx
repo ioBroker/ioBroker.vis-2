@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { TextField } from '@mui/material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import CustomEditor from '../../Components/CustomEditor';
@@ -32,7 +32,7 @@ const ImportDialog: React.FC<ImportDialogProps> = props => {
     const [view, setView] = useState(props.view);
     const [errors, setErrors] = useState([]);
 
-    const editor = useRef(null);
+    const editor = useRef<{ editor: { getSession: () => any } } | null>(null);
 
     useEffect(() => {
         editor.current?.editor.getSession().on('changeAnnotation', () => {
@@ -40,7 +40,6 @@ const ImportDialog: React.FC<ImportDialogProps> = props => {
                 setErrors(editor.current.editor.getSession().getAnnotations());
             }
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editor.current]);
 
     return (

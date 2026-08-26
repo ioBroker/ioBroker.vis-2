@@ -12,14 +12,26 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
-import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection } from '@iobroker/gui-components';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import type VisRxWidget from '@/Vis/visRxWidget';
 import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
 import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
+import {
+    checkWidgetSetCompatibility,
+    getIncompatibilityText,
+    type IncompatibleWidgetSet,
+} from './visWidgetSetCompatibility';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
+
+/**
+ * Prefix a widget set's url gets for `registerRemotes`, which resolves it against the application
+ * root. `fetch` does not: it resolves against the current document, which already sits under
+ * `/vis-2/`, so anything reading the url back has to strip this first.
+ */
+const VIS2_URL_PREFIX = './vis-2/';
 
 export interface VisRxWidgetWithInfo<
     TRxData extends Record<string, any>,
@@ -138,30 +150,6 @@ function getText(text: string | ioBroker.StringOrTranslated): string {
     return (text || '').toString();
 }
 
-const cloudVersions: Record<string, undefined | 'module'> = {
-    echarts: undefined,
-    eventlist: undefined,
-    fullcalendar: undefined,
-    openweathermap: undefined,
-    scenes: undefined,
-    scheduler: 'module',
-    'vis-2-widgets-energy': undefined,
-    'vis-2-widgets-gauges': 'module',
-    'vis-2-widgets-jaeger-design': 'module',
-    'vis-2-widgets-material': undefined,
-};
-/**
- * We have a problem, that cloud have specific versions of widgets, and they must be loaded sometimes as bundlerType no matter what has the user
- */
-function fixCloudBundlerType(adapterName: string, visWidgetsCollection: ioBroker.VisWidget): void {
-    if (window.location.hostname.includes('iobroker.')) {
-        // fix possible wrong bundlerType
-        if (adapterName in cloudVersions) {
-            visWidgetsCollection.bundlerType = cloudVersions[adapterName];
-        }
-    }
-}
-
 /**
  * Load all remote widgets from instances
  *
@@ -171,13 +159,15 @@ function fixCloudBundlerType(adapterName: string, visWidgetsCollection: ioBroker
  * @param onlyWidgetSets If array of names, load only these widget sets
  */
 function getRemoteWidgets(
-    socket: LegacyConnection,
+    socket: Connection,
     onlyWidgetSets?: false | string[],
 ): Promise<
     | undefined
     | {
           widgetSets: VisRxWidgetWithInfo<any>[];
           additionalSets: AdditionalIconSet;
+          /** Widget sets that were skipped because they were built for an older react */
+          incompatibleSets: IncompatibleWidgetSet[];
       }
 > {
     let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
@@ -189,10 +179,9 @@ function getRemoteWidgets(
         .then(objects => {
             const result: VisRxWidgetWithInfo<any>[] = [];
             const additionalSets: AdditionalIconSet = {};
+            const incompatibleSets: IncompatibleWidgetSet[] = [];
             const countRef = { count: 0, max: 0 };
-            const instances: ioBroker.InstanceObject[] = Object.values(
-                objects as Record<string, ioBroker.InstanceObject>,
-            );
+            const instances: ioBroker.InstanceObject[] = Object.values(objects);
             const dynamicWidgetInstances: ioBroker.InstanceObject[] = instances.filter(obj => {
                 if (!obj.common.visWidgets && !obj.common.visIconSets) {
                     return false;
@@ -235,10 +224,8 @@ function getRemoteWidgets(
                         }
 
                         if (!visWidgetsCollection.url?.startsWith('http')) {
-                            visWidgetsCollection.url = `./vis-2/widgets/${visWidgetsCollection.url}`;
+                            visWidgetsCollection.url = `${VIS2_URL_PREFIX}widgets/${visWidgetsCollection.url}`;
                         }
-
-                        fixCloudBundlerType(dynamicWidgetInstance.common.name, visWidgetsCollection);
 
                         registerRemotes(
                             [
@@ -256,16 +243,52 @@ function getRemoteWidgets(
                                     let i18nPrefix = '';
                                     let i18nPromiseWait: Promise<void | null> | undefined;
 
+                                    // A widget set built for an older react throws while its module is
+                                    // evaluated, deep inside `loadRemote()` - no widget exists yet, so the error
+                                    // boundary around the widgets cannot catch it and the message points at
+                                    // nothing. Ask the federation manifest of the set beforehand instead
+                                    const compatibility = checkWidgetSetCompatibility(collection.url);
+
+                                    const loadComponentsIfCompatible = (): Promise<void[] | void> =>
+                                        compatibility.then(problem => {
+                                            if (!problem) {
+                                                return _loadComponentHelper({
+                                                    visWidgetsCollection: collection,
+                                                    countRef,
+                                                    dynamicWidgetInstance: instance,
+                                                    i18nPrefix,
+                                                    result,
+                                                });
+                                            }
+                                            const skipped: IncompatibleWidgetSet = {
+                                                name: collection.name,
+                                                adapter: instance._id
+                                                    .substring('system.adapter.'.length)
+                                                    .replace(/\.\d*$/, ''),
+                                                problem,
+                                            };
+                                            incompatibleSets.push(skipped);
+                                            console.error(getIncompatibilityText(skipped));
+                                            return undefined;
+                                        });
+
                                     // 1. Load language file ------------------
                                     // instance.common.visWidgets.i18n is deprecated
                                     if (collection.url && collection.i18n === true) {
-                                        // load i18n from files
-                                        const pos = collection.url.lastIndexOf('/');
+                                        // load i18n from files.
+                                        // `collection.url` carries VIS2_URL_PREFIX for registerRemotes, which resolves
+                                        // it against the application root. `fetch` resolves against the current
+                                        // document instead, and that already sits under /vis-2/ - keeping the prefix
+                                        // asked for /vis-2/vis-2/widgets/<set>/i18n/<lang>.json and always answered 404.
+                                        const baseUrl = collection.url.startsWith(VIS2_URL_PREFIX)
+                                            ? collection.url.substring(VIS2_URL_PREFIX.length)
+                                            : collection.url;
+                                        const pos = baseUrl.lastIndexOf('/');
                                         let i18nURL: string;
                                         if (pos !== -1) {
-                                            i18nURL = collection.url.substring(0, pos);
+                                            i18nURL = baseUrl.substring(0, pos);
                                         } else {
-                                            i18nURL = collection.url;
+                                            i18nURL = baseUrl;
                                         }
                                         const lang = I18n.getLanguage();
 
@@ -303,29 +326,34 @@ function getRemoteWidgets(
                                         promises.push(i18nPromiseWait);
                                     } else if (collection.url && collection.i18n === 'component') {
                                         // instance.common.visWidgets.i18n is deprecated
-                                        i18nPromiseWait = loadRemote<any>(
-                                            `${collection.name as WidgetSetName}/translations`,
-                                        )
-                                            .then((translations: any) => {
-                                                countRef.count++;
+                                        // the translations come out of the same remote as the widgets, so this
+                                        // would already run into the crash the check is there to avoid
+                                        i18nPromiseWait = compatibility.then(problem => {
+                                            if (problem) {
+                                                return null;
+                                            }
+                                            return loadRemote<any>(`${collection.name as WidgetSetName}/translations`)
+                                                .then((translations: any) => {
+                                                    countRef.count++;
 
-                                                // add automatic prefix to all translations
-                                                if (translations.default.prefix === true) {
-                                                    translations.default.prefix = `${instance.common.name}_`;
-                                                }
-                                                i18nPrefix = translations.default.prefix;
+                                                    // add automatic prefix to all translations
+                                                    if (translations.default.prefix === true) {
+                                                        translations.default.prefix = `${instance.common.name}_`;
+                                                    }
+                                                    i18nPrefix = translations.default.prefix;
 
-                                                I18n.extendTranslations(translations.default);
-                                                window.__widgetsLoadIndicator?.(countRef.count, promises.length);
-                                            })
-                                            .catch((error: string) =>
-                                                console.log(`Cannot load i18n "${collection.name}": ${error}`),
-                                            );
+                                                    I18n.extendTranslations(translations.default);
+                                                    window.__widgetsLoadIndicator?.(countRef.count, promises.length);
+                                                })
+                                                .catch((error: string) =>
+                                                    console.log(`Cannot load i18n "${collection.name}": ${error}`),
+                                                );
+                                        });
                                     } else if (collection.i18n && typeof collection.i18n === 'object') {
                                         try {
                                             I18n.extendTranslations(collection.i18n);
                                         } catch (error) {
-                                            console.error(`Cannot import i18n: ${error}`);
+                                            console.error(`Cannot import i18n: ${error as Error}`);
                                         }
                                     }
 
@@ -333,28 +361,10 @@ function getRemoteWidgets(
                                     if (collection.components) {
                                         if (i18nPromiseWait instanceof Promise) {
                                             // we must wait for it as the flag i18nPrefix will be used in the component
-                                            promises.push(
-                                                i18nPromiseWait.then(() =>
-                                                    _loadComponentHelper({
-                                                        visWidgetsCollection: collection,
-                                                        countRef,
-                                                        dynamicWidgetInstance: instance,
-                                                        i18nPrefix,
-                                                        result,
-                                                    }),
-                                                ),
-                                            );
+                                            promises.push(i18nPromiseWait.then(() => loadComponentsIfCompatible()));
                                         } else {
                                             // do not wait for languages
-                                            promises.push(
-                                                _loadComponentHelper({
-                                                    visWidgetsCollection: collection,
-                                                    countRef,
-                                                    dynamicWidgetInstance: instance,
-                                                    i18nPrefix,
-                                                    result,
-                                                }),
-                                            );
+                                            promises.push(loadComponentsIfCompatible());
                                         }
                                     } else if (i18nPromiseWait instanceof Promise) {
                                         promises.push(i18nPromiseWait);
@@ -406,6 +416,7 @@ function getRemoteWidgets(
             return Promise.all(promises).then(() => ({
                 widgetSets: result,
                 additionalSets,
+                incompatibleSets,
             }));
         })
         .catch((e: unknown): undefined => {

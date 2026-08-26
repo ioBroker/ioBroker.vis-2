@@ -4,7 +4,7 @@ import { type SelectChangeEvent, TextField } from '@mui/material';
 
 import { Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 import { background, theme as ViewTheme } from '@/Attributes/ViewData';
 import { store } from '@/Store';
@@ -510,6 +510,14 @@ export function getFields(
                     notStyle: true,
                     // applyToAll: true,
                     groupApply: true,
+                },
+                {
+                    // The view shows the menu, but is not offered in it
+                    type: 'checkbox',
+                    label: 'Hide this view in the menu',
+                    attr: 'navigationHideEntry',
+                    notStyle: true,
+                    hidden: '!data.navigation',
                 },
                 {
                     type: 'text',

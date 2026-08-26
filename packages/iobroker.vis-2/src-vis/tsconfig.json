@@ -4,13 +4,15 @@
         "moduleResolution": "Bundler",
         "module": "esnext",
         "target": "esnext",
-        "baseUrl": ".",
         "checkJs": false,
-        "allowJs": true,
+        "allowJs": false,
+        "rootDir": "./src",
         "noEmit": false,
         "outDir": "./build",
         "sourceMap": true,
         "sourceRoot": "./src",
+        "strict": true,
+        "strictNullChecks": true,
         "noImplicitAny": true,
         "lib": ["es2018", "DOM"],
         "jsx": "react",
@@ -20,6 +22,6 @@
             "@iobroker/types-vis-2": ["./packages/types-vis-2"]
         }
     },
-    "include": ["./**/*"],
+    "include": ["./src/**/*"],
     "exclude": ["src/Components/CustomAceEditor.tsx"]
 }

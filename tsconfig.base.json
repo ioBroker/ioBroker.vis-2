@@ -1,11 +1,12 @@
 {
-    "extends": "@tsconfig/node18/tsconfig.json",
+    "extends": "@tsconfig/node22/tsconfig.json",
     "compilerOptions": {
         "module": "esnext",
         "target": "esnext",
-        "baseUrl": ".",
         "jsx": "preserve",
-        "moduleResolution": "node",
+        "moduleResolution": "Bundler",
+        "strictNullChecks": true,
+        "strict": true
     },
     "include": ["packages/"],
     "exclude": ["**/node_modules", "**/dist"]

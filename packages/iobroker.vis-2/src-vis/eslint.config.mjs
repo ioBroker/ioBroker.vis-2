@@ -7,7 +7,9 @@ export default [
         rules: {
             'no-new-func': 'warn',
             'no-extend-native': 'warn',
+            'react-hooks/set-state-in-effect': 'off',
             'no-eval': 'warn',
+            'react-hooks/refs': 'off',
             'prettier/prettier': [
                 'error',
                 {
