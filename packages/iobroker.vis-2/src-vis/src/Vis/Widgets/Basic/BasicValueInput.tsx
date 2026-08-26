@@ -123,7 +123,7 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
         this.setState({ value, sentValue: true });
     }
 
-    onStateUpdated(id: string, state: ioBroker.State | null): void {
+    onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
         if (id === this.state.rxData.oid && state && state.val !== null && state.val !== undefined) {
             const valStr = state.val.toString();
             if (this.state.value.toString() !== valStr) {
@@ -132,7 +132,6 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
         }
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicValueInput.getWidgetInfo();
     }
@@ -162,12 +161,12 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
             value = '';
         }
         const style: React.CSSProperties = {
-            color: this.state.rxStyle.color,
-            background: this.state.rxStyle.background,
-            backgroundColor: this.state.rxStyle['background-color'],
-            fontFamily: this.state.rxStyle['font-family'],
-            fontSize: this.state.rxStyle['font-size'],
-            fontStyle: this.state.rxStyle['font-style'],
+            color: this.state.rxStyle?.color,
+            background: this.state.rxStyle?.background,
+            backgroundColor: this.state.rxStyle?.['background-color'],
+            fontFamily: this.state.rxStyle?.['font-family'] as string | undefined,
+            fontSize: this.state.rxStyle?.['font-size'],
+            fontStyle: this.state.rxStyle?.['font-style'] as React.CSSProperties['fontStyle'],
         };
 
         let content;

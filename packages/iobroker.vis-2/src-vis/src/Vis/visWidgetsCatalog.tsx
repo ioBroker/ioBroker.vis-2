@@ -1,6 +1,6 @@
 import type React from 'react';
 
-import type { LegacyConnection, ThemeType, ObjectBrowserCustomFilter } from '@iobroker/adapter-react-v5';
+import type { Connection, ThemeType, ObjectBrowserCustomFilter } from '@iobroker/gui-components';
 import type {
     GroupWidgetId,
     Project,
@@ -19,6 +19,7 @@ import type {
 import type VisRxWidget from '@/Vis/visRxWidget';
 
 import { getRemoteWidgets, type VisRxWidgetWithInfo } from './visLoadWidgets';
+import type { IncompatibleWidgetSet } from './visWidgetSetCompatibility';
 import WIDGETS from './Widgets';
 
 const DEFAULT_SET_COLORS: Record<string, string> = {
@@ -126,7 +127,7 @@ export type RxWidgetInfoAttributesFieldAll = {
         onDataChange: (newData: WidgetData) => void,
         props: {
             context: {
-                socket: LegacyConnection;
+                socket: Connection;
                 projectName: string;
                 instance: number;
                 adapterName: string;
@@ -162,7 +163,7 @@ export type RxWidgetInfoAttributesFieldAll = {
         field: RxWidgetInfoAttributesField,
         data: Record<string, any>,
         changeData: (newData: Record<string, any>) => void,
-        socket: LegacyConnection,
+        socket: Connection,
         index?: number,
     ) => Promise<void> | string;
 };
@@ -196,12 +197,12 @@ export interface WidgetAttributeIterable {
 }
 
 export interface WidgetAttributesGroupInfoStored {
-    name?: string;
+    name: string;
     label?: string;
     singleName?: string;
     index?: number;
     hidden?: string | ((data: Record<string, any>, index: number, style: React.CSSProperties) => boolean) | boolean;
-    fields?: RxWidgetInfoAttributesFieldAll[];
+    fields: RxWidgetInfoAttributesFieldAll[];
     indexFrom?: number | string;
     indexTo?: number | string;
     iterable?: WidgetAttributeIterable;
@@ -229,7 +230,7 @@ export interface WidgetType {
               context: {
                   views: Project;
                   view: string;
-                  socket: LegacyConnection;
+                  socket: Connection;
                   themeType: ThemeType;
                   projectName: string;
                   adapterName: string;
@@ -282,7 +283,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                 }
                 // only if RX widget with the same name not found
                 let info;
-                if (VisWidgetsCatalog.rxWidgets[name]?.getWidgetInfo) {
+                if (VisWidgetsCatalog.rxWidgets?.[name]) {
                     info = VisWidgetsCatalog.rxWidgets[name].getWidgetInfo();
                     if (info?.visAttrs && typeof info.visAttrs !== 'string') {
                         return null;
@@ -428,6 +429,9 @@ export default class VisWidgetsCatalog {
     /** List of all collected icon sets from widget sets */
     static additionalSets: AdditionalIconSet | null = null;
 
+    /** Widget sets that were skipped because they were built for an older react and would crash while loading */
+    static incompatibleSets: IncompatibleWidgetSet[] = [];
+
     static getUsedWidgetSets(project: Project): string[] | false {
         let anyWithoutSet = false;
         const widgetSets: string[] = [];
@@ -462,7 +466,7 @@ export default class VisWidgetsCatalog {
 
     static setUsedWidgetSets(project: Project): Project {
         // provide for all widgets the widget set and set
-        let views: Project;
+        let views: Project = project;
         const widgetTypes = window.visWidgetTypes; // getWidgetTypes();
         const viewKeys = Object.keys(project);
 
@@ -504,7 +508,7 @@ export default class VisWidgetsCatalog {
     }
 
     static collectRxInformation(
-        socket: LegacyConnection,
+        socket: Connection,
         project: Project,
         changeProject?: (newProject: Project) => void,
     ): Promise<Record<string, VisRxWidget<any>>> {
@@ -527,6 +531,7 @@ export default class VisWidgetsCatalog {
                                 ] as VisRxWidgetWithInfo<any>[];
 
                                 VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
+                                VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
 
                                 collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>) => {
                                     if (!WidgetEl?.getWidgetInfo) {
@@ -565,7 +570,7 @@ export default class VisWidgetsCatalog {
                                     }
                                 }
 
-                                resolve(VisWidgetsCatalog.rxWidgets);
+                                resolve(VisWidgetsCatalog.rxWidgets || {});
                             },
                         ),
                     0,
@@ -625,7 +630,7 @@ export interface CommonGroups {
  * optional there, so anything that is not a number stays undefined instead of becoming NaN.
  */
 function parseNumberOption(option: string | undefined): number | undefined {
-    const value = parseFloat(option);
+    const value = parseFloat(option || '');
     return Number.isFinite(value) ? value : undefined;
 }
 
@@ -703,14 +708,14 @@ export const parseAttributes = (
                 }
 
                 const repeats = match[2];
-                let type: RxWidgetAttributeType | null;
+                let type: RxWidgetAttributeType | undefined;
                 let onChangeFunc: string | undefined;
                 if (match[4]) {
                     const parts = match[4].substring(1).split('/');
                     type = parts[0] as RxWidgetAttributeType;
                     onChangeFunc = parts[1];
                 } else {
-                    type = null;
+                    type = undefined;
                 }
                 const field: WidgetAttributeInfoStored = {
                     name: match[1],
@@ -933,7 +938,7 @@ export const parseAttributes = (
 
             for (let i = from; i <= to; i++) {
                 const indexedGroup: WidgetAttributesGroupInfoStored = {
-                    ...deepCloneRx(group),
+                    ...(deepCloneRx(group) as WidgetAttributesGroupInfoStored),
                     index: i,
                     name: `${group.singleName}-${i}`,
                     hidden: group.hidden,

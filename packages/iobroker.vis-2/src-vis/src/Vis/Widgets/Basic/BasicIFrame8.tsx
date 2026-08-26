@@ -21,7 +21,7 @@ type RxData = {
 export default class BasicIFrame8 extends VisRxWidget<RxData> {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-    private readonly frameRef: React.RefObject<HTMLIFrameElement>;
+    private readonly frameRef: React.RefObject<HTMLIFrameElement | null>;
 
     private hashInstalled = false;
 
@@ -136,7 +136,6 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicIFrame8.getWidgetInfo();
     }

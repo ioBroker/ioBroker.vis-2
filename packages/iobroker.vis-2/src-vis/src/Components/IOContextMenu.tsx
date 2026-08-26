@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { NestedMenuItem, IconMenuItem } from 'mui-nested-menu/index';
 
-import { Menu } from '@mui/material';
+import { Menu, MenuItem } from '@mui/material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import NestedMenuItem from './NestedMenuItem';
+
+import { I18n } from '@iobroker/gui-components';
 
 interface MenuItem {
     label: string;
@@ -16,7 +17,7 @@ interface MenuItem {
     style?: React.CSSProperties;
 }
 
-const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void): React.JSX.Element[] =>
+const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void): (React.JSX.Element | null)[] =>
     items.map((item, key: number) => {
         if (!item || item.hide) {
             return null;
@@ -28,8 +29,7 @@ const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void)
                     key={key}
                     leftIcon={item.leftIcon}
                     disabled={item.disabled}
-                    // @ts-expect-error we can provide an Element here too and it works
-                    label={<span style={{ width: 40 }}>{I18n.t(item.label)}</span>}
+                    label={I18n.t(item.label)}
                     parentMenuOpen={open}
                     onContextMenu={e => {
                         e.stopPropagation();
@@ -42,44 +42,39 @@ const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void)
         }
 
         return (
-            <IconMenuItem
+            <MenuItem
                 key={key}
                 onClick={() => {
                     item.onClick && item.onClick();
                     onClose();
                 }}
                 disabled={item.disabled}
-                // @ts-expect-error we can provide an Element here too and it works
-                label={[
-                    <span
-                        key="main"
-                        style={{ display: 'flex', alignItems: 'center', ...item.style }}
-                    >
-                        <span style={{ width: 40 }}>{item.leftIcon}</span>
-                        {I18n.t(item.label)}
-                    </span>,
-                    item.subLabel ? (
-                        <span
-                            key="second"
-                            style={{
-                                fontSize: 10,
-                                fontWeight: 'normal',
-                                display: 'block',
-                                paddingLeft: 40,
-                                marginTop: -6,
-                            }}
-                        >
-                            {item.subLabel}
-                        </span>
-                    ) : null,
-                ]}
-                onContextMenu={(e: React.MouseEvent<HTMLDivElement>) => {
+                sx={{ display: 'block' }}
+                onContextMenu={e => {
                     e.stopPropagation();
                     e.preventDefault();
                     item.onClick && item.onClick();
                     onClose();
                 }}
-            />
+            >
+                <span style={{ display: 'flex', alignItems: 'center', ...item.style }}>
+                    <span style={{ width: 40 }}>{item.leftIcon}</span>
+                    {I18n.t(item.label)}
+                </span>
+                {item.subLabel ? (
+                    <span
+                        style={{
+                            fontSize: 10,
+                            fontWeight: 'normal',
+                            display: 'block',
+                            paddingLeft: 40,
+                            marginTop: -6,
+                        }}
+                    >
+                        {item.subLabel}
+                    </span>
+                ) : null}
+            </MenuItem>
         );
     });
 

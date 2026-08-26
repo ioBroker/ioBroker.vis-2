@@ -1,23 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Utils } from '@iobroker/adapter-react-v5';
+import { Utils } from '@iobroker/gui-components';
 
-import type VisRxWidget from '@/Vis/visRxWidget';
 import './index.css';
 import App from './Editor';
 import * as serviceWorker from './serviceWorker';
 import packageJson from './version.json';
-
-declare global {
-    interface Window {
-        adapterName: string;
-        visRxWidget: typeof VisRxWidget;
-        disableDataReporting?: boolean;
-        sentryDSN?: string;
-        visConfigLoaded?: Promise<void>;
-    }
-}
 
 window.adapterName = 'vis-2';
 
@@ -30,11 +19,11 @@ function modifyClasses(className: string, addClass?: string, removeClass?: strin
         .split(' ')
         .map(c => c.trim())
         .filter(c => c);
-    const pos = classes.indexOf(removeClass);
+    const pos = removeClass ? classes.indexOf(removeClass) : -1;
     if (pos !== -1) {
         classes.splice(pos, 1);
     }
-    !classes.includes(addClass) && classes.push(addClass);
+    addClass && !classes.includes(addClass) && classes.push(addClass);
     return classes.join(' ');
 }
 
@@ -78,8 +67,8 @@ function build(): void {
 }
 
 // wait till all scrips are loaded
-window.visConfigLoaded
-    .then(() => {
+void window.visConfigLoaded
+    ?.then(() => {
         if (!window.disableDataReporting) {
             window.sentryDSN = 'https://db8b6e837c71447a876069559a00a742@sentry.iobroker.net/232';
         }

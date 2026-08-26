@@ -43,26 +43,35 @@ class JQuiIconNavigation extends JQuiButton {
         });
 
         const buttonText = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'buttontext');
-        delete buttonText.default;
+        if (buttonText) {
+            delete buttonText.default;
+        }
 
         const modal = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'modal');
-        delete modal.default;
+        if (modal) {
+            delete modal.default;
+        }
 
         const navView = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'nav_view');
-        navView.default = '';
+        if (navView) {
+            navView.default = '';
+        }
 
         const icon = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'icon');
-        icon.default =
-            'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJjdXJyZW50Q29sb3IiIGQ9Ik0yMSAzTDMgMTAuNTN2Ljk4bDYuODQgMi42NUwxMi40OCAyMWguOThMMjEgM3oiLz48L3N2Zz4=';
+        if (icon) {
+            icon.default =
+                'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJjdXJyZW50Q29sb3IiIGQ9Ik0yMSAzTDMgMTAuNTN2Ljk4bDYuODQgMi42NUwxMi40OCAyMWguOThMMjEgM3oiLz48L3N2Zz4=';
+        }
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconNavigation.getWidgetInfo();
     }

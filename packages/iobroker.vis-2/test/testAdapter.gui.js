@@ -36,7 +36,10 @@ describe('vis', () => {
             const widgets = await helper.palette.getListOfWidgets(gPage, widgetSets[s]);
             for (let w = 0; w < widgets.length; w++) {
                 const wid = await helper.palette.addWidget(gPage, widgets[w], true);
-                await helper.screenshot(gPage, `${10 + s}_${(Date.now() - start).toString().padStart(6, '0')}_${widgetSets[s]}_${widgets[w]}`);
+                await helper.screenshot(
+                    gPage,
+                    `${10 + s}_${(Date.now() - start).toString().padStart(6, '0')}_${widgetSets[s]}_${widgets[w]}`,
+                );
                 await helper.view.deleteWidget(gPage, wid, 3_500);
             }
         }
@@ -46,7 +49,8 @@ describe('vis', () => {
     });
 
     it('Check runtime', async function () {
-        this.timeout(20_000);
+        // the waits inside this test add up to 30 s, so the budget must be bigger than that
+        this.timeout(60_000);
 
         await helper.screenshot(gPage, `90_${(Date.now() - start).toString().padStart(6, '0')}before_runtime`);
 
@@ -84,7 +88,11 @@ describe('vis', () => {
 
         // addWidget() applies the passed style last, so it wins over the default style of the template, and it
         // selects the new widget - which is what makes the resize handles appear
-        const wid = await gPage.evaluate((type, style) => window.visAddWidget(type, 0, 0, {}, style), widgetType, START);
+        const wid = await gPage.evaluate(
+            (type, style) => window.visAddWidget(type, 0, 0, {}, style),
+            widgetType,
+            START,
+        );
         await gPage.waitForSelector(`#${wid}`, { timeout: 5_000 });
         await new Promise(resolve => setTimeout(resolve, 1_000));
 
@@ -104,7 +112,9 @@ describe('vis', () => {
         // apart by where they sit inside the widget
         const handles = () =>
             gPage.evaluate(id => {
-                const el = document.getElementById(id);
+                // The eight handles hang on the service div `rx_<wid>`, not on the widget element itself - for a
+                // vis-1 widget the latter is the div built by can.js, a sibling that carries no editor decoration.
+                const el = document.getElementById(`rx_${id}`);
                 const box = el.getBoundingClientRect();
                 return [...el.querySelectorAll(':scope > .vis-editmode-resizer')].map(handle => {
                     const b = handle.getBoundingClientRect();
@@ -148,7 +158,10 @@ describe('vis', () => {
             moved.left > startGeometry.left,
             `moving to the right must increase left (${startGeometry.left} -> ${moved.left})`,
         );
-        assert.ok(moved.top > startGeometry.top, `moving down must increase top (${startGeometry.top} -> ${moved.top})`);
+        assert.ok(
+            moved.top > startGeometry.top,
+            `moving down must increase top (${startGeometry.top} -> ${moved.top})`,
+        );
         assert.strictEqual(moved.width, startGeometry.width, 'moving must not change the width');
         assert.strictEqual(moved.height, startGeometry.height, 'moving must not change the height');
 

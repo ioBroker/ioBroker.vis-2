@@ -12,14 +12,7 @@ import {
     TextField,
 } from '@mui/material';
 
-import {
-    ColorPicker,
-    I18n,
-    IconPicker,
-    TextWithIcon,
-    type LegacyConnection,
-    type ThemeType,
-} from '@iobroker/adapter-react-v5';
+import { ColorPicker, I18n, IconPicker, TextWithIcon, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
@@ -38,7 +31,7 @@ interface EditFieldProps {
     themeType: ThemeType;
     theme: VisTheme;
     checkFunction: (
-        funcText: boolean | string | ((settings: ViewSettings) => boolean),
+        funcText: boolean | string | ((settings: ViewSettings) => boolean) | undefined,
         settings: ViewSettings,
     ) => boolean;
     changeProject: (project: Project) => void;
@@ -46,13 +39,13 @@ interface EditFieldProps {
     adapterName: string;
     instance: number;
     projectName: string;
-    socket: LegacyConnection;
+    socket: Connection;
     disabled: boolean;
     project: Project;
     additionalSets: AdditionalIconSet;
 }
 
-export default function getEditField(gProps: EditFieldProps): React.JSX.Element {
+export default function getEditField(gProps: EditFieldProps): React.JSX.Element | null {
     const {
         field,
         view,
@@ -247,7 +240,7 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
         );
     }
     if (field.type === 'raw') {
-        return field.Component;
+        return field.Component || null;
     }
     if (field.type === 'color') {
         return (
