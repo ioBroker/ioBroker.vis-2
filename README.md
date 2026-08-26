@@ -15,6 +15,7 @@ WEB visualization for ioBroker platform.
 - [Filters](#filters)
 - [Control interface](#control-interface)
 - [Default view](#default-view)
+- [Navigation](#navigation)
 - [Permissions System](#permissions-system)
 - [Settings](#settings)
 - [SVG and curentColor](#svg-and-currentcolor)
@@ -227,6 +228,17 @@ If only one view has *"Default"* flag, so this view will be opened independently
 E.g., you can create two views "Landscape-Mobile" and "Portrait-Mobile" and these two views will be switched automatically when you change the orientation or screen size.
 
 There is a helper widget "basic - Screen Resolution" that shows actual screen resolution and the best suitable default view for this resolution. 
+
+## Navigation
+Every widget that leads to a view - the `Go to view` option of the jQui widgets, `basic - HTML navigation`, … - gets
+the CSS class `vis-nav-active` as long as the view it points to is the view that is shown. So the entry of the current
+view can be highlighted in the CSS of the project:
+
+```css
+.vis-nav-active button {
+    border: 1px solid #0d72b8;
+}
+```
 
 ## Permissions System
 ### Project
