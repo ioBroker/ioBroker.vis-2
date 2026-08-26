@@ -23,7 +23,7 @@ import 'ace-builds/src-noconflict/worker-html';
 import 'ace-builds/src-noconflict/snippets/html';
 import 'ace-builds/src-noconflict/mode-html';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 Ace.config.set('basePath', './lib/js/ace');
 Ace.config.setModuleUrl('ace/ext/language_tools', './lib/js/ace/ext-language_tools.js');

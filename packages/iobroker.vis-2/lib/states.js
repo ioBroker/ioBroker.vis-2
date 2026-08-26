@@ -571,7 +571,6 @@ function getUsedObjectIDs(views, isByViews) {
         do {
             changed = false;
             // Check containers
-            // eslint-disable-next-line no-loop-func
             Object.keys(views).forEach(view => {
                 if (view === '___settings') {
                     return;

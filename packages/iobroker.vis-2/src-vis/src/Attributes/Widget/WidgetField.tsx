@@ -40,10 +40,9 @@ import {
     SelectFile as SelectFileDialog,
     type ObjectBrowserCustomFilter,
     type Connection,
-    type LegacyConnection,
     type ThemeType,
     type SelectIDFilters,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import { findWidgetUsages } from '@/Vis/visUtils';
 import { store, recalculateFields, selectWidget } from '@/Store';
@@ -113,7 +112,7 @@ function collectClasses(): Record<string, ClassesValue> {
 
                         if (name.length > 0) {
                             name = name[0].toUpperCase() + name.substring(1);
-                            let fff = document.styleSheets[sSheet].href;
+                            let fff = document.styleSheets[sSheet].href || '';
 
                             if (fff && fff.includes('/')) {
                                 fff = fff.substring(fff.lastIndexOf('/') + 1);
@@ -141,11 +140,11 @@ function collectClasses(): Record<string, ClassesValue> {
                 }
             }
         } catch (e) {
-            if (e.toString().includes('Cannot access rules')) {
+            if ((e as Error).toString().includes('Cannot access rules')) {
                 // ignore
                 console.warn(`[${sSheet}] Cannot access rules`);
             } else {
-                console.error(`[${sSheet}] Error by rules collection: ${e}`);
+                console.error(`[${sSheet}] Error by rules collection: ${e as Error}`);
             }
         }
     }
@@ -154,10 +153,10 @@ function collectClasses(): Record<string, ClassesValue> {
 }
 
 function getStylesOptions(options: {
-    filterFile: string;
-    filterName: string;
-    filterAttrs: string;
-    removeName: string;
+    filterFile?: string;
+    filterName?: string;
+    filterAttrs?: string;
+    removeName?: string;
     styles?: Record<string, ClassesValue>;
 }): Record<string, ClassesValue> {
     // Fill the list with styles
@@ -182,12 +181,12 @@ function getStylesOptions(options: {
                 if (!options.filterFile || (_internalList[style].file && _internalList[style].file.includes(file))) {
                     let isFound = !filters;
 
-                    isFound = isFound || !!filters.find(filter => style.includes(filter));
+                    isFound = isFound || !!filters?.find(filter => style.includes(filter));
 
                     if (isFound) {
                         isFound = !attrs;
                         if (!isFound) {
-                            isFound = !!attrs.find((attr: string) => {
+                            isFound = !!attrs?.find((attr: string) => {
                                 const t: string | number = (
                                     _internalList[style].attrs as Record<string, string | number>
                                 )[attr];
@@ -227,7 +226,7 @@ const getViewOptions = (
         folder?: { id: string; name: string; parentId: string };
         label?: string;
     }[] = [],
-    parentId: string = null,
+    parentId: string | null = null,
     level = 0,
 ): {
     view?: string;
@@ -299,19 +298,19 @@ interface WidgetFieldProps {
     adapterName: string;
     instance: number;
     projectName: string;
-    isDifferent: boolean;
-    error: string | boolean;
+    isDifferent?: boolean;
+    error?: string | boolean;
     disabled: boolean;
-    index: number;
-    widgetId: string;
+    index?: number;
+    widgetId: AnyWidgetId | null;
     selectedWidgets: AnyWidgetId[];
     selectedView: string;
-    isStyle: boolean;
+    isStyle?: boolean;
     widgetType?: WidgetType;
-    socket: LegacyConnection;
+    socket: Connection;
     changeProject: (project: Project) => void;
-    onPxToPercent: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
-    onPercentToPx: (widgets: string[], attr: string, cb: (newValues: string[]) => void) => void;
+    onPxToPercent: (widgets: string[], attr: string, cb: (newValues: (string | null)[]) => void) => void;
+    onPercentToPx: (widgets: string[], attr: string, cb: (newValues: (string | null)[]) => void) => void;
     fonts: string[];
     userGroups: ioBroker.UserGroup[];
     themeType: ThemeType;
@@ -322,8 +321,8 @@ interface WidgetFieldProps {
 const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | React.JSX.Element[] => {
     const [idDialog, setIdDialog] = useState(false);
 
-    const [objectCache, setObjectCache] = useState(null);
-    const [askForUsage, setAskForUsage] = useState(null);
+    const [objectCache, setObjectCache] = useState<ioBroker.Object | null>(null);
+    const [askForUsage, setAskForUsage] = useState<{ wid: AnyWidgetId; cb: () => void } | null>(null);
 
     const { field, widget, adapterName, instance, projectName, isDifferent, error, disabled, index, widgetId } = props;
 
@@ -349,7 +348,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 try {
                     customLegacyComponent = window.vis.binds[funcs[0]](field.name, options);
                 } catch (e) {
-                    console.error(`vis.binds.${funcs.join('.')}: ${e}`);
+                    console.error(`vis.binds.${funcs.join('.')}: ${e as Error}`);
                 }
             } else {
                 console.log(`No function: vis.binds.${funcs.join('.')}`);
@@ -359,7 +358,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 try {
                     customLegacyComponent = window.vis.binds[funcs[0]][funcs[1]](field.name, options);
                 } catch (e) {
-                    console.error(`vis.binds.${funcs.join('.')}: ${e}`);
+                    console.error(`vis.binds.${funcs.join('.')}: ${e as Error}`);
                 }
             } else {
                 console.log(`No function: vis.binds.${funcs.join('.')}`);
@@ -373,7 +372,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 try {
                     customLegacyComponent = window.vis.binds[funcs[0]][funcs[1]][funcs[2]](field.name, options);
                 } catch (e) {
-                    console.error(`vis.binds.${funcs.join('.')}: ${e}`);
+                    console.error(`vis.binds.${funcs.join('.')}: ${e as Error}`);
                 }
             } else {
                 console.log(`No function: vis.binds.${funcs.join('.')}`);
@@ -396,9 +395,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     >([]);
 
     const cacheTimer = useRef<ReturnType<typeof setTimeout>>(null);
-    const refCustom = useRef<HTMLDivElement>();
+    const refCustom = useRef<HTMLDivElement>(null);
 
-    let onChangeTimeout: ReturnType<typeof setTimeout>;
+    let onChangeTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const applyValue = (newValues: any): void => {
         const project = deepClone(store.getState().visProject);
@@ -411,9 +410,10 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
             (data as Record<string, any>)[field.name] = value;
 
-            if (field.onChangeFunc && props.widgetType) {
+            const widgetSet = props.widgetType?.set;
+            if (field.onChangeFunc && widgetSet) {
                 try {
-                    window.vis.binds[props.widgetType.set][field.onChangeFunc](
+                    window.vis.binds[widgetSet][field.onChangeFunc](
                         selectedWidget,
                         props.selectedView,
                         value,
@@ -423,7 +423,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         index,
                     );
                 } catch (e) {
-                    console.error(`Cannot call onChangeFunc: ${e}`);
+                    console.error(`Cannot call onChangeFunc: ${e as Error}`);
                 }
             }
             if (field.onChange) {
@@ -478,22 +478,23 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         .filter(obj => obj.common.getHistory)
                         .map(obj => ({
                             id: obj._id.replace('system.adapter.', ''),
-                            idShort: obj._id.split('.').pop(),
+                            idShort: obj._id.split('.').pop() || '',
                             name: obj.common.name,
-                            icon: obj.common.icon,
+                            icon: obj.common.icon || '',
                         }))
                         .sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
                     setInstances(inst);
                 });
             } else if (Array.isArray(field.adapters)) {
+                const adapters = field.adapters;
                 void props.socket.getAdapterInstances('').then(_instances => {
                     const inst = _instances
-                        .filter(obj => field.adapters.includes(obj.common.name))
+                        .filter(obj => adapters.includes(obj.common.name))
                         .map(obj => ({
                             id: obj._id.replace('system.adapter.', ''),
-                            idShort: obj._id.split('.').pop(),
+                            idShort: obj._id.split('.').pop() || '',
                             name: obj.common.name,
-                            icon: obj.common.icon,
+                            icon: obj.common.icon || '',
                         }))
                         .sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
                     setInstances(inst);
@@ -503,9 +504,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     const inst = _instances
                         .map(obj => ({
                             id: obj._id.replace('system.adapter.', ''),
-                            idShort: obj._id.split('.').pop(),
+                            idShort: obj._id.split('.').pop() || '',
                             name: obj.common.name,
-                            icon: obj.common.icon,
+                            icon: obj.common.icon || '',
                         }))
                         .sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
 
@@ -513,7 +514,6 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 });
             }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [propValue]);
 
     let value: string | number | boolean | null = cachedValue;
@@ -527,7 +527,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
     window.collectClassesValue ||= collectClasses();
 
-    const textRef = useRef();
+    // the ref of a MUI TextField points at its root div, not at the input
+    const textRef = useRef<HTMLDivElement>(null);
     const [textDialogFocused, setTextDialogFocused] = useState(false);
     const [textDialogEnabled, setTextDialogEnabled] = useState(true);
 
@@ -682,7 +683,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         if (value && (!objectCache || value !== objectCache._id)) {
             props.socket
                 .getObject(value as string)
-                .then(objectData => setObjectCache(objectData))
+                .then(objectData => setObjectCache(objectData || null))
                 .catch(() => setObjectCache(null));
         }
         if (objectCache && !value) {
@@ -713,7 +714,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 }
             } else if (field.filter) {
                 if (typeof field.filter === 'function') {
-                    customFilter = field.filter(widget.data, index);
+                    customFilter = field.filter(widget.data, index ?? 0);
                 } else {
                     customFilter = field.filter as ObjectBrowserCustomFilter;
                 }
@@ -725,7 +726,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 <TextField
                     variant="standard"
                     fullWidth
-                    placeholder={isDifferent ? t('different') : null}
+                    placeholder={isDifferent ? t('different') : undefined}
                     sx={{
                         '& .MuiInputBase-root': { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
                     }}
@@ -753,7 +754,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 <div style={{ ...commonStyles.fieldContent, fontStyle: 'italic' }}>
                     {objectCache
                         ? typeof objectCache.common.name === 'object'
-                            ? objectCache.common.name[I18n.lang]
+                            ? objectCache.common.name[I18n.getLanguage()]
                             : objectCache.common.name
                         : null}
                 </div>
@@ -764,15 +765,15 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         selected={value as string}
                         onOk={selected => change(selected)}
                         onClose={() => setIdDialog(false)}
-                        socket={props.socket as any as Connection}
+                        socket={props.socket}
                         types={
                             field.filter === 'chart' || field.filter === 'channel' || field.filter === 'device'
                                 ? ([field.filter] as ioBroker.ObjectType[])
-                                : null
+                                : undefined
                         }
-                        filters={filters}
+                        filters={filters || undefined}
                         expertMode={field.filter === 'chart' ? true : undefined}
-                        customFilter={customFilter}
+                        customFilter={customFilter || undefined}
                     />
                 ) : null}
             </>
@@ -802,7 +803,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }
 
     if (field.type === 'image') {
-        let _value: string;
+        let _value = '';
         if (idDialog) {
             _value = (value as string) || '';
             if (_value.startsWith('../')) {
@@ -817,7 +818,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 <TextField
                     variant="standard"
                     fullWidth
-                    placeholder={isDifferent ? t('different') : null}
+                    placeholder={isDifferent ? t('different') : undefined}
                     error={!!error}
                     helperText={typeof error === 'string' ? I18n.t(error) : null}
                     disabled={disabled}
@@ -862,6 +863,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         theme={props.theme}
                         onOk={_selected => {
                             let selected = Array.isArray(_selected) ? _selected[0] : _selected;
+                            if (!selected) {
+                                return;
+                            }
                             const projectPrefix = `${adapterName}.${instance}/${projectName}/`;
                             if (selected.startsWith(projectPrefix)) {
                                 selected = `_PRJ_NAME/${selected.substring(projectPrefix.length)}`;
@@ -873,7 +877,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             change(selected);
                             setIdDialog(false);
                         }}
-                        socket={props.socket as any as Connection}
+                        socket={props.socket}
                     />
                 ) : null}
             </>
@@ -883,8 +887,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     if (field.type === 'dimension') {
         const m = (value || '').toString().match(/^(-?[,.0-9]+)([a-z%]*)$/);
         let customValue = !m;
-        let _value: string;
-        let unit: string;
+        let _value = '';
+        let unit = '';
         if (m) {
             _value = m[1];
             unit = m[2] || 'px';
@@ -927,13 +931,13 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             {...params}
                             variant="standard"
                             fullWidth
-                            placeholder={isDifferent ? t('different') : null}
+                            placeholder={isDifferent ? t('different') : undefined}
                             error={!!error}
                             helperText={typeof error === 'string' ? I18n.t(error) : null}
                             disabled={disabled}
                             slotProps={{
                                 input: {
-                                    ...params.InputProps,
+                                    ...params.slotProps.input,
                                     sx: { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
                                     endAdornment:
                                         !isDifferent && !customValue ? (
@@ -975,7 +979,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             <TextField
                 variant="standard"
                 fullWidth
-                placeholder={isDifferent ? t('different') : null}
+                placeholder={isDifferent ? t('different') : undefined}
                 error={!!error}
                 helperText={typeof error === 'string' ? I18n.t(error) : null}
                 disabled={disabled}
@@ -1053,7 +1057,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 <Input
                     style={{
                         ...commonStyles.fieldContentSliderInput,
-                        width: field.max > 100000 ? 70 : field.max > 10000 ? 60 : 50,
+                        width: (field.max ?? 0) > 100000 ? 70 : (field.max ?? 0) > 10000 ? 60 : 50,
                     }}
                     value={value}
                     disabled={disabled}
@@ -1079,7 +1083,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         field.type === 'effect' ||
         field.type === 'widget'
     ) {
-        let { options } = field;
+        let options = field.options ?? [];
 
         if (field.type === 'fontname') {
             options = props.fonts;
@@ -1114,7 +1118,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 Object.keys(store.getState().visProject).forEach(
                     view =>
                         store.getState().visProject[view].widgets &&
-                        Object.keys(store.getState().visProject[view].widgets)
+                        (Object.keys(store.getState().visProject[view].widgets) as AnyWidgetId[])
                             .filter(
                                 (wid: AnyWidgetId) =>
                                     (field.withGroups || !store.getState().visProject[view].widgets[wid].grouped) &&
@@ -1126,12 +1130,12 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                                     wid,
                                     view,
                                     tpl: store.getState().visProject[view].widgets[wid].tpl,
-                                    name: store.getState().visProject[view].widgets[wid].name,
+                                    name: store.getState().visProject[view].widgets[wid].name || '',
                                 }),
                             ),
                 );
             } else {
-                wOptions = Object.keys(store.getState().visProject[props.selectedView].widgets)
+                wOptions = (Object.keys(store.getState().visProject[props.selectedView].widgets) as AnyWidgetId[])
                     .filter(
                         (wid: AnyWidgetId) =>
                             (field.withGroups ||
@@ -1144,7 +1148,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         wid,
                         view: props.selectedView,
                         tpl: store.getState().visProject[props.selectedView].widgets[wid].tpl,
-                        name: store.getState().visProject[props.selectedView].widgets[wid].name,
+                        name: store.getState().visProject[props.selectedView].widgets[wid].name || '',
                     }));
             }
             if (field.tpl) {
@@ -1175,8 +1179,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             <Select
                 variant="standard"
                 disabled={disabled || (field.checkUsage && props.selectedWidgets.length > 1)}
-                value={value}
-                defaultValue={field.default}
+                value={value as string}
+                defaultValue={field.default as string}
                 sx={{
                     ...commonStyles.clearPadding,
                     '& .MuiSelect-select': { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
@@ -1191,7 +1195,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     ) {
                         // Show dialog
                         setAskForUsage({
-                            wid: e.target.value,
+                            wid: e.target.value as AnyWidgetId,
                             cb: () => {
                                 const project = modifyWidgetUsages(
                                     store.getState().visProject,
@@ -1226,7 +1230,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                                         src={item.icon}
                                         style={{ width: 24, height: 24 }}
                                     />
-                                    <span style={item.color ? { color: item.color } : null}>{text}</span>
+                                    <span style={item.color ? { color: item.color } : undefined}>{text}</span>
                                 </>
                             );
                         }
@@ -1240,7 +1244,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     <MenuItem
                         value={typeof selectItem === 'object' ? selectItem.value : selectItem}
                         key={`${typeof selectItem === 'object' ? selectItem.value : selectItem}_${i}`}
-                        style={{ fontFamily: field.type === 'fontname' ? (selectItem as string) : null }}
+                        style={{ fontFamily: field.type === 'fontname' ? (selectItem as string) : undefined }}
                     >
                         {(selectItem as RxFieldOption).icon ? (
                             <ListItemIcon>
@@ -1259,14 +1263,14 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                                 <i>{t('attr_none')}</i>
                             ) : field.type === 'select' && !field.noTranslation ? (
                                 typeof selectItem === 'object' ? (
-                                    <span style={selectItem.color ? { color: selectItem.color } : null}>
+                                    <span style={selectItem.color ? { color: selectItem.color } : undefined}>
                                         {field.noTranslation ? selectItem.label : t(selectItem.label)}
                                     </span>
                                 ) : (
                                     t(selectItem)
                                 )
                             ) : typeof selectItem === 'object' ? (
-                                <span style={selectItem.color ? { color: selectItem.color } : null}>
+                                <span style={selectItem.color ? { color: selectItem.color } : undefined}>
                                     {selectItem.label}
                                 </span>
                             ) : (
@@ -1328,7 +1332,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         >
                             <FileIcon style={{ verticalAlign: 'middle', marginRight: 4 }} />
                             <span style={{ verticalAlign: 'middle' }}>
-                                {field.multiple !== false ? <Checkbox checked={views.includes(option.view)} /> : null}
+                                {field.multiple !== false ? (
+                                    <Checkbox checked={views.includes(option.view || '')} />
+                                ) : null}
                             </span>
                             <ListItemText
                                 primary={option.label}
@@ -1341,7 +1347,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             style={{ ...commonStyles.listFolder, paddingLeft: option.level * 16 }}
                         >
                             <FolderOpenedIcon style={commonStyles.iconFolder} />
-                            <span style={{ fontSize: '1rem' }}>{option.folder.name}</span>
+                            <span style={{ fontSize: '1rem' }}>{option.folder?.name}</span>
                         </ListSubheader>
                     ),
                 )}
@@ -1403,7 +1409,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }
 
     if (field.type === 'auto' || field.type === 'class' || field.type === 'filters') {
-        let options = field.options;
+        let options = field.options ?? [];
         if (field.type === 'class') {
             options = Object.keys(window.collectClassesValue).filter(cssClass => cssClass.match(/^vis-style-/));
         } else if (field.type === 'filters') {
@@ -1421,7 +1427,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 disabled={disabled}
                 options={(options as string[]) || []}
                 inputValue={(value as string) || ''}
-                value={value || ''}
+                value={(value as string) || ''}
                 onInputChange={(_e, inputValue) => change(inputValue)}
                 onChange={(_e, inputValue) => change(inputValue)}
                 sx={{
@@ -1431,21 +1437,21 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     field.name === 'font-family' || field.name === 'lc-font-family'
                         ? (optionProps, option) => (
                               <li
-                                  style={{ fontFamily: option as string }}
+                                  style={{ fontFamily: String(option) }}
                                   {...optionProps}
                               >
                                   {option}
                               </li>
                           )
-                        : null
+                        : undefined
                 }
                 renderInput={params => (
                     <TextField
                         variant="standard"
                         error={!!error}
                         helperText={typeof error === 'string' ? I18n.t(error) : null}
-                        disabled={disabled}
                         {...params}
+                        disabled={disabled}
                     />
                 )}
             />
@@ -1460,14 +1466,14 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 freeSolo
                 fullWidth
                 disabled={disabled}
-                // placeholder={isDifferent ? t('different') : null}
+                // placeholder={isDifferent ? t('different') : undefined}
                 options={options || []}
                 inputValue={(value as string) || ''}
                 value={(value as string) || ''}
                 onInputChange={(_e, inputValue) => change(inputValue)}
                 onChange={(_e, inputValue) => {
                     if (typeof inputValue === 'object' && inputValue !== null) {
-                        inputValue = inputValue.type === 'view' ? inputValue.view : inputValue.folder.name;
+                        inputValue = (inputValue.type === 'view' ? inputValue.view : inputValue.folder?.name) || '';
                     }
                     change(inputValue);
                 }}
@@ -1478,7 +1484,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     if (typeof option === 'string') {
                         return option;
                     }
-                    return option.type === 'view' ? option.label : option.folder.name;
+                    return (option.type === 'view' ? option.label : option.folder?.name) || '';
                 }}
                 getOptionDisabled={option => option.type === 'folder'}
                 renderOption={(optionProps: React.HTMLAttributes<HTMLLIElement> & { key: any }, option) =>
@@ -1498,10 +1504,10 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             component="li"
                             style={{ paddingLeft: option.level * 16 }}
                             {...optionProps}
-                            key={`folder${option.folder.id}`}
+                            key={`folder${option.folder?.id}`}
                         >
                             <FolderOpenedIcon style={{ color: '#00dc00', fontSize: 20 }} />
-                            {option.folder.name}
+                            {option.folder?.name}
                         </Box>
                     )
                 }
@@ -1510,8 +1516,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         variant="standard"
                         error={!!error}
                         helperText={typeof error === 'string' ? I18n.t(error) : null}
-                        disabled={disabled}
                         {...params}
+                        disabled={disabled}
                     />
                 )}
             />
@@ -1529,9 +1535,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         return (
             <Select
                 variant="standard"
-                value={value}
+                value={value as string}
                 disabled={disabled}
-                defaultValue={field.default}
+                defaultValue={field.default as string}
                 sx={{
                     ...commonStyles.clearPadding,
                     '& .MuiSelect-select': { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
@@ -1574,15 +1580,15 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 field: RxWidgetInfoAttributesFieldAll;
                 disabled?: boolean;
                 error?: boolean;
-                data: Record<string, any>;
-                onChange: (value: any, field: RxWidgetInfoAttributesFieldAll) => void;
+                data?: Record<string, any>;
+                onChange?: (value: any, field: RxWidgetInfoAttributesFieldAll) => void;
             }): React.JSX.Element => {
                 return (
                     <WidgetField
                         {...props}
                         error={editorProps.error}
                         field={editorProps.field}
-                        disabled={editorProps.disabled}
+                        disabled={!!editorProps.disabled}
                     />
                 );
             };
@@ -1625,7 +1631,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     },
                 );
             } catch (e) {
-                console.error(`Cannot render custom field ${field.name}: ${e}`);
+                console.error(`Cannot render custom field ${field.name}: ${e as Error}`);
             }
         } else {
             return (
@@ -1747,7 +1753,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             <>
                 <TextField
                     size="small"
-                    placeholder={isDifferent ? t('different') : null}
+                    placeholder={isDifferent ? t('different') : undefined}
                     variant="standard"
                     value={value}
                     multiline={field.multiline}
@@ -1836,7 +1842,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             }
                         }
                     }}
-                    placeholder={isDifferent ? t('different') : null}
+                    placeholder={isDifferent ? t('different') : undefined}
                     value={value}
                     onChange={e => change(e.target.value)}
                     type={field.type ? field.type : 'text'}

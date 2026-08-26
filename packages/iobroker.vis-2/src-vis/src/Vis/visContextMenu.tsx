@@ -11,7 +11,7 @@ import { BiImport, BiExport, BiCut, BiCopy, BiPaste } from 'react-icons/bi';
 import { RiBringToFront, RiSendToBack } from 'react-icons/ri';
 import { AiOutlineGroup, AiOutlineUngroup } from 'react-icons/ai';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import type { AnyWidgetId, Project, GroupWidgetId, SingleWidgetId, View, Widget } from '@iobroker/types-vis-2';
@@ -101,7 +101,7 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                       }
                       widgetName = coordinatesWidgets[0];
                       if (view.widgets[coordinatesWidgets[0]].data?.name) {
-                          widgetName = view.widgets[coordinatesWidgets[0]].data.name;
+                          widgetName = view.widgets[coordinatesWidgets[0]].data.name || '';
                           widgetType = coordinatesWidgets[0];
                       } else {
                           const tpl = view.widgets[coordinatesWidgets[0]].tpl;
@@ -115,7 +115,7 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                       }
 
                       if (view.widgets[coordinatesWidgets[0]].marketplace) {
-                          widgetType = `${view.widgets[coordinatesWidgets[0]].marketplace.name} (${I18n.t('version')} ${view.widgets[coordinatesWidgets[0]].marketplace.version})`;
+                          widgetType = `${view.widgets[coordinatesWidgets[0]].marketplace?.name} (${I18n.t('version')} ${view.widgets[coordinatesWidgets[0]].marketplace?.version})`;
                           // marketplaceUpdate = visProject.___settings.marketplace.find(u =>
                           //     u.widget_id === view.widgets[coordinatesWidgets[0]].marketplace.widget_id &&
                           //     u.version > view.widgets[coordinatesWidgets[0]].marketplace.version);

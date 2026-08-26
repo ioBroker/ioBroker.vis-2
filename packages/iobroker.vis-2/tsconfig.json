@@ -5,12 +5,11 @@
         // do not compile anything. This file is just to configure type checking
         "noEmit": true,
         // check JS files
-        "allowJs": true,
-        "checkJs": true,
+        "allowJs": false,
         "outDir": "./build/",
+        "rootDir": "./src",
         "sourceMap": true,
         "inlineSources": true,
-
         // This is necessary for the automatic typing of the adapter config
         "resolveJsonModule": true,
         "noImplicitAny": true,
@@ -18,6 +17,6 @@
         "target": "ES2022",
         "types": ["@types/node", "@iobroker/types"]
     },
-    "include": ["src/**/*.ts"],
-    "exclude": ["node_modules/**", "www/**", "lib/**", "build/**", "tasks.js"]
+    "include": ["src/**/*.ts", "src/**/*.d.ts"],
+    "exclude": ["node_modules/**", "www/**", "lib/**", "build/**", "tasks.js", "src-vis/**"]
 }
