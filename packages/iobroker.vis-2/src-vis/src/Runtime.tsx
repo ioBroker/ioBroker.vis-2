@@ -820,7 +820,15 @@ export default class Runtime<
         if (!this.state.editMode) {
             this.resolutionTimer = setTimeout(async () => {
                 this.resolutionTimer = null;
-                const view = Runtime.findViewWithNearestResolution(store.getState().visProject);
+                const project = store.getState().visProject;
+                // Only the views that offer themselves for a resolution take part in this game. Every other
+                // view was opened deliberately - by its URL, by the navigation or by a widget - and a resize
+                // must not throw the user out of it. On a phone a resize happens on every scroll, as the
+                // address bar appears and disappears.
+                if (!project[this.state.selectedView]?.settings?.useAsDefault) {
+                    return;
+                }
+                const view = Runtime.findViewWithNearestResolution(project);
                 if (view && view !== this.state.selectedView) {
                     await this.changeView(view);
                 }
