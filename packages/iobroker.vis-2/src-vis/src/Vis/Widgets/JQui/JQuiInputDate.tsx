@@ -139,7 +139,6 @@ class JQuiInputDate extends VisRxWidget<RxData> {
         } as const;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiInputDate.getWidgetInfo();
     }

@@ -16,7 +16,7 @@
 import React from 'react';
 import { Card, CardContent } from '@mui/material';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 import type {
     AnyWidgetId,
     RxWidgetInfo,
@@ -111,7 +111,11 @@ export class VisRxWidget<
     };
 
     /** Method called when state changed */
-    private readonly onStateChangedBind: (id: StateID, state: ioBroker.State, doNotApplyState?: any) => void;
+    private readonly onStateChangedBind: (
+        id: StateID,
+        state: ioBroker.State | null | undefined,
+        doNotApplyState?: boolean,
+    ) => void;
 
     // private newState?: Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null;
     protected newState?: Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null;
@@ -159,6 +163,9 @@ export class VisRxWidget<
         if (Array.isArray(options.visAttrs)) {
             options.visAttrs.forEach((group: RxWidgetInfoGroup) =>
                 group.fields?.forEach(item => {
+                    if (!item.name) {
+                        return;
+                    }
                     const type = (item as RxWidgetInfoAttributesFieldSimple).type;
                     widgetAttrInfo[item.name] = {
                         name: item.name,
@@ -222,10 +229,10 @@ export class VisRxWidget<
                         ? ['n', 'e', 's', 'w', 'nw', 'ne', 'sw', 'se']
                         : options.visResizeHandles
                     : options.resizeHandles,
-            rxData: newState.rxData,
-            rxStyle: newState.rxStyle,
+            rxData: newState?.rxData,
+            rxStyle: newState?.rxStyle,
             values: {},
-            visible: newState.visible,
+            visible: newState?.visible,
             disabled: false,
         };
     }
@@ -295,9 +302,8 @@ export class VisRxWidget<
         return result;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     onStateUpdated(_id: string, _state: Partial<ioBroker.State>): void {
-        //
+        // will be overwritten in the widget implementation
     }
 
     onIoBrokerStateChanged = (id: StateID, state: ioBroker.State | null | undefined): void => {
@@ -381,7 +387,7 @@ export class VisRxWidget<
 
         if (this.updateTimer) {
             clearTimeout(this.updateTimer);
-            this.updateTimer = null;
+            this.updateTimer = undefined;
         }
 
         // compare: try reference equality first (newState may reuse the same object refs), fall back to stringify only on mismatch
@@ -527,16 +533,16 @@ export class VisRxWidget<
         if (this.linkContext.IDs.length) {
             this.props.context.socket
                 .subscribeStateAsync(this.linkContext.IDs, this.onStateChangedBind)
-                .catch(e => console.error(`Cannot subscribe on ${this.linkContext.IDs}: ${e}`));
+                .catch(e => console.error(`Cannot subscribe on ${this.linkContext.IDs.join(', ')}: ${e as Error}`));
         }
     }
 
     onRxDataChanged(_prevRxData: typeof this.state.rxData): void {
-        //
+        // will be overwritten in the widget implementation
     }
 
     onRxStyleChanged(_prevRxStyle: typeof this.state.rxStyle): void {
-        //
+        // will be overwritten in the widget implementation
     }
 
     componentDidUpdate(_prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
@@ -583,9 +589,9 @@ export class VisRxWidget<
      * Check if the logged-in user's group has visibility permissions for this widget
      */
     isWidgetVisibleForGroup(newState: typeof this.newState): boolean {
-        const userGroups = newState.rxData['visibility-groups'];
+        const userGroups = newState?.rxData?.['visibility-groups'];
 
-        if (newState.rxData['visibility-groups-action'] === 'hide') {
+        if (newState?.rxData?.['visibility-groups-action'] === 'hide') {
             if (userGroups?.length && !this.isUserMemberOfGroup(this.props.context.user, userGroups)) {
                 return false;
             }
@@ -613,7 +619,7 @@ export class VisRxWidget<
                     if (this.linkContext.visibility[stateId]) {
                         return !VisBaseWidget.isWidgetHidden(
                             newState.rxData as WidgetData | GroupData,
-                            newState.values,
+                            newState.values || {},
                             this.props.id,
                         );
                     }
@@ -621,7 +627,7 @@ export class VisRxWidget<
                     // check if visible
                     return !VisBaseWidget.isWidgetHidden(
                         newState.rxData as WidgetData | GroupData,
-                        newState.values,
+                        newState.values || {},
                         this.props.id,
                     );
                 }
@@ -708,7 +714,7 @@ export class VisRxWidget<
         };
 
         // apply style from the element
-        Object.keys(this.state.rxStyle).forEach(attr => {
+        Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
             if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
                 attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
@@ -779,7 +785,7 @@ export class VisRxWidget<
     protected getMuiStyle(props: RxRenderWidgetProps, style?: React.CSSProperties): React.CSSProperties {
         const muiStyle: React.CSSProperties = { ...style };
 
-        Object.keys(this.state.rxStyle).forEach(attr => {
+        Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
             if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
                 const name = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
@@ -809,7 +815,13 @@ export class VisRxWidget<
             props.className = addClass(props.className, 'vis-user-disabled');
         }
 
-        Object.keys(this.state.rxStyle).forEach(attr => {
+        // a navigation widget that leads to the view that is shown is the active entry of the navigation
+        const navView = (this.state.rxData as unknown as { nav_view?: string }).nav_view;
+        if (navView && navView === this.props.context.activeView) {
+            props.className = addClass(props.className, 'vis-nav-active');
+        }
+
+        Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
             if (value !== null && value !== undefined) {
                 if (!this.wrappedContent || !POSSIBLE_MUI_STYLES.includes(attr)) {
@@ -830,7 +842,7 @@ export class VisRxWidget<
 
         if (this.state.editMode) {
             const zIndex = this.state.rxStyle
-                ? parseInt((this.state.rxStyle['z-index'] as unknown as string) || '0', 10)
+                ? parseInt((this.state.rxStyle?.['z-index'] as unknown as string) || '0', 10)
                 : 0;
             if (this.state.selected) {
                 // move widget to foreground
@@ -851,7 +863,7 @@ export class VisRxWidget<
         return (
             <VisViewComponent
                 context={this.props.context}
-                viewsActiveFilter={this.props.viewsActiveFilter}
+                viewsActiveFilter={this.props.viewsActiveFilter || {}}
                 activeView={view}
                 editMode={false}
                 key={`${this.props.id}_${view}`}
@@ -873,7 +885,7 @@ export class VisRxWidget<
         wid: AnyWidgetId,
         props?: {
             index?: number;
-            refParent?: React.RefObject<HTMLDivElement>;
+            refParent?: React.RefObject<HTMLDivElement | null>;
             isRelative?: boolean;
         },
     ): React.JSX.Element | null {
@@ -1023,7 +1035,7 @@ export class VisRxWidget<
         return style;
     }
 
-    renderSignal(index: number): React.JSX.Element {
+    renderSignal(index: number): React.JSX.Element | null {
         const oid = this.state.rxData[`signals-oid-${index}`];
         if (!oid || oid === 'nothing_selected') {
             return null;
@@ -1091,7 +1103,7 @@ export class VisRxWidget<
             return (
                 <div
                     style={style}
-                    className={this.state.rxData[`signals-blink-${index}`] ? 'vis-signals-blink' : null}
+                    className={this.state.rxData[`signals-blink-${index}`] ? 'vis-signals-blink' : undefined}
                 >
                     {icon}
                     {text}
@@ -1101,7 +1113,7 @@ export class VisRxWidget<
         return null;
     }
 
-    renderLastChange(widgetStyle: CSSStyleDeclaration | React.CSSProperties): React.JSX.Element {
+    renderLastChange(widgetStyle: CSSStyleDeclaration | React.CSSProperties): React.JSX.Element | null {
         const oid = this.state.rxData['lc-oid'];
         if (!oid || oid === 'nothing_selected') {
             return null;
@@ -1266,7 +1278,6 @@ export class VisRxWidget<
     /**
      * Get information about a specific widget, needs to be implemented by widget class
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): Readonly<RxWidgetInfo> {
         throw new Error('not implemented');
     }

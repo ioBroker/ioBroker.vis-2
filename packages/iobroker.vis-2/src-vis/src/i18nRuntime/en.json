@@ -18,5 +18,7 @@
   "Load widgets...": "Loading widgets...",
   "Loading objects...": "Loading objects...",
   "Cannot render widget %s": "Cannot render widget %s",
-  "Retry": "Retry"
+  "Retry": "Retry",
+  "Widget sets could not be loaded": "Widget sets could not be loaded",
+  "widget_sets_incompatible_react": "The following widget sets were built for an older version of react and cannot be loaded. Please update these adapters."
 }

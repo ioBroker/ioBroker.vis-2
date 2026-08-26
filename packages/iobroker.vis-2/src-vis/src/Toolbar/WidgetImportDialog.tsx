@@ -4,7 +4,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/
 
 import { Close as CloseIcon, ImportExport } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/adapter-react-v5';
+import { I18n, type ThemeType } from '@iobroker/gui-components';
 import { isGroup, getNewGroupId, getNewWidgetId, deepClone } from '@/Utilities/utils';
 
 import { store } from '@/Store';

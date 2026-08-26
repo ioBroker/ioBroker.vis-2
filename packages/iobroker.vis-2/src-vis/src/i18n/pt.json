@@ -232,6 +232,7 @@
     "Hide palette": "Ocultar paleta",
     "Hide panel names": "Ocultar nomes de painéis",
     "Hide selected widgets": "Ocultar widgets selecionados",
+    "Hide this view in the menu": "Ocultar esta visão no menu",
     "High": "Alto",
     "High priority": "Prioridade máxima",
     "Highest eg. Holiday": "Mais alto, por exemplo. Feriado",
@@ -773,5 +774,7 @@
     "vis_2_widgets_widgets_tabs_variant_full_width": "largura completa",
     "vis_2_widgets_widgets_tabs_vertical": "Vertical",
     "welcome_message": "Nenhum projeto ainda existe.",
-    "word-spacing": "espaçamento entre palavras"
+    "word-spacing": "espaçamento entre palavras",
+    "Widget sets could not be loaded": "Não foi possível carregar os conjuntos de widgets",
+    "widget_sets_incompatible_react": "Os seguintes conjuntos de widgets foram compilados para uma versão mais antiga do React e não podem ser carregados. Atualize os adaptadores correspondentes."
 }

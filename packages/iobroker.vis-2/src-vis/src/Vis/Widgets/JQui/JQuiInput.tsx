@@ -19,7 +19,7 @@ import { IconButton, TextField, InputAdornment, Button } from '@mui/material';
 
 import { KeyboardReturn } from '@mui/icons-material';
 
-import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, type Connection } from '@iobroker/gui-components';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 import type {
@@ -52,7 +52,7 @@ interface JQuiInputState extends VisRxWidgetState {
 
 class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputState> extends VisRxWidget<P, S> {
     private focused: boolean = false;
-    private readonly inputRef: React.RefObject<HTMLInputElement>;
+    private readonly inputRef: React.RefObject<HTMLInputElement | null>;
     private jQueryDone: boolean = false;
     private object: ioBroker.StateObject | null = null;
 
@@ -88,7 +88,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     const obj = await socket.getObject(data.oid);
@@ -193,7 +193,6 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
         };
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiInput.getWidgetInfo();
     }
@@ -215,7 +214,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                 this.setState({ input: input.val });
             }
         } catch (error) {
-            console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+            console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
         }
 
         if (
@@ -224,12 +223,14 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
             !this.props.editMode &&
             (this.state.rxData.jquery_style || this.state.rxData.no_style)
         ) {
-            setTimeout(() => this.inputRef.current.focus(), 100);
+            setTimeout(() => this.inputRef.current?.focus(), 100);
         }
     }
 
-    onStateUpdated(id: string, state: ioBroker.State | null | undefined): void {
-        super.onStateUpdated(id, state);
+    onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
+        if (state) {
+            super.onStateUpdated(id, state);
+        }
         if (state?.val || state?.val === 0) {
             if (id === this.state.rxData.oid && !this.focused) {
                 if (state.val.toString() !== this.state.input.toString()) {
@@ -250,7 +251,10 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
 
     async setValue(value: string): Promise<void> {
         if (this.object?._id !== this.state.rxData.oid) {
-            this.object = await this.props.context.socket.getObject(this.state.rxData.oid);
+            // the widget is bound to a state, but getObject() is generic on the id and cannot know that
+            this.object = (await this.props.context.socket.getObject(
+                this.state.rxData.oid,
+            )) as ioBroker.StateObject | null;
             if (!this.object) {
                 return;
             }
