@@ -1,7 +1,5 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
-// import because of federation and non TypeScript widgets
-import 'prop-types';
 
 import {
     DialogContent,
@@ -25,13 +23,14 @@ import { BiImport } from 'react-icons/bi';
 import {
     I18n,
     Loader,
-    LegacyConnection,
+    Connection,
     GenericApp,
     type GenericAppProps,
     type GenericAppState,
     type ThemeName,
     Utils,
-} from '@iobroker/adapter-react-v5';
+    ScrollbarStyles,
+} from '@iobroker/gui-components';
 
 import type {
     AnyWidgetId,
@@ -47,6 +46,7 @@ import VisEngine from './Vis/visEngine';
 import { applyTitleAndIcon, extractBinding, findWidgetUsages, readFile } from './Vis/visUtils';
 import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
+import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -81,6 +81,8 @@ export interface RuntimeState extends GenericAppState {
     alert: boolean;
     alertType: 'info' | 'warning' | 'error' | 'success';
     alertMessage: string;
+    /** Widget sets that were skipped because they were built for an older React. Empty if the user acknowledged them */
+    incompatibleSets: IncompatibleWidgetSet[];
     runtime: boolean;
     projectName: string;
     selectedWidgets: AnyWidgetId[];
@@ -107,7 +109,7 @@ export interface RuntimeState extends GenericAppState {
         callback: () => void;
         noClose?: boolean;
     } | null;
-    currentUser: ioBroker.UserObject;
+    currentUser: ioBroker.UserObject | null;
     userGroups: Record<ioBroker.ObjectIDs.Group, ioBroker.GroupObject>;
     splitSizes: [number, number, number];
     selectedGroup: GroupWidgetId | null;
@@ -121,12 +123,12 @@ export interface RuntimeState extends GenericAppState {
         message: string;
         title: string;
         callback: (isYes: boolean) => void;
-    };
+    } | null;
     showCodeDialog: {
         code: string;
         title: string;
         mode: 'json' | 'text' | 'javascript' | 'css' | 'html';
-    };
+    } | null;
 }
 
 declare global {
@@ -137,7 +139,10 @@ declare global {
     }
 }
 
-class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = RuntimeState> extends GenericApp<P, S> {
+export default class Runtime<
+    P extends RuntimeProps = RuntimeProps,
+    S extends RuntimeState = RuntimeState,
+> extends GenericApp<P, S> {
     static WIDGETS_LOADING_STEP_NOT_STARTED = 0;
 
     static WIDGETS_LOADING_STEP_HTML_LOADED = 1;
@@ -148,19 +153,19 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
     adapterId: string;
 
-    checkTimeout: ReturnType<typeof setTimeout> | null;
+    checkTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    resolutionTimer: ReturnType<typeof setTimeout> | null;
+    resolutionTimer: ReturnType<typeof setTimeout> | null = null;
 
-    lastProjectJSONfile: string;
+    lastProjectJSONfile = '';
 
-    subscribedProject: string;
+    subscribedProject: string | null = null;
 
-    changeTimer: ReturnType<typeof setTimeout> | null;
+    changeTimer: ReturnType<typeof setTimeout> | null = null;
 
-    needRestart: boolean;
+    needRestart = false;
 
-    lastUploadedState: ioBroker.StateValue;
+    lastUploadedState: ioBroker.StateValue = null;
 
     protected checkForUpdates?: () => Promise<void>;
 
@@ -170,9 +175,9 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
     protected changeProject?: (project: Project, ignoreHistory?: boolean) => Promise<void>;
 
-    protected renderImportProjectDialog?(): React.JSX.Element;
+    protected renderImportProjectDialog?(): React.JSX.Element | null;
 
-    protected setSelectedWidgets: (
+    protected setSelectedWidgets!: (
         selectedWidgets: AnyWidgetId[],
         selectedView?: string | (() => void),
         cb?: () => void,
@@ -181,19 +186,25 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     protected setSelectedGroup?: (selectedGroup: GroupWidgetId) => void;
 
     protected onWidgetsChanged?: (
-        changedData: {
-            wid: AnyWidgetId;
-            view: string;
-            style: WidgetStyle;
-            data: WidgetData;
-        }[],
-        view: string,
-        viewSettings: ViewSettings,
+        changedData:
+            | {
+                  wid: AnyWidgetId;
+                  view: string;
+                  style?: WidgetStyle;
+                  data?: WidgetData;
+              }[]
+            | null,
+        view?: string,
+        viewSettings?: ViewSettings,
     ) => void;
 
     protected onFontsUpdate?(fonts: string[]): void;
 
-    protected registerCallback?: (name: string, view: string, cb: () => void) => void;
+    protected registerCallback?: (
+        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx',
+        view: string,
+        cb?: (...args: any) => any,
+    ) => void;
 
     protected onIgnoreMouseEvents?: (ignore: boolean) => void;
 
@@ -223,7 +234,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
     protected initState?: (newState: Partial<S | RuntimeState>) => void;
 
-    protected setLoadingText?: (text: string) => void;
+    protected setLoadingText?: (text: string | null) => void;
 
     constructor(props: P) {
         const extendedProps = { ...props };
@@ -241,7 +252,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             'zh-cn': zhLang,
         };
 
-        extendedProps.Connection = LegacyConnection as unknown as LegacyConnection;
+        extendedProps.Connection = Connection as unknown as Connection;
         if (!window.disableDataReporting) {
             extendedProps.sentryDSN = window.sentryDSN;
         }
@@ -283,12 +294,11 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         registerWidgetsLoadIndicator(this.setWidgetsLoadingProgress);
     }
 
-    // eslint-disable-next-line class-methods-use-this
     createTheme(name?: ThemeName | null): VisTheme {
         return createTheme(Utils.getThemeName(name));
     }
 
-    setWidgetsLoadingProgress: (step: number, total: number) => void;
+    setWidgetsLoadingProgress!: (step: number, total: number) => void;
 
     setStateAsync(newState: Partial<RuntimeState | S>): Promise<void> {
         return new Promise(resolve => {
@@ -303,6 +313,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             alert: false,
             alertType: 'info',
             alertMessage: '',
+            incompatibleSets: [],
             runtime: true,
             projectName: 'main',
             selectedWidgets: [],
@@ -376,19 +387,23 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 this.checkTimeout = setTimeout(() => {
                     this.checkTimeout = null;
                     // compare last executed file with new one
-                    void readFile(this.socket as unknown as LegacyConnection, this.adapterId, fileName).then(file => {
+                    void readFile(this.socket as unknown as Connection, this.adapterId, fileName).then(file => {
                         try {
-                            const ts = (JSON.parse((file as any).file || file) as Project).___settings.ts;
-                            if (ts === store.getState().visProject.___settings.ts) {
+                            const newTs =
+                                typeof file === 'string'
+                                    ? (JSON.parse(file) as Project).___settings.ts
+                                    : (JSON.parse(file.file) as Project).___settings.ts;
+                            const oldTs = store.getState().visProject.___settings.ts;
+                            if (newTs === oldTs) {
                                 return;
                             }
-                            const tsInt = parseInt(ts.split('.')[0], 10);
-                            if (tsInt < parseInt(store.getState().visProject.___settings.ts.split('.')[0], 10)) {
+                            const tsInt = parseInt((newTs || '0').split('.')[0], 10);
+                            if (tsInt < parseInt((oldTs || '0').split('.')[0], 10)) {
                                 // ignore older files
                                 return;
                             }
                         } catch (e) {
-                            console.warn(`Cannot parse project file "${fileName}": ${e}`);
+                            console.warn(`Cannot parse project file "${fileName}": ${e as Error}`);
                         }
 
                         this.setState({ showProjectUpdateDialog: true });
@@ -426,7 +441,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             project[view].settings.style ||= {};
             project[view].widgets ||= {};
             if (project[view].widgets) {
-                Object.keys(project[view].widgets).forEach((wid: AnyWidgetId) => {
+                (Object.keys(project[view].widgets) as AnyWidgetId[]).forEach(wid => {
                     const widget = project[view].widgets[wid];
                     if (!widget) {
                         delete project[view].widgets[wid];
@@ -458,13 +473,13 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                             // Process bindings in data attributes
                             const OIDs = extractBinding(widget.data[attr]);
                             if (OIDs) {
-                                widget.data.bindings.push(attr);
+                                widget.data.bindings?.push(attr);
                             }
                         });
                     }
                     if (!widget.style.bindings && !Array.isArray(widget.style.bindings)) {
                         widget.style.bindings = [];
-                        Object.keys(widget.style).forEach((attr: keyof typeof widget.style) => {
+                        (Object.keys(widget.style) as (keyof typeof widget.style)[]).forEach(attr => {
                             if (
                                 attr === 'bindings' ||
                                 !widget.style[attr] ||
@@ -477,16 +492,14 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                             // Process bindings in data attributes
                             const OIDs = extractBinding(widget.style[attr].toString());
                             if (OIDs) {
-                                widget.style.bindings.push(attr);
+                                widget.style.bindings?.push(attr);
                             }
                         });
                     }
 
-                    if (widget.data.members) {
-                        widget.data.members.forEach(
-                            (_wid, i) => (widget.data.members[i] = _wid.replace(/\s/g, '_') as AnyWidgetId),
-                        );
-                    }
+                    widget.data.members?.forEach(
+                        (_wid, i) => (widget.data.members![i] = _wid.replace(/\s/g, '_') as AnyWidgetId),
+                    );
 
                     if (wid.includes(' ')) {
                         const newWid: SingleWidgetId = wid.replace(/\s/g, '_') as SingleWidgetId;
@@ -494,7 +507,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                         project[view].widgets[newWid] = widget;
                     }
 
-                    if (!this.state.runtime && this.getNewWidgetId) {
+                    if (!this.state.runtime && this.getNewWidgetId && this.getNewGroupId) {
                         // If the widget is not unique, change its name (only in editor mode)
                         if (
                             Object.keys(project).find(v => v !== view && project[v].widgets && project[v].widgets[wid])
@@ -549,13 +562,13 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                             if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
                                 // copy all group widgets too
                                 const newWidget = project[viewId].widgets[multiViewId];
-                                newWidget.data.members.forEach((memberId, i) => {
+                                newWidget.data.members?.forEach((memberId, i) => {
                                     const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
                                     project[viewId].widgets[newId] = JSON.parse(
                                         JSON.stringify(oView.widgets[memberId]),
                                     );
                                     delete project[viewId].widgets[newId].data['multi-views']; // do not allow multi-multi-views
-                                    newWidget.data.members[i] = newId;
+                                    newWidget.data.members![i] = newId;
                                     // do not copy members of multi-group
                                     if (project[viewId].widgets[newId].data.members) {
                                         project[viewId].widgets[newId].data.members = [];
@@ -576,7 +589,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         });
     }
 
-    static findViewWithNearestResolution(project: Project, resultRequired?: boolean): string {
+    static findViewWithNearestResolution(project: Project, resultRequired?: boolean): string | null | undefined {
         const w = window.innerWidth;
         const h = window.innerHeight;
 
@@ -593,7 +606,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 if (
                     project[view].settings?.useAsDefault &&
                     // If difference less than 20%
-                    Math.abs(project[view].settings.sizex - w) / project[view].settings.sizex < 0.2
+                    Math.abs((project[view].settings.sizex || 0) - w) / (project[view].settings.sizex || 1) < 0.2
                 ) {
                     views.push(view);
                 }
@@ -601,9 +614,9 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         }
 
         for (let i = 0; i < views.length; i++) {
-            if (Math.abs(project[views[i]].settings.sizey - h) < difference) {
+            if (Math.abs((project[views[i]].settings.sizey || 0) - h) < difference) {
                 result = views[i];
-                difference = Math.abs(parseInt(project[views[i]].settings.sizey.toString(), 10) - h);
+                difference = Math.abs((project[views[i]].settings.sizey || 0) - h);
             }
         }
 
@@ -648,7 +661,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         this.setLoadingText?.('Load project file...');
         try {
             const file: string | { file: string; mimeType: string } = await readFile(
-                this.socket as unknown as LegacyConnection,
+                this.socket,
                 this.adapterId,
                 `${projectName}/vis-views.json`,
             );
@@ -658,7 +671,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 fileStr = file;
             }
         } catch (err) {
-            console.warn(`Cannot read project file "${projectName}/vis-views.json": ${err}`);
+            console.warn(`Cannot read project file "${projectName}/vis-views.json": ${err as Error}`);
             fileStr = '{}';
         }
         this.setLoadingText?.(null);
@@ -666,7 +679,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         if (!fileStr || fileStr === '{}') {
             // read if show projects dialog allowed
             const obj = await this.socket.getObject(`system.adapter.${this.adapterName}.${this.instance}`);
-            if (this.state.runtime && obj.native.doNotShowProjectDialog) {
+            if (this.state.runtime && obj?.native.doNotShowProjectDialog) {
                 this.setState({ projectDoesNotExist: true });
             } else {
                 if (!this.state.projects) {
@@ -704,11 +717,11 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         let selectedView = currentPath.view;
         if (!selectedView || !project[selectedView]) {
             if (this.state.runtime) {
-                selectedView = Runtime.findViewWithNearestResolution(project, true);
+                selectedView = Runtime.findViewWithNearestResolution(project, true) || '';
             } else {
                 // take from local storage
-                if (Object.keys(project).includes(window.localStorage.getItem('selectedView'))) {
-                    selectedView = window.localStorage.getItem('selectedView');
+                if (Object.keys(project).includes(window.localStorage.getItem('selectedView') || '')) {
+                    selectedView = window.localStorage.getItem('selectedView') || '';
                 }
                 // take first view
                 if (!selectedView || !project[selectedView]) {
@@ -856,7 +869,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         }
     }
 
-    onWidgetSetsChanged = (id: string, state: ioBroker.State): void => {
+    onWidgetSetsChanged = (id: string, state: ioBroker.State | null | undefined): void => {
         if (state && this.lastUploadedState && state.val !== this.lastUploadedState) {
             this.lastUploadedState = state.val;
             this.onVisChanged();
@@ -866,11 +879,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
     async onConnectionReady(): Promise<void> {
         // preload all widgets first
         if (this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_HTML_LOADED) {
-            await VisWidgetsCatalog.collectRxInformation(
-                this.socket as unknown as LegacyConnection,
-                store.getState().visProject,
-                this.changeProject,
-            );
+            await VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, this.changeProject);
             await this.setStateAsync({ widgetsLoaded: Runtime.WIDGETS_LOADING_STEP_ALL_LOADED });
         }
 
@@ -878,9 +887,9 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
 
         const currentUser = await this.socket.getObject(`system.user.${userName || 'admin'}`);
         const name =
-            typeof currentUser.common.name === 'object'
+            typeof currentUser?.common.name === 'object'
                 ? currentUser.common.name[I18n.getLanguage()] || currentUser.common.name.en
-                : currentUser.common.name;
+                : currentUser?.common.name || 'admin';
 
         store.dispatch(updateActiveUser(name));
 
@@ -933,7 +942,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             const obj =
                 this.state.runtime &&
                 (await this.socket.getObject(`system.adapter.${this.adapterName}.${this.instance}`));
-            if (this.state.runtime && obj.native.doNotShowProjectDialog) {
+            if (this.state.runtime && obj?.native.doNotShowProjectDialog) {
                 this.setState({ projectDoesNotExist: true });
             } else {
                 if (!projects) {
@@ -977,7 +986,11 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         }
         newState.selectedWidgets = selectedWidgets;
 
-        if (!this.state.runtime && !store.getState().visProject.___settings.openedViews.includes(selectedView)) {
+        if (
+            !this.state.runtime &&
+            !store.getState().visProject.___settings.openedViews.includes(selectedView) &&
+            this.changeProject
+        ) {
             const project = JSON.parse(JSON.stringify(store.getState().visProject));
             project.___settings.openedViews.push(selectedView);
             await this.changeProject(project, true);
@@ -1048,17 +1061,93 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         />
     );
 
+    /** Key under which the acknowledgement of the incompatible widget sets is remembered */
+    static INCOMPATIBLE_SETS_ACK = 'Vis.incompatibleSetsAck';
+
+    /**
+     * Widget sets that were skipped and that the user has not acknowledged yet
+     *
+     * The acknowledgement is remembered by the names of the sets, so the dialog stays away on every further load
+     * but comes back as soon as another widget set is affected.
+     */
+    static getUnacknowledgedSets(): IncompatibleWidgetSet[] {
+        const sets = VisWidgetsCatalog.incompatibleSets;
+        if (!sets.length) {
+            return [];
+        }
+        const acknowledged = window.localStorage.getItem(Runtime.INCOMPATIBLE_SETS_ACK);
+        return acknowledged === Runtime.getSetsKey(sets) ? [] : sets;
+    }
+
+    /**
+     * Identity of a list of widget sets, independent of the order they were loaded in
+     *
+     * @param sets - the skipped widget sets
+     * @returns The adapter names, sorted and joined
+     */
+    static getSetsKey(sets: IncompatibleWidgetSet[]): string {
+        return sets
+            .map(set => set.adapter)
+            .sort()
+            .join(',');
+    }
+
     async onWidgetsLoaded(): Promise<void> {
         let widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_HTML_LOADED;
         if (this.socket.isConnected()) {
-            await VisWidgetsCatalog.collectRxInformation(
-                this.socket as unknown as LegacyConnection,
-                store.getState().visProject,
-                this.changeProject,
-            );
+            await VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, this.changeProject);
             widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_ALL_LOADED;
         }
-        this.setState({ widgetsLoaded });
+        this.setState({ widgetsLoaded, incompatibleSets: Runtime.getUnacknowledgedSets() });
+    }
+
+    /**
+     * Tells that widget sets were skipped because they were built for an older react
+     *
+     * Without it the widgets of such a set are simply absent - the views render with holes and nothing says why.
+     */
+    renderIncompatibleWidgetSetsDialog(): React.JSX.Element | null {
+        // the whole RuntimeState is only filled in componentDidMount, so on the first render it is not there yet
+        if (!this.state.incompatibleSets?.length) {
+            return null;
+        }
+
+        return (
+            <Dialog
+                open={!0}
+                maxWidth="sm"
+                fullWidth
+                onClose={() => this.acknowledgeIncompatibleSets()}
+            >
+                <DialogTitle>{I18n.t('Widget sets could not be loaded')}</DialogTitle>
+                <DialogContent>
+                    <div style={{ marginBottom: 12 }}>{I18n.t('widget_sets_incompatible_react')}</div>
+                    <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+                        {this.state.incompatibleSets.map(set => (
+                            <li key={set.adapter}>{set.adapter}</li>
+                        ))}
+                    </ul>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<IconClose />}
+                        onClick={() => this.acknowledgeIncompatibleSets()}
+                    >
+                        {I18n.t('Ok')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
+    acknowledgeIncompatibleSets(): void {
+        window.localStorage.setItem(
+            Runtime.INCOMPATIBLE_SETS_ACK,
+            Runtime.getSetsKey(VisWidgetsCatalog.incompatibleSets),
+        );
+        this.setState({ incompatibleSets: [] });
     }
 
     addProject = async (projectName: string, doNotLoad?: boolean): Promise<void> => {
@@ -1086,7 +1175,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 this.setState({ projectsDialog: false });
             }
         } catch (e) {
-            window.alert(`Cannot create project: ${e.toString()}`);
+            window.alert(`Cannot create project: ${(e as Error).toString()}`);
         }
     };
 
@@ -1110,7 +1199,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                             if (
                                 e.key === 'Enter' &&
                                 this.state.newProjectName &&
-                                !this.state.projects.includes(this.state.newProjectName)
+                                !this.state.projects?.includes(this.state.newProjectName)
                             ) {
                                 await this.addProject(this.state.newProjectName);
                                 window.location.href = `edit.html?${this.state.newProjectName}`;
@@ -1127,7 +1216,9 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                         variant="contained"
                         // default
                         color="primary"
-                        disabled={!this.state.newProjectName || this.state.projects.includes(this.state.newProjectName)}
+                        disabled={
+                            !this.state.newProjectName || !!this.state.projects?.includes(this.state.newProjectName)
+                        }
                         onClick={async () => {
                             await this.addProject(this.state.newProjectName, true);
                             window.location.href = `edit.html?${this.state.newProjectName}`;
@@ -1165,7 +1256,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                         alt="vis-2"
                         style={{ width: 24, marginRight: 10, marginTop: 4 }}
                     />
-                    {!this.state.projects.length
+                    {!this.state.projects?.length
                         ? I18n.t('Create or import new "vis-2" project')
                         : I18n.t('Select vis-2 project')}
                 </DialogTitle>
@@ -1196,7 +1287,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                                     onClick={() =>
                                         this.setState({
                                             showNewProjectDialog: true,
-                                            newProjectName: this.state.projects.length ? '' : 'main',
+                                            newProjectName: this.state.projects?.length ? '' : 'main',
                                         })
                                     }
                                     style={{ backgroundColor: '#112233', color: '#ffffff' }}
@@ -1283,7 +1374,7 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
             void this.refreshProjects().then(() => {
                 this.setState({ showProjectsDialog: true });
             });
-            return null;
+            return <div />;
         }
 
         return (
@@ -1293,9 +1384,9 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 activeView={this.state.selectedView || ''}
                 editMode={!this.state.runtime && this.state.editMode}
                 runtime={this.state.runtime}
-                socket={this.socket as unknown as LegacyConnection}
-                visCommonCss={this.state.visCommonCss}
-                visUserCss={this.state.visUserCss}
+                socket={this.socket}
+                visCommonCss={this.state.visCommonCss || ''}
+                visUserCss={this.state.visUserCss || ''}
                 lang={this.socket.systemLang}
                 adapterName={this.adapterName}
                 instance={this.instance}
@@ -1309,8 +1400,8 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
                 lockDragging={this.state.lockDragging}
                 disableInteraction={this.state.disableInteraction}
                 widgetHint={this.state.widgetHint}
-                onFontsUpdate={this.state.runtime ? null : (fonts: string[]) => this.onFontsUpdate(fonts)}
-                registerEditorCallback={this.state.runtime ? null : this.registerCallback}
+                onFontsUpdate={this.state.runtime ? undefined : (fonts: string[]) => this.onFontsUpdate?.(fonts)}
+                registerEditorCallback={this.state.runtime ? undefined : this.registerCallback}
                 themeType={this.state.themeType}
                 themeName={this.state.themeName}
                 theme={this.state.theme}
@@ -1360,15 +1451,15 @@ class Runtime<P extends RuntimeProps = RuntimeProps, S extends RuntimeState = Ru
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
+                    <ScrollbarStyles theme={this.state.theme} />
                     {!this.state.loaded || !store.getState().visProject.___settings
                         ? this.renderLoader()
                         : this.getVisEngine()}
                     {this.state.projectDoesNotExist ? this.renderProjectDoesNotExist() : null}
                     {this.state.showProjectsDialog ? this.showSmallProjectsDialog() : null}
+                    {this.renderIncompatibleWidgetSetsDialog()}
                 </ThemeProvider>
             </StyledEngineProvider>
         );
     }
 }
-
-export default Runtime;

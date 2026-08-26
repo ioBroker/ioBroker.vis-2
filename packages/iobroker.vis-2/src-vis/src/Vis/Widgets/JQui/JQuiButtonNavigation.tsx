@@ -44,22 +44,29 @@ class JQuiButtonNavigation extends JQuiButton {
         });
 
         const modal = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'modal');
-        delete modal.default;
+        if (modal) {
+            delete modal.default;
+        }
 
         const navView = JQuiButton.findField<RxWidgetInfoAttributesFieldDefault>(newWidgetInfo, 'nav_view');
-        navView.default = '';
+        if (navView) {
+            navView.default = '';
+        }
 
         const text = JQuiButton.findField<RxWidgetInfoAttributesFieldText>(newWidgetInfo, 'buttontext');
-        text.default = 'View';
+        if (text) {
+            text.default = 'View';
+        }
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         return newWidgetInfo as RxWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiButtonNavigation.getWidgetInfo();
     }

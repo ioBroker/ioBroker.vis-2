@@ -40,7 +40,7 @@ function _translateWord(
     } else if (typeof text === 'string' && !text.match(/_tooltip$/)) {
         // console.log(`"${text}": {en: "${text}", de: "${text}", ru: "${text}"},`);
     } else if (typeof text !== 'string') {
-        console.warn(`Trying to translate non-text: ${text}`);
+        console.warn(`Trying to translate non-text: ${text as string}`);
     }
 
     return text;

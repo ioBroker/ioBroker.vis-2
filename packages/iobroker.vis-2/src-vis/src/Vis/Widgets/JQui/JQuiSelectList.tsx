@@ -38,9 +38,11 @@ class JQuiSelectList extends JQuiState {
             },
         };
 
-        const type: Writeable<RxWidgetInfoAttributesFieldSelect> =
+        const type: Writeable<RxWidgetInfoAttributesFieldSelect> | null =
             JQuiState.findField<RxWidgetInfoAttributesFieldSelect>(newWidgetInfo, 'type');
-        type.default = 'select';
+        if (type) {
+            type.default = 'select';
+        }
 
         // Add note
         (newWidgetInfo.visAttrs[0].fields as Writeable<RxWidgetInfoAttributesField[]>).unshift({
@@ -52,7 +54,6 @@ class JQuiSelectList extends JQuiState {
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiSelectList.getWidgetInfo();
     }

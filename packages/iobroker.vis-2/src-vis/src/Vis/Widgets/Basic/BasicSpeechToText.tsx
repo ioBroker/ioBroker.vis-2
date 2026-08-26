@@ -2,7 +2,7 @@ import React from 'react';
 // @ts-expect-error fix import
 import type * as SpeechRecognition from 'dom-speech-recognition';
 
-import { I18n, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Icon } from '@iobroker/gui-components';
 
 import VisRxWidget from '@/Vis/visRxWidget';
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
@@ -71,7 +71,6 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicSpeechToText.getWidgetInfo();
     }

@@ -31,7 +31,7 @@ import {
     List,
 } from '@mui/material';
 
-import { I18n, Icon, type LegacyConnection } from '@iobroker/adapter-react-v5';
+import { I18n, Icon, type Connection } from '@iobroker/gui-components';
 
 import { deepClone } from '@/Utilities/utils';
 
@@ -134,7 +134,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 _field: RxWidgetInfoAttributesField,
                                 data: RxData,
                                 changeData: (newData: RxData) => void,
-                                socket: LegacyConnection,
+                                socket: Connection,
                             ): Promise<void> => {
                                 if (data.oid) {
                                     const { default: BulkEditorComponent } = await import('./BulkEditor');
@@ -246,7 +246,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 field: RxWidgetInfoAttributesField,
                                 data: Record<string, any>,
                                 changeData: (newData: Record<string, any>) => void,
-                                _socket: LegacyConnection,
+                                _socket: Connection,
                                 index?: number,
                             ): Promise<void> => {
                                 if (data[(field as RxWidgetInfoAttributesFieldCheckbox).name]) {
@@ -389,7 +389,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
 
             setTimeout(
                 () =>
-                    this.props.context.onWidgetsChanged([
+                    this.props.context.onWidgetsChanged?.([
                         {
                             wid: this.props.id,
                             view: this.props.view,
@@ -424,7 +424,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
             if (this.props.context.onWidgetsChanged) {
                 setTimeout(
                     () =>
-                        this.props.context.onWidgetsChanged([
+                        this.props.context.onWidgetsChanged?.([
                             {
                                 wid: this.props.id,
                                 view: this.props.view,
@@ -439,9 +439,11 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
             try {
                 const state = await this.props.context.socket.getState(this.state.rxData.oid);
-                this.onStateUpdated(this.state.rxData.oid, state);
+                if (state) {
+                    this.onStateUpdated(this.state.rxData.oid, state);
+                }
             } catch (error) {
-                console.error(`Cannot get state ${this.state.rxData.oid}: ${error}`);
+                console.error(`Cannot get state ${this.state.rxData.oid}: ${error as Error}`);
             }
         }
     }
@@ -461,7 +463,6 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiState.getWidgetInfo();
     }
@@ -543,7 +544,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     }
 
     renderIcon(i: number, selectedIndex: number): React.JSX.Element | null {
-        let color: string;
+        let color: string | undefined;
         const rxData = this.state.rxData as unknown as Record<string, string>;
         let icon: string = rxData[`icon${i}`] || rxData[`image${i}`];
         if (icon && rxData[`color${i}`]) {
@@ -791,14 +792,13 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                         value={this.state.value === undefined ? '' : this.state.value}
                         onChange={e => this.onClick(this.getSelectedIndex(e.target.value))}
                         variant={variant}
-                        sx={{
-                            '& .MuiSelect-select':
-                                variant === 'filled'
-                                    ? {
-                                          mb: '10px',
-                                      }
-                                    : undefined,
-                        }}
+                        sx={
+                            variant === 'filled'
+                                ? {
+                                      '& .MuiSelect-select': { mb: '10px' },
+                                  }
+                                : undefined
+                        }
                     >
                         {buttons}
                     </Select>

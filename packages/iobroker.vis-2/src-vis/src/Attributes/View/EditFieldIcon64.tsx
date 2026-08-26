@@ -3,7 +3,7 @@ import { Button, IconButton, TextField } from '@mui/material';
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
-import { Icon, type ThemeType } from '@iobroker/adapter-react-v5';
+import { Icon, type ThemeType } from '@iobroker/gui-components';
 
 import MaterialIconSelector from '@/Components/MaterialIconSelector';
 import type { VisTheme, AdditionalIconSet } from '@iobroker/types-vis-2';

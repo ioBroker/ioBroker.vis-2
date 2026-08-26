@@ -1,6 +1,6 @@
 import type React from 'react';
 import { createTheme as muiCreateTheme } from '@mui/material/styles';
-import { Theme, type ThemeName } from '@iobroker/adapter-react-v5';
+import { Theme, type ThemeName } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 export default function createTheme(
@@ -17,7 +17,35 @@ export default function createTheme(
     const success = '#73b6a8';
     let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
     if (cssVariables) {
-        theme = muiCreateTheme({ ...theme, cssVariables: true }) as VisTheme;
+        // With CSS variables MUI resolves the text color of a `color="default"` Fab from the palette
+        // (`--mui-palette-grey-900` resp. `--mui-palette-text-primary`) instead of contrasting it against
+        // the grey[300] background the Fab paints for itself. In the dark theme that is light on light.
+        // The button variants of the ioBroker theme already contrast explicitly, the Fab did not. See #661.
+        const greyBackground = theme.palette.grey?.[300];
+        const defaultFabColor = greyBackground ? theme.palette.getContrastText(greyBackground) : undefined;
+
+        theme = muiCreateTheme(
+            {
+                ...theme,
+                // `color-scheme: dark` on `:root` makes the browser paint an opaque canvas (#121212) behind a
+                // document that declares itself transparent, so an `iFrame` or `echarts` widget - and the whole
+                // runtime embedded in an app - loses its transparency in the dark mode. Measured: with the
+                // scheme the embedded document shows #121212, without it the parent shines through. See #661.
+                cssVariables: { disableCssColorScheme: true },
+            },
+            {
+                components: {
+                    MuiFab: {
+                        styleOverrides: {
+                            root: ({ ownerState }: { ownerState?: { color?: string } }) =>
+                                defaultFabColor && (!ownerState?.color || ownerState.color === 'default')
+                                    ? { color: defaultFabColor }
+                                    : {},
+                        },
+                    },
+                },
+            },
+        ) as VisTheme;
     }
     theme.palette.text.danger = {
         color: danger,

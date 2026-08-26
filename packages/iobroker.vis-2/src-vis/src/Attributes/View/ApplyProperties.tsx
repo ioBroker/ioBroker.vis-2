@@ -1,5 +1,5 @@
 import React from 'react';
-import { Confirm as ConfirmDialog, I18n } from '@iobroker/adapter-react-v5';
+import { Confirm as ConfirmDialog, I18n } from '@iobroker/gui-components';
 
 import type { Field, FieldGroup } from '@/Attributes/View/Items';
 import type { Project } from '@iobroker/types-vis-2';
@@ -8,9 +8,9 @@ export function getViewsWithDifferentValues(
     project: Project,
     field: Field,
     selectedView: string,
-    views: string[],
+    views: string[] | null,
     checkFunction: (
-        funcText: boolean | string | ((settings: Record<string, any>) => boolean),
+        funcText: boolean | string | ((settings: Record<string, any>) => boolean) | undefined,
         settings: Record<string, any>,
     ) => boolean,
 ): string[] | null {
@@ -70,7 +70,7 @@ interface RenderApplyDialogProps {
     field: ApplyField | null;
     changeProject: (newProject: Project) => void;
     checkFunction: (
-        funcText: boolean | string | ((settings: Record<string, any>) => boolean),
+        funcText: boolean | string | ((settings: Record<string, any>) => boolean) | undefined,
         settings: Record<string, any>,
     ) => boolean;
 }

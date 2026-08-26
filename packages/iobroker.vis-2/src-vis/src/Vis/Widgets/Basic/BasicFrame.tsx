@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 
 type RxData = {
     title: string;
@@ -81,7 +81,6 @@ export default class BasicFrame extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicFrame.getWidgetInfo();
     }
