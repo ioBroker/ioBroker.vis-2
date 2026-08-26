@@ -17,7 +17,6 @@ import {
     TextField,
     Button,
     ListItemIcon,
-    CssBaseline,
 } from '@mui/material';
 
 import { Add as IconAdd, Close as IconClose, FileCopy as IconDocument } from '@mui/icons-material';
@@ -1363,7 +1362,6 @@ export default class Runtime<P extends RuntimeProps = RuntimeProps, S extends Ru
         return (
             <StyledEngineProvider injectFirst>
                 <ThemeProvider theme={this.state.theme}>
-                    <CssBaseline />
                     {!this.state.loaded || !store.getState().visProject.___settings
                         ? this.renderLoader()
                         : this.getVisEngine()}

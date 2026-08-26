@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.15.4",
+    "version": "2.15.5",
     "news": {
+      "2.15.5": {
+        "en": "Corrected background",
+        "de": "Hintergrund korrigiert",
+        "ru": "Исправлен фон",
+        "pt": "Fundo corrigido",
+        "nl": "Achtergrond gecorrigeerd",
+        "fr": "Fond corrigé",
+        "it": "Sfondo corretto",
+        "es": "Fondo corregido",
+        "pl": "Poprawione tło",
+        "uk": "Виправлений фон",
+        "zh-cn": "校正背景"
+      },
       "2.15.4": {
         "en": "Fixed the loading of the vis-2-widgets-material widget set on the cloud: it is built as an ES module and was still forced to be loaded as a global script, which ended in `remoteEntryExports is undefined`\nThe bundler type of the widget sets is only patched on the real cloud domains now. Local installations reachable under a name like `iobroker.local` or `iobroker.fritz.box` were treated as cloud before and could not load their widget sets\nRemoved the fixed table of bundler types for the cloud. It existed because the declaration was read from the `io-package.json` of the locally installed adapter while the cloud serves its own copy of the widget set, so a very old installation could describe the delivered file wrongly. Those versions are history, and the table had gone stale in the meantime: it forced `echarts`, `openweathermap`, `fullcalendar` and `vis-2-widgets-energy` to be loaded as a global script although they are ES modules, which ended in `remoteEntryExports is undefined`. Every widget set is loaded by what it declares itself now\nCorrected background",
         "de": "Das Laden des Widget-Sets vis-2-widgets-material in der Cloud wurde korrigiert: Es ist als ES-Modul erstellt und wurde dennoch gezwungen, als globales Skript geladen zu werden, was zu dem Fehler `remoteEntryExports is undefined` führte.\nDer Bundler-Typ der Widget-Sets wird derzeit nur auf den echten Cloud-Domains gepatcht. Lokale Installationen, die unter einem Namen wie `iobroker.local` oder `iobroker.fritz.box` erreichbar sind, wurden zuvor als Cloud-Installationen behandelt und konnten ihre Widget-Sets nicht laden.\nDie feste Tabelle der Bundler-Typen für die Cloud wurde entfernt. Sie existierte, weil die Deklaration aus der `io-package.json` des lokal installierten Adapters gelesen wurde, während die Cloud eine eigene Kopie des Widget-Sets bereitstellt. Daher konnte eine sehr alte Installation die ausgelieferte Datei falsch beschreiben. Diese Versionen gehören der Vergangenheit an, und die Tabelle war zwischenzeitlich veraltet: Sie erzwang, dass `echarts`, `openweathermap`, `fullcalendar` und `vis-2-widgets-energy` als globales Skript geladen wurden, obwohl es sich um ES-Module handelt, was zu einem Fehler `remoteEntryExports is undefined` führte. Jedes Widget-Set wird nun anhand seiner eigenen Deklaration geladen.\nHintergrund korrigiert",
