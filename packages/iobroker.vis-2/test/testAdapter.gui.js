@@ -93,12 +93,15 @@ describe('vis', () => {
             widgetType,
             START,
         );
-        await gPage.waitForSelector(`#${wid}`, { timeout: 5_000 });
+        // The editor works on the service div "rx_<wid>": it carries the geometry, the frame and the resize
+        // handles. A vis-1 widget additionally has its own div with the plain widget ID, which is the one
+        // "document.getElementById(wid)" finds - that div is only the content and has no handles.
+        await gPage.waitForSelector(`#rx_${wid}`, { timeout: 5_000 });
         await new Promise(resolve => setTimeout(resolve, 1_000));
 
         const geometry = () =>
             gPage.evaluate(id => {
-                const el = document.getElementById(id);
+                const el = document.getElementById(`rx_${id}`);
                 const px = value => Math.round(parseFloat(value) || 0);
                 return {
                     left: px(el.style.left),
@@ -112,8 +115,6 @@ describe('vis', () => {
         // apart by where they sit inside the widget
         const handles = () =>
             gPage.evaluate(id => {
-                // The eight handles hang on the service div `rx_<wid>`, not on the widget element itself - for a
-                // vis-1 widget the latter is the div built by can.js, a sibling that carries no editor decoration.
                 const el = document.getElementById(`rx_${id}`);
                 const box = el.getBoundingClientRect();
                 return [...el.querySelectorAll(':scope > .vis-editmode-resizer')].map(handle => {
@@ -149,7 +150,7 @@ describe('vis', () => {
 
         // --- moving: both edges of an axis travel together, the size stays ---
         const center = await gPage.evaluate(id => {
-            const b = document.getElementById(id).getBoundingClientRect();
+            const b = document.getElementById(`rx_${id}`).getBoundingClientRect();
             return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
         }, wid);
         await dragBy(center.x, center.y, 60, 40);
