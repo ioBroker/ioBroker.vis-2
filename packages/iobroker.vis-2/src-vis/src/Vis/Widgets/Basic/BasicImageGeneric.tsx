@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Icon } from '@iobroker/adapter-react-v5';
+import { Icon } from '@iobroker/gui-components';
 import type { RxRenderWidgetProps, VisBaseWidgetProps, WidgetData } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
 
@@ -16,7 +16,7 @@ export interface RxDataBasicImageGeneric extends WidgetData {
 export default abstract class BasicImageGeneric<T extends RxDataBasicImageGeneric> extends VisRxWidget<T> {
     private refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-    private readonly imageRef: React.RefObject<HTMLImageElement> = React.createRef<HTMLImageElement>();
+    private readonly imageRef: React.RefObject<HTMLImageElement | null> = React.createRef<HTMLImageElement>();
 
     private hashInstalled = false;
 

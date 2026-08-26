@@ -18,5 +18,7 @@
   "Load widgets...": "Ładowanie widżetów...",
   "Loading objects...": "Ładowanie obiektów...",
   "Cannot render widget %s": "Nie można wyświetlić widżetu %s",
-  "Retry": "Spróbuj ponownie"
+  "Retry": "Spróbuj ponownie",
+  "Widget sets could not be loaded": "Nie można załadować zestawów widżetów",
+  "widget_sets_incompatible_react": "Poniższe zestawy widżetów zostały zbudowane dla starszej wersji React i nie mogą zostać załadowane. Zaktualizuj odpowiednie adaptery."
 }

@@ -32,10 +32,9 @@ import {
     I18n,
     Icon,
     SelectFile as SelectFileDialog,
-    type LegacyConnection,
     type Connection,
     type ThemeType,
-} from '@iobroker/adapter-react-v5';
+} from '@iobroker/gui-components';
 
 import MaterialIconSelector from '@/Components/MaterialIconSelector';
 import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
@@ -72,7 +71,7 @@ export interface BulkEditorData {
 }
 
 interface BulkEditorProps {
-    socket: LegacyConnection;
+    socket: Connection;
     data: BulkEditorData;
     themeType: ThemeType;
     theme: VisTheme;
@@ -165,7 +164,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
             });
     }
 
-    static async generateFields(data: BulkEditorData, socket: LegacyConnection): Promise<BulkEditorData | false> {
+    static async generateFields(data: BulkEditorData, socket: Connection): Promise<BulkEditorData | false> {
         const oid: string | null | undefined = data.oid;
         if (!oid || oid === 'nothing_selected') {
             return false;
@@ -394,8 +393,8 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                 key="iconDialog"
                 additionalSets={this.props.additionalSets}
                 themeType={this.props.themeType}
-                value={this.state.icons[this.state.iconDialog]}
-                onClose={(icon: string) => {
+                value={this.state.icons[this.state.iconDialog] || undefined}
+                onClose={icon => {
                     this.setState({ iconDialog: null });
                     if (icon !== null) {
                         const icons = [...this.state.icons];
@@ -461,7 +460,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                 onOk={(selectedOrArray: string | string[] | undefined) =>
                     onChange(Array.isArray(selectedOrArray) ? selectedOrArray[0] : selectedOrArray, true)
                 }
-                socket={this.props.socket as any as Connection}
+                socket={this.props.socket}
             />
         );
     }
@@ -536,14 +535,15 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                         label={I18n.t('Value')}
                         value={this.state.editDialog.value}
                         onChange={e => {
-                            if (this.state.editDialog) {
-                                this.setState(prevState => ({
+                            const editDialog = this.state.editDialog;
+                            if (editDialog) {
+                                this.setState({
                                     editDialog: {
                                         value: e.target.value,
-                                        add: prevState.editDialog.add,
-                                        index: prevState.editDialog.index,
+                                        add: editDialog.add,
+                                        index: editDialog.index,
                                     },
-                                }));
+                                });
                             }
                         }}
                     />
@@ -960,7 +960,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                                         label: '20',
                                     },
                                 ]}
-                                onChange={(_e, value) => this.setState({ steps: value as number })}
+                                onChange={(_e, value) => this.setState({ steps: value })}
                             />
                         </div>
                     </div>
@@ -1172,7 +1172,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
         );
     }
 
-    render(): React.JSX.Element[] {
+    render(): (React.JSX.Element | null)[] {
         return [
             <Button
                 fullWidth

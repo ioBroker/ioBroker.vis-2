@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { Close, FilterAlt, LayersClear as Clear, Visibility, VisibilityOff } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/adapter-react-v5';
+import { I18n } from '@iobroker/gui-components';
 import type Editor from '@/Editor';
 import type { AnyWidgetId } from '@iobroker/types-vis-2';
 import { store } from '@/Store';

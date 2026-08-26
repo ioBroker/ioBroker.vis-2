@@ -18,5 +18,7 @@
   "Load widgets...": "正在加载小部件...",
   "Loading objects...": "正在加载对象...",
   "Cannot render widget %s": "无法显示小部件 %s",
-  "Retry": "重试"
+  "Retry": "重试",
+  "Widget sets could not be loaded": "无法加载小部件集",
+  "widget_sets_incompatible_react": "以下小部件集是为较旧版本的 React 构建的，无法加载。请更新相应的适配器。"
 }

@@ -20,7 +20,7 @@ import {
 
 import { Search as SearchIcon, Close as ClearIcon, Check as CheckIcon, Delete as EraseIcon } from '@mui/icons-material';
 
-import { I18n, Utils, Icon } from '@iobroker/adapter-react-v5';
+import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { MaterialIconSelectorProps, VisTheme } from '@iobroker/types-vis-2';
 
 import UploadFile from './UploadFile';
@@ -145,10 +145,10 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
             this.list[type] = true;
             if (type === 'customIcons') {
                 try {
-                    this.list[type] = await fetch(this.props.customIcons).then(res => res.json());
+                    this.list[type] = await fetch(this.props.customIcons || '').then(res => res.json());
                 } catch (e) {
                     this.list[type] = {};
-                    console.error(`Cannot load custom icons from ${this.props.customIcons}: ${e}`);
+                    console.error(`Cannot load custom icons from ${this.props.customIcons}: ${e as Error}`);
                 }
             } else if (this.props.additionalSets?.[type]) {
                 this.list[type] = await fetch(this.props.additionalSets[type].url)
@@ -165,7 +165,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                         const lang = I18n.getLanguage();
                         Object.keys(data).forEach(iconName => {
                             additionalSetsInfo[type][iconName] = {
-                                name: getText(data[iconName].name, lang),
+                                name: getText(data[iconName].name || '', lang),
                                 keywords: data[iconName].words,
                             };
                         });
@@ -262,7 +262,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                 } else if (this.state.iconType === 'customIcons') {
                     filtered = Object.keys(this.list.customIcons).filter(icon => icon.includes(filter as string));
                 } else {
-                    filtered = this.index
+                    filtered = (this.index || [])
                         .filter(
                             icon =>
                                 !icon.unsupported_families?.includes(this.state.iconType) &&
@@ -278,7 +278,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
             } else if (this.state.iconType === 'customIcons') {
                 filtered = Object.keys(this.list.customIcons);
             } else {
-                filtered = this.index
+                filtered = (this.index || [])
                     .filter(
                         icon => !icon.unsupported_families || !icon.unsupported_families.includes(this.state.iconType),
                     )
@@ -315,7 +315,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
         }
     }
 
-    renderIcons(): React.JSX.Element[] {
+    renderIcons(): React.JSX.Element[] | null {
         const iconStyle =
             this.props.customColor && this.state.iconType === 'customIcons' ? { color: this.props.customColor } : {};
         const icons = [];

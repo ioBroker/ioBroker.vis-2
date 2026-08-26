@@ -76,7 +76,6 @@ class BasicSvgBool extends VisRxWidget<RxData> {
         } as const;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicSvgBool.getWidgetInfo();
     }
@@ -147,7 +146,7 @@ class BasicSvgBool extends VisRxWidget<RxData> {
 
         return (
             <div
-                onClick={this.props.editMode || this.state.rxData.no_control ? null : () => this.onSvgClick()}
+                onClick={this.props.editMode || this.state.rxData.no_control ? undefined : () => this.onSvgClick()}
                 className="vis-widget-body"
             >
                 {this.renderSvg()}
