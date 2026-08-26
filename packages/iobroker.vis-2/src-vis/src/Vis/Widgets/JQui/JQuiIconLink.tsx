@@ -43,16 +43,19 @@ class JQuiIconLink extends JQuiButton {
         });
 
         const target = JQuiButton.findField<RxWidgetInfoAttributesFieldSimple>(newWidgetInfo, 'target');
-        target.default = '_blank';
+        if (target) {
+            target.default = '_blank';
+        }
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         return newWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconLink.getWidgetInfo();
     }

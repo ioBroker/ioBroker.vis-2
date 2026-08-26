@@ -44,18 +44,23 @@ class JQuiContainerDialog extends JQuiButton {
 
         // set resizable to true
         const visResizable = JQuiButton.findField<RxWidgetInfoAttributesFieldCheckbox>(newWidgetInfo, 'visResizable');
-        visResizable.default = true;
+        if (visResizable) {
+            visResizable.default = true;
+        }
 
         const buttonText = JQuiButton.findField<RxWidgetInfoAttributesFieldText>(newWidgetInfo, 'buttontext');
-        buttonText.default = 'Container Dialog';
+        if (buttonText) {
+            buttonText.default = 'Container Dialog';
+        }
 
         const htmlDialog = JQuiButton.findField<RxWidgetInfoAttributesFieldHTML>(newWidgetInfo, 'html_dialog');
-        htmlDialog.default = '<div>HTML Dialog</div>';
+        if (htmlDialog) {
+            htmlDialog.default = '<div>HTML Dialog</div>';
+        }
 
         return newWidgetInfo as RxWidgetInfo;
     }
 
-    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiContainerDialog.getWidgetInfo();
     }
