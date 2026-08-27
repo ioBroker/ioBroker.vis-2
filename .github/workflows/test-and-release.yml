@@ -29,10 +29,10 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Use Node.js 24.15.0
+            - name: Use Node.js 24.x
               uses: actions/setup-node@v4
               with:
-                  node-version: 24.15.0
+                  node-version: 24.x
 
             - name: Install Monorepo
               run: npm run install-monorepo
@@ -42,6 +42,9 @@ jobs:
 
             - name: Test TypeScript
               run: npm run check-ts -w packages/iobroker.vis-2
+
+            - name: Lint
+              run: npm run lint
 
             - name: Run local tests
               run: npm run test-gui -w packages/iobroker.vis-2
@@ -65,10 +68,10 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Use Node.js 24.15.0
+            - name: Use Node.js 24.x
               uses: actions/setup-node@v4
               with:
-                  node-version: 24.15.0
+                  node-version: 24.x
 
             - name: Install Monorepo
               run: npm run install-monorepo
@@ -100,10 +103,10 @@ jobs:
               with:
                   ref: 'master'
 
-            - name: Use Node.js 24.15.0
+            - name: Use Node.js 24.x
               uses: actions/setup-node@v4
               with:
-                  node-version: 24.15.0
+                  node-version: 24.x
                   registry-url: 'https://registry.npmjs.org'
 
             - name: Extract the version and commit body from the tag
