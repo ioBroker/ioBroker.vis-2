@@ -61,6 +61,7 @@ class JQuiToggle extends JQuiBinaryState {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiToggle.getWidgetInfo();
     }

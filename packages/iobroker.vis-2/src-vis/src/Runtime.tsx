@@ -294,6 +294,7 @@ export default class Runtime<
         registerWidgetsLoadIndicator(this.setWidgetsLoadingProgress);
     }
 
+    // eslint-disable-next-line class-methods-use-this
     createTheme(name?: ThemeName | null): VisTheme {
         return createTheme(Utils.getThemeName(name));
     }

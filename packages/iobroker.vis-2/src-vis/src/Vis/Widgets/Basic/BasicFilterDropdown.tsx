@@ -286,6 +286,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
         };
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicFilterDropdown.getWidgetInfo();
     }

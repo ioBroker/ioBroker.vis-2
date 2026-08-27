@@ -328,6 +328,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiSlider.getWidgetInfo();
     }

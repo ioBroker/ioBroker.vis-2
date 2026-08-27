@@ -97,6 +97,7 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
         } as const;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicViewInWidget.getWidgetInfo();
     }

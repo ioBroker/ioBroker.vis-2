@@ -85,6 +85,7 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
     /**
      * Enables calling widget info on the class instance itself
      */
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicScreenResolution.getWidgetInfo();
     }

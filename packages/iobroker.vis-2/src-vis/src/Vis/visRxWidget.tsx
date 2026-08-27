@@ -302,6 +302,7 @@ export class VisRxWidget<
         return result;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     onStateUpdated(_id: string, _state: Partial<ioBroker.State>): void {
         // will be overwritten in the widget implementation
     }
@@ -1278,6 +1279,7 @@ export class VisRxWidget<
     /**
      * Get information about a specific widget, needs to be implemented by widget class
      */
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): Readonly<RxWidgetInfo> {
         throw new Error('not implemented');
     }

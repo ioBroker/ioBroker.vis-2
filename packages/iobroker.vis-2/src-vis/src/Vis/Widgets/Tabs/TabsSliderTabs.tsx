@@ -161,6 +161,7 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
         this.setState({ tabIndex });
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return TabsSliderTabs.getWidgetInfo();
     }

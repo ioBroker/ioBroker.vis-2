@@ -43,6 +43,7 @@ class JQuiRadioSteps extends JQuiState {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiRadioSteps.getWidgetInfo();
     }

@@ -395,6 +395,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         return VisRxWidget.findField(widgetInfo, name) as unknown as Writeable<Field>;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiBinaryState.getWidgetInfo();
     }

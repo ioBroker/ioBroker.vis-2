@@ -79,6 +79,7 @@ class JQuiDialog extends JQuiButton {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiDialog.getWidgetInfo();
     }

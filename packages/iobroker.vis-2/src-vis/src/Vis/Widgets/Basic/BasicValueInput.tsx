@@ -132,6 +132,7 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
         }
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicValueInput.getWidgetInfo();
     }

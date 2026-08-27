@@ -76,6 +76,7 @@ export default class BasicLogout extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicLogout.getWidgetInfo();
     }

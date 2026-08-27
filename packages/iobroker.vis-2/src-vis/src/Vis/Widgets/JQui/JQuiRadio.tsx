@@ -53,6 +53,7 @@ class JQuiRadio extends JQuiBinaryState {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiRadio.getWidgetInfo();
     }

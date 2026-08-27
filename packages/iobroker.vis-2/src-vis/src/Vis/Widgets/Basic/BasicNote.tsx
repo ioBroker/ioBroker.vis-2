@@ -82,6 +82,7 @@ export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
     /**
      * Enables calling widget info on the class instance itself
      */
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicNote.getWidgetInfo();
     }

@@ -117,6 +117,7 @@ export default class BasicIFrame extends VisRxWidget<RxData> {
     /**
      * Enables calling widget info on the class instance itself
      */
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return BasicIFrame.getWidgetInfo();
     }

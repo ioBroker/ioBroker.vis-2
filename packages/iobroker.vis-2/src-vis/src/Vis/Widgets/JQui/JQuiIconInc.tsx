@@ -50,6 +50,7 @@ class JQuiIconInc extends JQuiWriteState {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconInc.getWidgetInfo();
     }

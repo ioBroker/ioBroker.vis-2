@@ -193,6 +193,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
         };
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiInput.getWidgetInfo();
     }

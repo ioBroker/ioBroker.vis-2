@@ -62,6 +62,7 @@ export default class JQuiIconHttpGet extends JQuiButton {
         return newWidgetInfo;
     }
 
+    // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return JQuiIconHttpGet.getWidgetInfo();
     }
