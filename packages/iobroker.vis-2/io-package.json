@@ -230,7 +230,7 @@
     ],
     "licenseInformation": {
       "type": "commercial",
-      "link": "https://raw.githubusercontent.com/ioBroker/ioBroker.vis-2/master/LICENSE",
+      "link": "https://iobroker.net/www/pricing",
       "license": "CC-BY-NC-4.0"
     },
     "stopBeforeUpdate": true
