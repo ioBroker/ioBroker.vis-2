@@ -1688,23 +1688,23 @@
             if (!dateObj) {
                 return '';
             }
+            const original = dateObj;
+            // a state may deliver the timestamp as string, and "1710500000000" is no date string
+            if (typeof dateObj === 'string' && dateObj.trim() && !isNaN(Number(dateObj))) {
+                dateObj = Number(dateObj);
+            }
             const text = typeof dateObj;
             if (text === 'string') {
                 dateObj = new Date(dateObj);
             }
             if (text !== 'object') {
-                let i = parseInt(dateObj, 10);
-                if (i == dateObj) {
-                    i = dateObj;
-                    // if greater than 2000.01.01 00:00:00
-                    if (i > 946681200000) {
-                        dateObj = new Date(dateObj);
-                    } else {
-                        dateObj = new Date(dateObj * 1000);
-                    }
-                } else {
-                    dateObj = new Date(dateObj);
-                }
+                const i = Number(dateObj);
+                // if greater than 2000.01.01 00:00:00
+                dateObj = i > 946681200000 ? new Date(i) : new Date(i * 1000);
+            }
+            if (isNaN(dateObj.getTime())) {
+                // show the unparsable value instead of "NaN:NaN:NaN"
+                return text === 'string' ? original : '';
             }
             if (interval) {
                 vis.binds.basic.startUpdateInterval();
