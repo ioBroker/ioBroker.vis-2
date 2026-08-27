@@ -1042,7 +1042,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     key={key}
                     className="vis-editmode-resizer"
                     style={Object.assign(handler as React.CSSProperties, style)}
-                    onMouseDown={
+                    onPointerDown={
                         !frameOnly && handler.opacity === RESIZERS_OPACITY
                             ? e => this.onResizeStart(e, key as Resize)
                             : undefined
@@ -1899,7 +1899,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     style={{
                         top: widgetNameBottom ? undefined : `calc(-14px - ${borderWidth})`,
                     }}
-                    onMouseDown={e => {
+                    onPointerDown={e => {
                         if (this.props.context.setSelectedWidgets) {
                             this.onMouseDown(e);
                         }
@@ -1913,7 +1913,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     {this.state.multiViewWidget || widget.usedInWidget ? null : (
                         <AnchorIcon
                             titleAccess={I18n.t('Toggle relative position')}
-                            onMouseDown={e => this.onToggleRelative(e)}
+                            onPointerDown={e => this.onToggleRelative(e)}
                             className={Utils.clsx(
                                 'vis-anchor',
                                 this.props.isRelative ? 'vis-anchor-enabled' : 'vis-anchor-disabled',
@@ -1926,7 +1926,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     widget.usedInWidget ? null : (
                         <ExpandIcon
                             titleAccess={I18n.t('Toggle full width')}
-                            onMouseDown={e => this.onToggleWidth(e)}
+                            onPointerDown={e => this.onToggleWidth(e)}
                             className={Utils.clsx(
                                 'vis-expand',
                                 widget.style.width === '100%' ? 'vis-expand-enabled' : 'vis-expand-disabled',
@@ -1936,7 +1936,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     {this.state.multiViewWidget || !this.props.isRelative || widget.usedInWidget ? null : (
                         <KeyboardReturn
                             titleAccess={I18n.t('Toggle line break')}
-                            onMouseDown={e => this.onToggleLineBreak(e)}
+                            onPointerDown={e => this.onToggleLineBreak(e)}
                             className={Utils.clsx(
                                 'vis-new-line',
                                 widget.style.newLine ? 'vis-new-line-enabled' : 'vis-new-line-disabled',
@@ -1965,7 +1965,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             this.props.selectedGroup !== this.props.id ? ( // and it does not the edited group itself
                 <div
                     className={classNames.join(' ')}
-                    onMouseDown={e => {
+                    onPointerDown={e => {
                         if (this.props.context.setSelectedWidgets) {
                             this.onMouseDown(e);
                         }
