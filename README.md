@@ -326,6 +326,7 @@ npm run start
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@typhosj) The widgets can be selected, moved and resized with a finger in the editor: the gestures run on pointer events now and no longer on mouse events only
+* (@typhosj) A timestamp that arrives as a string is shown as a date again instead of `NaN:NaN:NaN`, and a value that cannot be parsed at all is shown as it is
 * (@typhosj) A widget that leads to the view that is shown gets the CSS class `vis-nav-active`, so the current entry of a self-built navigation can be highlighted. The jQui buttons mark themselves by the active view now instead of the address of the browser, which they never noticed changing
 * (@typhosj) The project setting `States Debounce Time` is applied again: the commands for one object ID are collected during that period. It had no effect at all, as the value was never read from the project
 * (@typhosj) The switch of the `binary control` widget shows the state of the object again if no text and no icon are defined

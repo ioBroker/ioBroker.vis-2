@@ -1494,18 +1494,22 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             return '';
         }
         let dateObj: Date;
+        const text = typeof value;
+        // the comparison has to sit on the expression itself, a variable does not narrow the type
         if (typeof value === 'object') {
             dateObj = value instanceof Date ? value : new Date(value);
         } else if (isVarFinite(value)) {
-            const i = parseInt(value as string, 10);
+            // a state may deliver the timestamp as string, and "1710500000000" is no date string - it has to
+            // become a number before it reaches Date, otherwise the result is an "Invalid Date"
+            const i = Number(value);
             // if greater than 2000.01.01 00:00:00
-            if (i > 946681200000) {
-                dateObj = new Date(value);
-            } else {
-                dateObj = new Date((value as number) * 1000);
-            }
+            dateObj = i > 946681200000 ? new Date(i) : new Date(i * 1000);
         } else {
             dateObj = new Date(value);
+        }
+        if (isNaN(dateObj.getTime())) {
+            // show the unparsable value instead of "NaN:NaN:NaN"
+            return text === 'string' ? (value as string) : '';
         }
         if (interval) {
             this.startUpdateInterval();
