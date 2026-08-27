@@ -456,7 +456,11 @@ class VisFormatUtils {
                         }
                     } else {
                         const operationArg: string | number | undefined | null | string[] = operation.arg as
-                            string | number | undefined | null | string[];
+                            | string
+                            | number
+                            | undefined
+                            | null
+                            | string[];
 
                         switch (operation.op) {
                             case '*':

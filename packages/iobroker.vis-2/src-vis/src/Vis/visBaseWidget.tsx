@@ -188,7 +188,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     protected resizeLocked?: boolean;
 
     protected visDynamicResizable:
-        undefined | null | { default: boolean; desiredSize?: { width: number; height: number } | boolean };
+        | undefined
+        | null
+        | { default: boolean; desiredSize?: { width: number; height: number } | boolean };
 
     protected isCanWidget?: boolean;
 

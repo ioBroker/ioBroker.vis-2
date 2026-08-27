@@ -339,9 +339,15 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             funcs.shift();
         }
 
+        // A widget set of vis-1 reads `vis.activeWidgets` and `vis.activeView` while it builds its custom
+        // component, and that call happens synchronously a few lines below. An effect would run after the
+        // render and therefore too late, so these three assignments have to stay here. The React Compiler
+        // cannot see the legacy bridge and flags them as a mutation during the render.
+        /* eslint-disable react-hooks/immutability -- see the comment above */
         window._ = window.vis._; // for old widgets, else lodash overwrites it
         window.vis.activeWidgets = [...props.selectedWidgets];
         window.vis.activeView = props.selectedView;
+        /* eslint-enable react-hooks/immutability */
 
         if (funcs.length === 1) {
             if (typeof window.vis.binds[funcs[0]] === 'function') {

@@ -5,7 +5,16 @@ import VisRxWidget from '@/Vis/visRxWidget';
 
 type RxData = {
     svgType:
-        'line' | 'triangle' | 'square' | 'pentagone' | 'hexagone' | 'octagone' | 'circle' | 'star' | 'arrow' | 'custom';
+        | 'line'
+        | 'triangle'
+        | 'square'
+        | 'pentagone'
+        | 'hexagone'
+        | 'octagone'
+        | 'circle'
+        | 'star'
+        | 'arrow'
+        | 'custom';
     points: number;
     strokeColor: string;
     fill: string;

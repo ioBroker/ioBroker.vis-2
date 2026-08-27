@@ -36,7 +36,7 @@
     },
     "scripts": {
         "build": "npm run clean && lerna run build",
-        "lint": "cd packages/iobroker.vis-2 && npm run lint && cd ../types-vis-2 && npm run lint",
+        "lint": "cd packages/iobroker.vis-2 && npm run lint && cd src-vis && npm run lint && cd ../../types-vis-2 && npm run lint",
         "clean": "lerna run clean",
         "install-monorepo": "npm i && npm i -w packages/iobroker.vis-2 && npm i -w packages/types-vis-2 && cd packages/iobroker.vis-2/src-vis && npm i",
         "npm": "npm run install-monorepo",

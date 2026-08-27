@@ -97,7 +97,9 @@ class JQuiWriteState<
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     // the field selects a state, but getObject() is generic on the id
                                     const obj = (await socket.getObject(data.oid)) as
-                                        ioBroker.StateObject | null | undefined;
+                                        | ioBroker.StateObject
+                                        | null
+                                        | undefined;
                                     let changed = false;
                                     if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
                                         if (data.min !== obj.common.min) {

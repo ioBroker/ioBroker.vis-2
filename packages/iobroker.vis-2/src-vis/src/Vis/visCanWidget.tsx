@@ -1439,7 +1439,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
                     if (widgetData?.oid) {
                         options.val = this.props.context.canStates.attr(`${widgetData.oid}.val`) as
-                            string | number | boolean;
+                            | string
+                            | number
+                            | boolean;
                     }
                     const widgetFragment = this.props.context.can.view(this.props.tpl, options);
 
