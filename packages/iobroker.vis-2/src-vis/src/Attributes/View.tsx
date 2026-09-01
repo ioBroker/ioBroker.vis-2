@@ -16,9 +16,18 @@ import { renderApplyDialog, getViewsWithDifferentValues, type ApplyField } from 
 import showAllViewsDialog from './View/AllViewsDialog';
 
 const styles: Record<string, any> = {
+    groupSurface: (theme: VisTheme): React.CSSProperties => ({
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+    }),
     accordionRoot: {
+        // Surfaces instead of lines: the group header carries its own background, so the border MUI
+        // draws above and below every accordion is only noise. A 2px gap lets the darker panel show
+        // through between the groups - that sliver is the separator, not a drawn line.
+        border: 'none',
         p: 0,
+        // after `m: 0`, otherwise the shorthand wipes it again
         m: 0,
+        marginBottom: '2px',
         minHeight: 0,
         '&:before': {
             opacity: 0,
@@ -42,17 +51,16 @@ const styles: Record<string, any> = {
         alignItems: 'center',
         justifyContent: 'space-between',
     },
+    // like the palette: the rows sit flush and read as a list. With a margin between them each row looks
+    // like a separate little box.
     groupSummary: {
-        mt: '10px',
-        borderRadius: '4px',
         p: '2px',
+        pl: '8px',
         minHeight: 0,
     },
     groupSummaryExpanded: {
-        mt: '10px',
-        borderTopRightRadius: '4px',
-        borderTopLeftRadius: '4px',
         p: '2px',
+        pl: '8px',
         minHeight: 0,
     },
 };
@@ -314,7 +322,7 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                                     props.theme,
                                     commonStyles.clearPadding,
                                     accordionOpen[key] === 1 ? styles.groupSummaryExpanded : styles.groupSummary,
-                                    styles.lightedPanel,
+                                    styles.groupSurface,
                                 ),
                                 '& .MuiAccordionSummary-content': Utils.getStyle(
                                     props.theme,

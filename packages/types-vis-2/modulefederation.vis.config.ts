@@ -43,7 +43,7 @@ function makeShared(pkgs: string[]): { [packageName: string]: VisSharedModuleCon
  * Package a shared entry belongs to.
  *
  * Some entries of the list are sub-paths (`react/jsx-runtime`, `react-dom/client`, the i18n JSONs of
- * adapter-react-v5). They never appear in a package.json on their own, so filtering the list against the
+ * gui-components). They never appear in a package.json on their own, so filtering the list against the
  * dependencies of a component has to compare the package they belong to - otherwise exactly those entries that
  * MUST be shared would silently be dropped for every component that passes its package.json.
  *
@@ -116,7 +116,11 @@ export function moduleFederationShared(packageJson?: Record<string, any> | strin
         '@iobroker/gui-components/i18n/ru.json',
         '@iobroker/gui-components/i18n/uk.json',
         '@iobroker/gui-components/i18n/zh-cn.json',
-        '@iobroker/vis-2-widgets-react-dev',
+        // `@iobroker/vis-2-widgets-react-dev` is deliberately NOT in this list. It is a build helper of the
+        // widget sets whose runtime part is only a dummy `VisRxWidget` for their stand-alone demo page - the
+        // real class reaches a widget set via `window.visRxWidget`. vis-2 never imports it, and since
+        // @module-federation/vite 1.21 bundles every shared entry, the dummy would drag its undeclared
+        // `@iobroker/adapter-react-v5` (built for MUI 6, `Grid2`) into the host build and break it.
         '@mui/icons-material',
         '@mui/material',
         // Holds the ThemeContext that `useTheme()` reads. It stays a singleton on purpose although the MUI

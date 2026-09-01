@@ -68,9 +68,18 @@ const ICONS: Record<string, React.JSX.Element> = {
 type GroupAction = 'add' | 'delete' | 'down' | 'up' | 'clone';
 
 const styles: Record<string, any> = {
+    groupSurface: (theme: VisTheme): React.CSSProperties => ({
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+    }),
     accordionRoot: {
+        // Surfaces instead of lines: the group header carries its own background, so the border MUI
+        // draws above and below every accordion is only noise. A 2px gap lets the darker panel show
+        // through between the groups - that sliver is the separator, not a drawn line.
+        border: 'none',
         p: 0,
+        // after `m: 0`, otherwise the shorthand wipes it again
         m: 0,
+        marginBottom: '2px',
         minHeight: 'initial',
         '&:before': {
             opacity: 0,
@@ -130,16 +139,14 @@ const styles: Record<string, any> = {
     fieldInput: {
         width: '100%',
     },
+    // like the palette: the rows sit flush and read as a list, not as separate boxes
     groupSummary: {
-        marginTop: '10px',
-        borderRadius: '4px',
         padding: '2px',
+        paddingLeft: '8px',
     },
     groupSummaryExpanded: {
-        marginTop: '10px',
-        borderTopRightRadius: '4px',
-        borderTopLeftRadius: '4px',
         padding: '2px',
+        paddingLeft: '8px',
     },
     accordionOpenedSummary: {
         fontWeight: 'bold',
@@ -1492,7 +1499,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         this.state.accordionOpen[group.name] === 1 && group.hasValues
                             ? styles.groupSummaryExpanded
                             : styles.groupSummary,
-                        styles.lightedPanel,
+                        styles.groupSurface,
                     ),
                     '& .MuiAccordionSummary-content': Utils.getStyle(
                         this.props.theme,

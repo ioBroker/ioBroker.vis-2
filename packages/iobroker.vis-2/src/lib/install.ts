@@ -9,12 +9,8 @@ import {
     rmdirSync,
 } from 'node:fs';
 import { join, basename, normalize } from 'node:path';
-import mime from 'mime';
-import { createHash } from 'node:crypto';
 
 const wwwDir = existsSync(`${__dirname}/../../www/`) ? `${__dirname}/../../www/` : `${__dirname}/../www/`;
-
-const TEXT_TYPES = ['application/json', 'application/javascript', 'image/svg+xml'];
 
 const generic = ['basic', 'jqplot', 'jqui', 'swipe', 'tabs'];
 
@@ -34,30 +30,9 @@ function copyFileSync(source: string, target: string, forceBuild?: boolean): boo
     }
     if (existsSync(targetFile)) {
         const newFile = readFileSync(source);
-        const oldFile = readFileSync(targetFile);
-        const type = mime.getType(source);
-        !type && console.log(`Unknown file type: ${source}`);
-        if (newFile.byteLength !== oldFile.byteLength || forceBuild) {
+        if (forceBuild || !newFile.equals(readFileSync(targetFile))) {
             changed = true;
             writeFileSync(targetFile, newFile);
-        } else if (type && (type.startsWith('text/') || TEXT_TYPES.includes(type))) {
-            if (newFile.toString('utf8') !== oldFile.toString('utf8')) {
-                changed = true;
-                writeFileSync(targetFile, newFile);
-            }
-        } else {
-            const hashSumOld = createHash('sha256');
-            hashSumOld.update(oldFile);
-            const hexOld = hashSumOld.digest('hex');
-
-            const hashSumNew = createHash('sha256');
-            hashSumNew.update(newFile);
-            const hexNew = hashSumNew.digest('hex');
-
-            if (hexNew !== hexOld) {
-                changed = true;
-                writeFileSync(targetFile, newFile);
-            }
         }
     } else {
         changed = true;

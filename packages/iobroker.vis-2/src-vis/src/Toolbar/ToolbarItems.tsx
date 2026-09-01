@@ -27,14 +27,16 @@ import type Editor from '@/Editor';
 import MultiSelect from './MultiSelect';
 
 const styles: Record<string, any> = {
-    toolbarBlock: {
+    // a group of the header: the kit separates with a hairline instead of a drawn frame, and every
+    // distance is a multiple of 4
+    toolbarBlock: (theme: VisTheme): React.CSSProperties => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        borderRightStyle: 'solid',
-        padding: '0px 10px',
-        borderWidth: 1,
-    },
+        borderRight: `1px solid ${theme.palette.divider}`,
+        padding: '0 12px',
+        gap: 4,
+    }),
     disabled: (theme: VisTheme) => ({
         color: theme.palette.action.disabled,
     }),
@@ -52,8 +54,10 @@ const styles: Record<string, any> = {
         flexDirection: 'row',
     },
     toolbarLabel: {
-        fontSize: '72%',
-        opacity: '80%',
+        fontSize: '68%',
+        opacity: 0.6,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
         paddingTop: 4,
     },
     toolbarTooltip: {
@@ -442,7 +446,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         }
 
         const div = (
-            <div style={{ ...styles.toolbarBlock, borderRightWidth: this.props.last ? 0 : undefined }}>
+            <div style={{ ...styles.toolbarBlock(this.props.theme), borderRightWidth: this.props.last ? 0 : undefined }}>
                 <div style={styles.toolbarItems}>
                     {items.map((item, key) => {
                         if (Array.isArray(item)) {

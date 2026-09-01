@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import commonjs from 'vite-plugin-commonjs';
-import vitetsConfigPaths from 'vite-tsconfig-paths';
 import { federation } from '@module-federation/vite';
 import { resolve } from 'node:path';
 import { moduleFederationShared } from '@iobroker/types-vis-2/modulefederation.vis.config';
@@ -25,7 +24,26 @@ export default defineConfig({
             exposes: {
                 './visRxWidget': './src/Vis/visRxWidget',
             },
-            remotes: {},
+            // vis-2 registers its remotes - the widget sets - at runtime with `registerRemotes()`, so there is
+            // nothing to declare here. One is declared anyway: @module-federation/vite decides by `exposes` and
+            // `remotes` alone whether it builds a host or a remote, and "exposes but no remotes" makes vis-2 a
+            // REMOTE. For a remote the plugin defers every shared module to the federation bootstrap: the
+            // exports of `react/jsx-runtime`, `@mui/system`, ... become `let` bindings that are filled
+            // asynchronously, and whatever uses them while a module is evaluated (every MUI icon, MUI's own
+            // theme setup) dies with `jsx is not a function` or `createCssVarsProvider is not a function`.
+            // One declared remote turns vis-2 back into the host it is, and the shares are provided
+            // synchronously from the local copies again. The plugin preloads every declared remote from its
+            // entry bootstrap, so the entry has to exist: `public/vis2-dynamic-remotes.js` is an inert remote
+            // that hands out an empty module. The runtime resolves a relative entry against the origin, not
+            // the page, hence the same `./vis-2/` prefix the widget sets get (VIS2_URL_PREFIX in
+            // visLoadWidgets.tsx); the dev server proxies `/vis-2` to ioBroker web.
+            remotes: {
+                vis2DynamicRemotes: {
+                    type: 'module',
+                    name: 'vis2DynamicRemotes',
+                    entry: './vis-2/vis2-dynamic-remotes.js',
+                },
+            },
             filename: 'remoteEntry.js',
             manifest: true,
             dts: false,
@@ -37,7 +55,6 @@ export default defineConfig({
             promiseImportName: (i: number): string => `__tla_${i}`,
         }),
         react(),
-        vitetsConfigPaths(),
         commonjs(),
     ],
     server: {
@@ -60,6 +77,7 @@ export default defineConfig({
             '@': resolve(__dirname, 'src'),
             '@iobroker/types-vis-2': resolve(__dirname, '..', '..', 'types-vis-2'),
         },
+        tsconfigPaths: true,
     },
     build: {
         target: 'chrome81',

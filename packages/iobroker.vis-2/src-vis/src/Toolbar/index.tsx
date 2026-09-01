@@ -57,7 +57,12 @@ const styles: Record<string, any> = {
         width: 22,
         height: 22,
     },
-    lightedPanel: (theme: VisTheme): React.CSSProperties => theme.classes.lightedPanel,
+    // "Kopfzeile - Haarlinie statt Schatten": a header is separated by a line, it is not a card - so it
+    // takes the surface colour and a bottom hairline instead of theme.classes.lightedPanel
+    header: (theme: VisTheme): React.CSSProperties => ({
+        backgroundColor: theme.palette.background.paper,
+        borderBottom: `1px solid ${theme.palette.divider}`,
+    }),
     toolbar: (theme: VisTheme): React.CSSProperties => theme.classes.toolbar,
     narrowToolbar: {
         pt: '4px',
@@ -406,7 +411,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
         return (
             <Box
                 component="div"
-                sx={styles.lightedPanel}
+                sx={styles.header}
             >
                 <style>
                     {`

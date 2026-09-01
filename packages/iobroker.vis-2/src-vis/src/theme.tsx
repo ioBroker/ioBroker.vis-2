@@ -16,6 +16,15 @@ export default function createTheme(
     const danger = '#dd5325';
     const success = '#73b6a8';
     let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
+
+    // No radius override: the editor keeps square corners - rounded panels read as dated here.
+    // "trennt, umrandet aber nicht" - the kit separates with a hairline instead of framing with a border.
+    // The value is the one of the dark sheet; in the light theme that light blue would be invisible, so
+    // there the MUI divider stays. It is applied where it is needed rather than as `palette.divider`: with
+    // `cssVariables` MUI builds --mui-palette-divider from `colorSchemes`, so neither a later assignment
+    // nor a palette override in createTheme would reach it.
+    const hairline = themeName === 'dark' || theme.palette.mode === 'dark' ? 'rgba(126, 195, 240, 0.14)' : theme.palette.divider;
+
     if (cssVariables) {
         // With CSS variables MUI resolves the text color of a `color="default"` Fab from the palette
         // (`--mui-palette-grey-900` resp. `--mui-palette-text-primary`) instead of contrasting it against
@@ -46,6 +55,9 @@ export default function createTheme(
                 },
             },
         ) as VisTheme;
+    } else {
+        // a nested theme must not emit the variables again, but it has to look the same
+        theme = muiCreateTheme({ ...theme }) as VisTheme;
     }
     theme.palette.text.danger = {
         color: danger,
@@ -65,10 +77,11 @@ export default function createTheme(
     } = {
         blockHeader: {
             fontSize: 16,
+            fontWeight: 600,
             textAlign: 'left',
             marginTop: '8px',
             borderRadius: '2px',
-            paddingLeft: '8px',
+            padding: '8px 12px',
         },
         viewTabs: {
             minHeight: 0,
@@ -78,7 +91,10 @@ export default function createTheme(
             minHeight: 0,
         },
         lightedPanel: {
-            backgroundColor: theme.palette.mode === 'dark' ? 'hsl(0deg 0% 20%)' : 'hsl(0deg 0% 90%)',
+            // Careful: this is applied to whole panels AND to single rows (the accordion summaries of the
+            // palette). A frame with a card radius turns a list into a row of capsules, so this stays a
+            // surface tint. The card look is built where an actual card is built.
+            backgroundColor: theme.palette.background.paper,
         },
         toolbar: {
             display: 'flex',

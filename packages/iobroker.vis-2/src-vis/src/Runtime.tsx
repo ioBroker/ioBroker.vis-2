@@ -263,7 +263,7 @@ export default class Runtime<
                 // host: '192.168.178.45',
             };
         }
-        if (window.socketUrl && window.socketUrl.startsWith(':')) {
+        if (window.socketUrl?.startsWith(':')) {
             window.socketUrl = `${window.location.protocol}//${window.location.hostname}${window.socketUrl}`;
         }
 

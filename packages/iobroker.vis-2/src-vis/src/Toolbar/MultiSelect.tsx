@@ -171,17 +171,22 @@ class MultiSelect extends Component<MultiSelectProps, MultiSelectState> {
                                 '& .MuiListItemText-secondary': styles.secondary,
                             }}
                             primary={text}
+                            // only when there is something to show: the span carries `background` and, with a
+                            // colour, a radius and padding, so an empty one is drawn as a small pill next to
+                            // the name. It is positioned absolutely and therefore does not even hold a place.
                             secondary={
-                                <span
-                                    style={{
-                                        ...(color ? styles.coloredSecondary : undefined),
-                                        color,
-                                        background: backColor,
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {subText}
-                                </span>
+                                subText ? (
+                                    <span
+                                        style={{
+                                            ...(color ? styles.coloredSecondary : undefined),
+                                            color,
+                                            background: backColor,
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {subText}
+                                    </span>
+                                ) : undefined
                             }
                         />
                         <ListItemIcon style={{ minWidth: 16 }}>

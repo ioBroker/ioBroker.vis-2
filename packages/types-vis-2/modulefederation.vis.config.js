@@ -32,7 +32,7 @@ function makeShared(pkgs) {
  * Package a shared entry belongs to.
  *
  * Some entries of the list are sub-paths (`react/jsx-runtime`, `react-dom/client`, the i18n JSONs of
- * adapter-react-v5). They never appear in a package.json on their own, so filtering the list against the
+ * gui-components). They never appear in a package.json on their own, so filtering the list against the
  * dependencies of a component has to compare the package they belong to - otherwise exactly those entries that
  * MUST be shared would silently be dropped for every component that passes its package.json.
  *
@@ -98,7 +98,11 @@ export function moduleFederationShared(packageJson) {
         '@iobroker/gui-components/i18n/ru.json',
         '@iobroker/gui-components/i18n/uk.json',
         '@iobroker/gui-components/i18n/zh-cn.json',
-        '@iobroker/vis-2-widgets-react-dev',
+        // `@iobroker/vis-2-widgets-react-dev` is deliberately NOT in this list. It is a build helper of the
+        // widget sets whose runtime part is only a dummy `VisRxWidget` for their stand-alone demo page - the
+        // real class reaches a widget set via `window.visRxWidget`. vis-2 never imports it, and since
+        // @module-federation/vite 1.21 bundles every shared entry, the dummy would drag its undeclared
+        // `@iobroker/adapter-react-v5` (built for MUI 6, `Grid2`) into the host build and break it.
         '@mui/icons-material',
         '@mui/material',
         // Holds the ThemeContext that `useTheme()` reads. It stays a singleton on purpose although the MUI
@@ -107,15 +111,14 @@ export function moduleFederationShared(packageJson) {
         // MUI theme, which is always the light one
         '@mui/private-theming',
         '@mui/system',
-        'prop-types',
         'react',
         'react-dom',
         'react-dom/client',
         // The JSX runtime must be shared together with react itself. A component that bundles its own copy
-        // creates its elements with the element symbol of ITS react version, and since React 19 renamed that
+        // creates its elements with the element symbol of ITS React version, and since React 19 renamed that
         // symbol (`react.element` -> `react.transitional.element`) to detect exactly this situation, the host
         // does not accept those elements anymore. Sharing it makes every component use the JSX runtime of the
-        // host, no matter which react version it was built against.
+        // host, no matter which React version it was built against.
         'react/jsx-runtime',
         // Development builds of a component (the widget development mode loads them from localhost:4173) use
         // the dev variant instead

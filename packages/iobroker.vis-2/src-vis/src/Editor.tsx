@@ -98,24 +98,33 @@ import type { VisEngineHandlers } from './Vis/visView';
 
 const styles: Record<string, any> = {
     block: {
+        // A flex column so the content area can take whatever the header and the tabs leave over. `overflow`
+        // stays on `auto` as a safety net - nothing may become unreachable if a panel ever grows.
+        display: 'flex',
+        flexDirection: 'column',
         overflow: 'auto',
-        height: 'calc(100vh - 102px)',
-        padding: '0px 8px',
+        height: '100%',
+        // Horizontal only, on the 4 grid: the column fills its parent, so padding added top and bottom
+        // would turn straight into a scrollbar. `boxSizing` keeps the border inside that height.
+        padding: '0 12px',
+        // the border has to be inside the height, as the document is on `content-box` since `CssBaseline`
+        // was removed - otherwise every panel grows by 2px and the columns no longer line up
+        boxSizing: 'border-box',
     },
     blockNarrow: {
-        height: 'calc(100vh - 67px)',
+        height: '100%',
     },
     blockVeryNarrow: {
-        height: 'calc(100vh - 39px)',
+        height: '100%',
     },
     canvas: {
-        height: 'calc(100vh - 154px)',
+        height: '100%',
     },
     canvasNarrow: {
-        height: 'calc(100vh - 119px)',
+        height: '100%',
     },
     canvasVeryNarrow: {
-        height: 'calc(100vh - 91px)',
+        height: '100%',
     },
     menu: {
         display: 'flex',
@@ -124,6 +133,13 @@ const styles: Record<string, any> = {
     app: (theme: IobTheme): React.CSSProperties => ({
         backgroundColor: theme.palette.background.default,
         color: theme.palette.text.primary,
+        // The toolbar takes the height it needs, the work area gets the rest. The columns used to guess the
+        // height of the toolbar and were a few pixels too tall, which gave every column a second scrollbar
+        // next to the one of its own list.
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
     }),
     tabsContainer: {
         width: '100%',
@@ -1998,10 +2014,14 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     renderPalette(): React.JSX.Element {
         return (
             <div
+                className="vis-editor-column"
                 style={{
                     ...styles.block,
                     ...(this.state.toolbarHeight === 'narrow' ? styles.blockNarrow : undefined),
                     ...(this.state.toolbarHeight === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
+                    ...this.state.theme.classes.lightedPanel,
+                    // square corners on purpose: a rounded panel reads as dated in this editor
+                    border: `1px solid ${this.state.theme.palette.divider}`,
                     display: this.state.hidePalette ? 'none' : undefined,
                 }}
             >
@@ -2094,10 +2114,14 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     renderAttributes(): React.JSX.Element {
         return (
             <div
+                className="vis-editor-column"
                 style={{
                     ...styles.block,
                     ...(this.state.toolbarHeight === 'narrow' ? styles.blockNarrow : undefined),
                     ...(this.state.toolbarHeight === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
+                    ...this.state.theme.classes.lightedPanel,
+                    // square corners on purpose: a rounded panel reads as dated in this editor
+                    border: `1px solid ${this.state.theme.palette.divider}`,
                 }}
             >
                 <Attributes
@@ -2446,6 +2470,17 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     <ScrollbarStyles theme={this.state.theme} />
                     <style>
                         {`
+/* the header and the tabs of a column take their height, the content area takes the rest - without this
+   the margins of the heading push the column past its own height and it grows a second scrollbar */
+.vis-editor-column > :last-child {
+    flex: 1;
+    min-height: 0;
+}
+/* the heading brings a top margin of its own, which counts towards the height of the column and is what
+   is left over for a second scrollbar - at the very top of a panel it has nothing to space out anyway */
+.vis-editor-column > :first-child {
+    margin-top: 0;
+}
 @keyframes colorBlink {
     0% {
         color: #FF0000;
@@ -2546,7 +2581,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             version={this.props.version}
                         />
                         <div
-                            style={{ position: 'relative' }}
+                            // `minHeight: 0` is what lets a flex child shrink to its share instead of
+                            // growing with its content
+                            style={{ position: 'relative', flex: 1, minHeight: 0 }}
                             ref={this.mainRef}
                         >
                             <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>

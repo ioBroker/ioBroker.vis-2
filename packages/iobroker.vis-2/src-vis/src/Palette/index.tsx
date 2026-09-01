@@ -71,9 +71,17 @@ const styles: Record<string, any> = {
     labelShrink: {
         display: 'none',
     },
+    groupSurface: (theme: VisTheme): React.CSSProperties => ({
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+    }),
     accordionRoot: {
+        // Surfaces instead of lines, like the attributes: the group header carries its own background and
+        // the 2px gap lets the darker panel show through as the separator.
+        border: 'none',
         p: 0,
+        // after `m: 0`, otherwise the shorthand wipes it again
         m: 0,
+        marginBottom: '2px',
         width: '100%',
         minHeight: 'initial',
         '&:before': {
@@ -395,13 +403,19 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     expandIcon={<ExpandMoreIcon />}
                     className={Utils.clsx('vis-palette-widget-set', opened && 'vis-palette-summary-expanded')}
                     sx={{
-                        ...Utils.getStyle(
-                            this.props.theme,
-                            commonStyles.clearPadding,
-                            opened ? styles.groupSummaryExpanded : styles.groupSummary,
-                            styles.lightedPanel,
-                            { minHeight: 0 },
-                        ),
+                        // nested under the class, see the widget set header below
+                        '&.MuiAccordionSummary-root': {
+                            ...Utils.getStyle(
+                                this.props.theme,
+                                commonStyles.clearPadding,
+                                opened ? styles.groupSummaryExpanded : styles.groupSummary,
+                                styles.groupSurface,
+                                { minHeight: 0 },
+                            ),
+                            // `clearPadding` removes the indent as well, so the label would sit right on
+                            // the edge of the panel
+                            paddingLeft: '8px',
+                        },
                         '& .MuiAccordionSummary-content': {
                             ...commonStyles.clearPadding,
                             ...(opened ? styles.accordionOpenedSummary : undefined),
@@ -661,7 +675,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 10,
+                        // 2, like the gap between the groups of the attributes - 10 made the palette rows
+                        // sit visibly further apart than the ones on the other side
+                        gap: 2,
                         textAlign: 'center',
                         overflowY: 'auto',
                         height: 'calc(100% - 86px)',
@@ -723,14 +739,22 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         this.state.accordionOpen[category] && 'vis-palette-summary-expanded',
                                     )}
                                     sx={{
-                                        ...Utils.getStyle(
-                                            this.props.theme,
-                                            commonStyles.clearPadding,
-                                            this.state.accordionOpen[category]
-                                                ? styles.groupSummaryExpanded
-                                                : styles.groupSummary,
-                                            styles.lightedPanel,
-                                        ),
+                                        // nested under the class on purpose: flat properties lose against
+                                        // MUI's own `.MuiAccordionSummary-root { min-height: 48px }`, which
+                                        // is what made these rows taller than the ones of the attributes
+                                        '&.MuiAccordionSummary-root': {
+                                            ...Utils.getStyle(
+                                                this.props.theme,
+                                                commonStyles.clearPadding,
+                                                this.state.accordionOpen[category]
+                                                    ? styles.groupSummaryExpanded
+                                                    : styles.groupSummary,
+                                                styles.groupSurface,
+                                            ),
+                                            // `clearPadding` removes the indent as well, so the label would
+                                            // sit right on the edge of the panel
+                                            paddingLeft: '8px',
+                                        },
                                         '&.Mui-expanded': { minHeight: 0 },
                                         '& .MuiAccordionSummary-content': {
                                             ...commonStyles.clearPadding,
