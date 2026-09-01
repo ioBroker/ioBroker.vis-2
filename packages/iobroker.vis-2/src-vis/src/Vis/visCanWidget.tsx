@@ -368,6 +368,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     // Move helper to actual widget
                     this.refService.current.style.left = `${this.widDiv.offsetLeft}px`;
                     this.refService.current.style.top = `${this.widDiv.offsetTop}px`;
+                    // the marks are drawn in the layer of the view and follow the service div, so they have to
+                    // be told whenever it is moved past a render
+                    this.updateMarksRect();
                 }
             } else if (command === 'updateContainers') {
                 // try to find 'vis-view-container' in it
@@ -1576,6 +1579,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                                 this.refService.current.style.left = `${this.widDiv.offsetLeft}px`;
                                 this.refService.current.style.top = `${this.widDiv.offsetTop}px`;
                             }
+                            this.updateMarksRect();
                         }
                     }, 50);
                 }

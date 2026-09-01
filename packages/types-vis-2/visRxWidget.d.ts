@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2022-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2022-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -116,7 +116,7 @@ declare class VisRxWidget<
      */
     isWidgetVisibleForGroup(newState: typeof this.newState): boolean;
     /**
-     * Checks if widget is visible, according to the state, id
+     * Checks if the widget is visible, according to the state, id
      *
      * @param stateId state id to check visibility for
      * @param newState the new state
@@ -144,7 +144,7 @@ declare class VisRxWidget<
         wid: AnyWidgetId,
         props?: {
             index?: number;
-            refParent?: React.RefObject<HTMLDivElement>;
+            refParent?: React.RefObject<HTMLDivElement | null>;
             isRelative?: boolean;
         },
     ): JSX.Element | null;

@@ -44,6 +44,13 @@ export default defineConfig({
                     entry: './vis-2/vis2-dynamic-remotes.js',
                 },
             },
+            // Every shared module is a singleton, and this decides WHOSE copy the single instance is. With the
+            // default `version-first` a widget set can overwrite the registration of vis-2 as long as the module
+            // is not loaded yet - measured: `@mui/material` was then provided by the `echarts` widget set, not by
+            // vis-2. `loaded-first` makes the registration of the host stick (the runtime skips the overwrite for
+            // an active share whose strategy is `loaded-first`), so a widget set always renders with the MUI,
+            // react and gui-components of vis-2, whatever version it was built against.
+            shareStrategy: 'loaded-first',
             filename: 'remoteEntry.js',
             manifest: true,
             dts: false,

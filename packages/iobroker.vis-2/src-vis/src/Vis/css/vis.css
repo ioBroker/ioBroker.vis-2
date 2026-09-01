@@ -72,6 +72,16 @@ html {
     background-size: 1em 1em;
 }
 
+/*
+ * The marks of the widgets - name plates and resize handles - are drawn in one layer per view instead of inside
+ * the widgets, see visAdornerLayer.ts. The layer covers the whole view and therefore has to let every click
+ * through; only the marks themselves take the mouse back.
+ */
+.vis-adorner-layer .vis-editmode-widget-name,
+.vis-adorner-layer .vis-editmode-resizer {
+    pointer-events: auto;
+}
+
 .vis-editmode-overlay {
     width: 100%;
     height: 100%;
@@ -91,9 +101,13 @@ html {
     position: absolute;
 }
 
-/* The frame around a selected widget is drawn by getResizeHandlers(), also when several are selected */
+/*
+ * A selected widget is washed in the blue of the editor - the overlay is at `opacity: 0.3`, so the widget stays
+ * readable through it. The frame around it is drawn by getResizeHandlers(), also when several are selected.
+ */
 .vis-editmode-selected.vis-editmode-overlay {
     z-index: 1001;
+    background-color: #0d72b8;
 }
 
 /* the widget names are hidden, so the selection has to carry more weight */

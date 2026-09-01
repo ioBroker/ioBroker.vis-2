@@ -14,12 +14,15 @@
  */
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui/icons-material';
 
 import { I18n, Utils } from '@iobroker/gui-components';
 
 import { calculateOverflow, deepClone, isVarFinite } from '@/Utilities/utils';
+
+import { getAdornerLayer } from './visAdornerLayer';
 import type {
     AnyWidgetId,
     ResizeHandler,
@@ -161,6 +164,19 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
     protected refService = React.createRef<HTMLDivElement>();
 
+    /** The div in the adorner layer that carries the marks of this widget */
+    protected refMarks = React.createRef<HTMLDivElement>();
+
+    /**
+     * Where the marks sit: the padding box of this widget in the coordinates of the adorner layer.
+     *
+     * Deliberately NOT state. Measuring it and putting it into state renders the widget a second time after
+     * every render, and a gesture that writes the position into the DOM is undone by that render - the widget
+     * jumped back to its old place and forward again with the next mouse move. The value is written straight to
+     * the div instead, and render() only uses it as the starting point for a fresh one.
+     */
+    protected marksRect: { left: number; top: number; width: number; height: number } | null = null;
+
     protected widDiv: null | CanHTMLDivElement = null;
 
     readonly onCommandBound: typeof this.onCommand;
@@ -282,9 +298,58 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 onTempSelect: this.onTempSelect,
                 onCommand: this.onCommandBound,
             });
+
+        this.updateMarksRect();
+    }
+
+    /**
+     * Put the marks of this widget onto it.
+     *
+     * They are drawn in the adorner layer of the view and not as children of the widget, so their position has
+     * to be measured. This runs in the commit phase, before the browser paints, so a `setState` here is applied
+     * in the same frame and the marks do not lag behind while a widget is dragged.
+     */
+    protected updateMarksRect(): void {
+        const service = this.refService.current;
+        const layer = this.state.editMode ? getAdornerLayer(this.props.view) : null;
+
+        if (!service || !layer) {
+            this.marksRect = null;
+            return;
+        }
+
+        const box = service.getBoundingClientRect();
+        const layerBox = layer.getBoundingClientRect();
+        const style = window.getComputedStyle(service);
+        const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+        const borderRight = parseFloat(style.borderRightWidth) || 0;
+        const borderTop = parseFloat(style.borderTopWidth) || 0;
+        const borderBottom = parseFloat(style.borderBottomWidth) || 0;
+
+        // The marks used to be children of the widget and are therefore placed against its PADDING box - the
+        // offsets of the resize handles even subtract the border width to get there. Mirroring that box keeps
+        // every one of those rules working unchanged.
+        const rect = {
+            left: box.left - layerBox.left + borderLeft,
+            top: box.top - layerBox.top + borderTop,
+            width: box.width - borderLeft - borderRight,
+            height: box.height - borderTop - borderBottom,
+        };
+
+        this.marksRect = rect;
+
+        const marks = this.refMarks.current;
+        if (marks) {
+            marks.style.left = `${rect.left}px`;
+            marks.style.top = `${rect.top}px`;
+            marks.style.width = `${rect.width}px`;
+            marks.style.height = `${rect.height}px`;
+        }
     }
 
     componentDidUpdate(_prevProps?: VisBaseWidgetProps, _prevState?: Readonly<TState>): void {
+        this.updateMarksRect();
+
         const gesture = this.state.gesture;
         // while the gesture is running it is the truth and must stay
         if (!gesture || this.movement) {
@@ -381,7 +446,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
 
             // show resizers again
-            const resizers = this.refService.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
+            const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
             resizers?.forEach(item => (item.style.display = 'block'));
 
             if (command === 'stopResize') {
@@ -705,9 +770,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                         height: rect.height,
                     };
                 }
-                const resizers: NodeListOf<ResizerElement> =
-                    this.refService.current.querySelectorAll('.vis-editmode-resizer');
-                resizers.forEach(item => {
+                const resizers = this.refMarks.current?.querySelectorAll<ResizerElement>('.vis-editmode-resizer');
+                resizers?.forEach(item => {
                     item._storedOpacity = item.style.opacity;
                     item.style.opacity = '0.3';
                 });
@@ -750,7 +814,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // end of resize
             if (save) {
                 const resizers =
-                    this.refService.current?.querySelectorAll<HTMLDivElementResizers>('.vis-editmode-resizer');
+                    this.refMarks.current?.querySelectorAll<HTMLDivElementResizers>('.vis-editmode-resizer');
                 resizers?.forEach(item => {
                     if (item._storedOpacity !== undefined) {
                         item.style.opacity = item._storedOpacity;
@@ -798,9 +862,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             };
 
             // hide resizers
-            const resizers: NodeListOf<HTMLDivElement> =
-                this.refService.current.querySelectorAll('.vis-editmode-resizer');
-            resizers.forEach(item => (item.style.display = 'none'));
+            const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
+            resizers?.forEach(item => (item.style.display = 'none'));
         } else if (this.movement && y !== undefined && x !== undefined) {
             // move widget
             const leftPx = this.movement.left + x;
@@ -819,9 +882,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // End of movement
             if (save) {
                 // show resizers
-                const resizers: NodeListOf<HTMLDivElement> =
-                    this.refService.current.querySelectorAll('.vis-editmode-resizer');
-                resizers.forEach(item => (item.style.display = 'block'));
+                const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
+                resizers?.forEach(item => (item.style.display = 'block'));
 
                 if (this.props.isRelative) {
                     // A relative widget carries no position of its own; where it lands is decided by the order,
@@ -2025,6 +2087,37 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             serviceStyle = { ...serviceStyle, cursor: 'crosshair' };
         }
 
+        // The name plate and the resize handles are drawn outside the widget, so they are not its children: they
+        // go into the adorner layer of the view, onto a div that mirrors the padding box of this widget. The
+        // overlay stays here - it covers the widget exactly and decides which widget a click selects, which has
+        // to keep following the order of the widgets themselves.
+        const resizeHandlers = this.getResizeHandlers(selected, widget, borderWidth);
+        const layer = this.state.editMode ? getAdornerLayer(this.props.view) : null;
+        const marksRect = this.marksRect;
+        const marks =
+            layer && (widgetName || resizeHandlers)
+                ? createPortal(
+                      <div
+                          ref={this.refMarks}
+                          className="vis-editmode-marks"
+                          style={{
+                              position: 'absolute',
+                              // the last measurement; updateMarksRect() writes the exact values after this render
+                              left: marksRect?.left ?? 0,
+                              top: marksRect?.top ?? 0,
+                              width: marksRect?.width ?? 0,
+                              height: marksRect?.height ?? 0,
+                              // the layer lets clicks through; only the marks themselves take the mouse back
+                              pointerEvents: 'none',
+                          }}
+                      >
+                          {widgetName}
+                          {resizeHandlers}
+                      </div>,
+                      layer,
+                  )
+                : null;
+
         return (
             <div
                 id={props.id}
@@ -2036,11 +2129,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             >
                 {signals}
                 {lastChange}
-                {widgetName}
                 {overlay}
-                {this.getResizeHandlers(selected, widget, borderWidth)}
                 {rxWidget}
                 {groupInstructions}
+                {marks}
             </div>
         );
     }

@@ -87,7 +87,7 @@
         "5-patch": "node tasks --5-patch",
         "build-editor": "node tasks --build-editor",
         "update-packages": "npx -y npm-check-updates --upgrade && cd src-vis && npx -y npm-check-updates --upgrade && cd ..",
-        "npm": "npm i -f && cd src-vis && npm i -f"
+        "npm": "npm i && cd src-vis && npm i"
     },
     "license": "CC-BY-NC-4.0"
 }

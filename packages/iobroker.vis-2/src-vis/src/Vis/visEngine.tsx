@@ -2484,7 +2484,9 @@ ${this.scripts}
             setTimeInterval: this.setTimeInterval,
             setTimeStart: this.setTimeStart,
             setValue: this.setValue,
-            showWidgetNames: !!this.props.showWidgetNames,
+            // Nobody passes this prop today, and the widgets ask for `!== false`: not passing it has to mean
+            // "show the name plate", otherwise `!!undefined` switched the plate off for the whole editor.
+            showWidgetNames: this.props.showWidgetNames !== false,
             socket: this.props.socket,
             systemConfig: this.systemConfig,
             theme: this.props.theme,

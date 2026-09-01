@@ -8,33 +8,32 @@ export interface VisSharedModuleConfig {
 }
 
 /**
- * Packages that may exist more than once in the browser.
+ * Every shared module is a singleton that accepts any version.
  *
  * React must never be duplicated - widgets extend the `VisRxWidget` of vis-2 and render into its tree, so a
- * second React means a second context registry and nothing works anymore. MUI is different: two MUI majors can
- * live side by side in one React tree. A widget set built against an older MUI major therefore keeps its own
- * copy instead of being given the one of vis-2, where removed or changed components (`Grid`, `@mui/styles`,
- * dropped props) would break it.
+ * second React means a second context registry and nothing works anymore.
  *
- * `@mui/system` and `@mui/icons-material` belong to the same major as `@mui/material` and must follow it -
- * material of one major with the system of another is broken.
+ * MUI used to be exempt from that: `@mui/material` and `@mui/system` were shared with the version range of the
+ * consumer, so a widget set only got the copy of vis-2 while the two ranges overlapped. That is too narrow in
+ * practice - a set built against 9.1.0 while vis-2 ships 9.1.2 already carried its own copy - and it also costs
+ * size, because a bundled share is bundled as a whole namespace. They are singletons with `requiredVersion: '*'`
+ * now, so a widget set always renders with the MUI of vis-2, whatever patch or minor it was built against.
  *
- * The theme survives the split because it does not travel through MUI: `styled()` reads it from the
- * ThemeContext of `@emotion/react` and `useTheme()` from `@mui/private-theming` - both stay singletons, so the
- * `ThemeProvider` of vis-2 also reaches a widget that brought its own MUI.
+ * The price is that a widget set built against an OLDER MUI MAJOR is handed a MUI it was not compiled for, where
+ * removed or changed components (`Grid`, `@mui/styles`, dropped props) can break it. That is acceptable because
+ * such a set cannot run here anyway: every widget set of MUI 5 or 6 is a react 18 build, and those are already
+ * recognized and skipped by `visWidgetSetCompatibility.ts` before a single module of them is evaluated.
  *
- * Only widget sets that are BUILT AGAIN with this version profit from it. An already published widget set has
- * its shared configuration baked into its remoteEntry, still asks for a singleton and is therefore still given
- * the MUI of vis-2. For those the error boundary around every widget remains the only safety net.
+ * `@mui/styles` is deliberately absent: it does not exist beyond MUI 6, so vis-2 has nothing to provide and the
+ * plugin would abort the build over a shared module it cannot resolve.
+ *
+ * The theme reaches a widget either way, because it does not travel through MUI: `styled()` reads it from the
+ * ThemeContext of `@emotion/react` and `useTheme()` from `@mui/private-theming`.
  */
-const VERSIONED_PACKAGES = ['@mui/icons-material', '@mui/material', '@mui/styles', '@mui/system'];
-
 function makeShared(pkgs: string[]): { [packageName: string]: VisSharedModuleConfig } {
     const result: { [packageName: string]: VisSharedModuleConfig } = {};
     pkgs.forEach(packageName => {
-        result[packageName] = VERSIONED_PACKAGES.includes(packageName)
-            ? { singleton: false }
-            : { requiredVersion: '*', singleton: true };
+        result[packageName] = { requiredVersion: '*', singleton: true };
     });
     return result;
 }
@@ -105,24 +104,29 @@ export function moduleFederationShared(packageJson?: Record<string, any> | strin
         // `@emotion/react` above.
         '@emotion/react',
         '@iobroker/gui-components',
-        '@iobroker/gui-components/i18n/de.json',
-        '@iobroker/gui-components/i18n/en.json',
-        '@iobroker/gui-components/i18n/es.json',
-        '@iobroker/gui-components/i18n/fr.json',
-        '@iobroker/gui-components/i18n/it.json',
-        '@iobroker/gui-components/i18n/nl.json',
-        '@iobroker/gui-components/i18n/pl.json',
-        '@iobroker/gui-components/i18n/pt.json',
-        '@iobroker/gui-components/i18n/ru.json',
-        '@iobroker/gui-components/i18n/uk.json',
-        '@iobroker/gui-components/i18n/zh-cn.json',
         // `@iobroker/vis-2-widgets-react-dev` is deliberately NOT in this list. It is a build helper of the
         // widget sets whose runtime part is only a dummy `VisRxWidget` for their stand-alone demo page - the
         // real class reaches a widget set via `window.visRxWidget`. vis-2 never imports it, and since
         // @module-federation/vite 1.21 bundles every shared entry, the dummy would drag its undeclared
         // `@iobroker/adapter-react-v5` (built for MUI 6, `Grid2`) into the host build and break it.
-        '@mui/icons-material',
         '@mui/material',
+        // `@mui/icons-material` is deliberately NOT shared. An icon is a stateless SVG component - no context,
+        // no singleton, two copies in one page are harmless - but a shared entry is bundled as a whole
+        // namespace, so the host had to carry all ~10700 icons (13683 SVG paths, 3.1 MB of raw path data)
+        // although vis-2 uses 83 of them. And being a versioned package, only a widget set of the SAME MUI
+        // major was ever given that copy; every set of an older major kept its own anyway. A set now bundles
+        // the handful it uses, tree-shaken - for the sets in this repository that is around 50 icons each.
+        // Measured: the build of vis-2 goes from 11 MB to 6.3 MB by this entry alone.
+        //
+        // The i18n JSONs of `@iobroker/gui-components` (and of `@iobroker/adapter-react-v5` before them) are
+        // gone for the same reason: no widget set ever imported them, vis-2 does not either, and as shared
+        // entries they were bundled a second time next to the copy inside gui-components (444 kB).
+        //
+        // `moment` on the other hand is used by vis-2 itself (visEngine, visFormatUtils, WidgetBindingField)
+        // and by half of the widget sets, so sharing it costs the host nothing - a package the host already
+        // bundles is free as a share, one it does not use costs its full size (`echarts` was measured at
+        // +1.7 MB and vis-2 never imports it).
+        'moment',
         // Holds the ThemeContext that `useTheme()` reads. It stays a singleton on purpose although the MUI
         // packages around it are versioned: that is what lets the `ThemeProvider` of vis-2 still reach a widget
         // set that brought its own MUI major. Without it such a widget would silently fall back to the default

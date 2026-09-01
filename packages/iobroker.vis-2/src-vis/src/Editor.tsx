@@ -118,13 +118,12 @@ const styles: Record<string, any> = {
         height: '100%',
     },
     canvas: {
-        height: '100%',
-    },
-    canvasNarrow: {
-        height: '100%',
-    },
-    canvasVeryNarrow: {
-        height: '100%',
+        // The workspace is a flex column of `renderTabs()` and this - so the canvas takes the rest instead of
+        // asking for a percentage of it. A `height: '100%'` here resolved against the auto-height wrapper and
+        // therefore collapsed to zero, which took the drop area of `ViewDrop` with it: a widget could not be
+        // dropped on a view at all. `minHeight: 0` is what lets a flex child shrink below its content.
+        flex: 1,
+        minHeight: 0,
     },
     menu: {
         display: 'flex',
@@ -2056,13 +2055,17 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         const visEngine = this.getVisEngine();
 
         return (
-            <div key="engine">
+            <div
+                key="engine"
+                // Fills the pane of the splitter, so the canvas below has a definite height to take its share
+                // of. Without it the wrapper is only as tall as the tabs and every percentage height inside
+                // resolves to `auto`.
+                style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
+            >
                 {this.renderTabs()}
                 <div
                     style={{
                         ...styles.canvas,
-                        ...(this.state.toolbarHeight === 'narrow' ? styles.canvasNarrow : undefined),
-                        ...(this.state.toolbarHeight === 'veryNarrow' ? styles.canvasVeryNarrow : undefined),
                         overflow: this.state.editMode
                             ? 'auto'
                             : store.getState().visProject.___settings?.bodyOverflow || 'auto',

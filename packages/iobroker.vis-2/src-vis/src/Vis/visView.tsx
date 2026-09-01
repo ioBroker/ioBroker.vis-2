@@ -36,6 +36,7 @@ import type {
     ViewCommandOptions,
 } from '@iobroker/types-vis-2';
 import { hasWidgetAccess, isVarFinite } from '@/Utilities/utils';
+import { registerAdornerLayer } from './visAdornerLayer';
 import { recalculateFields, selectView, store } from '@/Store';
 
 import VisBaseWidget from './visBaseWidget';
@@ -158,6 +159,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     private readonly refRelativeView: React.RefObject<HTMLDivElement | null>;
 
+    /** Where the editor marks of every widget of this view are drawn, see visAdornerLayer.ts */
+    private readonly refAdornerLayer: React.RefObject<HTMLDivElement | null>;
+
+    /** The layer the widgets were told about, to notice when it appears or goes */
+    private announcedAdornerLayer: HTMLDivElement | null = null;
+
     /** The div with the limited screen size, that contains all widgets if the view is limited */
     private readonly refLimitScreen: React.RefObject<HTMLDivElement | null>;
 
@@ -210,6 +217,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
         this.refView = React.createRef();
         this.refRelativeView = React.createRef();
+        this.refAdornerLayer = React.createRef();
         this.refLimitScreen = React.createRef();
         this.refRelativeColumnsView = new Array(MAX_COLUMNS);
         for (let r = 0; r < MAX_COLUMNS; r++) {
@@ -225,8 +233,26 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.oldFilter = JSON.stringify((props.viewsActiveFilter && props.viewsActiveFilter[this.props.view]) || []);
     }
 
+    /**
+     * Tell the widgets of this view where to draw their marks.
+     *
+     * React commits the children before their parent, so a widget renders for the first time while the layer of
+     * the view does not exist yet and finds nothing to draw into. Announcing it afterwards therefore has to
+     * render the widgets again, once, when the layer appears or goes away.
+     */
+    private announceAdornerLayer(): void {
+        const layer = this.refAdornerLayer.current;
+        if (layer === this.announcedAdornerLayer) {
+            return;
+        }
+        this.announcedAdornerLayer = layer;
+        registerAdornerLayer(this.props.view, layer);
+        this.forceUpdate();
+    }
+
     async componentDidMount(): Promise<void> {
         this.updateViewWidth();
+        this.announceAdornerLayer();
 
         await this.promiseToCollect;
         this.props.context.linkContext.registerViewRef(this.props.view, this.refView, this.onCommand);
@@ -236,6 +262,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     componentWillUnmount(): void {
+        this.announcedAdornerLayer = null;
+        registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
 
         if (this.refView.current?._originalParent) {
@@ -1370,6 +1398,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     componentDidUpdate(): void {
+        // The layer only exists in edit mode, so it appears and goes again while the view lives
+        this.announceAdornerLayer();
         this.registerEditorHandlers();
         this.updateViewWidth();
 
@@ -2489,6 +2519,29 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     />
                 ))}
                 {renderedWidgets}
+                {this.props.editMode ? (
+                    <div
+                        className="vis-adorner-layer"
+                        ref={this.refAdornerLayer}
+                        // The layer covers the view and lets every click through; only the marks inside it take
+                        // the mouse back (`.vis-editmode-resizer` and `.vis-editmode-widget-name` in vis.css).
+                        //
+                        // The z-index has to clear the widgets (`visRxWidget` gives a selected one `800 + own`)
+                        // and the rulers at 1000, but it must stay BELOW the chrome of the editor, which is
+                        // portalled to the body and therefore compares against this layer directly: MUI puts an
+                        // app bar at 1100, a drawer at 1200, a dialog at 1300 and a tooltip at 1500. At 1400 a
+                        // name plate was drawn over the open dialog.
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            width: '100%',
+                            height: '100%',
+                            pointerEvents: 'none',
+                            zIndex: 1050,
+                        }}
+                    />
+                ) : null}
             </div>
         );
 
