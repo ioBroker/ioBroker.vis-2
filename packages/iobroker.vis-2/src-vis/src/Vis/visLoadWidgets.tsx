@@ -243,11 +243,20 @@ function getRemoteWidgets(
                                     let i18nPrefix = '';
                                     let i18nPromiseWait: Promise<void | null> | undefined;
 
+                                    // `collection.url` carries VIS2_URL_PREFIX for registerRemotes, which resolves
+                                    // it against the application root. `fetch` resolves against the current
+                                    // document instead, and that already sits under /vis-2/ - with the prefix the
+                                    // manifest and the language files were asked for under /vis-2/vis-2/... and
+                                    // always answered 404
+                                    const fetchUrl = collection.url.startsWith(VIS2_URL_PREFIX)
+                                        ? collection.url.substring(VIS2_URL_PREFIX.length)
+                                        : collection.url;
+
                                     // A widget set built for an older react throws while its module is
                                     // evaluated, deep inside `loadRemote()` - no widget exists yet, so the error
                                     // boundary around the widgets cannot catch it and the message points at
                                     // nothing. Ask the federation manifest of the set beforehand instead
-                                    const compatibility = checkWidgetSetCompatibility(collection.url);
+                                    const compatibility = checkWidgetSetCompatibility(fetchUrl);
 
                                     const loadComponentsIfCompatible = (): Promise<void[] | void> =>
                                         compatibility.then(problem => {
@@ -275,20 +284,13 @@ function getRemoteWidgets(
                                     // 1. Load language file ------------------
                                     // instance.common.visWidgets.i18n is deprecated
                                     if (collection.url && collection.i18n === true) {
-                                        // load i18n from files.
-                                        // `collection.url` carries VIS2_URL_PREFIX for registerRemotes, which resolves
-                                        // it against the application root. `fetch` resolves against the current
-                                        // document instead, and that already sits under /vis-2/ - keeping the prefix
-                                        // asked for /vis-2/vis-2/widgets/<set>/i18n/<lang>.json and always answered 404.
-                                        const baseUrl = collection.url.startsWith(VIS2_URL_PREFIX)
-                                            ? collection.url.substring(VIS2_URL_PREFIX.length)
-                                            : collection.url;
-                                        const pos = baseUrl.lastIndexOf('/');
+                                        // load i18n from files
+                                        const pos = fetchUrl.lastIndexOf('/');
                                         let i18nURL: string;
                                         if (pos !== -1) {
-                                            i18nURL = baseUrl.substring(0, pos);
+                                            i18nURL = fetchUrl.substring(0, pos);
                                         } else {
-                                            i18nURL = baseUrl;
+                                            i18nURL = fetchUrl;
                                         }
                                         const lang = I18n.getLanguage();
 
