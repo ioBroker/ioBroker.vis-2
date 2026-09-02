@@ -43,6 +43,7 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'iFrame 8',
             visPrev: 'widgets/basic/img/Prev_StatefulIFrame8.png',
+            visHelp: 'help_iframe8', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

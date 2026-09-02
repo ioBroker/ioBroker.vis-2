@@ -32,7 +32,8 @@ class BasicSvgBool extends VisRxWidget<RxData> {
             id: 'tplValueBoolCtrlSvg',
             visSet: 'basic',
             visName: 'Bool SVG',
-            visWidgetLabel: 'qui_Bool SVG',
+            visWidgetLabel: 'bool_svg',
+            visHelp: 'help_bool_svg', // Description in the palette
             visPrev: 'widgets/basic/img/Prev_ValueBoolCtrlSvg.png',
             visAttrs: [
                 {

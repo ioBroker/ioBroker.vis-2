@@ -155,6 +155,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'filter - dropdown',
             visPrev: 'widgets/basic/img/Prev_FilterDropdown.png',
+            visHelp: 'help_filter_dropdown', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

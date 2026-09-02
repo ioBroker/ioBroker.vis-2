@@ -30,6 +30,7 @@ class JQuiInputSet extends JQuiInput {
             visSet: 'jqui',
             visName: 'Input + Button',
             visWidgetLabel: 'jqui_input_with_button',
+            visHelp: 'help_jqui_input_with_button', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_InputWithButton.png',
             visOrder: 14,
             visAttrs: widgetInfo.visAttrs,

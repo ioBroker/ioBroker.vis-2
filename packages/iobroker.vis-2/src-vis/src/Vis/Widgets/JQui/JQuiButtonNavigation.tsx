@@ -31,6 +31,7 @@ class JQuiButtonNavigation extends JQuiButton {
             visSet: 'jqui',
             visName: 'Navigation Button',
             visWidgetLabel: 'jqui_navigation_button',
+            visHelp: 'help_jqui_navigation_button', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonNav.png',
             visOrder: 8,
             visAttrs: widgetInfo.visAttrs,

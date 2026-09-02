@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Full Screen">
+    <title>Full Screen</title>
+    <path d="M22 6 H16 V12" fill="none" stroke="#0d72b8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M38 6 H44 V12" fill="none" stroke="#0d72b8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M22 26 H16 V20" fill="none" stroke="#4dabf5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M38 26 H44 V20" fill="none" stroke="#4dabf5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

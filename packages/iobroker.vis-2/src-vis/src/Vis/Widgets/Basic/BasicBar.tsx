@@ -24,6 +24,7 @@ export default class BasicBar extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'Bar',
             visPrev: 'widgets/basic/img/Prev_ValueFloatBar.png',
+            visHelp: 'help_value_float_bar', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

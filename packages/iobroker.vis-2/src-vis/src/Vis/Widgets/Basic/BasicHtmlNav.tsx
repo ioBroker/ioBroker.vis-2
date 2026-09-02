@@ -33,6 +33,7 @@ export default class BasicHtmlNav extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'HTML navigation',
             visPrev: 'widgets/basic/img/Prev_HTMLnavigation.png',
+            visHelp: 'help_html_nav', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

@@ -113,6 +113,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
             visSet: 'jqui',
             visName: 'States control',
             visWidgetLabel: 'jqui_states_control',
+            visHelp: 'help_jqui_states_control', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonState.png',
             visOrder: 14,
             visAttrs: [

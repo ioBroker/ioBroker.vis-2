@@ -85,6 +85,7 @@ export default class BasicSpeechToText extends VisRxWidget<RxData, BasicSpeechTo
             visSet: 'basic',
             visName: 'Speech to Text',
             visPrev: 'widgets/basic/img/Prev_Speech2Text.png',
+            visHelp: 'help_speech_to_text', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

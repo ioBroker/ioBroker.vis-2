@@ -34,6 +34,7 @@ export default class BasicSvgShape extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'SVG shape',
             visPrev: 'widgets/basic/img/Prev_SvgShape.png',
+            visHelp: 'help_shapes', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

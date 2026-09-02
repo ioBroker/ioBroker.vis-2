@@ -29,6 +29,7 @@ class JQuiSelectList extends JQuiState {
             visSet: 'jqui',
             visName: 'Select ValueList',
             visWidgetLabel: 'jqui_select_list',
+            visHelp: 'help_jqui_select_list', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_SelectList.png',
             visOrder: 16,
             visAttrs: widgetInfo.visAttrs,

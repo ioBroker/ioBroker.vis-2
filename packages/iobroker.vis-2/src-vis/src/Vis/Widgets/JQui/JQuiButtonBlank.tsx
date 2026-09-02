@@ -28,8 +28,9 @@ class JQuiButtonBlank extends JQuiButton {
         const newWidgetInfo = {
             id: 'tplJquiButtonLinkBlank',
             visSet: 'jqui',
-            visName: 'Button Link',
+            visName: 'Button Link (new window)',
             visWidgetLabel: 'jqui_button_link_blank',
+            visHelp: 'help_jqui_button_link_blank', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonLinkBlank.png',
             visOrder: 2,
             visAttrs: widgetInfo.visAttrs,

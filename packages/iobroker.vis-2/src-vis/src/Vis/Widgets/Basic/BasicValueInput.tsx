@@ -52,6 +52,7 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
             visSet: 'basic',
             visName: 'Input val',
             visWidgetLabel: 'vis-2-widgets-basic-input_value', // Label of widget
+            visHelp: 'help_value_input', // Description in the palette
             visPrev: 'widgets/basic/img/Prev_ValueInput.png',
             visAttrs: [
                 {

@@ -30,6 +30,7 @@ class JQuiContainerDialog extends JQuiButton {
             visSet: 'jqui',
             visName: 'container - HTML - view in jqui Dialog',
             visWidgetLabel: 'jqui_container_dialog',
+            visHelp: 'help_jqui_container_dialog', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ContainerDialog.png',
             visOrder: 7,
             visAttrs: widgetInfo.visAttrs,

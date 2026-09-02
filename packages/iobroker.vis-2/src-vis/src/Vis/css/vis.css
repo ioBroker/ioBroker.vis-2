@@ -315,3 +315,123 @@ html {
         visibility: hidden;
     }
 }
+
+/*
+ * The modern look of the `Basic - Table` widget.
+ *
+ * The widget can also draw itself with the classes of the can.js widget it replaced - `tclass` and everything
+ * derived from it, styled by widgets/basic/css/table.css - and its "no style" setting is what picks that. The
+ * two are kept apart completely: a project that styled its table through the old class names keeps that look
+ * by switching the setting on, and nothing here can reach those names.
+ *
+ * The colours come in a light and a dark variant instead of from the theme object, because a table paints many
+ * cells and putting the colours into inline styles would repeat them on every one of them.
+ */
+.vis-table-modern {
+    --vis-table-border: #e0e0e0;
+    --vis-table-head-bg: #f5f5f5;
+    --vis-table-head-fg: #1a1a1a;
+    --vis-table-fg: #1f1f1f;
+    --vis-table-row-alt: #fafafa;
+    --vis-table-hover: #eef5fb;
+    --vis-table-selected: #d6e8f7;
+    --vis-table-accent: #0d72b8;
+
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--vis-table-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vis-table-fg);
+    font-family: inherit;
+    font-size: 0.9em;
+}
+
+.vis-table-modern.vis-table-modern-dark {
+    --vis-table-border: #3a3f45;
+    --vis-table-head-bg: #23282e;
+    --vis-table-head-fg: #e8eaed;
+    --vis-table-fg: #d7dade;
+    --vis-table-row-alt: #1e2227;
+    --vis-table-hover: #263039;
+    --vis-table-selected: #14405f;
+    --vis-table-accent: #4dabf5;
+}
+
+.vis-table-modern .vis-table-modern-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+}
+
+.vis-table-modern table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+/* sticky, so the header stays while the rows are scrolled */
+.vis-table-modern thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--vis-table-head-bg);
+    color: var(--vis-table-head-fg);
+    text-align: left;
+    font-weight: 600;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--vis-table-border);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vis-table-modern tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--vis-table-border);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vis-table-modern tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.vis-table-modern tbody tr:nth-child(even) {
+    background: var(--vis-table-row-alt);
+}
+
+.vis-table-modern tbody tr.vis-table-modern-clickable {
+    cursor: pointer;
+}
+
+.vis-table-modern tbody tr.vis-table-modern-clickable:hover {
+    background: var(--vis-table-hover);
+}
+
+/* The bar on the left marks the selected row without taking the row colour away from the content */
+.vis-table-modern tbody tr.vis-table-modern-selected {
+    background: var(--vis-table-selected);
+    box-shadow: inset 3px 0 0 0 var(--vis-table-accent);
+}
+
+.vis-table-modern button {
+    font: inherit;
+    color: #fff;
+    background: var(--vis-table-accent);
+    border: none;
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+}
+
+.vis-table-modern button:hover {
+    filter: brightness(1.12);
+}
+
+.vis-table-modern button:active {
+    filter: brightness(0.92);
+}

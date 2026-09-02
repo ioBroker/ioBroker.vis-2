@@ -29,6 +29,7 @@ class JQuiIconStatePushButton extends JQuiBinaryState {
             visSet: 'jqui',
             visName: 'Binary Icon Push Button',
             visWidgetLabel: 'jqui_icon_state_push_button',
+            visHelp: 'help_jqui_icon_state_push_button', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconPushButton.png',
             visOrder: 15,
             visAttrs: widgetInfo.visAttrs,

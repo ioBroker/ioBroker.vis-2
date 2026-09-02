@@ -70,6 +70,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
             visSet: 'jqui',
             visName: 'Input',
             visWidgetLabel: 'jqui_input',
+            visHelp: 'help_jqui_input', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_Input.png',
             visOrder: 13,
             visAttrs: [

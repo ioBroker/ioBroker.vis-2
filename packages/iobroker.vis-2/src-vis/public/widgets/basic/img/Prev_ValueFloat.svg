@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Number">
+    <title>Number</title>
+    <text x="4" y="23" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#0d72b8">21,5</text>
+    <text x="41" y="23" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#4dabf5">°C</text>
+</svg>

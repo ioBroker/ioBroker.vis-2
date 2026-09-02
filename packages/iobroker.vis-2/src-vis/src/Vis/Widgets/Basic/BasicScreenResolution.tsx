@@ -60,6 +60,7 @@ export default class BasicScreenResolution extends VisRxWidget<RxData, BasicScre
             visSet: 'basic',
             visName: 'Screen Resolution',
             visPrev: 'widgets/basic/img/Prev_ScreenResolution.png',
+            visHelp: 'help_screen_resolution', // Description in the palette
             visAttrs: [],
             // visWidgetLabel: 'value_string',  // Label of widget
             visDefaultStyle: {

@@ -31,6 +31,7 @@ class JQuiDialog extends JQuiButton {
             visSet: 'jqui',
             visName: 'HTML - Dialog',
             visWidgetLabel: 'jqui_html_dialog',
+            visHelp: 'help_jqui_html_dialog', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_JquiDialog.png',
             visOrder: 5,
             visAttrs: widgetInfo.visAttrs,

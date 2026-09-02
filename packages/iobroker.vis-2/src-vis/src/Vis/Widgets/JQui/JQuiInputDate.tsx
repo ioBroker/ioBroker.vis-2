@@ -67,6 +67,7 @@ class JQuiInputDate extends VisRxWidget<RxData> {
             visSet: 'jqui',
             visName: 'Input Date',
             visWidgetLabel: 'jqui_input_date',
+            visHelp: 'help_jqui_input_date', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_InputDate.png',
             visOrder: 30,
             visAttrs: [

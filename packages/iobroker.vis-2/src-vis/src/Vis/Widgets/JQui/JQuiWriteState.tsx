@@ -79,6 +79,7 @@ class JQuiWriteState<
             visSet: 'jqui',
             visName: 'Icon State',
             visWidgetLabel: 'jqui_write_value',
+            visHelp: 'help_jqui_write_value', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_WriteState.png',
             visOrder: 26,
             visAttrs: [

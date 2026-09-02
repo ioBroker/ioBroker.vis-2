@@ -38,6 +38,7 @@ export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
             visSet: 'basic',
             visName: 'Note',
             visPrev: 'widgets/basic/img/Prev_Note.png',
+            visHelp: 'help_note', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

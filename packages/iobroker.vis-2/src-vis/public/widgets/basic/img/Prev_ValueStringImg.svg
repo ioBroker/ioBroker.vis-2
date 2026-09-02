@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="String img src">
+    <title>String img src</title>
+    <rect x="12.5" y="4.5" width="35" height="23" rx="2.5" fill="none" stroke="#0d72b8" stroke-width="2" />
+    <circle cx="21" cy="12" r="2.6" fill="#4dabf5" />
+    <path d="M15 24 L25 15 L31 21 L37 16 L45 24 Z" fill="#4dabf5" />
+</svg>

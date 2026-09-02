@@ -29,6 +29,7 @@ class JQuiIconStateBool extends JQuiBinaryState {
             visSet: 'jqui',
             visName: 'Binary Icon State',
             visWidgetLabel: 'jqui_icon_state_bool',
+            visHelp: 'help_jqui_icon_state_bool', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconStateBool.png',
             visOrder: 15,
             visAttrs: widgetInfo.visAttrs,

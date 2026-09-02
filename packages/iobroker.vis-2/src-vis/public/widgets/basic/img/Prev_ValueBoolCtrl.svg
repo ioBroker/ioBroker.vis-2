@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Bool control">
+    <title>Bool control</title>
+    <!-- the same two states as Bool HTML, but this one switches when it is clicked -->
+    <rect x="6.5" y="9.5" width="34" height="15" rx="7.5" fill="none" stroke="#0d72b8" stroke-width="2" />
+    <circle cx="32.5" cy="17" r="5" fill="#0d72b8" />
+    <path d="M46 22 L52 15 H48.5 L54 8" fill="none" stroke="#4dabf5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

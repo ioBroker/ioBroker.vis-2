@@ -25,6 +25,7 @@ export default class BasicFrame extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'Border',
             visPrev: 'widgets/basic/img/Prev_tplFrame.png',
+            visHelp: 'help_frame', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

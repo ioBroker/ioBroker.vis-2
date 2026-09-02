@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="String (unescaped)">
+    <title>String (unescaped)</title>
+    <!-- the markup around the text is the point of this widget, so the tags carry the accent colour -->
+    <text x="2" y="22" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4dabf5">&lt;b&gt;</text>
+    <text x="21" y="22" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#0d72b8">Abc</text>
+</svg>

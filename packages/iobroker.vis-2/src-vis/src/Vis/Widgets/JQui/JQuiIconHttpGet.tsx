@@ -31,6 +31,7 @@ export default class JQuiIconHttpGet extends JQuiButton {
             visSet: 'jqui',
             visName: 'Icon HTTP GET',
             visWidgetLabel: 'jqui_icon_http_get',
+            visHelp: 'help_jqui_icon_http_get', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconHttpGet.png',
             visOrder: 4,
             visAttrs: widgetInfo.visAttrs,

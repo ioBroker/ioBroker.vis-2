@@ -18,6 +18,7 @@ export default class BasicImage8 extends BasicImageGeneric<RxData> {
             visSet: 'basic',
             visName: 'Image 8',
             visPrev: 'widgets/basic/img/Prev_StatefulImage.png',
+            visHelp: 'help_image8', // Description in the palette
             visDefaultStyle: {
                 width: 200,
                 height: 130,

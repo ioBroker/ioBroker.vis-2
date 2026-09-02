@@ -49,6 +49,7 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
             visSetLabel: 'Tabs',
             visPrev: 'widgets/tabs/img/Prev_SliderTabs.png',
             visWidgetLabel: 'vis_2_widgets_widgets_tabs_label', // Label of widget
+            visHelp: 'help_tabs_slider_tabs', // Description in the palette
             visSetIcon: 'widgets/tabs/img/Prev_SliderTabs.png', // Icon of a widget set
             visAttrs: [
                 {

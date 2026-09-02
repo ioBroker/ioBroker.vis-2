@@ -41,6 +41,7 @@ export default class BasicRedNumber extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'Red Number',
             visPrev: 'widgets/basic/img/Prev_RedNumber.png',
+            visHelp: 'help_red_number', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

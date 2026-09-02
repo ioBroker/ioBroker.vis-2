@@ -29,6 +29,7 @@ class JQuiRadioList extends JQuiState {
             visSet: 'jqui',
             visName: 'Radiobuttons ValueList',
             visWidgetLabel: 'jqui_radio_list',
+            visHelp: 'help_jqui_radio_list', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_RadioList.png',
             visOrder: 15,
             visAttrs: widgetInfo.visAttrs,

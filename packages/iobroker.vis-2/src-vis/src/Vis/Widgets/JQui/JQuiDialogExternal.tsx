@@ -30,6 +30,7 @@ class JQuiDialogExternal extends JQuiButton {
             visSet: 'jqui',
             visName: 'External Dialog',
             visWidgetLabel: 'jqui_html_external_dialog',
+            visHelp: 'help_jqui_html_external_dialog', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_JquiExternalDialog.png',
             visOrder: 11,
             visAttrs: widgetInfo.visAttrs,

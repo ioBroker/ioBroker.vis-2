@@ -29,6 +29,7 @@ class JQuiSliderVertical extends JQuiSlider {
             visSet: 'jqui',
             visName: 'Vertical slider ',
             visWidgetLabel: 'jqui_slider_vertical',
+            visHelp: 'help_jqui_slider_vertical', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_SliderVertical.png',
             visOrder: 25,
             visAttrs: widgetInfo.visAttrs,

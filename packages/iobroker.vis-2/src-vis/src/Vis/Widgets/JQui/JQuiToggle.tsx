@@ -29,6 +29,7 @@ class JQuiToggle extends JQuiBinaryState {
             visSet: 'jqui',
             visName: 'Icon Toggle',
             visWidgetLabel: 'jqui_icon_toggle',
+            visHelp: 'help_jqui_icon_toggle', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconToggle.png',
             visOrder: 32,
             visAttrs: widgetInfo.visAttrs,

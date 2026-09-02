@@ -2,7 +2,19 @@ import React, { useEffect, useState, useMemo } from 'react';
 
 import { Accordion, AccordionDetails, AccordionSummary, Tooltip, IconButton, Box } from '@mui/material';
 
-import { ExpandMore as ExpandMoreIcon, FormatPaint, Info as InfoIcon, Visibility } from '@mui/icons-material';
+import {
+    ExpandMore as ExpandMoreIcon,
+    FormatPaint,
+    Info as InfoIcon,
+    Visibility,
+    AspectRatio as AspectRatioIcon,
+    FormatColorFill as FormatColorFillIcon,
+    TextFields as TextFieldsIcon,
+    Tune as TuneIcon,
+    Menu as MenuIcon,
+    WebAsset as WebAssetIcon,
+    PhoneIphone as PhoneIphoneIcon,
+} from '@mui/icons-material';
 
 import { Utils, I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
 
@@ -14,6 +26,21 @@ import { resolution, getFields, type Field } from './View/Items';
 import getEditField from './View/EditField';
 import { renderApplyDialog, getViewsWithDifferentValues, type ApplyField } from './View/ApplyProperties';
 import showAllViewsDialog from './View/AllViewsDialog';
+
+/**
+ * The mark in front of the name of a group of the view, so that a group is found by its shape and not by
+ * reading every label. Keyed by the label, because a group of the view is named by its label and carries no
+ * name of its own - unlike the groups of a widget, see Attributes/Widget/index.tsx.
+ */
+const GROUP_ICONS: Record<string, React.JSX.Element> = {
+    'CSS Common': <AspectRatioIcon fontSize="small" />,
+    'CSS background (background-...)': <FormatColorFillIcon fontSize="small" />,
+    'CSS Font & Text': <TextFieldsIcon fontSize="small" />,
+    Options: <TuneIcon fontSize="small" />,
+    Navigation: <MenuIcon fontSize="small" />,
+    'App bar': <WebAssetIcon fontSize="small" />,
+    'Responsive settings': <PhoneIphoneIcon fontSize="small" />,
+};
 
 const styles: Record<string, any> = {
     groupSurface: (theme: VisTheme): React.CSSProperties => ({
@@ -334,7 +361,11 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                             }}
                             expandIcon={<ExpandMoreIcon />}
                         >
-                            {I18n.t(group.label)}
+                            {/* the gap keeps the icon off the label; without it they touch at `fontSize="small"` */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {GROUP_ICONS[group.label] || null}
+                                {I18n.t(group.label)}
+                            </div>
                         </AccordionSummary>
                         {accordionOpen[key] !== 0 ? (
                             <AccordionDetails sx={styles.accordionDetails}>

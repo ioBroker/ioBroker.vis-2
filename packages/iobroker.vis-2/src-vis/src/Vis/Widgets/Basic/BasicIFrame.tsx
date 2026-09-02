@@ -40,6 +40,7 @@ export default class BasicIFrame extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'iFrame',
             visPrev: 'widgets/basic/img/Prev_iFrame.png',
+            visHelp: 'help_iframe', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

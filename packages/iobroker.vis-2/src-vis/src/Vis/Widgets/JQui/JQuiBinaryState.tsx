@@ -91,6 +91,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             visSet: 'jqui',
             visName: 'Html Bool',
             visWidgetLabel: 'jqui_binary_control',
+            visHelp: 'help_jqui_binary_control', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_BinaryControl.png',
             visOrder: 14,
             visAttrs: [

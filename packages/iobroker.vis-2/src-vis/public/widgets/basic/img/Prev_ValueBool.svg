@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Bool HTML">
+    <title>Bool HTML</title>
+    <!-- one of two pieces of HTML: the widget shows either the left or the right one -->
+    <rect x="2.5" y="6.5" width="24" height="19" rx="2.5" fill="none" stroke="#0d72b8" stroke-width="2" />
+    <path d="M8 16.5 L12 20.5 L21 11.5" fill="none" stroke="#0d72b8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="33.5" y="6.5" width="24" height="19" rx="2.5" fill="none" stroke="#4dabf5" stroke-width="2" />
+    <path d="M40 11 L51 21 M51 11 L40 21" fill="none" stroke="#4dabf5" stroke-width="2.4" stroke-linecap="round" />
+</svg>

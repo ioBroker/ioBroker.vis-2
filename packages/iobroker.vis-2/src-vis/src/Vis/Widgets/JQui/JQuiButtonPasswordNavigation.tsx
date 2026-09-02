@@ -31,6 +31,7 @@ class JQuiButtonPasswordNavigation extends JQuiButton {
             visSet: 'jqui',
             visName: 'Navigation with password',
             visWidgetLabel: 'jqui_navigation_password',
+            visHelp: 'help_jqui_navigation_password', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonNavPw.png',
             visOrder: 10,
             visAttrs: widgetInfo.visAttrs,

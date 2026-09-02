@@ -3,6 +3,24 @@ import BasicBulb from './Basic/BasicBulb';
 import BasicRedNumber from './Basic/BasicRedNumber';
 import BasicHtml from './Basic/BasicHtml';
 import BasicValueString from './Basic/BasicValueString';
+import BasicValueFloat from './Basic/BasicValueFloat';
+import BasicValueStringRaw from './Basic/BasicValueStringRaw';
+import BasicValueStringImg from './Basic/BasicValueStringImg';
+import BasicValueTimestamp from './Basic/BasicValueTimestamp';
+import BasicValueTimestampValue from './Basic/BasicValueTimestampValue';
+import BasicTimeValue from './Basic/BasicTimeValue';
+import BasicValueLastchange from './Basic/BasicValueLastchange';
+import BasicValueBool from './Basic/BasicValueBool';
+import BasicAckBool from './Basic/BasicAckBool';
+import BasicValueBoolCheckbox from './Basic/BasicValueBoolCheckbox';
+import BasicValueBoolSelect from './Basic/BasicValueBoolSelect';
+import BasicValueBoolCtrl from './Basic/BasicValueBoolCtrl';
+import BasicValueListText from './Basic/BasicValueListText';
+import BasicValueListHtml from './Basic/BasicValueListHtml';
+import BasicValueListHtml8 from './Basic/BasicValueListHtml8';
+import BasicHtmlState from './Basic/BasicHtmlState';
+import BasicFullScreen from './Basic/BasicFullScreen';
+import BasicTable from './Basic/BasicTable';
 import BasicValueInput from './Basic/BasicValueInput';
 import BasicViewInWidget from './Basic/BasicViewInWidget';
 import BasicViewInWidget8 from './Basic/BasicViewInWidget8';
@@ -66,6 +84,24 @@ const WIDGETS = [
     BasicFilterDropdown,
     BasicLink,
     BasicValueString,
+    BasicValueFloat,
+    BasicValueStringRaw,
+    BasicValueStringImg,
+    BasicValueTimestamp,
+    BasicValueTimestampValue,
+    BasicTimeValue,
+    BasicValueLastchange,
+    BasicValueBool,
+    BasicAckBool,
+    BasicValueBoolCheckbox,
+    BasicValueBoolSelect,
+    BasicValueBoolCtrl,
+    BasicValueListText,
+    BasicValueListHtml,
+    BasicValueListHtml8,
+    BasicHtmlState,
+    BasicFullScreen,
+    BasicTable,
     BasicValueInput,
     BasicViewInWidget,
     BasicViewInWidget8,

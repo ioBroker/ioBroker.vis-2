@@ -95,6 +95,7 @@ import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages } from './Vis/visUtils';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
 import type { VisEngineHandlers } from './Vis/visView';
+import registerBasicWords from '@/Vis/Widgets/Basic/i18n';
 
 const styles: Record<string, any> = {
     block: {
@@ -349,6 +350,10 @@ declare global {
         ) => Promise<AnyWidgetId>;
     }
 }
+
+// The names of the attributes of the `basic` widgets. Only the editor shows them, so they are registered
+// here and not from the widgets, which would carry eleven catalogs into the runtime bundle.
+registerBasicWords();
 
 export default class Editor extends Runtime<EditorProps, EditorState> {
     mainRef: React.RefObject<HTMLDivElement | null> | null = null;

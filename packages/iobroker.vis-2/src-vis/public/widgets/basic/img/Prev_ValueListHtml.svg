@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="ValueList HTML">
+    <title>ValueList HTML</title>
+    <!-- the same list, but the picked entry reaches the page as markup -->
+    <rect x="3" y="4" width="30" height="6" rx="2" fill="#4dabf5" opacity="0.45" />
+    <rect x="3" y="13" width="30" height="6" rx="2" fill="#0d72b8" />
+    <rect x="3" y="22" width="24" height="6" rx="2" fill="#4dabf5" opacity="0.45" />
+    <text x="36" y="21" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0d72b8">&lt;/&gt;</text>
+</svg>

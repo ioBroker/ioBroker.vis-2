@@ -355,6 +355,8 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                     : widgetInfo.visWidgetLabel === ''
                       ? ''
                       : undefined, // new style with translation
+                // like the label, the help of a widget set brings the prefix of its own translations with it
+                help: widgetInfo.visHelp ? i18nPrefix + widgetInfo.visHelp : undefined,
                 setLabel: widgetInfo.visSetLabel ? i18nPrefix + widgetInfo.visSetLabel : undefined, // new style with translation
                 setColor: widgetInfo.visSetColor,
                 setIcon:

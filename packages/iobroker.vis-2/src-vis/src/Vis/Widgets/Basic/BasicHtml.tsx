@@ -33,6 +33,7 @@ class BasicHtml extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'HTML',
             visPrev: 'widgets/basic/img/Prev_HTML.png',
+            visHelp: 'help_html', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

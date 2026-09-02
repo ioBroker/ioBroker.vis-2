@@ -66,6 +66,7 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
             visSet: 'jqui',
             visName: 'Button dialog close',
             visWidgetLabel: 'jqui_button_dialog_close',
+            visHelp: 'help_jqui_button_dialog_close', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonDialogClose.png',
             visOrder: 13,
             visAttrs: [

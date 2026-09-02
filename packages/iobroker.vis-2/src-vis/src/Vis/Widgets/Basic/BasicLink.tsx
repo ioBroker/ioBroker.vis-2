@@ -34,6 +34,7 @@ class BasicLink extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'link',
             visPrev: 'widgets/basic/img/Prev_tplLink.png',
+            visHelp: 'help_link', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

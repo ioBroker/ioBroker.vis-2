@@ -127,6 +127,7 @@ class JQuiButton<
             visName: 'Button Link',
             visSetLabel: 'jqui_set_label',
             visWidgetLabel: 'jqui_button_link',
+            visHelp: 'help_jqui_button_link', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonLink.png',
             visOrder: 1,
             visAttrs: [

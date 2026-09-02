@@ -57,6 +57,7 @@ class BasicValueString extends VisRxWidget<RxData> {
                 },
             ],
             visWidgetLabel: 'value_string', // Label of widget
+            visHelp: 'help_value_string', // Description in the palette
             visDefaultStyle: {
                 width: 100,
                 height: 30,

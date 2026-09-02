@@ -31,6 +31,7 @@ class JQuiIconDialog extends JQuiButton {
             visSet: 'jqui',
             visName: 'Icon - Dialog',
             visWidgetLabel: 'jqui_icon_dialog',
+            visHelp: 'help_jqui_icon_dialog', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_JquiIconDialog.png',
             visOrder: 6,
             visAttrs: widgetInfo.visAttrs,

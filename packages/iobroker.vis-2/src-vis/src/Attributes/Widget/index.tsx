@@ -25,6 +25,15 @@ import {
     LinkOff,
     Link as LinkIcon,
     ContentCopy,
+    Visibility as VisibilityIcon,
+    Tune as TuneIcon,
+    AspectRatio as AspectRatioIcon,
+    TextFields as TextFieldsIcon,
+    FormatColorFill as FormatColorFillIcon,
+    BorderStyle as BorderStyleIcon,
+    Padding as PaddingIcon,
+    History as HistoryIcon,
+    AddAlert as AddAlertIcon,
 } from '@mui/icons-material';
 
 import { I18n, Icon, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
@@ -60,8 +69,26 @@ import WidgetCSS from './WidgetCSS';
 import WidgetJS from './WidgetJS';
 import WidgetBindingField from './WidgetBindingField';
 
+/**
+ * The mark in front of the name of a group, so that a group is found by its shape and not by reading every
+ * label. Keyed by `group.<name>` for a group and by the plain name for everything else.
+ *
+ * `common` is the group a widget declares itself, and it is the only one whose icon says "the settings of this
+ * widget" rather than naming a kind of CSS.
+ */
 const ICONS: Record<string, React.JSX.Element> = {
     'group.fixed': <FilterAltIcon fontSize="small" />,
+    'group.common': <TuneIcon fontSize="small" />,
+    'group.visibility': <VisibilityIcon fontSize="small" />,
+    // position, size and z-index - what the box is and where it sits
+    'group.css_common': <AspectRatioIcon fontSize="small" />,
+    'group.css_font_text': <TextFieldsIcon fontSize="small" />,
+    'group.css_background': <FormatColorFillIcon fontSize="small" />,
+    'group.css_border': <BorderStyleIcon fontSize="small" />,
+    // padding, margin and the shadow around the box
+    'group.css_shadow_padding': <PaddingIcon fontSize="small" />,
+    'group.last_change': <HistoryIcon fontSize="small" />,
+    'group.signals': <AddAlertIcon fontSize="small" />,
     locked: <LockIcon fontSize="small" />,
 };
 
@@ -1519,7 +1546,8 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         alignItems: 'center',
                     }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {/* the gap keeps the icon off the label; without it they touch at `fontSize="small"` */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {ICONS[`group.${group.singleName || group.name}`]
                             ? ICONS[`group.${group.singleName || group.name}`]
                             : null}

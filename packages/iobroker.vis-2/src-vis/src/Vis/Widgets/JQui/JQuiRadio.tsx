@@ -29,6 +29,7 @@ class JQuiRadio extends JQuiBinaryState {
             visSet: 'jqui',
             visName: 'Radiobuttons on/off',
             visWidgetLabel: 'jqui_radio_buttons_on_off',
+            visHelp: 'help_jqui_radio_buttons_on_off', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_RadioButtonsOnOff.png',
             visOrder: 15,
             visAttrs: widgetInfo.visAttrs,

@@ -47,13 +47,23 @@ const styles: Record<string, any> = {
         width: 'auto',
         borderRadius: 4,
     },
-    widgetTooltip: {
-        '& $widgetImage': {
-            zoom: 0.6,
-        },
-        '& $widgetImageWithSrc': {
-            height: 64,
-        },
+    /*
+     * The preview in the tooltip, drawn from the same source as the one in the row but at its own size. It used
+     * to be the very same element, and the tooltip tried to enlarge it through `& $widgetImage` - which is the
+     * syntax of JSS and means nothing to `sx`, and could not have won anyway: the size of the preview sits in
+     * an inline style, and no stylesheet beats that. The tooltip therefore showed the small preview.
+     */
+    widgetImageTooltip: {
+        maxWidth: 180,
+        maxHeight: 110,
+        width: 'auto',
+        borderRadius: 4,
+    },
+    widgetTooltipHelp: {
+        marginTop: 6,
+        maxWidth: 260,
+        whiteSpace: 'normal',
+        lineHeight: 1.35,
     },
     widgetImageContainer: {
         // borderLeftStyle: 'solid',
@@ -127,48 +137,60 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         }
     }
 
-    let img;
-    if (props.widgetType.preview?.startsWith('<img')) {
-        const m = props.widgetType.preview.match(/src="([^"]+)"/) || props.widgetType.preview.match(/src='([^']+)'/);
-        if (m) {
-            img = (
+    /**
+     * The preview of the widget.
+     *
+     * @param imageStyle - how big it is drawn; the row and the tooltip ask for different sizes
+     * @param ref - only the preview in the row is measured, the one in the tooltip is not
+     */
+    const renderPreview = (
+        imageStyle: React.CSSProperties,
+        ref?: React.RefObject<HTMLSpanElement | null>,
+    ): React.JSX.Element => {
+        if (props.widgetType.preview?.startsWith('<img')) {
+            const m =
+                props.widgetType.preview.match(/src="([^"]+)"/) || props.widgetType.preview.match(/src='([^']+)'/);
+            if (m) {
+                return (
+                    <img
+                        src={m[1]}
+                        style={imageStyle}
+                        alt={props.widgetType.name}
+                    />
+                );
+            }
+        } else if (
+            props.widgetType.preview &&
+            (IMAGE_TYPES.find(ext => (props.widgetType.preview || '').toLowerCase().endsWith(ext)) ||
+                props.widgetSet === '__marketplace')
+        ) {
+            return (
                 <img
-                    src={m[1]}
-                    style={styles.widgetImageWithSrc}
+                    src={props.widgetType.preview}
+                    style={imageStyle}
                     alt={props.widgetType.name}
+                    onError={e => {
+                        if (e.target) {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = './img/no-image.svg';
+                            (e.target as HTMLImageElement).style.height = '24px';
+                        }
+                    }}
                 />
             );
         }
-    } else if (
-        props.widgetType.preview &&
-        (IMAGE_TYPES.find(ext => (props.widgetType.preview || '').toLowerCase().endsWith(ext)) ||
-            props.widgetSet === '__marketplace')
-    ) {
-        img = (
-            <img
-                src={props.widgetType.preview}
-                style={styles.widgetImageWithSrc}
-                alt={props.widgetType.name}
-                onError={e => {
-                    if (e.target) {
-                        (e.target as HTMLImageElement).onerror = null;
-                        (e.target as HTMLImageElement).src = './img/no-image.svg';
-                        (e.target as HTMLImageElement).style.height = '24px';
-                    }
-                }}
-            />
-        );
-    }
 
-    if (!img) {
-        img = (
+        // no image: the preview is a piece of HTML that draws the widget itself
+        return (
             <span
                 style={styles.widgetImage}
-                ref={imageRef}
+                ref={ref}
                 dangerouslySetInnerHTML={{ __html: props.widgetType.preview || '' }}
             />
         );
-    }
+    };
+
+    const img = renderPreview(styles.widgetImageWithSrc, imageRef);
 
     let label = props.widgetType.label ? I18n.t(props.widgetType.label) : window.vis._(props.widgetType.title || '');
     // remove legacy stuff
@@ -186,12 +208,11 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
     const result = (
         <Tooltip
             title={
-                <Box
-                    component="div"
-                    sx={styles.widgetTooltip}
-                >
-                    <div>{img}</div>
-                    {props.widgetType.help ? <div>{props.widgetType.help}</div> : null}
+                <Box component="div">
+                    <div>{renderPreview(styles.widgetImageTooltip)}</div>
+                    {props.widgetType.help ? (
+                        <div style={styles.widgetTooltipHelp}>{I18n.t(props.widgetType.help)}</div>
+                    ) : null}
                 </Box>
             }
             slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}

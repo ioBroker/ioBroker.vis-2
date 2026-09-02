@@ -38,6 +38,7 @@ class Swipe extends VisRxWidget<RxData> {
             visSetLabel: 'vis_2_widgets_widgets_swipe_label', // label of the widget set
             visPrev: 'widgets/swipe/img/Prev_Swipe.png',
             visWidgetLabel: 'vis_2_widgets_widgets_swipe_label', // Label of widget
+            visHelp: 'help_swipe', // Description in the palette
             visSetIcon: 'widgets/swipe/img/Prev_Swipe.png', // Icon of a widget set
             visAttrs: [
                 {

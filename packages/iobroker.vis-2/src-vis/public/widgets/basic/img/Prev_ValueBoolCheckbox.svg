@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Bool Checkbox">
+    <title>Bool Checkbox</title>
+    <rect x="18.5" y="8.5" width="17" height="17" rx="2.5" fill="#0d72b8" />
+    <path d="M22.5 17 L26 20.5 L32 13" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="39.5" y="8.5" width="17" height="17" rx="2.5" fill="none" stroke="#4dabf5" stroke-width="2" />
+</svg>

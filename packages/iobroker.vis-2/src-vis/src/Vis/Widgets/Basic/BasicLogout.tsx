@@ -25,6 +25,7 @@ export default class BasicLogout extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'HTML logout',
             visPrev: 'widgets/basic/img/Prev_HtmlLogout.png',
+            visHelp: 'help_html_logout', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

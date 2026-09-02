@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="ValueList Text">
+    <title>ValueList Text</title>
+    <!-- the value picks one entry of a list; the picked one carries the accent -->
+    <rect x="3" y="4" width="38" height="6" rx="2" fill="#4dabf5" opacity="0.45" />
+    <rect x="3" y="13" width="46" height="6" rx="2" fill="#0d72b8" />
+    <rect x="3" y="22" width="32" height="6" rx="2" fill="#4dabf5" opacity="0.45" />
+    <path d="M52 16 L57 16 M52 16 L54.5 13.5 M52 16 L54.5 18.5" fill="none" stroke="#0d72b8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

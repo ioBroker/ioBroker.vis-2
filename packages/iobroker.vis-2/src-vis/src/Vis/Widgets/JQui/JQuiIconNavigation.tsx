@@ -30,6 +30,7 @@ class JQuiIconNavigation extends JQuiButton {
             visSet: 'jqui',
             visName: 'Navigation Icon',
             visWidgetLabel: 'jqui_navigation_icon',
+            visHelp: 'help_jqui_navigation_icon', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconNav.png',
             visOrder: 9,
             visAttrs: widgetInfo.visAttrs,

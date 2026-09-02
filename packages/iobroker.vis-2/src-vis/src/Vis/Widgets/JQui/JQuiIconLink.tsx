@@ -28,8 +28,9 @@ class JQuiIconLink extends JQuiButton {
         const newWidgetInfo = {
             id: 'tplIconLink',
             visSet: 'jqui',
-            visName: 'Button Link',
+            visName: 'Icon Link',
             visWidgetLabel: 'jqui_icon_link',
+            visHelp: 'help_jqui_icon_link', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconLink.png',
             visOrder: 3,
             visAttrs: widgetInfo.visAttrs,

@@ -24,6 +24,7 @@ class JQuiRadioSteps extends JQuiState {
             visSet: 'jqui',
             visName: 'Radiobuttons 25%',
             visWidgetLabel: 'jqui_radio_steps',
+            visHelp: 'help_jqui_radio_steps', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_RadioSteps.png',
             visOrder: 25,
             visAttrs: widgetInfo.visAttrs,

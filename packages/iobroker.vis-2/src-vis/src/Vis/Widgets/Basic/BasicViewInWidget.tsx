@@ -89,7 +89,9 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
             ],
             visPrev: 'widgets/basic/img/Prev_ContainerView.png',
             visWidgetLabel: 'vis_2_widgets_basic_view_in_widget', // Label of widget
+            visHelp: 'help_container_view', // Description in the palette
             visSetLabel: 'set_basic',
+            visSetIcon: 'widgets/basic/img/Prev_Basic.svg', // Icon of the widget set
             visDefaultStyle: {
                 width: 300,
                 height: 200,

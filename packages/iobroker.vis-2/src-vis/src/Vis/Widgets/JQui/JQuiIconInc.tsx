@@ -30,6 +30,7 @@ class JQuiIconInc extends JQuiWriteState {
             visSet: 'jqui',
             visName: 'Icon Increment',
             visWidgetLabel: 'jqui_icon_increment',
+            visHelp: 'help_jqui_icon_increment', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_IconInc.png',
             visOrder: 27,
             visAttrs: widgetInfo.visAttrs,

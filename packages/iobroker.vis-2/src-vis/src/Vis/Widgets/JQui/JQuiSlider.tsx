@@ -83,6 +83,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
             visSet: 'jqui',
             visName: 'Slider',
             visWidgetLabel: 'jqui_slider',
+            visHelp: 'help_jqui_slider', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_Slider.png',
             visOrder: 24,
             visAttrs: [

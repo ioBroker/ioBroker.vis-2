@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="Timestamp">
+    <title>Timestamp</title>
+    <!-- the moment a value was updated: date and time under each other -->
+    <text x="3" y="14" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#4dabf5">01.09.2026</text>
+    <text x="3" y="27" font-family="Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0d72b8">12:30:45</text>
+</svg>

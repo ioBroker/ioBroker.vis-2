@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="Basic">
+    <title>Basic</title>
+    <!--
+        The set of the elementary building blocks, so the icon is three of them. Two blues of the editor: the
+        darker one carries on a light panel, the lighter one on a dark panel, so the shape reads on both.
+    -->
+    <rect x="1.8" y="12.6" width="9.2" height="9.2" rx="1.6" fill="#0d72b8" />
+    <rect x="13" y="12.6" width="9.2" height="9.2" rx="1.6" fill="#0d72b8" />
+    <rect x="7.4" y="2.2" width="9.2" height="9.2" rx="1.6" fill="#4dabf5" />
+</svg>

@@ -15,6 +15,7 @@ export default class BasicImage extends BasicImageGeneric<RxData> {
             visSet: 'basic',
             visName: 'Image',
             visPrev: 'widgets/basic/img/Prev_Image.png',
+            visHelp: 'help_image', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',

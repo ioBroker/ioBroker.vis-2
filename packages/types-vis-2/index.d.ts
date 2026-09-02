@@ -1102,6 +1102,10 @@ export interface VisRxWidgetStateValues {
     [timestamp: `${string}.ts`]: number;
     /** State last change */
     [timestamp: `${string}.lc`]: number;
+    /** Whether the value was confirmed by the device; the engine fills it like the other fields */
+    [ack: `${string}.ack`]: boolean;
+    /** Quality code of the state */
+    [quality: `${string}.q`]: number;
 }
 
 export interface VisCanWidgetStateValues extends VisRxWidgetStateValues {
@@ -1793,6 +1797,11 @@ export interface RxWidgetInfo {
     readonly visWidgetLabel?: string;
     /** Preview link (image URL, like 'widgets/basic/img/Prev_RedNumber.png') */
     readonly visPrev: string;
+    /**
+     * What the widget does, shown in the tooltip of the palette under the preview. Normally a translation key,
+     * like `visWidgetLabel`. The counterpart of `data-vis-help` of a vis-1 widget.
+     */
+    readonly visHelp?: string;
     /** Color of widget in palette. If not set, the visSetColor will be taken */
     readonly visWidgetColor?: string;
 

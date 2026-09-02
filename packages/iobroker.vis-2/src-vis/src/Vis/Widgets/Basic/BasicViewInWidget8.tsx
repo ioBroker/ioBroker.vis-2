@@ -34,6 +34,7 @@ class BasicViewInWidget8 extends VisRxWidget<RxData> {
             visName: 'View in widget 8',
             visAttrs: 'oid;count[1]/number;group.views;contains_view_(0-count)/views' as unknown as RxWidgetInfoGroup[],
             visPrev: 'widgets/basic/img/Prev_StatefulContainerView8.png',
+            visHelp: 'help_container_view8', // Description in the palette
         } as const;
     }
 

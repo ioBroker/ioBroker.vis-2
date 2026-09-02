@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 32" width="60" height="32" role="img" aria-label="ValueList HTML Style">
+    <title>ValueList HTML Style</title>
+    <!-- every entry brings a style of its own, so the three bars differ in more than length -->
+    <rect x="3" y="4" width="30" height="6" rx="3" fill="#4dabf5" opacity="0.45" />
+    <rect x="3" y="13" width="30" height="6" rx="0" fill="#0d72b8" />
+    <rect x="3" y="22" width="24" height="6" rx="1" fill="none" stroke="#4dabf5" stroke-width="1.6" />
+    <path d="M42 22 L48 6 L54 22 M44 17 H52" fill="none" stroke="#0d72b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

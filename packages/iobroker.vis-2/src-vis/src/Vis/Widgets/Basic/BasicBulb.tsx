@@ -46,6 +46,7 @@ export default class BasicBulb extends VisRxWidget<RxData> {
             visSet: 'basic',
             visName: 'Bulb on/off',
             visPrev: 'widgets/basic/img/Prev_BulbOnOffCtrl.png',
+            visHelp: 'help_bulb_on_off', // Description in the palette
             visAttrs: [
                 {
                     name: 'common',
