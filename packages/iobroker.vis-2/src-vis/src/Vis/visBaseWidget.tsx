@@ -22,7 +22,7 @@ import { I18n, Utils } from '@iobroker/gui-components';
 
 import { calculateOverflow, deepClone, isVarFinite } from '@/Utilities/utils';
 
-import { getAdornerLayer } from './visAdornerLayer';
+import { cancelMarksUpdate, getAdornerLayer, scheduleMarksUpdate, type MarksRect } from './visAdornerLayer';
 import type {
     AnyWidgetId,
     ResizeHandler,
@@ -127,6 +127,11 @@ interface Handler {
     borderBottom?: string;
     borderLeft?: string;
     borderRight?: string;
+    /** A corner handle draws a border on all four sides; an edge draws its line through `color`, see vis.css */
+    border?: string;
+    color?: string;
+    borderRadius?: number;
+    boxSizing?: 'border-box';
 }
 
 interface ResizerElement extends HTMLDivElement {
@@ -175,7 +180,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
      * jumped back to its old place and forward again with the next mouse move. The value is written straight to
      * the div instead, and render() only uses it as the starting point for a fresh one.
      */
-    protected marksRect: { left: number; top: number; width: number; height: number } | null = null;
+    protected marksRect: MarksRect | null = null;
 
     protected widDiv: null | CanHTMLDivElement = null;
 
@@ -309,32 +314,49 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
      * to be measured. This runs in the commit phase, before the browser paints, so a `setState` here is applied
      * in the same frame and the marks do not lag behind while a widget is dragged.
      */
-    protected updateMarksRect(): void {
-        const service = this.refService.current;
-        const layer = this.state.editMode ? getAdornerLayer(this.props.view) : null;
+    /** Which view this widget draws its marks into, for the batched update in visAdornerLayer.ts */
+    marksView(): string {
+        return this.props.view;
+    }
 
-        if (!service || !layer) {
-            this.marksRect = null;
-            return;
+    /**
+     * Read where the marks of this widget have to sit: its padding box, in the coordinates of the layer.
+     *
+     * Only reads, never writes - the writes of every widget follow together, see `scheduleMarksUpdate`.
+     *
+     * @param layerBox - the box of the layer, measured once for the whole view
+     * @returns the box for the marks, or null while this widget has none
+     */
+    measureMarks(layerBox: DOMRect): MarksRect | null {
+        const service = this.refService.current;
+        if (!service || !this.state.editMode) {
+            return null;
         }
 
         const box = service.getBoundingClientRect();
-        const layerBox = layer.getBoundingClientRect();
-        const style = window.getComputedStyle(service);
-        const borderLeft = parseFloat(style.borderLeftWidth) || 0;
-        const borderRight = parseFloat(style.borderRightWidth) || 0;
-        const borderTop = parseFloat(style.borderTopWidth) || 0;
-        const borderBottom = parseFloat(style.borderBottomWidth) || 0;
 
         // The marks used to be children of the widget and are therefore placed against its PADDING box - the
         // offsets of the resize handles even subtract the border width to get there. Mirroring that box keeps
-        // every one of those rules working unchanged.
-        const rect = {
-            left: box.left - layerBox.left + borderLeft,
-            top: box.top - layerBox.top + borderTop,
-            width: box.width - borderLeft - borderRight,
-            height: box.height - borderTop - borderBottom,
+        // every one of those rules working unchanged. `clientLeft`/`clientTop` are the border widths and
+        // `clientWidth`/`clientHeight` the padding box, all without asking for the computed style.
+        return {
+            left: box.left - layerBox.left + service.clientLeft,
+            top: box.top - layerBox.top + service.clientTop,
+            width: service.clientWidth,
+            height: service.clientHeight,
         };
+    }
+
+    /**
+     * Put the measured box on the div that carries the marks of this widget.
+     *
+     * @param rect - the result of `measureMarks`
+     */
+    applyMarks(rect: MarksRect | null): void {
+        if (!rect) {
+            this.marksRect = null;
+            return;
+        }
 
         this.marksRect = rect;
 
@@ -347,6 +369,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
     }
 
+    /** Ask for the marks to be put back onto this widget, together with those of every other widget */
+    protected updateMarksRect(): void {
+        scheduleMarksUpdate(this);
+    }
     componentDidUpdate(_prevProps?: VisBaseWidgetProps, _prevState?: Readonly<TState>): void {
         this.updateMarksRect();
 
@@ -373,6 +399,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     }
 
     componentWillUnmount(): void {
+        cancelMarksUpdate(this);
+
         this.updateInterval && clearInterval(this.updateInterval);
         this.updateInterval = undefined;
 
@@ -445,12 +473,19 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 }
             }
 
-            // show resizers again
-            const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
-            resizers?.forEach(item => (item.style.display = 'block'));
+            // The marks were hidden when the move started, see onMove(). They come back through onMove(save)
+            // after a real move, but the view only sends that when the mouse moved - a press without a move,
+            // which is how a widget is selected, ends here and nowhere else.
+            if (this.refMarks.current) {
+                this.refMarks.current.style.display = '';
+            }
 
             if (command === 'stopResize') {
                 this.resize = false;
+            }
+            // a press on a handle that was released without a move never reaches the end of onMove()
+            if (window.document.body.style.cursor) {
+                window.document.body.style.cursor = '';
             }
             return true;
         }
@@ -822,6 +857,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     }
                 });
                 this.resize = false;
+                window.document.body.style.cursor = '';
 
                 // The values this gesture changed must come from the computation and not from the DOM: this
                 // call carries the last position itself, so React has not rendered it yet and reading the
@@ -861,9 +897,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 height: startRect.height,
             };
 
-            // hide resizers
-            const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
-            resizers?.forEach(item => (item.style.display = 'none'));
+            // The marks of this widget go away for the gesture. The handles have nothing to do while it is
+            // being moved, and a relative widget is not moved by its own render at all - the view draws a copy
+            // under the cursor - so its marks could not follow it and would stand still beside the copy.
+            if (this.refMarks.current) {
+                this.refMarks.current.style.display = 'none';
+            }
         } else if (this.movement && y !== undefined && x !== undefined) {
             // move widget
             const leftPx = this.movement.left + x;
@@ -881,9 +920,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
             // End of movement
             if (save) {
-                // show resizers
-                const resizers = this.refMarks.current?.querySelectorAll<HTMLDivElement>('.vis-editmode-resizer');
-                resizers?.forEach(item => (item.style.display = 'block'));
+                if (this.refMarks.current) {
+                    this.refMarks.current.style.display = '';
+                }
 
                 if (this.props.isRelative) {
                     // A relative widget carries no position of its own; where it lands is decided by the order,
@@ -932,9 +971,34 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
     };
 
+    /**
+     * The cursor a resize from this handle is shown with, see onResizeStart()
+     *
+     * @param type - the handle the resize started from
+     */
+    static resizeCursor(type: Resize): string {
+        if (type === 'top' || type === 'bottom') {
+            return 'ns-resize';
+        }
+        if (type === 'left' || type === 'right') {
+            return 'ew-resize';
+        }
+        if (type === 'top-left' || type === 'bottom-right') {
+            return 'nwse-resize';
+        }
+        if (type === 'top-right' || type === 'bottom-left') {
+            return 'nesw-resize';
+        }
+        return '';
+    }
+
     onResizeStart(e: React.MouseEvent, type: Resize): void {
         e.stopPropagation();
         this.resize = type;
+        // For the whole gesture the cursor belongs to the document, not to the handle: the mouse runs ahead of
+        // the edge it drags and leaves the handle, and the cursor fell back to the arrow while the widget was
+        // still being resized. It goes away again when the resize ends, see onMove().
+        window.document.body.style.cursor = VisBaseWidget.resizeCursor(type);
         this.props.mouseDownOnView(e, this.props.id, this.props.isRelative, true);
     }
 
@@ -949,22 +1013,42 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
          */
         const frameOnly = this.props.selectedWidgets?.length !== 1;
 
-        const thickness = 0.4;
-        const shift = 0.3;
-        const square = 0.4;
-
-        const squareShift = `calc(${shift - square}em - ${borderWidth})`;
-        const squareWidthHeight = `${square}em`;
-        const shiftEm = `${shift}em`;
-        const thicknessEm = `${thickness}em`;
-        const offsetEm = `calc(${shift - thickness}em - ${borderWidth})`;
+        // Fixed pixel sizes on purpose. These are chrome of the editor and must not scale with the content: in
+        // `em` a handle inherited the font size of the widget, which made it 16px on a widget with a large font
+        // and 3px on one with a small font, so how well a widget could be grabbed depended on what was in it.
+        /** The outline around a selected widget */
+        const FRAME = 1;
+        /**
+         * How wide the grab strip along an edge is. It straddles the edge, half outside and half inside.
+         *
+         * Neither extreme works. Reaching only inwards covers a small widget - a `Basic String` is a few pixels
+         * high - so every press starts a resize instead of a move. Reaching only outwards is worse: relative
+         * widgets sit flush against each other, and because the marks are drawn in a layer above every widget,
+         * the strip of the selected widget then swallows the presses meant for its neighbour. Straddling keeps
+         * both to half.
+         */
+        const EDGE_GRAB = 12;
+        /** The square at a corner, centred on it, so it reaches half of this into the widget */
+        const HANDLE = 8;
 
         const widgetWidth100 = widget.style.width === '100%';
         const widgetHeight100 = widget.style.height === '100%';
 
-        const color = '#014488'; // it is so to be able to change color in a web storm
-        const border = `0.1em dashed ${color}`;
-        const borderDisabled = '0.1em dashed #888';
+        // The blue of the editor, the same one the selection is washed in
+        const color = '#0d72b8';
+        const colorDisabled = '#8a8a8a';
+        // Solid, not dashed: a dashed outline reads as "placeholder" or "disabled" in every other editor. Only
+        // the corner squares carry it; an edge draws its line through `color`, see vis.css.
+        const border = `${FRAME}px solid ${color}`;
+
+        // Everything is measured from the border box, which is what the eye takes for the edge of the widget.
+        // The marks sit on the padding box, so the border of the widget lies in front of it.
+        const edgeOffset = `calc(-${borderWidth} - ${EDGE_GRAB / 2}px)`;
+        const handleOffset = `calc(-${borderWidth} - ${HANDLE / 2}px)`;
+        const edgeThickness = `${EDGE_GRAB}px`;
+        const handleSize = `${HANDLE}px`;
+        /** Where an edge stops so that it does not run underneath the square of a corner */
+        const cornerInset = `${HANDLE / 2}px`;
 
         const resizable = this.isResizable();
 
@@ -1006,79 +1090,91 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
         const handlers: Record<string, Handler> = {
             top: {
-                top: offsetEm,
-                height: thicknessEm,
-                left: controllable['top-left'] ? shiftEm : 0,
-                right: controllable['top-right'] ? shiftEm : 0,
+                top: edgeOffset,
+                height: edgeThickness,
+                left: controllable['top-left'] ? cornerInset : 0,
+                right: controllable['top-right'] ? cornerInset : 0,
                 cursor: 'ns-resize',
                 background: 'transparent',
                 opacity: controllable.top ? RESIZERS_OPACITY : RESIZERS_OPACITY_DISABLED,
-                borderTop: controllable.top ? border : borderDisabled,
+                color: controllable.top ? color : colorDisabled,
             },
             bottom: {
-                bottom: offsetEm,
-                height: thicknessEm,
-                left: controllable['bottom-left'] ? shiftEm : 0,
-                right: controllable['bottom-right'] ? shiftEm : 0,
+                bottom: edgeOffset,
+                height: edgeThickness,
+                left: controllable['bottom-left'] ? cornerInset : 0,
+                right: controllable['bottom-right'] ? cornerInset : 0,
                 cursor: 'ns-resize',
                 background: 'transparent',
                 opacity: controllable.bottom ? RESIZERS_OPACITY : RESIZERS_OPACITY_DISABLED,
-                borderBottom: controllable.bottom ? border : borderDisabled,
+                color: controllable.bottom ? color : colorDisabled,
             },
             left: {
-                top: controllable['top-left'] ? shiftEm : 0,
-                bottom: controllable['bottom-left'] ? shiftEm : 0,
-                left: offsetEm,
-                width: thicknessEm,
+                top: controllable['top-left'] ? cornerInset : 0,
+                bottom: controllable['bottom-left'] ? cornerInset : 0,
+                left: edgeOffset,
+                width: edgeThickness,
                 cursor: 'ew-resize',
                 background: 'transparent',
                 opacity: controllable.left ? RESIZERS_OPACITY : RESIZERS_OPACITY_DISABLED,
-                borderLeft: controllable.left ? border : borderDisabled,
+                color: controllable.left ? color : colorDisabled,
             },
             right: {
-                top: controllable['top-right'] ? shiftEm : 0,
-                bottom: controllable['bottom-right'] ? shiftEm : 0,
-                right: offsetEm,
-                width: thicknessEm,
+                top: controllable['top-right'] ? cornerInset : 0,
+                bottom: controllable['bottom-right'] ? cornerInset : 0,
+                right: edgeOffset,
+                width: edgeThickness,
                 cursor: 'ew-resize',
                 background: 'transparent',
                 opacity: controllable.right ? RESIZERS_OPACITY : RESIZERS_OPACITY_DISABLED,
-                borderRight: controllable.right ? border : borderDisabled,
+                color: controllable.right ? color : colorDisabled,
             },
             'top-left': {
-                top: squareShift,
-                height: squareWidthHeight,
-                left: squareShift,
-                width: squareWidthHeight,
+                top: handleOffset,
+                height: handleSize,
+                left: handleOffset,
+                width: handleSize,
                 cursor: 'nwse-resize',
-                background: color,
+                background: '#fff',
+                border,
+                borderRadius: 1,
+                boxSizing: 'border-box',
                 opacity: RESIZERS_OPACITY,
             },
             'top-right': {
-                top: squareShift,
-                height: squareWidthHeight,
-                right: squareShift,
-                width: squareWidthHeight,
+                top: handleOffset,
+                height: handleSize,
+                right: handleOffset,
+                width: handleSize,
                 cursor: 'nesw-resize',
-                background: color,
+                background: '#fff',
+                border,
+                borderRadius: 1,
+                boxSizing: 'border-box',
                 opacity: RESIZERS_OPACITY,
             },
             'bottom-left': {
-                bottom: squareShift,
-                height: squareWidthHeight,
-                left: squareShift,
-                width: squareWidthHeight,
+                bottom: handleOffset,
+                height: handleSize,
+                left: handleOffset,
+                width: handleSize,
                 cursor: 'nesw-resize',
-                background: color,
+                background: '#fff',
+                border,
+                borderRadius: 1,
+                boxSizing: 'border-box',
                 opacity: RESIZERS_OPACITY,
             },
             'bottom-right': {
-                bottom: squareShift,
-                height: squareWidthHeight,
-                right: squareShift,
-                width: squareWidthHeight,
+                bottom: handleOffset,
+                height: handleSize,
+                right: handleOffset,
+                width: handleSize,
                 cursor: 'nwse-resize',
-                background: color,
+                background: '#fff',
+                border,
+                borderRadius: 1,
+                boxSizing: 'border-box',
                 opacity: RESIZERS_OPACITY,
             },
         };
@@ -1090,22 +1186,37 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
         return Object.keys(handlers).map((key: string) => {
             const handler = handlers[key];
+            /**
+             * An edge that cannot be dragged is only a line of the frame and must let the mouse through to the
+             * widget underneath. With the mouse it would go to the view instead - it has no handler, and the
+             * marks lie in a layer that is a child of the view - and the view takes a press it gets as a press
+             * on empty space: it deselects everything. On a small relative widget, where three of the four
+             * edges are such lines, a grab near an edge then deselected the widget instead of moving it.
+             */
+            let decoration = false;
             if (!(controllable as Record<string, boolean>)[key]) {
                 if (key.includes('-')) {
                     return null;
                 }
                 handler.cursor = 'default';
+                decoration = true;
             }
             if (frameOnly) {
                 // the frame is decoration here, nothing to grab
                 handler.cursor = 'default';
+                decoration = true;
             }
 
             return (
                 <div
                     key={key}
-                    className="vis-editmode-resizer"
-                    style={Object.assign(handler as React.CSSProperties, style)}
+                    // the key names the side - `top` or `top-left` - and vis.css draws the line from it
+                    className={`vis-editmode-resizer vis-editmode-resizer-${key}`}
+                    style={Object.assign(
+                        handler as React.CSSProperties,
+                        style,
+                        decoration ? { pointerEvents: 'none' as const } : null,
+                    )}
                     onMouseDown={
                         !frameOnly && handler.opacity === RESIZERS_OPACITY
                             ? e => this.onResizeStart(e, key as Resize)
@@ -2093,23 +2204,17 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         // to keep following the order of the widgets themselves.
         const resizeHandlers = this.getResizeHandlers(selected, widget, borderWidth);
         const layer = this.state.editMode ? getAdornerLayer(this.props.view) : null;
-        const marksRect = this.marksRect;
         const marks =
             layer && (widgetName || resizeHandlers)
                 ? createPortal(
                       <div
                           ref={this.refMarks}
                           className="vis-editmode-marks"
-                          style={{
-                              position: 'absolute',
-                              // the last measurement; updateMarksRect() writes the exact values after this render
-                              left: marksRect?.left ?? 0,
-                              top: marksRect?.top ?? 0,
-                              width: marksRect?.width ?? 0,
-                              height: marksRect?.height ?? 0,
-                              // the layer lets clicks through; only the marks themselves take the mouse back
-                              pointerEvents: 'none',
-                          }}
+                          // No geometry here on purpose: `applyMarks()` is the only writer of it. Rendering it
+                          // from the last measurement as well made React put a stale position into the DOM
+                          // after every render, and the two writers then drifted apart - the marks followed the
+                          // first gesture and stayed behind on every one after it.
+                          style={{ position: 'absolute', pointerEvents: 'none' }}
                       >
                           {widgetName}
                           {resizeHandlers}

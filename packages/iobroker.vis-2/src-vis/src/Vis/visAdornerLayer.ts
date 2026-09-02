@@ -48,3 +48,71 @@ export function registerAdornerLayer(view: string, element: HTMLDivElement | nul
 export function getAdornerLayer(view: string): HTMLDivElement | null {
     return layers[view] || null;
 }
+
+/** The box of a widget in the coordinates of the layer of its view */
+export interface MarksRect {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}
+
+/** A widget that draws marks into a layer */
+export interface MarksClient {
+    /** Name of the view this widget belongs to */
+    marksView(): string;
+    /** Read the DOM: where the marks of this widget have to sit, or null if it has none right now */
+    measureMarks(layerBox: DOMRect): MarksRect | null;
+    /** Write the result to the DOM */
+    applyMarks(rect: MarksRect | null): void;
+}
+
+const pending = new Set<MarksClient>();
+let flushScheduled = false;
+
+/**
+ * Put the marks of a widget onto it, together with those of every other widget that asked in the same turn.
+ *
+ * Reading the position of an element after the DOM was written forces the browser to lay the page out again.
+ * Doing that per widget - measure one, write one, measure the next - makes it lay out once PER WIDGET, which is
+ * what made dragging a relative widget stutter: such a drag moves the whole flow, so nearly every widget of the
+ * view has new marks at the same moment.
+ *
+ * So the work is collected and split in two: first every measurement, then every write. The browser then lays
+ * out once for the whole view instead of once per widget. The flush runs as a microtask, which is still before
+ * the browser paints, so the marks are on the widget in the same frame and nothing lags behind.
+ */
+export function scheduleMarksUpdate(client: MarksClient): void {
+    pending.add(client);
+    if (flushScheduled) {
+        return;
+    }
+    flushScheduled = true;
+    queueMicrotask(flushMarks);
+}
+
+/** A widget that goes away must not be measured any more */
+export function cancelMarksUpdate(client: MarksClient): void {
+    pending.delete(client);
+}
+
+function flushMarks(): void {
+    flushScheduled = false;
+    const clients = [...pending];
+    pending.clear();
+
+    // read everything ...
+    const layerBoxes: Record<string, DOMRect | null> = {};
+    const rects = clients.map(client => {
+        const view = client.marksView();
+        if (!(view in layerBoxes)) {
+            const layer = layers[view];
+            layerBoxes[view] = layer ? layer.getBoundingClientRect() : null;
+        }
+        const layerBox = layerBoxes[view];
+        return layerBox ? client.measureMarks(layerBox) : null;
+    });
+
+    // ... and only then write, so that no write can invalidate the next measurement
+    clients.forEach((client, index) => client.applyMarks(rects[index]));
+}

@@ -1634,6 +1634,11 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             this.bindingsTimer = setTimeout(() => {
                 this.bindingsTimer = null;
                 this.renderWidget(true);
+                // The request is served and has to be taken back. It stayed set otherwise, and every later
+                // render of this widget rendered the can.js widget again from the project - a gesture renders
+                // on every mouse move, so a dragged widget snapped back to its old place after each of them.
+                // Harmless for as long as a move wrote the DOM directly and did not render at all.
+                this.setState({ applyBindings: false });
             }, 10);
         }
 

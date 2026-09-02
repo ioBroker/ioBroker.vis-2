@@ -82,6 +82,36 @@ html {
     pointer-events: auto;
 }
 
+/*
+ * The handles are NOT grown beyond what is drawn. The marks lie in a layer above every widget, so any area a
+ * handle claims outside its own widget is taken away from the neighbour - and relative widgets sit flush
+ * against each other. 8px centred on the edge is the compromise: half of it over the widget, half over
+ * whatever is next to it.
+ *
+ * That is also why the line of an edge cannot be a border of the grab strip: the strip straddles the edge, so
+ * its own borders would sit 4px beside the widget. It is drawn through the middle instead, in the colour the
+ * strip carries - blue where the edge can be dragged, grey where it only marks the outline.
+ */
+.vis-adorner-layer .vis-editmode-resizer-top::after,
+.vis-adorner-layer .vis-editmode-resizer-bottom::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 1px solid currentColor;
+}
+
+.vis-adorner-layer .vis-editmode-resizer-left::after,
+.vis-adorner-layer .vis-editmode-resizer-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    border-left: 1px solid currentColor;
+}
+
 .vis-editmode-overlay {
     width: 100%;
     height: 100%;
@@ -107,7 +137,12 @@ html {
  */
 .vis-editmode-selected.vis-editmode-overlay {
     z-index: 1001;
-    background-color: #0d72b8;
+    /*
+     * The overlay is at `opacity: 0.3`, so this alpha is multiplied by it and the widget ends up washed in
+     * about 8% blue. A stronger wash marks the selection more, but one edits what it covers - and the outline
+     * and the handles say the same thing without taking the content away.
+     */
+    background-color: rgba(13, 114, 184, 0.27);
 }
 
 /* the widget names are hidden, so the selection has to carry more weight */
