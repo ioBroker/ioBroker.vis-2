@@ -22,7 +22,7 @@ import pl from './pl.json';
 import uk from './uk.json';
 import zhCn from './zh-cn.json';
 
-/** The words that name the attributes of the `basic` widgets, see {@link registerWords} */
-export default function registerBasicWords(): void {
+/** The words that name the attributes of the `jqplot` gauge, see {@link registerWords} */
+export default function registerJqPlotWords(): void {
     registerWords({ en, de, ru, pt, nl, fr, it, es, pl, uk, 'zh-cn': zhCn });
 }

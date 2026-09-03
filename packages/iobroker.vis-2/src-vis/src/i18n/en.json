@@ -834,6 +834,8 @@
     "help_speech_to_text": "Listens through the microphone of the browser and writes what was said into a state.",
     "help_value_float_bar": "A numeric state as a bar between a minimum and a maximum, upright or lying, with a colour of your own.",
     "help_value_input": "An input field for the value of a state, plain and without the styling of the jQui input.",
+    "jqplot_meter_gauge": "Meter gauge",
+    "help_jqplot_meter_gauge": "A numeric state as a needle on a half-round scale, with coloured bands for the ranges that matter.",
     "value_string": "String",
     "version": "version",
     "vertical": "vertical",

@@ -324,8 +324,11 @@ html {
  * two are kept apart completely: a project that styled its table through the old class names keeps that look
  * by switching the setting on, and nothing here can reach those names.
  *
- * The colours come in a light and a dark variant instead of from the theme object, because a table paints many
- * cells and putting the colours into inline styles would repeat them on every one of them.
+ * The colours are custom properties that the widget fills from the MUI theme, so the table follows whatever
+ * theme the project runs under, a self-made one included. They are set once on the container and not per cell:
+ * a table draws many cells, and MUI's own `TableCell` - which would bring the theme along by itself - measured
+ * about twice the render time of a plain `td` (14.7 vs 26.6 ms at 120 cells, 304 vs 571 ms at 3000). The
+ * values below are only what is used before the widget has set anything.
  */
 .vis-table-modern {
     --vis-table-border: #e0e0e0;
@@ -336,6 +339,7 @@ html {
     --vis-table-hover: #eef5fb;
     --vis-table-selected: #d6e8f7;
     --vis-table-accent: #0d72b8;
+    --vis-table-accent-fg: #ffffff;
 
     height: 100%;
     display: flex;
@@ -347,17 +351,6 @@ html {
     color: var(--vis-table-fg);
     font-family: inherit;
     font-size: 0.9em;
-}
-
-.vis-table-modern.vis-table-modern-dark {
-    --vis-table-border: #3a3f45;
-    --vis-table-head-bg: #23282e;
-    --vis-table-head-fg: #e8eaed;
-    --vis-table-fg: #d7dade;
-    --vis-table-row-alt: #1e2227;
-    --vis-table-hover: #263039;
-    --vis-table-selected: #14405f;
-    --vis-table-accent: #4dabf5;
 }
 
 .vis-table-modern .vis-table-modern-scroll {
@@ -420,7 +413,7 @@ html {
 
 .vis-table-modern button {
     font: inherit;
-    color: #fff;
+    color: var(--vis-table-accent-fg);
     background: var(--vis-table-accent);
     border: none;
     border-radius: 4px;

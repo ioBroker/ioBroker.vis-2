@@ -76,6 +76,8 @@ import TabsSliderTabs from './Tabs/TabsSliderTabs';
 
 import Swipe from './Swipe/Swipe';
 
+import JqPlotGauge from './JqPlot/JqPlotGauge';
+
 const WIDGETS = [
     BasicBar,
     BasicBulb,
@@ -154,6 +156,7 @@ const WIDGETS = [
     TabsSliderTabs,
 
     Swipe,
+    JqPlotGauge,
 ];
 
 export default WIDGETS;

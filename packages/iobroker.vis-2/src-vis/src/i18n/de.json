@@ -834,6 +834,8 @@
     "help_speech_to_text": "Hört über das Mikrofon des Browsers zu und schreibt das Gesprochene in einen Datenpunkt.",
     "help_value_float_bar": "Ein numerischer Datenpunkt als Balken zwischen Minimum und Maximum, stehend oder liegend, in selbst gewählter Farbe.",
     "help_value_input": "Ein Eingabefeld für den Wert eines Datenpunkts, schlicht und ohne die Gestaltung der jQui-Eingabe.",
+    "jqplot_meter_gauge": "Zeigerinstrument",
+    "help_jqplot_meter_gauge": "Ein numerischer Datenpunkt als Zeiger auf einer halbrunden Skala, mit farbigen Bändern für die wichtigen Bereiche.",
     "value_string": "Zeichenfolge",
     "version": "Ausführung",
     "vertical": "vertikal",
