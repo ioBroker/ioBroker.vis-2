@@ -86,7 +86,12 @@ export function moduleFederationShared(packageJson) {
         // factory, every MUI copy may have its own as long as they all read the theme from the shared
         // `@emotion/react` above.
         '@emotion/react',
-        '@iobroker/gui-components',
+        // `@iobroker/gui-components` is deliberately NOT shared, for the same reason as the icons below: a
+        // shared entry is bundled as a whole namespace, and the package is 2.8 MB - 518 KB of it images
+        // embedded as base64, 158 KB icon paths, 1562 words in nine languages - while vis-2 uses 24 of its
+        // exports and the runtime far fewer. Sharing it cost the runtime 313 KB that tree-shaking now takes
+        // out. It carries no state that would mind a second copy: `I18n` keeps the dictionary and the
+        // language on `window` on purpose, and the theme reaches a widget set through the shared MUI below.
         // `@iobroker/vis-2-widgets-react-dev` is deliberately NOT in this list. It is a build helper of the
         // widget sets whose runtime part is only a dummy `VisRxWidget` for their stand-alone demo page - the
         // real class reaches a widget set via `window.visRxWidget`. vis-2 never imports it, and since

@@ -52,17 +52,17 @@ import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
 import { getMultiViewWidgetId, hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
 
-import enLang from './i18n/en.json';
-import deLang from './i18n/de.json';
-import ruLang from './i18n/ru.json';
-import ptLang from './i18n/pt.json';
-import nlLang from './i18n/nl.json';
-import frLang from './i18n/fr.json';
-import itLang from './i18n/it.json';
-import esLang from './i18n/es.json';
-import plLang from './i18n/pl.json';
-import ukLang from './i18n/uk.json';
-import zhLang from './i18n/zh-cn.json';
+import enLang from './i18nRuntime/en.json';
+import deLang from './i18nRuntime/de.json';
+import ruLang from './i18nRuntime/ru.json';
+import ptLang from './i18nRuntime/pt.json';
+import nlLang from './i18nRuntime/nl.json';
+import frLang from './i18nRuntime/fr.json';
+import itLang from './i18nRuntime/it.json';
+import esLang from './i18nRuntime/es.json';
+import plLang from './i18nRuntime/pl.json';
+import ukLang from './i18nRuntime/uk.json';
+import zhLang from './i18nRuntime/zh-cn.json';
 
 const styles: { editModeComponentStyle: React.CSSProperties } = {
     editModeComponentStyle: {
@@ -236,21 +236,31 @@ export default class Runtime<
 
     protected setLoadingText?: (text: string | null) => void;
 
+    /**
+     * The words this app knows.
+     *
+     * The runtime carries only the ones it can actually show; the editor overrides this with its own, much
+     * bigger catalog. `tasks.js buildEditor()` copies every word of `i18nRuntime` that the editor catalog is
+     * missing into it, so a word that both need is written down once, here.
+     */
+    protected static translations: Record<string, Record<string, string>> = {
+        en: enLang,
+        de: deLang,
+        ru: ruLang,
+        pt: ptLang,
+        nl: nlLang,
+        fr: frLang,
+        it: itLang,
+        es: esLang,
+        pl: plLang,
+        uk: ukLang,
+        'zh-cn': zhLang,
+    };
+
     constructor(props: P) {
         const extendedProps = { ...props };
-        extendedProps.translations = {
-            en: enLang,
-            de: deLang,
-            ru: ruLang,
-            pt: ptLang,
-            nl: nlLang,
-            fr: frLang,
-            it: itLang,
-            es: esLang,
-            pl: plLang,
-            uk: ukLang,
-            'zh-cn': zhLang,
-        };
+        // `new.target` is the class that is really being built, so the editor gets its own catalog here
+        extendedProps.translations = new.target.translations;
 
         extendedProps.Connection = Connection as unknown as Connection;
         if (!window.disableDataReporting) {

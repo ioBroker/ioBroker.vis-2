@@ -114,8 +114,11 @@ class VisFormatUtils {
 
     static formatValue(value: number | string, decimals?: number | string, _format?: string): string {
         if (typeof decimals !== 'number') {
+            // The caller put the format where the number of places goes. Take it over before `decimals` is
+            // set, otherwise the format becomes the 2 that was just written there - which used to make this
+            // return "1undefined234,50", because `format[0]` was then read off a number.
+            _format = decimals;
             decimals = 2;
-            _format = decimals as unknown as string;
         }
 
         // format = (_format === undefined) ? (this.vis.isFloatComma) ? ".," : ",." : _format;

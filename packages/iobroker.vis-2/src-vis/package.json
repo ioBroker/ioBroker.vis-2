@@ -45,7 +45,8 @@
         "uuid": "^14.0.2",
         "vite": "8.2.2",
         "vite-plugin-commonjs": "^0.10.4",
-        "vite-plugin-top-level-await": "^1.6.0"
+        "vite-plugin-top-level-await": "^1.6.0",
+        "vitest": "^3.2.7"
     },
     "scripts": {
         "start": "vite --port 3000",
@@ -53,7 +54,9 @@
         "lint": "eslint -c eslint.config.mjs",
         "build": "tsc && vite build",
         "preview": "vite preview --port 3000",
-        "check-ts": "tsc --noEmit -p tsconfig.json"
+        "check-ts": "tsc --noEmit -p tsconfig.json",
+        "test": "vitest run --config vitest.config.ts",
+        "test:watch": "vitest --config vitest.config.ts"
     },
     "eslintConfig": {
         "extends": "react-app"

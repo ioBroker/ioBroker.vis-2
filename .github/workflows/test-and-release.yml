@@ -46,6 +46,11 @@ jobs:
             - name: Lint
               run: npm run lint
 
+            - name: Run unit tests
+              # a fraction of a second and no browser, so a broken binding parser shows up here and not
+              # three minutes later in the GUI run
+              run: npm run test-unit -w packages/iobroker.vis-2
+
             - name: Run local tests
               run: npm run test-gui -w packages/iobroker.vis-2
 

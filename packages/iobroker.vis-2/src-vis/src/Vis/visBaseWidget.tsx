@@ -1421,8 +1421,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
     static formatValue(value: string | number, decimals: number | string, _format?: string): string {
         if (typeof decimals !== 'number') {
+            // see VisFormatUtils.formatValue: the format has to be taken over before `decimals` is set
+            _format = decimals;
             decimals = 2;
-            _format = decimals as any as string;
         }
         const format = _format === undefined ? '.,' : _format;
         if (typeof value !== 'number') {
@@ -2210,6 +2211,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                       <div
                           ref={this.refMarks}
                           className="vis-editmode-marks"
+                          // the marks sit in the layer of the view, not inside the widget, so this is the only
+                          // thing that ties them back to it - for a test, and for anyone reading the DOM
+                          data-widget-id={this.props.id}
                           // No geometry here on purpose: `applyMarks()` is the only writer of it. Rendering it
                           // from the last measurement as well made React put a stale position into the DOM
                           // after every render, and the two writers then drifted apart - the marks followed the

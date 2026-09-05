@@ -1,7 +1,7 @@
 {
     "name": "iobroker.vis-2",
     "description": "Next generation graphical user interface for ioBroker.",
-    "version": "2.20.0",
+    "version": "2.20.1",
     "author": {
         "name": "bluefox",
         "email": "dogafox@gmail.com"
@@ -33,7 +33,7 @@
         "@iobroker/build-tools": "^3.0.1",
         "@iobroker/db-objects-redis": "^7.2.2",
         "@iobroker/db-states-redis": "^7.2.2",
-        "@iobroker/vis-2-widgets-testing": "^1.0.6",
+        "@iobroker/vis-2-widgets-testing": "^1.0.7",
         "@material-icons/svg": "^1.0.33",
         "@tsconfig/node22": "^22.0.6",
         "@types/jquery": "^4.0.1",
@@ -64,6 +64,7 @@
     ],
     "scripts": {
         "check-ts": "cd src-vis && tsc --noEmit -p tsconfig.json && cd .. && tsc --noEmit -p tsconfig.json",
+        "test-unit": "cd src-vis && npm run test",
         "start": "cd src-vis && npm run start",
         "lint": "eslint -c eslint.config.mjs",
         "test": "mocha ./test/*.engine.js --exit",

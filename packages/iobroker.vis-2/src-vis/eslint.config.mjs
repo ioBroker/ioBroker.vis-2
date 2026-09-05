@@ -22,9 +22,9 @@ export default [
         languageOptions: {
             parserOptions: {
                 projectService: {
-                    // vite.config.ts sits outside the tsconfig include ('./src/**/*'), so the type aware
-                    // rules have no project for it
-                    allowDefaultProject: ['*.js', '*.mjs', 'vite.config.ts'],
+                    // the two vite configs sit outside the tsconfig include ('./src/**/*'), so the type
+                    // aware rules have no project for them
+                    allowDefaultProject: ['*.js', '*.mjs', 'vite.config.ts', 'vitest.config.ts'],
                 },
                 tsconfigRootDir: import.meta.dirname,
             },

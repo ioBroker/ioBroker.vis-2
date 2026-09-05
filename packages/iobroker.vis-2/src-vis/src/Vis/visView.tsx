@@ -42,6 +42,14 @@ import { recalculateFields, selectView, store } from '@/Store';
 import VisBaseWidget from './visBaseWidget';
 import VisCanWidget from './visCanWidget';
 import { addClass, parseDimension } from './visUtils';
+import {
+    type Box,
+    computeRelativeOrder,
+    computeRulers,
+    selectionRect,
+    snapToGrid,
+    snapToWidgets,
+} from './visViewGeometry';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
@@ -580,20 +588,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               this.movement.h = e.pageY - (this.movement.startY || 0);
 
               if (this.selectDiv) {
-                  if (this.movement.w >= 0) {
-                      this.selectDiv.style.left = `${this.movement.x}px`;
-                      this.selectDiv.style.width = `${this.movement.w}px`;
-                  } else {
-                      this.selectDiv.style.left = `${this.movement.x + this.movement.w}px`;
-                      this.selectDiv.style.width = `${-this.movement.w}px`;
-                  }
-                  if (this.movement.h >= 0) {
-                      this.selectDiv.style.top = `${this.movement.y}px`;
-                      this.selectDiv.style.height = `${this.movement.h}px`;
-                  } else {
-                      this.selectDiv.style.top = `${this.movement.y + this.movement.h}px`;
-                      this.selectDiv.style.height = `${-this.movement.h}px`;
-                  }
+                  const rect = selectionRect(this.movement as Required<VisViewMovement>);
+                  this.selectDiv.style.left = `${rect.left}px`;
+                  this.selectDiv.style.top = `${rect.top}px`;
+                  this.selectDiv.style.width = `${rect.width}px`;
+                  this.selectDiv.style.height = `${rect.height}px`;
                   // get selected widgets
                   const widgets: AnyWidgetId[] = this.getWidgetsInRect(
                       this.selectDiv.getBoundingClientRect(),
@@ -847,34 +846,16 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return;
         }
 
-        let target: AnyWidgetId | null = null;
-        let after = false;
-
+        const boxes: Partial<Record<AnyWidgetId, Box>> = {};
         for (const wid of drag.order) {
-            if (wid === drag.wid) {
-                continue;
-            }
-            const ref = this.widgetsRefs[wid]?.widDiv || this.widgetsRefs[wid]?.refService?.current;
-            const rect = ref?.getBoundingClientRect();
-            if (rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                target = wid;
-                // the widgets are stacked in columns, so the vertical half is what decides
-                after = y > rect.top + rect.height / 2;
-                break;
+            const element = this.widgetsRefs[wid]?.widDiv || this.widgetsRefs[wid]?.refService?.current;
+            const box = element?.getBoundingClientRect();
+            if (box) {
+                boxes[wid] = box;
             }
         }
 
-        if (!target) {
-            return;
-        }
-
-        const order = [...drag.order];
-        const from = order.indexOf(drag.wid);
-        order.splice(from, 1);
-        const targetPos = order.indexOf(target);
-        const to = after ? targetPos + 1 : targetPos;
-        order.splice(to, 0, drag.wid);
-
+        const order = computeRelativeOrder(drag.order, drag.wid, boxes, x, y);
         if (order.join(',') !== drag.order.join(',')) {
             this.setState({ relativeDrag: { ...drag, order } });
         }
@@ -914,67 +895,47 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               const viewRect = this.refView.current.getBoundingClientRect();
 
               if (!this.movement.isResize && store.getState().visProject[this.props.view].settings?.snapType === 2) {
-                  const gridSize =
-                      parseInt(
-                          (store.getState().visProject[this.props.view].settings?.gridSize || 0) as unknown as string,
-                          10,
-                      ) || 10;
-                  this.movement.x -= Math.ceil(
-                      ((this.movement.startWidget?.left || 0) - viewRect.left + this.movement.x) % gridSize,
+                  const gridSize = parseInt(
+                      (store.getState().visProject[this.props.view].settings?.gridSize || 0) as unknown as string,
+                      10,
                   );
-                  this.movement.y -= Math.ceil(
-                      ((this.movement.startWidget?.top || 0) - viewRect.top + this.movement.y) % gridSize,
+                  const snapped = snapToGrid(
+                      this.movement,
+                      {
+                          left: this.movement.startWidget?.left || 0,
+                          top: this.movement.startWidget?.top || 0,
+                      },
+                      viewRect,
+                      gridSize,
                   );
+                  this.movement.x = snapped.x;
+                  this.movement.y = snapped.y;
               }
 
               if (!this.movement.isResize && store.getState().visProject[this.props.view].settings?.snapType === 1) {
-                  const left = (this.movement.startWidget?.left || 0) + this.movement.x;
-                  const right = (this.movement.startWidget?.right || 0) + this.movement.x;
-                  const top = (this.movement.startWidget?.top || 0) + this.movement.y;
-                  const bottom = (this.movement.startWidget?.bottom || 0) + this.movement.y;
-                  for (const wid in widgetsRefs) {
-                      const widgetId = wid as AnyWidgetId;
-                      // do not snap to itself
-                      if (this.selectedWidgets.includes(widgetId)) {
+                  // the rectangles of everything that is not being dragged; a widget does not snap to itself
+                  const others: Box[] = [];
+                  for (const wid of Object.keys(widgetsRefs) as AnyWidgetId[]) {
+                      if (this.selectedWidgets.includes(wid)) {
                           continue;
                       }
-                      const widgetRect = widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
-
-                      if (widgetRect) {
-                          if (
-                              Math.abs(widgetRect.top - bottom) <= 10 &&
-                              left <= widgetRect.right &&
-                              right >= widgetRect.left
-                          ) {
-                              this.movement.y += Math.round(widgetRect.top - bottom);
-                              break;
-                          }
-                          if (
-                              Math.abs(widgetRect.bottom - top) <= 10 &&
-                              left <= widgetRect.right &&
-                              right >= widgetRect.left
-                          ) {
-                              this.movement.y += Math.round(widgetRect.bottom - top);
-                              break;
-                          }
-                          if (
-                              Math.abs(widgetRect.left - right) <= 10 &&
-                              top <= widgetRect.bottom &&
-                              bottom >= widgetRect.top
-                          ) {
-                              this.movement.x += Math.round(widgetRect.left - right);
-                              break;
-                          }
-                          if (
-                              Math.abs(widgetRect.right - left) <= 10 &&
-                              top <= widgetRect.bottom &&
-                              bottom >= widgetRect.top
-                          ) {
-                              this.movement.x += Math.round(widgetRect.right - left);
-                              break;
-                          }
+                      const box = widgetsRefs[wid].refService?.current?.getBoundingClientRect();
+                      if (box) {
+                          others.push(box);
                       }
                   }
+                  const snapped = snapToWidgets(
+                      this.movement,
+                      {
+                          left: this.movement.startWidget?.left || 0,
+                          top: this.movement.startWidget?.top || 0,
+                          right: this.movement.startWidget?.right || 0,
+                          bottom: this.movement.startWidget?.bottom || 0,
+                      },
+                      others,
+                  );
+                  this.movement.x = snapped.x;
+                  this.movement.y = snapped.y;
               }
 
               this.showRulers();
@@ -1055,72 +1016,45 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return;
         }
 
-        const verticals = [];
-        const horizontals = [];
-
         const viewRect = this.refView.current?.getBoundingClientRect();
 
         if (!viewRect) {
             return;
         }
 
-        for (const wid of Object.keys(this.widgetsRefs)) {
-            const widgetId = wid as AnyWidgetId;
-            const { widgets } = selectView(store.getState(), this.props.view);
+        const { widgets } = selectView(store.getState(), this.props.view);
+        const others: Box[] = [];
+        const selected: Box[] = [];
+
+        for (const wid of Object.keys(this.widgetsRefs) as AnyWidgetId[]) {
             if (
-                !this.selectedWidgets.includes(widgetId) &&
-                widgets[widgetId] &&
-                ((this.props.selectedGroup && widgets[this.props.selectedGroup].data.members.includes(widgetId)) ||
+                !this.selectedWidgets.includes(wid) &&
+                widgets[wid] &&
+                ((this.props.selectedGroup && widgets[this.props.selectedGroup].data.members.includes(wid)) ||
                     !this.props.selectedGroup) &&
-                (!widgets[widgetId].grouped || this.props.selectedGroup)
+                (!widgets[wid].grouped || this.props.selectedGroup)
             ) {
-                if (!this.widgetsRefs[widgetId].refService?.current) {
-                    console.error(`CHECK WHY!!! ${widgetId} has no refService.current`);
+                const box = this.widgetsRefs[wid].refService?.current?.getBoundingClientRect();
+                if (box) {
+                    others.push(box);
                 } else {
-                    const boundingRect = this.widgetsRefs[widgetId].refService?.current?.getBoundingClientRect();
-                    if (boundingRect) {
-                        horizontals.push(Math.round(boundingRect.top));
-                        horizontals.push(Math.round(boundingRect.bottom));
-                        verticals.push(Math.round(boundingRect.left));
-                        verticals.push(Math.round(boundingRect.right));
-                    }
+                    console.error(`CHECK WHY!!! ${wid} has no refService.current`);
                 }
             }
         }
 
-        const selectedHorizontals: number[] = [];
-        const selectedVerticals: number[] = [];
         for (const wid of this.selectedWidgets) {
-            const { widgets } = selectView(store.getState(), this.props.view);
-            // check if not in a group
             // a selected widget does not have to be rendered: a relative widget that is being dragged is
             // replaced by its placeholder for the duration of the gesture, so it has no ref
             if (widgets[wid] && (!widgets[wid].grouped || this.props.selectedGroup)) {
-                const boundingRect = this.widgetsRefs[wid]?.refService?.current?.getBoundingClientRect();
-                if (boundingRect) {
-                    selectedHorizontals.push(Math.round(boundingRect.top));
-                    selectedHorizontals.push(Math.round(boundingRect.bottom));
-                    selectedVerticals.push(Math.round(boundingRect.left));
-                    selectedVerticals.push(Math.round(boundingRect.right));
+                const box = this.widgetsRefs[wid]?.refService?.current?.getBoundingClientRect();
+                if (box) {
+                    selected.push(box);
                 }
             }
         }
 
-        horizontals.forEach(horizontal =>
-            selectedHorizontals.forEach(selectedHorizontal => {
-                if (Math.abs(horizontal - selectedHorizontal) <= 0.3) {
-                    rulers.push({ type: 'horizontal', value: horizontal - viewRect.top });
-                }
-            }),
-        );
-
-        verticals.forEach(vertical =>
-            selectedVerticals.forEach(selectedVertical => {
-                if (Math.abs(vertical - selectedVertical) <= 0.3) {
-                    rulers.push({ type: 'vertical', value: vertical - viewRect.left });
-                }
-            }),
-        );
+        rulers.push(...computeRulers(others, selected, viewRect));
 
         this.setState({ rulers });
     };

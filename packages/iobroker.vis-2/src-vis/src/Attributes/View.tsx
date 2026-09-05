@@ -71,9 +71,14 @@ const styles: Record<string, any> = {
         p: 0,
         m: 0,
     }),
+    // A cell has to stay a cell: `display: flex` here took it out of the table layout, and the row fell apart -
+    // the label spanned the full width with its icon pushed to the far edge, and the control below it. The
+    // flex belongs on something inside the cell.
     fieldTitle: {
         width: 140,
         fontSize: '80%',
+    },
+    fieldTitleContent: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -461,8 +466,10 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                                                         style={styles.fieldTitle}
                                                         title={!field.title ? undefined : I18n.t(field.title)}
                                                     >
-                                                        {I18n.t(field.label)}
-                                                        {helpText}
+                                                        <div style={styles.fieldTitleContent}>
+                                                            {I18n.t(field.label)}
+                                                            {helpText}
+                                                        </div>
                                                     </td>
                                                     <Box
                                                         component="td"

@@ -98,6 +98,18 @@ import type { VisEngineHandlers } from './Vis/visView';
 import registerBasicWords from '@/Vis/Widgets/Basic/i18n';
 import registerJqPlotWords from '@/Vis/Widgets/JqPlot/i18n';
 
+import enLang from './i18n/en.json';
+import deLang from './i18n/de.json';
+import ruLang from './i18n/ru.json';
+import ptLang from './i18n/pt.json';
+import nlLang from './i18n/nl.json';
+import frLang from './i18n/fr.json';
+import itLang from './i18n/it.json';
+import esLang from './i18n/es.json';
+import plLang from './i18n/pl.json';
+import ukLang from './i18n/uk.json';
+import zhLang from './i18n/zh-cn.json';
+
 const styles: Record<string, any> = {
     block: {
         // A flex column so the content area can take whatever the header and the tabs leave over. `overflow`
@@ -358,6 +370,24 @@ registerBasicWords();
 registerJqPlotWords();
 
 export default class Editor extends Runtime<EditorProps, EditorState> {
+    /**
+     * Everything the editor says, which is far more than the runtime needs - see `Runtime.translations`, whose
+     * catalog holds only the words a dashboard can show. The runtime does not carry these.
+     */
+    protected static translations: Record<string, Record<string, string>> = {
+        en: enLang,
+        de: deLang,
+        ru: ruLang,
+        pt: ptLang,
+        nl: nlLang,
+        fr: frLang,
+        it: itLang,
+        es: esLang,
+        pl: plLang,
+        uk: ukLang,
+        'zh-cn': zhLang,
+    };
+
     mainRef: React.RefObject<HTMLDivElement | null> | null = null;
 
     tempProject: Project | null = null;
