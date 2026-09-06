@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { toPng } from 'html-to-image';
 
 import {
@@ -21,6 +22,7 @@ import IOContextMenu from '../Components/IOContextMenu';
 import WidgetExportDialog from '../Toolbar/WidgetExportDialog';
 import WidgetImportDialog from '../Toolbar/WidgetImportDialog';
 import { type WidgetType, getWidgetTypes } from './visWidgetsCatalog';
+import { getAdornerLayer } from './visAdornerLayer';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 
 interface VisContextMenuProps {
@@ -54,9 +56,51 @@ export interface VisMarketplaceProps {
     onAdded?: () => void;
 }
 
+/**
+ * Show on the view which widget an entry of the "Select" submenu is about.
+ *
+ * That submenu only opens when widgets overlap - and then the menu covers exactly the spot they overlap in, so
+ * `w000437` alone says nothing about which of them it is. Pointing at an entry therefore lights the widget up
+ * in the blue a widget already wears when the mouse is over it, before anything is selected.
+ *
+ * The boxes are drawn into the adorner layer of the view (see `visAdornerLayer.ts`), which is what that layer
+ * is there for: it lies above every widget and lets the mouse through, so nothing has to be written into the
+ * widgets themselves - which is also the only way that works for a can.js widget and a React one alike.
+ */
+function HighlightedWidgets(props: { view: string; widgets: AnyWidgetId[] }): React.JSX.Element | null {
+    const layer = props.widgets.length ? getAdornerLayer(props.view) : null;
+    if (!layer) {
+        return null;
+    }
+    const layerBox = layer.getBoundingClientRect();
+
+    return createPortal(
+        <>
+            {props.widgets.map(wid => {
+                const rect = window.document.getElementById(wid)?.getBoundingClientRect();
+                return rect ? (
+                    <div
+                        key={wid}
+                        className="vis-editmode-widget-highlight"
+                        style={{
+                            left: rect.left - layerBox.left,
+                            top: rect.top - layerBox.top,
+                            width: rect.width,
+                            height: rect.height,
+                        }}
+                    />
+                ) : null;
+            })}
+        </>,
+        layer,
+    );
+}
+
 const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null => {
     const [exportDialog, setExportDialog] = useState(false);
     const [importDialog, setImportDialog] = useState(false);
+    /** What the entry under the pointer would select, shown on the view while it is pointed at */
+    const [highlightedWidgets, setHighlightedWidgets] = useState<AnyWidgetId[]>([]);
     const visProject = store.getState().visProject;
 
     if (!visProject[props.selectedView] && Object.keys(visProject).length > 1) {
@@ -141,10 +185,13 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                                   label: 'all',
                                   hide: coordinatesWidgets.length === 1,
                                   onClick: () => props.setSelectedWidgets(coordinatesWidgets),
+                                  onHover: (hovered: boolean) =>
+                                      setHighlightedWidgets(hovered ? coordinatesWidgets : []),
                               },
                               ...coordinatesWidgets.map(widget => ({
                                   label: widget,
                                   onClick: () => props.setSelectedWidgets([widget]),
+                                  onHover: (hovered: boolean) => setHighlightedWidgets(hovered ? [widget] : []),
                               })),
                           ],
                       },
@@ -352,12 +399,17 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                 <IOContextMenu
                     menuItemsData={menuItemsData}
                     disabled={props.disabled}
+                    onClosed={() => setHighlightedWidgets([])}
                 >
                     {props.children}
                 </IOContextMenu>
             ) : (
                 props.children
             )}
+            <HighlightedWidgets
+                view={props.selectedView}
+                widgets={highlightedWidgets}
+            />
             {importDialog ? (
                 <WidgetImportDialog
                     onClose={() => setImportDialog(false)}

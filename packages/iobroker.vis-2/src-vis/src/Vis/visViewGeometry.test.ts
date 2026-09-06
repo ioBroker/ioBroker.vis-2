@@ -6,6 +6,7 @@ import {
     type Box,
     computeRelativeOrder,
     computeRulers,
+    droppedOrderIsDone,
     selectionRect,
     snapToGrid,
     snapToWidgets,
@@ -128,24 +129,24 @@ describe('computeRelativeOrder', () => {
     };
 
     it('puts the widget before the one it is dropped on the upper half of', () => {
-        expect(computeRelativeOrder(order, 'w3' as AnyWidgetId, boxes, 50, 60)).toEqual(['w1', 'w3', 'w2']);
+        expect(computeRelativeOrder(order, 'w3', boxes, 50, 60)).toEqual(['w1', 'w3', 'w2']);
     });
 
     it('puts it after the one it is dropped on the lower half of', () => {
-        expect(computeRelativeOrder(order, 'w1' as AnyWidgetId, boxes, 50, 90)).toEqual(['w2', 'w1', 'w3']);
+        expect(computeRelativeOrder(order, 'w1', boxes, 50, 90)).toEqual(['w2', 'w1', 'w3']);
     });
 
     it('leaves the order alone when the cursor is over nothing', () => {
-        expect(computeRelativeOrder(order, 'w1' as AnyWidgetId, boxes, 500, 500)).toEqual(order);
+        expect(computeRelativeOrder(order, 'w1', boxes, 500, 500)).toEqual(order);
     });
 
     it('does not let a widget be dropped on itself', () => {
         // the cursor is over w1, which is the one being dragged, so nothing else is under it
-        expect(computeRelativeOrder(order, 'w1' as AnyWidgetId, boxes, 50, 20)).toEqual(order);
+        expect(computeRelativeOrder(order, 'w1', boxes, 50, 20)).toEqual(order);
     });
 
     it('leaves the order alone when a widget has no rectangle', () => {
-        expect(computeRelativeOrder(order, 'w1' as AnyWidgetId, {}, 50, 60)).toEqual(order);
+        expect(computeRelativeOrder(order, 'w1', {}, 50, 60)).toEqual(order);
     });
 });
 
@@ -170,5 +171,37 @@ describe('selectionRect', () => {
 
     it('copes with a frame that was not dragged at all', () => {
         expect(selectionRect({ x: 5, y: 5, w: 0, h: 0 })).toEqual({ left: 5, top: 5, width: 0, height: 0 });
+    });
+});
+
+describe('droppedOrderIsDone', () => {
+    const ids = (...names: string[]): AnyWidgetId[] => names as AnyWidgetId[];
+
+    it('holds on while the project still has the widget where it started', () => {
+        // dropped w3 from the end to the front; the project is still the old order
+        expect(droppedOrderIsDone(ids('w1', 'w2', 'w3'), ids('w3', 'w1', 'w2'), 'w3')).toBe(false);
+    });
+
+    it('lets go once the dragged widget arrived where it was dropped', () => {
+        expect(droppedOrderIsDone(ids('w3', 'w1', 'w2'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
+    });
+
+    it('lets go even when the saved order differs in something the drag never touched', () => {
+        // w3 landed in front as dropped; that w1 and w2 swapped meanwhile is not this gesture's business,
+        // and holding on for an exact match would freeze the view on the dropped order for good
+        expect(droppedOrderIsDone(ids('w3', 'w2', 'w1'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
+    });
+
+    it('lets go when a widget was added meanwhile, which the dropped order does not know', () => {
+        // rendering from an order without w4 would leave w4 out of the view entirely
+        expect(droppedOrderIsDone(ids('w1', 'w2', 'w3', 'w4'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
+    });
+
+    it('lets go when a widget was removed meanwhile', () => {
+        expect(droppedOrderIsDone(ids('w1', 'w3'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
+    });
+
+    it('lets go when the dragged widget itself is gone', () => {
+        expect(droppedOrderIsDone(ids('w1', 'w2'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
     });
 });

@@ -42,6 +42,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { isVarFinite } from '@/Utilities/utils';
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { ensureLegacyLibs } from '../../visLoadLegacy';
 
 export type JQuiButtonDataProps = {
     buttontext: string;
@@ -456,7 +457,9 @@ class JQuiButton<
         if (this.refButton.current) {
             if (this.state.rxData.jquery_style && !(this.refButton.current as any)._jQueryDone) {
                 (this.refButton.current as any)._jQueryDone = true;
-                (window.jQuery as any)(this.refButton.current).button();
+                const button = this.refButton.current;
+                // jQuery UI is only fetched for the widgets that switched this style on
+                void ensureLegacyLibs().then(() => (window.jQuery as any)(button).button());
             }
             if (
                 this.refButton.current.clientWidth !== this.state.width ||

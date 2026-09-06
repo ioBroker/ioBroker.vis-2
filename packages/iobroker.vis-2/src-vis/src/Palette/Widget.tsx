@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useDrag } from 'react-dnd';
-import useConnectRef from '@/Utilities/useConnectRef';
-import { getEmptyImage } from 'react-dnd-html5-backend';
+import { useDraggable } from '@dnd-kit/core';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 import { Delete as DeleteIcon, Update as UpdateIcon, Block as DeletedIcon } from '@mui/icons-material';
@@ -105,6 +103,14 @@ interface WidgetProps {
     marketplace?: MarketplaceWidgetRevision;
     marketplaceUpdates?: MarketplaceWidgetRevision[];
     marketplaceDeleted?: string[];
+}
+
+/** What a palette entry hands over while it is dragged. `ViewDrop` in the editor reads it back. */
+export interface WidgetDragData {
+    kind: 'widget';
+    widgetSet: string;
+    widgetType: WidgetType | MarketplaceWidgetRevision;
+    preview: React.JSX.Element;
 }
 
 const Widget = (props: WidgetProps): React.JSX.Element | null => {
@@ -266,27 +272,21 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
     );
 
     const widthRef = useRef<HTMLSpanElement>(null);
-    const [, dragRef, preview] = useDrag(
-        {
-            type: 'widget',
-            item: () => ({
-                widgetType: props.widgetType,
-                widgetSet: props.widgetSet,
-                preview: <div style={{ width: widthRef.current?.offsetWidth || 100 }}>{result}</div>,
-            }),
-            collect: monitor => ({
-                isDragging: monitor.isDragging(),
-                handlerId: monitor.getHandlerId(),
-            }),
-        },
-        [props.widgetType],
-    );
-
-    const setDragRef = useConnectRef<HTMLSpanElement>(dragRef);
-
-    useEffect(() => {
-        preview(getEmptyImage(), { captureDraggingState: true });
-    }, [props.widgetType]);
+    // dnd-kit re-reads `data` when the drag starts, so the preview is built from the current render and the
+    // lazy `item()` react-dnd needed here is gone. There is no `getEmptyImage()` either: nothing native is
+    // dragged, so the browser draws no ghost that would have to be hidden.
+    // `attributes` of dnd-kit are left out on purpose: they would put `role="button"` on this span, and a
+    // palette entry has real buttons of its own inside it for the marketplace widgets
+    const { listeners, setNodeRef } = useDraggable({
+        id: `widget_${props.widgetTypeName}`,
+        disabled: !props.editMode,
+        data: {
+            kind: 'widget',
+            widgetSet: props.widgetSet,
+            widgetType: props.widgetType,
+            preview: <div style={{ width: widthRef.current?.offsetWidth || 100 }}>{result}</div>,
+        } satisfies WidgetDragData,
+    });
 
     if (typeof props.widgetType.customPalette === 'function') {
         if (!props.editMode) {
@@ -305,9 +305,10 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
 
     return (
         <span
-            ref={props.editMode ? setDragRef : null}
+            ref={props.editMode ? setNodeRef : null}
             id={`widget_${props.widgetTypeName}`}
             className={`widget-${props.widgetSet}`}
+            {...(props.editMode ? listeners : undefined)}
         >
             <span ref={widthRef}>{result}</span>
         </span>

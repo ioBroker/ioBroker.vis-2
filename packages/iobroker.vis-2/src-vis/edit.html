@@ -8,13 +8,7 @@
     <meta name="theme-color" content="#000000"/>
     <link rel="manifest" href="/manifest.json" id="vis-manifest"/>
 
-    <link rel="stylesheet" type="text/css" href="./lib/css/jquery.multiselect-1.13.css"/>
 
-    <script type="text/javascript" src="./lib/js/jquery-1.11.2.min.js"></script>
-    <script type="text/javascript" src="./lib/js/jquery-ui-1.11.4.full.min.js"></script>
-    <script type="text/javascript" src="./lib/js/can.custom.js"></script>
-    <script type="text/javascript" src="./lib/js/jquery.multiselect-1.13.min.js"></script>
-    <script type="text/javascript" src="./lib/js/quo.standalone.js"></script>
     <script type="text/javascript" id="_socket/info.js"></script>
     <script type="text/javascript" id="config.js"></script> <!-- this file must be before vis.js -->
     <script type="text/javascript">
@@ -133,6 +127,11 @@
         document.head.appendChild(script);
     </script>
     <!--script type="text/javascript" src="/../../socket.io/socket.io.js"></script-->
+    <!--
+        jQuery, jQuery UI, can.js, the multiselect plugin and quo used to be loaded here, 474 KB before the
+        first pixel. vis-2 has no ejs template of its own any more, so they are fetched on demand now - see
+        src/Vis/visLoadLegacy.ts for who asks for them and when.
+    -->
 </head>
 <body>
 <div id="root"></div>

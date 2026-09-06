@@ -70,6 +70,8 @@ import VisView from './visView';
 import VisFormatUtils from './visFormatUtils';
 import { getUrlParameter, extractBinding, readFile, isLocalStateId } from './visUtils';
 import VisWidgetsCatalog from './visWidgetsCatalog';
+import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded } from './visLoadLegacy';
+import { createStateValues, upgradeStateValues } from './visCanStates';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
     if (!text) {
@@ -290,7 +292,16 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
     defaultMode!: number;
 
-    can: any;
+    /**
+     * can.js, once it is there.
+     *
+     * This used to be copied out of `window` in the constructor, which only worked because the library was a
+     * blocking script tag in the page. It is loaded on demand now, so the value has to be read at the moment
+     * it is used - `render` puts it into the widget context, and that runs again after the load.
+     */
+    get can(): any {
+        return window.can;
+    }
 
     refViews: Record<
         string,
@@ -312,8 +323,10 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
     constructor(props: VisEngineProps) {
         super(props);
-        window.jQuery = window.$;
-        window.$ = window.jQuery; // jQuery library
+        // jQuery puts itself on `window` under both names, but it is only loaded once a legacy widget asks
+        // for it - so take over whatever is already there and never overwrite it with `undefined`
+        window.jQuery ||= window.$;
+        window.$ ||= window.jQuery; // jQuery library
         // window.$$ = $$; // Gestures library
         window.systemLang = props.lang || window.systemLang || 'en';
 
@@ -328,7 +341,6 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         // set moment locale
         moment.locale(window.systemLang);
 
-        this.can = window.can;
         this.scripts = null;
         this.isTouch = 'ontouchstart' in document.documentElement;
         this.debounceInterval = 700;
@@ -483,14 +495,17 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     }
 
     componentDidMount(): void {
-        // modify jquery dialog to add it to view (originally dialog was added to body) (because of styles)
-        (window.$ as any).ui.dialog.prototype._appendTo = function () {
-            const wid = this.options.wid;
-            const views = store.getState().visProject;
-            const view = Object.keys(views).find(v => views[v].widgets?.[wid]);
-            !view && console.warn(`Cannot find view for widget "${wid}"!`);
-            return this.document.find(view ? `#visview_${view.replace(/\s/g, '_')}` : 'body').eq(0);
-        };
+        // Modify jquery dialog to add it to view (originally dialog was added to body) (because of styles).
+        // Only a vis-1 widget opens such a dialog, so this waits for jQuery UI instead of loading it.
+        onLegacyLibsLoaded(() => {
+            (window.$ as any).ui.dialog.prototype._appendTo = function () {
+                const wid = this.options.wid;
+                const views = store.getState().visProject;
+                const view = Object.keys(views).find(v => views[v].widgets?.[wid]);
+                !view && console.warn(`Cannot find view for widget "${wid}"!`);
+                return this.document.find(view ? `#visview_${view.replace(/\s/g, '_')}` : 'body').eq(0);
+            };
+        });
 
         // generate the browser instance ID
         if (!window.localStorage.getItem('visInstance')) {
@@ -584,37 +599,40 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     }
 
     createLegacyVisObject(): VisLegacy {
-        // simulate legacy file manager
+        // Simulate legacy file manager. Only a vis-1 widget ever reaches for `$.fm`, so the hook waits until
+        // jQuery is loaded for such a widget instead of pulling the library in just to be hung on.
         if (this.props.showLegacyFileSelector) {
-            (window.jQuery as any).fm = (
-                options: {
-                    path?: string;
-                    userArg?: any;
-                },
-                onChange: (
-                    data: {
-                        path: string;
-                        file: string;
+            onLegacyLibsLoaded(() => {
+                (window.jQuery as any).fm = (
+                    options: {
+                        path?: string;
+                        userArg?: any;
                     },
-                    userArg: any,
-                ) => void,
-            ) => {
-                // possible options
-                // {
-                //     lang,
-                //     defaultPath,
-                //     path,
-                //     uploadDir,
-                //     fileFilter,
-                //     folderFilter,
-                //     mode: 'open',
-                //     view: 'prev',
-                //     userArg: wdata,
-                //     conn,
-                //     zindex
-                // }
-                this.props.showLegacyFileSelector?.((data, userArg) => onChange(data, userArg), options);
-            };
+                    onChange: (
+                        data: {
+                            path: string;
+                            file: string;
+                        },
+                        userArg: any,
+                    ) => void,
+                ) => {
+                    // possible options
+                    // {
+                    //     lang,
+                    //     defaultPath,
+                    //     path,
+                    //     uploadDir,
+                    //     fileFilter,
+                    //     folderFilter,
+                    //     mode: 'open',
+                    //     view: 'prev',
+                    //     userArg: wdata,
+                    //     conn,
+                    //     zindex
+                    // }
+                    this.props.showLegacyFileSelector?.((data, userArg) => onChange(data, userArg), options);
+                };
+            });
         }
 
         return {
@@ -1660,8 +1678,21 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     }
 
     initCanObjects(): CanObservable<Record<string, any>> {
-        // creat "Can" objects
-        return new this.can.Map({ 'nothing_selected.val': null });
+        if (!isLegacyLibsLoaded()) {
+            // The states are collected from the first subscription on, but can.js only shows up once a vis-1
+            // widget set does. Move them into the real can.Map as soon as it is there, so the vis-1 templates
+            // observe the values they always did. This runs before any widget set script, because the engine
+            // registers for the load before anybody asks for it.
+            onLegacyLibsLoaded(() => {
+                this.canStates = upgradeStateValues(this.canStates);
+                this.vis.states = this.canStates;
+                // the widgets get the store through the context, and that is built in `render`
+                this.forceUpdate();
+            });
+        }
+
+        // Until then the values live in a plain object with the same surface - see `visCanStates`
+        return createStateValues();
 
         /*
         if (false && this.props.editMode) {
@@ -1716,7 +1747,14 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     }
 
     _setValue(id: string, val: ioBroker.StateValue): void {
-        const oldVal = this.canStates.attr(`${id}.val`);
+        // the state as it stands, to put it back if the write does not go through
+        const oldState = {
+            val: this.canStates.attr(`${id}.val`),
+            ack: this.canStates.attr(`${id}.ack`),
+            ts: this.canStates.attr(`${id}.ts`),
+            lc: this.canStates.attr(`${id}.lc`),
+            q: this.canStates.attr(`${id}.q`),
+        } as unknown as ioBroker.SettableState;
 
         // Send ack=false with new value to all widgets
         this.onStateChange(id, { val, ack: false });
@@ -1726,10 +1764,10 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             return;
         }
 
-        // save actual value to restore it in case of error
         this.props.socket.setState(id, { val, ack: false }).catch(error => {
             console.error(`Cannot set ${id} with "${val}: ${error}`);
-            if (oldVal === undefined) {
+            if (oldState.val === undefined) {
+                // nothing was known about the state before, so take the value that was never written out again
                 this.canStates.removeAttr(`${id}.val`);
                 this.canStates.removeAttr(`${id}.q`);
                 this.canStates.removeAttr(`${id}.from`);
@@ -1737,8 +1775,11 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 this.canStates.removeAttr(`${id}.lc`);
                 this.canStates.removeAttr(`${id}.ack`);
             } else {
-                // If error set value back, but we need generate the edge
-                this.canStates.attr(`${id}.val`, oldVal);
+                // Put the old state back the way the optimistic value went in, so the edge is generated.
+                // Writing `canStates` alone would only reach the vis-1 widgets that observe it - a React
+                // widget hears about a change through `onStateChange` and would otherwise go on showing a
+                // value that never reached the state.
+                this.onStateChange(id, oldState);
             }
         });
     }
@@ -1811,6 +1852,17 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         elm.innerHTML = html;
         // we must load script one after another, to keep the order
         const scripts: HTMLScriptElement[] = Array.from(elm.querySelectorAll('script'));
+
+        // Everything that comes out of `widgets.html` is a vis-1 widget set: its scripts call `$` while they
+        // load and its templates are can.js. So the legacy libraries are fetched here, and only if a set
+        // really runs - a project made of React widgets alone never gets this far and never pays for them.
+        const needsLegacyLibs = scripts.some(script => {
+            const widgetSet = script.getAttribute('data-widgetset');
+            return !!widgetSet && (!usedWidgetSets || usedWidgetSets.includes(widgetSet));
+        });
+        if (needsLegacyLibs) {
+            await ensureLegacyLibs();
+        }
 
         // load all scripts of one widget set sequentially and all groups of scripts in parallel
         const groups: Record<
@@ -2023,7 +2075,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                     (el as any)._showDialog(true);
                 } else {
                     // noinspection JSJQueryEfficiency
-                    (window.jQuery as any)(`#${data}_dialog`).dialog('open');
+                    // a dialog under this name can only have been made by a vis-1 widget, and those bring
+                    // jQuery UI with them - without it there is nothing to open
+                    (window.jQuery as any)?.(`#${data}_dialog`).dialog('open');
                 }
                 break;
             }
@@ -2042,7 +2096,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                     (el as any)._showDialog(false);
                 } else {
                     // noinspection JSJQueryEfficiency
-                    (window.jQuery as any)(`#${data}_dialog`).dialog('close');
+                    // a dialog under this name can only have been made by a vis-1 widget, and those bring
+                    // jQuery UI with them - without it there is nothing to close
+                    (window.jQuery as any)?.(`#${data}_dialog`).dialog('close');
                 }
                 break;
             }

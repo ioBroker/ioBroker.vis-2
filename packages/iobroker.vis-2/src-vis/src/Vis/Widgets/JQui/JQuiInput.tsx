@@ -29,6 +29,7 @@ import type {
     VisBaseWidgetProps,
     Writeable,
 } from '@iobroker/types-vis-2';
+import { ensureLegacyLibs } from '../../visLoadLegacy';
 
 type RxData = {
     label: string;
@@ -246,7 +247,9 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
         if (this.inputRef.current) {
             if (this.state.rxData.jquery_style && !this.jQueryDone) {
                 this.jQueryDone = true;
-                (window as any).jQuery(this.inputRef.current).button().addClass('ui-state-default');
+                const input = this.inputRef.current;
+                // jQuery UI is only fetched for the widgets that switched this style on
+                void ensureLegacyLibs().then(() => (window as any).jQuery(input).button().addClass('ui-state-default'));
             }
         }
     }

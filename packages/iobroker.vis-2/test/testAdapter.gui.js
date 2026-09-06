@@ -240,16 +240,25 @@ describe('vis', () => {
             gPage.evaluate(() => [...document.querySelectorAll('.vis-widget')].map(el => el.id));
         const before = await widgetIds();
 
-        // Without this puppeteer refuses with "Drag Interception is not enabled!" - it is what makes it send
-        // the native drag events through CDP instead of plain mouse events.
-        await gPage.setDragInterception(true);
-
         const source = await gPage.waitForSelector(`#widget_${widgetType}`, { timeout: 5_000 });
         const target = await gPage.waitForSelector('#vis-react-container', { timeout: 5_000 });
         assert.ok(source, `the palette has no entry "${widgetType}"`);
         assert.ok(target, 'the editor has no view to drop onto');
 
-        await source.dragAndDrop(target);
+        const from = await source.boundingBox();
+        const to = await target.boundingBox();
+        assert.ok(from && to, 'palette entry or view is not on the screen');
+
+        // The editor drags with dnd-kit, which listens to pointer events - so this is a plain mouse gesture
+        // and needs no `setDragInterception`. It used to be react-dnd with its HTML5 backend, where nothing
+        // but a native `dragstart` would do.
+        await gPage.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+        await gPage.mouse.down();
+        // the first move has to clear the 5 px that tell a drag from a click, the rest carry it over
+        await gPage.mouse.move(from.x + from.width / 2 + 10, from.y + from.height / 2 + 10);
+        await gPage.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 10 });
+        await gPage.mouse.up();
+
         // the drop writes the project, and the widget appears with the next render
         await new Promise(resolve => setTimeout(resolve, 3_000));
 
@@ -266,7 +275,6 @@ describe('vis', () => {
 
         // leave the view and the page as they were found
         await helper.view.deleteWidget(gPage, added[0], 3_500);
-        await gPage.setDragInterception(false);
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 

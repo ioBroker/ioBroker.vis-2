@@ -127,6 +127,22 @@ html {
     box-shadow: 0 0 15px 4px #0d72b8;
 }
 
+/*
+ * The widget an entry of the "Select" submenu points at, drawn into the adorner layer while that entry is under
+ * the pointer. It wears the blue of `.vis-editmode-overlay-not-selected:hover` because it says the same thing -
+ * "this is the one you are pointing at" - only the pointer is in the menu instead of on the widget. The colours
+ * carry their own alpha rather than the `opacity: 0.3` of the overlay, so the frame stays crisp on top of a
+ * widget that is dark itself.
+ */
+.vis-adorner-layer .vis-editmode-widget-highlight {
+    position: absolute;
+    box-sizing: border-box;
+    pointer-events: none;
+    background: rgba(13, 114, 184, 0.3);
+    border: 2px solid #0d72b8;
+    box-shadow: 0 0 15px 4px rgba(13, 114, 184, 0.6);
+}
+
 .vis-editmode-overlay-absolute {
     position: absolute;
 }

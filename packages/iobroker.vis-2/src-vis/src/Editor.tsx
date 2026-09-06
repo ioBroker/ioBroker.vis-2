@@ -1,8 +1,14 @@
 import React, { useRef } from 'react';
 import { ThemeProvider, StyledEngineProvider, type SxProps } from '@mui/material/styles';
-import { DndProvider, useDrop } from 'react-dnd';
-import { TouchBackend } from 'react-dnd-touch-backend';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+    DndContext,
+    MouseSensor,
+    TouchSensor,
+    useDroppable,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from '@dnd-kit/core';
 import ReactSplit, { SplitDirection } from '@devbookhq/splitter';
 
 import {
@@ -60,7 +66,6 @@ import type {
     ViewSettings,
     Widget,
     WidgetData,
-    WidgetSetName,
     WidgetStyle,
     VisTheme,
 } from '@iobroker/types-vis-2';
@@ -75,14 +80,14 @@ import {
     pasteSingleWidget,
     safeParseLS,
 } from './Utilities/utils';
-import useConnectRef from './Utilities/useConnectRef';
 
 import Attributes from './Attributes';
 import Palette from './Palette';
 import Toolbar from './Toolbar';
 import CodeDialog from './Components/CodeDialog';
 import CreateFirstProjectDialog from './Components/CreateFirstProjectDialog';
-import { DndPreview, isTouchDevice } from './Utils';
+import { DndPreview } from './Utils';
+import type { WidgetDragData } from './Palette/Widget';
 import VisWidgetsCatalog, {
     getWidgetTypes,
     parseAttributes,
@@ -223,9 +228,13 @@ const styles: Record<string, any> = {
     }),
 };
 
+/** What `ViewDrop` puts on its droppable, so that the drop handler can work out where the pointer was */
+interface ViewDropData {
+    kind: 'view';
+    getRect: () => DOMRect | undefined;
+}
+
 interface ViewDropProps {
-    addMarketplaceWidget: Editor['addMarketplaceWidget'];
-    addWidget: Editor['addWidget'];
     editMode: boolean;
     children: React.JSX.Element;
 }
@@ -233,57 +242,21 @@ interface ViewDropProps {
 const ViewDrop: React.FC<ViewDropProps> = props => {
     const targetRef = useRef<HTMLDivElement>(null);
 
-    const [{ CanDrop, isOver }, drop] = useDrop<
-        {
-            widgetSet: WidgetSetName;
-            widgetType: WidgetType | MarketplaceWidgetRevision;
-        },
-        unknown,
-        {
-            isOver: boolean;
-            CanDrop: boolean;
-        }
-    >(
-        () => ({
-            accept: ['widget'],
-            drop(item, monitor) {
-                if (targetRef.current) {
-                    const clientOffset = monitor.getClientOffset();
-                    if (!clientOffset) {
-                        return;
-                    }
-                    const targetRect = targetRef.current.getBoundingClientRect();
-                    if (item.widgetSet === '__marketplace') {
-                        void props.addMarketplaceWidget(
-                            (item.widgetType as MarketplaceWidgetRevision).id,
-                            clientOffset.x - targetRect.x,
-                            clientOffset.y - targetRect.y,
-                        );
-                    } else {
-                        void props.addWidget(
-                            item.widgetType.name,
-                            clientOffset.x - targetRect.x,
-                            clientOffset.y - targetRect.y,
-                        );
-                    }
-                }
-            },
-            canDrop: () => props.editMode,
-            collect: monitor => ({
-                isOver: monitor.isOver(),
-                CanDrop: monitor.canDrop(),
-            }),
-        }),
-        [props.editMode],
-    );
-
-    const dropRef = useConnectRef<HTMLDivElement>(drop);
+    const { isOver, setNodeRef } = useDroppable({
+        id: 'view',
+        disabled: !props.editMode,
+        // the rectangle is read when the widget is dropped, not now - the view is resized all the time
+        data: {
+            kind: 'view',
+            getRect: () => targetRef.current?.getBoundingClientRect(),
+        } satisfies ViewDropData,
+    });
 
     return (
         <div
-            ref={dropRef}
+            ref={setNodeRef}
             style={
-                isOver && CanDrop
+                isOver
                     ? {
                           borderStyle: 'dashed',
                           borderRadius: 4,
@@ -301,6 +274,72 @@ const ViewDrop: React.FC<ViewDropProps> = props => {
                 {props.children}
             </div>
         </div>
+    );
+};
+
+/** Where the pointer was when the drag started - a mouse event carries it directly, a touch event in its list */
+function activatorPoint(event: Event | null): { x: number; y: number } | null {
+    if (event && 'clientX' in event) {
+        const mouseEvent = event as MouseEvent;
+        return { x: mouseEvent.clientX, y: mouseEvent.clientY };
+    }
+    const touch = (event as TouchEvent | null)?.touches?.[0];
+    return touch ? { x: touch.clientX, y: touch.clientY } : null;
+}
+
+interface EditorDndProps {
+    addMarketplaceWidget: Editor['addMarketplaceWidget'];
+    addWidget: Editor['addWidget'];
+    children: React.ReactNode;
+}
+
+/**
+ * The drag and drop of the editor: a widget is taken out of the palette and dropped somewhere on the view.
+ *
+ * react-dnd needed two backends for this, one built on the native drag events of the browser and one on touch
+ * events, and only one of them could be active. dnd-kit works on pointer events, so the two sensors below
+ * cover mouse and finger at the same time. There is no `getClientOffset()` either: where the widget landed is
+ * where the drag started plus how far it was moved.
+ */
+const EditorDnd: React.FC<EditorDndProps> = props => {
+    const sensors = useSensors(
+        // a few pixels of movement are what tells a drag from a click on a palette entry
+        useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+        // on a touch screen a short hold does that, so that a swipe still scrolls the palette
+        useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    );
+
+    const onDragEnd = (event: DragEndEvent): void => {
+        const target = event.over?.data.current as ViewDropData | undefined;
+        const item = event.active.data.current as WidgetDragData | undefined;
+        if (target?.kind !== 'view' || item?.kind !== 'widget') {
+            return;
+        }
+
+        const rect = target.getRect();
+        const start = activatorPoint(event.activatorEvent);
+        if (!rect || !start) {
+            return;
+        }
+
+        const x = start.x + event.delta.x - rect.x;
+        const y = start.y + event.delta.y - rect.y;
+
+        if (item.widgetSet === '__marketplace') {
+            void props.addMarketplaceWidget((item.widgetType as MarketplaceWidgetRevision).id, x, y);
+        } else {
+            void props.addWidget((item.widgetType as WidgetType).name, x, y);
+        }
+    };
+
+    return (
+        <DndContext
+            sensors={sensors}
+            onDragEnd={onDragEnd}
+        >
+            <DndPreview />
+            {props.children}
+        </DndContext>
     );
 };
 
@@ -2109,11 +2148,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     }}
                 >
                     {this.state.showCode ? <pre>{JSON.stringify(store.getState().visProject, null, 2)}</pre> : null}
-                    <ViewDrop
-                        addWidget={this.addWidget}
-                        addMarketplaceWidget={this.addMarketplaceWidget}
-                        editMode={this.state.editMode}
-                    >
+                    <ViewDrop editMode={this.state.editMode}>
                         <div
                             id="vis-react-container"
                             style={{
@@ -2626,8 +2661,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             style={{ position: 'relative', flex: 1, minHeight: 0 }}
                             ref={this.mainRef}
                         >
-                            <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
-                                <DndPreview />
+                            <EditorDnd
+                                addWidget={this.addWidget}
+                                addMarketplaceWidget={this.addMarketplaceWidget}
+                            >
                                 {this.state.hidePalette && this.state.hideAttributes ? this.renderWorkspace() : null}
                                 <ReactSplit
                                     direction={SplitDirection.Horizontal}
@@ -2698,7 +2735,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                     {this.renderWorkspace()}
                                     {!this.state.hideAttributes ? this.renderAttributes() : null}
                                 </ReactSplit>
-                            </DndProvider>
+                            </EditorDnd>
                         </div>
                     </Box>
                     {this.renderLoadingText()}

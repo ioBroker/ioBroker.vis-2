@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
-import { useDrag } from 'react-dnd';
-import useConnectRef from '@/Utilities/useConnectRef';
-import { getEmptyImage } from 'react-dnd-html5-backend';
+import { useDraggable } from '@dnd-kit/core';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 
@@ -18,7 +16,7 @@ import { BiImport, BiExport } from 'react-icons/bi';
 import { I18n, Utils } from '@iobroker/gui-components';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
-import { store } from '@/Store';
+import type { ViewDragData } from './viewsDnd';
 
 const styles: Record<string, any> = {
     viewManageBlock: (theme: VisTheme) => theme.classes.viewManageBlock,
@@ -87,34 +85,19 @@ const View = (props: ViewProps): React.JSX.Element => {
         </Box>
     );
 
-    const visProject = store.getState().visProject;
-
-    const [{ isDraggingThisItem }, dragRef, preview] = useDrag(
-        {
-            type: 'view',
-            item: () => ({
-                name: props.name,
-                preview: <div>{viewBlockPreview}</div>,
-            }),
-            end: (item, monitor) => {
-                const dropResult = monitor.getDropResult();
-                if (item && dropResult) {
-                    props.moveView(item.name, (dropResult as any).folder.id);
-                }
-            },
-            collect: monitor => ({
-                isDraggingThisItem: monitor.isDragging(),
-                handlerId: monitor.getHandlerId(),
-            }),
-        },
-        [visProject],
-    );
-
-    const setDragRef = useConnectRef<HTMLDivElement>(dragRef);
-
-    useEffect(() => {
-        preview(getEmptyImage(), { captureDraggingState: true });
-    }, [visProject]);
+    const {
+        attributes,
+        listeners,
+        setNodeRef: setDragRef,
+        isDragging: isDraggingThisItem,
+    } = useDraggable({
+        id: `view:${props.name}`,
+        data: {
+            kind: 'view',
+            name: props.name,
+            preview: <div>{viewBlockPreview}</div>,
+        } satisfies ViewDragData,
+    });
 
     useEffect(() => {
         props.setIsDragging(isDraggingThisItem ? props.name : '');
@@ -141,6 +124,8 @@ const View = (props: ViewProps): React.JSX.Element => {
                         style={styles.icon}
                         ref={setDragRef}
                         title={I18n.t('Drag me')}
+                        {...listeners}
+                        {...attributes}
                     >
                         <FileIcon />
                     </div>

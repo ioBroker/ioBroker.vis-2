@@ -845,8 +845,14 @@ export class VisRxWidget<
             const zIndex = this.state.rxStyle
                 ? parseInt((this.state.rxStyle?.['z-index'] as unknown as string) || '0', 10)
                 : 0;
-            if (this.state.selected) {
-                // move widget to foreground
+            if (this.state.selected && !this.props.isRelative) {
+                // A selected widget goes to the foreground, so that whatever lies on it does not hide the one
+                // being edited. Only an absolute one: a relative widget sits in the flow, and the absolute
+                // widgets drawn over it were put there on purpose. Lifting it above them lifts its overlay
+                // too - and that overlay is what takes the mouse, so every click meant for the widget on top
+                // went to the relative one underneath, which could not even be grabbed any more.
+                // A selected widget that stays under something is still reachable: its name plate and its
+                // resize handles are drawn in the adorner layer above every widget (see visAdornerLayer.ts).
                 props.style.zIndex = 800 + zIndex;
             } else {
                 props.style.zIndex = zIndex;

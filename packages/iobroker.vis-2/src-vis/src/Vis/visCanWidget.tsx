@@ -36,6 +36,7 @@ import type {
 import { calculateOverflow, isVarFinite, deepClone } from '@/Utilities/utils';
 import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget, isIdAttribute, isIdValue } from './visUtils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
+import { ensureLegacyLibs, isLegacyLibsLoaded } from './visLoadLegacy';
 
 interface WidgetDataWithParsedFilter extends WidgetData {
     wid: SingleWidgetId;
@@ -133,6 +134,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     private updateOnStyle: boolean | undefined;
 
+    /** Set on unmount, so the deferred first render of a widget that left the view again is dropped */
+    private unmounted = false;
+
     constructor(props: VisBaseWidgetProps) {
         super(props);
 
@@ -185,31 +189,41 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     componentDidMount(): void {
         super.componentDidMount();
+        this.unmounted = false;
 
         this.props.context.linkContext.subscribe(this.IDs);
 
         if (!this.widDiv) {
-            // link could be a ref or direct a div (e.g., by groups)
-            // console.log('Widget mounted');
-            this.renderWidget(undefined, undefined, undefined, undefined, () => {
-                const newState = { mounted: true };
-
-                if (this.widDiv && this.props.context.allWidgets[this.props.id]) {
-                    // try to read resize handlers
-                    analyzeDraggableResizable(
-                        this.widDiv,
-                        newState,
-                        this.props.context.allWidgets[this.props.id].style,
-                    );
-                }
-
-                this.setState(newState);
-            });
+            // This is the one widget class that renders a can.js template, so it is also the last place that
+            // can make sure the library is there. Normally the widget set it belongs to has already loaded it
+            // - this only catches a widget that reaches the view by some other route, e.g. a group pulled in
+            // later. `renderWidget` builds can.Maps right away, so it has to wait for the load.
+            if (isLegacyLibsLoaded()) {
+                this.renderWidgetOnMount();
+            } else {
+                void ensureLegacyLibs().then(() => !this.unmounted && this.renderWidgetOnMount());
+            }
         }
+    }
+
+    /** Build the vis-1 widget for the first time and take the resize handles out of what it produced */
+    renderWidgetOnMount(): void {
+        // link could be a ref or direct a div (e.g., by groups)
+        this.renderWidget(undefined, undefined, undefined, undefined, () => {
+            const newState = { mounted: true };
+
+            if (this.widDiv && this.props.context.allWidgets[this.props.id]) {
+                // try to read resize handlers
+                analyzeDraggableResizable(this.widDiv, newState, this.props.context.allWidgets[this.props.id].style);
+            }
+
+            this.setState(newState);
+        });
     }
 
     componentWillUnmount(): void {
         super.componentWillUnmount();
+        this.unmounted = true;
 
         if (this.props.context.linkContext) {
             if (this.props.context.linkContext && this.props.context.linkContext.unregisterChangeHandler) {
@@ -1648,19 +1662,21 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         if (this.widDiv && this.state.editMode && this.props.context.allWidgets[this.props.id]) {
             const zIndexProp = this.props.context.allWidgets[this.props.id].style['z-index'];
             const zIndex = parseInt((zIndexProp || 0) as unknown as string, 10);
-            if (this.state.selected) {
-                // move widget overlay in foreground
+            // A selected widget goes to the foreground so that whatever lies on it does not hide the one being
+            // edited - but only an absolute one. A relative widget sits in the flow, and the absolute widgets
+            // over it were put there on purpose; lifting it above them lifts its overlay too, and that overlay
+            // is what takes the mouse. See the same rule in `visRxWidget`.
+            const foreground = this.state.selected && !this.props.isRelative;
+
+            if (foreground) {
                 this.widDiv.style.zIndex = (500 + (zIndex || 0)).toString();
-            } else if (zIndexProp !== undefined) {
-                // overlay must be always on top of the widget itself
-                this.widDiv.style.zIndex = parseInt((zIndexProp || 0) as unknown as string, 10).toString();
+            } else if (zIndexProp !== undefined || this.widDiv.style.zIndex) {
+                // back to its own z-index - also when it was in the foreground a moment ago
+                this.widDiv.style.zIndex = (zIndex || 0).toString();
             }
 
-            if (this.state.selected) {
-                props.style.zIndex = 500 + (zIndex || 0) + 1; // + 800
-            } else {
-                props.style.zIndex = (zIndex || 0) + 1; // + 800
-            }
+            // the overlay must always be on top of the widget itself
+            props.style.zIndex = (foreground ? 500 : 0) + (zIndex || 0) + 1;
 
             this.widDiv.style.userSelect = 'none';
             this.widDiv.style.pointerEvents = 'none';

@@ -46,6 +46,7 @@ import {
     type Box,
     computeRelativeOrder,
     computeRulers,
+    droppedOrderIsDone,
     selectionRect,
     snapToGrid,
     snapToWidgets,
@@ -161,6 +162,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     /** Where inside the widget the drag started, so the copy stays under that point */
     private dragGhostOffset: { x: number; y: number } = { x: 0, y: 0 };
 
+    /** Last resort that ends a dropped order the project never carried, see `onMouseWidgetUp` */
+    private droppedOrderTimer: ReturnType<typeof setTimeout> | null = null;
+
     private readonly promiseToCollect: Promise<Record<string, VisRxWidget<any>>>;
 
     private readonly refView: React.RefObject<ViewElement | null>;
@@ -270,6 +274,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     componentWillUnmount(): void {
+        if (this.droppedOrderTimer) {
+            clearTimeout(this.droppedOrderTimer);
+            this.droppedOrderTimer = null;
+        }
         this.announcedAdornerLayer = null;
         registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
@@ -743,6 +751,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   const element = widgetsRefs[draggedId]?.refService?.current;
                   const rect = element?.getBoundingClientRect();
                   if (order.includes(draggedId) && element && rect) {
+                      if (this.droppedOrderTimer) {
+                          // the previous drop is over - this gesture brings its own order
+                          clearTimeout(this.droppedOrderTimer);
+                          this.droppedOrderTimer = null;
+                      }
                       this.createDragGhost(element, rect, e.clientX, e.clientY);
                       this.setState({
                           relativeDrag: {
@@ -868,9 +881,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.props.context.onIgnoreMouseEvents?.(ignore);
 
             if (ignore && this.movement) {
-                this.onMouseWidgetMove &&
-                    this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
-                this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
+                // A widget takes the mouse over, so the gesture has to end here - the mouseup it would end at
+                // goes to that widget and never reaches us. Ending it means more than dropping the listeners:
+                // the drag ghost, the placeholder that stands in for a dragged relative widget and the
+                // tentative order all belong to the gesture, and a relative widget whose placeholder stays
+                // behind is gone from the view until the page is loaded again. `onMouseWidgetUp` is that
+                // teardown, so it is the one thing to call.
+                this.onMouseWidgetUp?.();
                 this.movement = null;
             }
         }
@@ -885,6 +902,15 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                       this.selectedWidgets.includes(this.props.selectedGroup) &&
                       !this.movement.isResize)
               ) {
+                  return;
+              }
+
+              // The button is up although the gesture is still running: the mouseup happened where the page
+              // could not see it - over an iframe of a widget, or outside the window while another program had
+              // the focus. Without this the gesture runs on with the button released, and a relative widget
+              // stays the placeholder it was replaced by for good.
+              if (!(e.buttons & 1)) {
+                  this.onMouseWidgetUp?.(e);
                   return;
               }
               const widgetsRefs = this.widgetsRefs;
@@ -1060,7 +1086,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     };
 
     onMouseWidgetUp = !this.props.context.runtime
-        ? (e: MouseEvent) => {
+        ? (e?: MouseEvent) => {
               const widgetsRefs = this.widgetsRefs;
               e && e.stopPropagation();
               this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
@@ -1076,10 +1102,19 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   if (changed) {
                       // the order the widget was dropped into becomes the order of the view
                       this.props.context.onWidgetsChanged?.(null, this.props.view, { order: relativeDrag.order });
-                      // keep rendering from it until the project carries it, see componentDidUpdate
+                      // keep rendering from it until the project carries it, see releaseDroppedOrder()
                       this.setState({ relativeDrag: { ...relativeDrag, dropped: true } });
+
+                      // Last resort. The order is only held on to in order to bridge the debounced save, so if
+                      // the project has not caught up by now the save did not happen - and then showing what
+                      // the project says beats freezing the view on an order that is never coming.
+                      // `releaseDroppedOrder` runs on renders, and a view nothing happens in has none.
+                      this.droppedOrderTimer ||= setTimeout(() => {
+                          this.droppedOrderTimer = null;
+                          this.setState({ relativeDrag: null });
+                      }, 5_000);
                   } else {
-                      this.setState({ relativeDrag: null });
+                      this.clearRelativeDrag();
                   }
               }
 
@@ -1337,12 +1372,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.registerEditorHandlers();
         this.updateViewWidth();
 
-        // The tentative order of a finished drag may go as soon as the project carries it - dropping it earlier
-        // would show the old order until the debounced save has been through.
-        const relativeDrag = this.state.relativeDrag;
-        if (relativeDrag?.dropped && this.lastRelativeOrder.join(',') === relativeDrag.order.join(',')) {
-            this.setState({ relativeDrag: null });
-        }
+        this.releaseDroppedOrder();
         // detect filter changes
         if (!this.props.editMode) {
             const newFilter = JSON.stringify(
@@ -1352,6 +1382,25 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 this.oldFilter = newFilter;
                 this.changeFilter({ filter: JSON.parse(newFilter) });
             }
+        }
+    }
+
+    /** Forget the order a drag was dropped into, and with it the timer that would have done it */
+    private clearRelativeDrag(): void {
+        if (this.droppedOrderTimer) {
+            clearTimeout(this.droppedOrderTimer);
+            this.droppedOrderTimer = null;
+        }
+        if (this.state.relativeDrag) {
+            this.setState({ relativeDrag: null });
+        }
+    }
+
+    /** Let go of the order a drag was dropped into, once `droppedOrderIsDone` says it has served its purpose */
+    private releaseDroppedOrder(): void {
+        const relativeDrag = this.state.relativeDrag;
+        if (relativeDrag?.dropped && droppedOrderIsDone(this.lastRelativeOrder, relativeDrag.order, relativeDrag.wid)) {
+            this.clearRelativeDrag();
         }
     }
 
@@ -2421,6 +2470,14 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     !this.props.context.runtime
                         ? e => this.props.editMode && this.mouseDownLocal && this.mouseDownLocal(e)
                         : undefined
+                }
+                onDragStart={
+                    // Nothing in the editor is dragged natively: the palette and the views list use dnd-kit,
+                    // which works on pointer events. What the browser starts on its own - on an image, a link
+                    // or a selection that a gesture left behind - cannot be dropped anywhere, so it only puts
+                    // its "no drop" sign and a ghost of the element over the view and takes the mouse events
+                    // away from the move or resize gesture that is actually running.
+                    !this.props.context.runtime && this.props.editMode ? e => e.preventDefault() : undefined
                 }
                 onDoubleClick={
                     this.props.context.runtime

@@ -193,6 +193,33 @@ export function computeRelativeOrder(
 }
 
 /**
+ * Whether the order a relative drag was dropped into has done its job and may be let go of.
+ *
+ * The order is held on to after the drop only to bridge the debounced save: until the project carries it,
+ * rendering from the project would show the old order again for a moment. Holding it is never harmless -
+ * while it stands, the view renders the relative widgets from it, so a widget missing from it is not
+ * rendered at all. It is therefore given up as soon as it is no longer needed:
+ *
+ * - the dragged widget arrived where it was dropped, so the project has caught up. Comparing the whole order
+ *   instead would hold on for good whenever the saved order comes back differing in something the drag never
+ *   touched.
+ * - the view does not hold the same relative widgets any more. The dropped order is then stale by
+ *   definition, and a widget that appeared meanwhile would be missing from the view.
+ *
+ * @param rendered - the order the project gives, as the last render worked it out
+ * @param dropped - the order the widget was dropped into
+ * @param dragged - the widget that was dragged
+ * @returns true if the dropped order may be forgotten
+ */
+export function droppedOrderIsDone(rendered: AnyWidgetId[], dropped: AnyWidgetId[], dragged: AnyWidgetId): boolean {
+    if (rendered.indexOf(dragged) === dropped.indexOf(dragged)) {
+        return true;
+    }
+
+    return rendered.length !== dropped.length || !rendered.every(id => dropped.includes(id));
+}
+
+/**
  * The rectangle of the selection frame, from a corner and a size that may be negative.
  *
  * Dragging up or to the left gives a negative width or height; CSS wants a positive size and a moved corner.

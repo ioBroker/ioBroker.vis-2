@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { TouchBackend } from 'react-dnd-touch-backend';
+import { DndContext, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 
 import { AppBar, IconButton, Tooltip } from '@mui/material';
 
@@ -25,8 +23,9 @@ import View from './View';
 import ExportDialog from './ExportDialog';
 import ImportDialog from './ImportDialog';
 import FolderDialog from './FolderDialog';
-import { DndPreview, isTouchDevice } from '../../Utils';
+import { DndPreview } from '../../Utils';
 import { store } from '../../Store';
+import type { ViewsDragData, ViewsDropData } from './viewsDnd';
 import { deepClone, getNewWidgetId, hasViewAccess, isGroup, pasteGroup, safeParseLS } from '../../Utilities/utils';
 
 const styles: Record<string, any> = {
@@ -111,6 +110,36 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
         const project = deepClone(visProject);
         project[name].parentId = parentId;
         void props.changeProject(project);
+    };
+
+    const sensors = useSensors(
+        // a few pixels of movement tell a drag from a click on the icon
+        useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+        // on a touch screen a short hold does, so that a swipe still scrolls the list
+        useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    );
+
+    /**
+     * Where a dragged view or folder ends up.
+     *
+     * With react-dnd this was spread over the tree: every drop target returned a folder, and every drag source
+     * picked that result up again in its own `end` handler. dnd-kit reports the pair to the context, so both
+     * moves are made here.
+     */
+    const onDragEnd = (event: DragEndEvent): void => {
+        const item = event.active.data.current as ViewsDragData | undefined;
+        const target = event.over?.data.current as ViewsDropData | undefined;
+        if (!item || target?.kind !== 'viewsTarget') {
+            return;
+        }
+        // the root of the tree has no folder, and `null` as a parent is what puts an item there
+        const parentId = target.folder ? target.folder.id : (null as unknown as string);
+
+        if (item.kind === 'view') {
+            moveView(item.name, parentId);
+        } else {
+            moveFolder(item.folder.id, parentId);
+        }
     };
 
     const importViewAction = (view: string, data: string): void => {
@@ -222,7 +251,10 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
             closeTitle="Close"
         >
             <div style={styles.dialog}>
-                <DndProvider backend={isTouchDevice() ? TouchBackend : HTML5Backend}>
+                <DndContext
+                    sensors={sensors}
+                    onDragEnd={onDragEnd}
+                >
                     <DndPreview />
                     {props.editMode ? (
                         <AppBar
@@ -337,7 +369,7 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
                             setIsOverRoot={setIsOverRoot}
                         />
                     </div>
-                </DndProvider>
+                </DndContext>
             </div>
             {folderDialog ? (
                 <FolderDialog

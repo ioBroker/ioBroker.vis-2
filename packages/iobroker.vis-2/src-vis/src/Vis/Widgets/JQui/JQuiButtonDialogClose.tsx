@@ -275,7 +275,8 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                 (el as any)._showDialog(false);
             } else {
                 // noinspection JSJQueryEfficiency
-                (window.jQuery as any)(`#${dlgName}_dialog`).dialog('close');
+                // the fallback for a vis-1 dialog, which cannot be there unless jQuery UI is loaded too
+                (window.jQuery as any)?.(`#${dlgName}_dialog`).dialog('close');
             }
         } else {
             window.alert('Dialog not found');

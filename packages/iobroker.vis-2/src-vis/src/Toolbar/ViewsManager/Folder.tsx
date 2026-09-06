@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
-import { useDrag, useDrop } from 'react-dnd';
-import useConnectRef from '@/Utilities/useConnectRef';
-import { getEmptyImage } from 'react-dnd-html5-backend';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 
@@ -16,6 +14,7 @@ import { FaFolder as FolderClosedIcon, FaFolderOpen as FolderOpenedIcon } from '
 import { Utils, I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
+import { canDropInto, useDraggedItem, type FolderDragData, type ViewsDropData } from './viewsDnd';
 
 const styles: Record<string, any> = {
     viewManageBlock: (theme: VisTheme) => theme.classes.viewManageBlock,
@@ -86,87 +85,37 @@ const Folder: React.FC<FolderProps> = props => {
 
     const visProject = store.getState().visProject;
 
-    const [{ canDrop }, drop] = useDrop<
-        {
-            name: string;
-            folder: FolderType;
-        },
-        unknown,
-        { isOver: boolean; canDrop: boolean }
-    >(
-        () => ({
-            accept: ['view', 'folder'],
-            drop: () => ({ folder: props.folder }),
-            canDrop: (item, monitor) => {
-                if (monitor.getItemType() === 'view') {
-                    return visProject[item.name].parentId !== props.folder.id;
-                }
-                if (monitor.getItemType() === 'folder') {
-                    let currentFolder = props.folder;
-                    if (currentFolder.id === item.folder.parentId) {
-                        return false;
-                    }
-                    const folders = visProject.___settings.folders;
-                    while (true) {
-                        if (currentFolder.id === item.folder.id) {
-                            return false;
-                        }
-                        if (!currentFolder.parentId) {
-                            return true;
-                        }
-                        const parentId = currentFolder.parentId;
-                        currentFolder = folders.find(foundFolder => foundFolder.id === parentId) as FolderType;
-                    }
-                }
-                return false;
-            },
-            collect: monitor => ({
-                isOver: monitor.isOver(),
-                canDrop: monitor.canDrop(),
-            }),
-        }),
-        [visProject],
-    );
+    const dragged = useDraggedItem();
+    const canDrop = !!dragged && canDropInto(dragged, props.folder, visProject);
 
-    const dropRef = useConnectRef<HTMLDivElement>(drop);
+    const { setNodeRef: setDropRef } = useDroppable({
+        id: `folder:${props.folder.id}`,
+        disabled: !canDrop,
+        data: { kind: 'viewsTarget', folder: props.folder } satisfies ViewsDropData,
+    });
 
-    const [{ isDraggingThisItem }, dragRef, preview] = useDrag(
-        {
-            type: 'folder',
-            item: () => ({
-                folder: props.folder,
-                preview: <div>{folderBlock}</div>,
-            }),
-            end: (item, monitor) => {
-                const dropResult = monitor.getDropResult<{ folder: FolderType }>();
-                if (item && dropResult) {
-                    props.moveFolder(item.folder.id, dropResult.folder.id);
-                }
-            },
-            collect: monitor => ({
-                isDraggingThisItem: monitor.isDragging(),
-                handlerId: monitor.getHandlerId(),
-            }),
-        },
-        [visProject],
-    );
-
-    const setDragRef = useConnectRef<HTMLDivElement>(dragRef);
-
-    useEffect(() => {
-        preview(getEmptyImage(), { captureDraggingState: true });
-    }, [visProject, preview]);
+    const {
+        attributes,
+        listeners,
+        setNodeRef: setDragRef,
+        isDragging: isDraggingThisItem,
+    } = useDraggable({
+        id: `folder:${props.folder.id}`,
+        data: {
+            kind: 'folder',
+            folder: props.folder,
+            preview: <div>{folderBlock}</div>,
+        } satisfies FolderDragData,
+    });
 
     useEffect(() => {
         props.setIsDragging(isDraggingThisItem ? props.folder.id : '');
     }, [isDraggingThisItem]);
 
-    console.log(`${props.folder.name} ${props.isDragging} ${canDrop}`);
-
     return (
         <Box
             component="div"
-            ref={dropRef}
+            ref={setDropRef}
             sx={Utils.getStyle(
                 props.theme,
                 styles.root,
@@ -180,6 +129,8 @@ const Folder: React.FC<FolderProps> = props => {
                 sx={styles.icon}
                 ref={setDragRef}
                 title={I18n.t('Drag me')}
+                {...listeners}
+                {...attributes}
             >
                 {props.foldersCollapsed.includes(props.folder.id) ? (
                     <FolderClosedIcon

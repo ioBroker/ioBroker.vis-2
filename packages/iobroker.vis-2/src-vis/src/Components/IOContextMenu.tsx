@@ -14,6 +14,8 @@ interface MenuItem {
     leftIcon?: React.ReactNode;
     disabled?: boolean;
     onClick?: () => void;
+    /** Called when the pointer comes onto the entry and again when it leaves - to preview what it would do */
+    onHover?: (hovered: boolean) => void;
     style?: React.CSSProperties;
 }
 
@@ -48,6 +50,8 @@ const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void)
                     item.onClick && item.onClick();
                     onClose();
                 }}
+                onMouseEnter={() => item.onHover?.(true)}
+                onMouseLeave={() => item.onHover?.(false)}
                 disabled={item.disabled}
                 sx={{ display: 'block' }}
                 onContextMenu={e => {
@@ -82,10 +86,17 @@ interface IOContextMenuProps {
     children: React.ReactNode;
     disabled: boolean;
     menuItemsData: (position: { top: number; left: number }) => any;
+    /** The menu is gone - whatever an entry showed while it was pointed at has to go with it */
+    onClosed?: () => void;
 }
 
 const IOContextMenu = (props: IOContextMenuProps): React.JSX.Element => {
     const [menuPosition, setMenuPosition] = useState<null | { top: number; left: number }>(null);
+
+    const closeMenu = (): void => {
+        setMenuPosition(null);
+        props.onClosed?.();
+    };
 
     const handleRightClick: React.MouseEventHandler<HTMLDivElement> = async (
         event: React.MouseEvent<HTMLDivElement>,
@@ -95,7 +106,7 @@ const IOContextMenu = (props: IOContextMenuProps): React.JSX.Element => {
         }
         event.preventDefault();
         if (menuPosition) {
-            setMenuPosition(null);
+            closeMenu();
             await new Promise(resolve => {
                 setTimeout(resolve, 200);
             });
@@ -115,11 +126,11 @@ const IOContextMenu = (props: IOContextMenuProps): React.JSX.Element => {
             {menuPosition ? (
                 <Menu
                     open={!0}
-                    onClose={() => setMenuPosition(null)}
+                    onClose={closeMenu}
                     anchorReference="anchorPosition"
                     anchorPosition={menuPosition}
                 >
-                    {contextMenuItems(props.menuItemsData(menuPosition), !!menuPosition, () => setMenuPosition(null))}
+                    {contextMenuItems(props.menuItemsData(menuPosition), !!menuPosition, closeMenu)}
                 </Menu>
             ) : null}
         </div>

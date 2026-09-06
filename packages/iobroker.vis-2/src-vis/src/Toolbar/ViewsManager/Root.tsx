@@ -1,10 +1,9 @@
-import { useDrop } from 'react-dnd';
-import useConnectRef from '@/Utilities/useConnectRef';
+import { useDroppable } from '@dnd-kit/core';
 import React, { useEffect } from 'react';
 
 import { I18n } from '@iobroker/gui-components';
 import { store } from '../../Store';
-import type { FolderType } from './Folder';
+import { canDropInto, useDraggedItem, type ViewsDropData } from './viewsDnd';
 
 interface RootProps {
     setIsOverRoot: (isOver: boolean) => void;
@@ -12,42 +11,21 @@ interface RootProps {
 }
 
 const Root: React.FC<RootProps> = props => {
-    const [{ canDrop, isOver }, drop] = useDrop<
-        {
-            name: string;
-            folder: FolderType;
-        },
-        unknown,
-        { isOver: boolean; canDrop: boolean }
-    >(
-        () => ({
-            accept: ['view', 'folder'],
-            drop: () => ({ folder: { id: null } }),
-            canDrop: (item, monitor) => {
-                if (monitor.getItemType() === 'view') {
-                    return !!store.getState().visProject[item.name].parentId;
-                }
-                if (monitor.getItemType() === 'folder') {
-                    return !!item.folder.parentId;
-                }
-                return false;
-            },
-            collect: monitor => ({
-                isOver: monitor.isOver(),
-                canDrop: monitor.canDrop(),
-            }),
-        }),
-        [store.getState().visProject],
-    );
+    const dragged = useDraggedItem();
+    const canDrop = !!dragged && canDropInto(dragged, null, store.getState().visProject);
+
+    const { isOver, setNodeRef } = useDroppable({
+        id: 'views-root',
+        disabled: !canDrop,
+        data: { kind: 'viewsTarget', folder: null } satisfies ViewsDropData,
+    });
 
     useEffect(() => {
         props.setIsOverRoot(isOver && canDrop);
     }, [isOver, canDrop]);
 
-    const dropRef = useConnectRef<HTMLDivElement>(drop);
-
     return props.isDragging && canDrop ? (
-        <div ref={dropRef}>
+        <div ref={setNodeRef}>
             <div style={{ height: 34, width: 'calc(100% - 7px)', opacity: 0.7 }}>
                 {I18n.t('Drop here to add to root')}
             </div>

@@ -28,6 +28,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import type { VisRxWidgetState } from '../../visRxWidget';
 import VisRxWidget from '../../visRxWidget';
+import { ensureLegacyLibs } from '../../visLoadLegacy';
 
 type RxData = {
     type: 'button' | 'round-button' | 'html' | 'radio' | 'checkbox' | 'image' | 'switch';
@@ -878,7 +879,8 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
                 const el = this.refService.current.getElementsByClassName('vis-widget-body');
                 if (el?.length && !(this.refService.current as any)._jQueryDone) {
                     (this.refService.current as any)._jQueryDone = true;
-                    (window.jQuery as any)(el[0]).button();
+                    // jQuery UI is only fetched for the widgets that switched this style on
+                    void ensureLegacyLibs().then(() => (window.jQuery as any)(el[0]).button());
                     const textEl = el[0].getElementsByClassName('ui-button-text');
                     if (textEl?.length) {
                         (textEl[0] as any).style.display = 'flex';

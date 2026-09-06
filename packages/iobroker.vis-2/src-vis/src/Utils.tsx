@@ -1,16 +1,24 @@
 import React, { type MutableRefObject, useEffect, useRef } from 'react';
-import { usePreview } from 'react-dnd-preview';
+import { DragOverlay, useDndContext } from '@dnd-kit/core';
 import type { Timer } from '@iobroker/types-vis-2';
 
-export const DndPreview = (): React.JSX.Element | null => {
-    const preview = usePreview();
-    const display = preview.display;
-    // TODO: How to fix this?
-    const { item, style } = preview as unknown as { item: { preview: React.JSX.Element }; style: React.CSSProperties };
-    if (!display) {
-        return null;
-    }
-    return <div style={{ ...style, zIndex: 1000 }}>{item.preview}</div>;
+/** What a drag source puts into `data` so that `DndPreview` can show something while it is dragged */
+export interface DndPreviewData {
+    preview: React.JSX.Element;
+}
+
+/**
+ * What is shown under the cursor while something is dragged.
+ *
+ * dnd-kit moves this layer itself, so unlike the drag layer of react-dnd it needs no coordinates and no
+ * empty drag image to suppress the one the browser would draw - there is no native drag going on at all,
+ * which is also why the same code covers mouse and touch.
+ */
+export const DndPreview = (): React.JSX.Element => {
+    const { active } = useDndContext();
+    const preview = (active?.data.current as DndPreviewData | undefined)?.preview;
+
+    return <DragOverlay zIndex={1000}>{preview ?? null}</DragOverlay>;
 };
 
 /**

@@ -1841,6 +1841,23 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         ]);
     }
 
+    /**
+     * The `z-index` a widget style asks for, as a number - or null if it does not ask for one.
+     *
+     * A binding that has not been replaced yet leaves `{...}` in the value; that is not a number and must not
+     * end up as one, or the widget would jump in the stack for as long as the binding takes.
+     *
+     * @param style - the style of the widget, resolved or not
+     */
+    static parseZIndex(style: WidgetStyle | undefined): number | null {
+        const value = (style as Record<string, unknown> | undefined)?.['z-index'];
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+        const zIndex = parseInt(value as string, 10);
+        return isFinite(zIndex) ? zIndex : null;
+    }
+
     static correctStylePxValue(value?: string | number | null): string | number | undefined {
         if (typeof value === 'string') {
             if (isVarFinite(value)) {
@@ -1890,6 +1907,17 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
             style.position = this.props.isRelative ? 'relative' : 'absolute';
             style.userSelect = 'none';
+
+            // A widget has to be ONE stacking unit. The overlay that takes the mouse lies inside it and
+            // carries `z-index: 1000` (1001 when selected), so without a z-index of its own the widget opens
+            // no stacking context and that overlay leaves it: it ends up in the context of the view, above
+            // every widget whose overlay stayed inside. A click then went to a widget that is drawn below the
+            // one under the cursor - a relative widget of an unknown type, which is rendered from here and
+            // nowhere else, took every click meant for the absolute widgets lying on it.
+            // `visRxWidget` and `visCanWidget` write their own value over this one further down; this is what
+            // a widget gets that brings none, and what puts the two in the same stack in the first place.
+            style.zIndex =
+                VisBaseWidget.parseZIndex(this.state.rxStyle) ?? VisBaseWidget.parseZIndex(this.state.style) ?? 0;
 
             if (selected) {
                 if (
