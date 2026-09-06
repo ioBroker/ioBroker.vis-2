@@ -124,6 +124,10 @@ const styles: Record<string, any> = {
         fontSize: '80%',
         position: 'relative',
         lineHeight: '21px',
+        // The label and its control share one centre line. A table cell inherits `middle` from the table
+        // anyway, but only as long as nothing in between says otherwise - saying it here is what keeps a
+        // label next to a tall control (a select) at the same height as one next to a short one (a checkbox).
+        verticalAlign: 'middle',
     },
     fieldTitleDisabled: {
         opacity: 0.8,
@@ -151,6 +155,14 @@ const styles: Record<string, any> = {
             display: 'initial',
         },
     },
+    /*
+     * One height for the rows that carry a field. The controls are not all the same height - a select is
+     * 20px, a text field 27, a slider 31 - and the rows followed them, so the labels went down the column in
+     * an uneven rhythm. `height` on a row is a minimum: the taller controls keep their room.
+     */
+    fieldRowHeight: {
+        height: 28,
+    },
     fieldDivider: {
         width: '100%',
         height: 2,
@@ -165,6 +177,15 @@ const styles: Record<string, any> = {
     },
     fieldInput: {
         width: '100%',
+        // The control is centred in its cell instead of hanging in the line box the cell would otherwise
+        // build. MUI gives a `FormControl` `vertical-align: top`, so a control shorter than that line box -
+        // a checkbox is 16px against 22px - sat at its top, three pixels above the label next to it.
+        display: 'flex',
+        alignItems: 'center',
+    },
+    /** The other half of `fieldTitle`: both cells centre their content, so the two sit on one line */
+    fieldValue: {
+        verticalAlign: 'middle',
     },
     // like the palette: the rows sit flush and read as a list, not as separate boxes
     groupSummary: {
@@ -189,6 +210,10 @@ const styles: Record<string, any> = {
     infoIcon: {
         verticalAlign: 'middle',
         marginLeft: 3,
+        // the size of the label, not the 24px an MUI icon brings: at that size it was taller than the row it
+        // sits in and pushed that one row apart from all the others
+        width: 16,
+        height: 16,
     },
     bindIconSpan: {
         verticalAlign: 'middle',
@@ -1837,7 +1862,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             <Box
                 component="tr"
                 key={fieldIndex}
-                sx={styles.fieldRow}
+                sx={{ ...styles.fieldRow, ...styles.fieldRowHeight }}
             >
                 <Box
                     component="td"
@@ -1937,7 +1962,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     ) : null}
                     {field.tooltip ? <InfoIcon style={styles.infoIcon} /> : null}
                 </Box>
-                <Box component="td">
+                <Box
+                    component="td"
+                    sx={styles.fieldValue}
+                >
                     <div style={styles.fieldInput}>
                         {isBoundField ? (
                             <WidgetBindingField

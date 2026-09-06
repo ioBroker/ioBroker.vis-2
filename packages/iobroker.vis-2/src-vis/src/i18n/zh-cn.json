@@ -805,5 +805,8 @@
   "left": "left",
   "off": "off",
   "on": "on",
-  "right": "right"
+  "right": "right",
+  "Show widgets as icons": "以图标显示部件",
+  "Show widgets as list": "以列表显示部件",
+  "Recently used": "最近使用"
 }

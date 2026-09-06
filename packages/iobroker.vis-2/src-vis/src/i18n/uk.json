@@ -805,5 +805,8 @@
   "left": "left",
   "off": "off",
   "on": "on",
-  "right": "right"
+  "right": "right",
+  "Show widgets as icons": "Показувати віджети значками",
+  "Show widgets as list": "Показувати віджети списком",
+  "Recently used": "Нещодавно використані"
 }

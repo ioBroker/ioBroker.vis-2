@@ -88,6 +88,7 @@ import CodeDialog from './Components/CodeDialog';
 import CreateFirstProjectDialog from './Components/CreateFirstProjectDialog';
 import { DndPreview } from './Utils';
 import type { WidgetDragData } from './Palette/Widget';
+import { rememberWidget } from './Palette/recentWidgets';
 import VisWidgetsCatalog, {
     getWidgetTypes,
     parseAttributes,
@@ -638,6 +639,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         data?: Partial<WidgetData>,
         style?: Partial<WidgetStyle>,
     ): Promise<AnyWidgetId> => {
+        // whichever way it was added - dropped from the palette, pasted, or by a wizard - this is where a
+        // widget of this type comes into being, so this is where the palette learns that it was used
+        rememberWidget(widgetType);
+
         const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
         const newKey = getNewWidgetId(store.getState().visProject);

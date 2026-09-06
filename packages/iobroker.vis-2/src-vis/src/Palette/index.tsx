@@ -17,8 +17,11 @@ import {
     Clear as ClearIcon,
     UnfoldMore as UnfoldMoreIcon,
     UnfoldLess as UnfoldLessIcon,
+    ViewModule as ViewGridIcon,
+    ViewList as ViewListIcon,
     Search,
     Palette as IconPalette,
+    History as HistoryIcon,
 } from '@mui/icons-material';
 
 import { I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
@@ -32,6 +35,7 @@ import type Editor from '../Editor';
 import Widget from './Widget';
 import MarketplacePalette from '../Marketplace/MarketplacePalette';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
+import { getRecentWidgets, onRecentWidgetsChanged } from './recentWidgets';
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
 
 // declare global {
@@ -71,9 +75,21 @@ const styles: Record<string, any> = {
     labelShrink: {
         display: 'none',
     },
-    groupSurface: (theme: VisTheme): React.CSSProperties => ({
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
-    }),
+    /*
+     * The surface of a group header. It has to be opaque: the header sticks while the widgets of its set
+     * scroll under it (see `stickySummary`), and a tint alone let them shine through.
+     *
+     * The colour is the same as before. The palette column is `background.paper`, so the tint that used to be
+     * mixed with it by transparency is now painted onto that colour - which is what a translucent header over
+     * this panel came out as anyway.
+     */
+    groupSurface: (theme: VisTheme): React.CSSProperties => {
+        const tint = theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)';
+        return {
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: `linear-gradient(${tint}, ${tint})`,
+        };
+    },
     accordionRoot: {
         // Surfaces instead of lines, like the attributes: the group header carries its own background and
         // the 2px gap lets the darker panel show through as the separator.
@@ -90,6 +106,22 @@ const styles: Record<string, any> = {
     },
     accordionOpenedSummary: {
         fontWeight: 'bold',
+    },
+    /*
+     * The header of a set stays at the top of the palette while its widgets scroll past it, so one always
+     * knows which set is being looked at. It sticks inside its own accordion, which is what makes it give
+     * way to the next header instead of piling up.
+     */
+    stickySummary: {
+        position: 'sticky',
+        top: 0,
+        zIndex: 2,
+    },
+    /** Three tiles side by side, the widths shared equally - `minmax(0, 1fr)` so a long name cannot widen one */
+    widgetsGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        gap: 4,
     },
     groupSummary: {
         borderRadius: '4px',
@@ -163,7 +195,13 @@ interface PaletteProps {
     selectedView: string;
 }
 
+/** How the palette draws its entries. Kept in the local storage, so it survives a reload. */
+export type PaletteView = 'grid' | 'full';
+
 interface PaletteState {
+    view: PaletteView;
+    /** The widget types placed last, see recentWidgets.ts */
+    recent: string[];
     filter: string;
     marketplaceUpdates: MarketplaceWidgetRevision[] | null;
     marketplaceDeleted: string[] | null;
@@ -178,6 +216,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
 
     private marketplaceLoadingStarted = false;
 
+    /** Stops listening for a widget that was placed, see componentDidMount */
+    private unsubscribeRecent: (() => void) | null = null;
+
     private readonly lang: ioBroker.Languages = I18n.getLanguage();
 
     constructor(props: PaletteProps) {
@@ -191,6 +232,10 @@ class Palette extends Component<PaletteProps, PaletteState> {
         }
 
         this.state = {
+            // the icon view is the default: a widget is recognised by its preview, and three of them fit
+            // side by side where one row used to be
+            view: window.localStorage.getItem('paletteView') === 'full' ? 'full' : 'grid',
+            recent: getRecentWidgets(),
             filter: '',
             marketplaceUpdates: null,
             marketplaceDeleted: null,
@@ -204,6 +249,17 @@ class Palette extends Component<PaletteProps, PaletteState> {
     componentDidMount(): void {
         if (this.state.accordionOpen.__marketplace) {
             this.loadMarketplace();
+        }
+        // the widgets are added by the editor, not here, so the list has to be told about it
+        this.unsubscribeRecent = onRecentWidgetsChanged(() => this.setState({ recent: getRecentWidgets() }));
+    }
+
+    componentWillUnmount(): void {
+        this.unsubscribeRecent?.();
+        this.unsubscribeRecent = null;
+        if (this.buildWidgetListTimeout) {
+            clearTimeout(this.buildWidgetListTimeout);
+            this.buildWidgetListTimeout = null;
         }
     }
 
@@ -378,6 +434,94 @@ class Palette extends Component<PaletteProps, PaletteState> {
         });
     }
 
+    /**
+     * The widget types placed last, at the top of the palette.
+     *
+     * A page is built out of a handful of types, and they lie scattered over a dozen sets - this is the
+     * shortcut back to them. While something is searched for, the search itself is the shortcut, so the
+     * section steps aside.
+     */
+    renderRecent(): React.JSX.Element | null {
+        if (this.state.filter || !this.state.recent.length) {
+            return null;
+        }
+
+        const types = getWidgetTypes();
+        // a type of a set that is not installed any more is simply gone
+        const recent = this.state.recent
+            .map(name => types.find(type => type.name === name))
+            .filter((type): type is WidgetType => !!type);
+
+        if (!recent.length) {
+            return null;
+        }
+
+        const opened = this.state.accordionOpen.__recent !== false;
+
+        return (
+            <Accordion
+                sx={{
+                    ...styles.accordionRoot,
+                    '&.Mui-expanded': { margin: 0 },
+                }}
+                elevation={0}
+                expanded={opened}
+                onChange={(_e, expanded) => {
+                    const accordionOpen = JSON.parse(JSON.stringify(this.state.accordionOpen));
+                    accordionOpen.__recent = expanded;
+                    window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
+                    this.setState({ accordionOpen });
+                }}
+            >
+                <AccordionSummary
+                    id="summary_recent"
+                    expandIcon={<ExpandMoreIcon />}
+                    className={Utils.clsx('vis-palette-widget-set', opened && 'vis-palette-summary-expanded')}
+                    sx={{
+                        '&.MuiAccordionSummary-root': {
+                            ...Utils.getStyle(
+                                this.props.theme,
+                                commonStyles.clearPadding,
+                                opened ? styles.groupSummaryExpanded : styles.groupSummary,
+                                styles.groupSurface,
+                                styles.stickySummary,
+                            ),
+                            paddingLeft: '8px',
+                        },
+                        '&.Mui-expanded': { minHeight: 0 },
+                        '& .MuiAccordionSummary-content': {
+                            ...commonStyles.clearPadding,
+                            ...(opened ? styles.accordionOpenedSummary : undefined),
+                        },
+                    }}
+                >
+                    <HistoryIcon style={styles.groupIcon} />
+                    {I18n.t('Recently used')}
+                </AccordionSummary>
+                <AccordionDetails sx={styles.accordionDetails}>
+                    <div style={this.state.view === 'grid' ? styles.widgetsGrid : undefined}>
+                        {recent.map(widgetItem => (
+                            <Widget
+                                view={this.state.view}
+                                changeProject={this.props.changeProject}
+                                changeView={this.props.changeView}
+                                editMode={this.props.editMode}
+                                key={widgetItem.name}
+                                selectedView={this.props.selectedView}
+                                socket={this.props.socket}
+                                themeType={this.props.themeType}
+                                widgetSet={widgetItem.set || ''}
+                                widgetSetProps={this.state.widgetSetProps?.[widgetItem.set || '']}
+                                widgetType={widgetItem}
+                                widgetTypeName={widgetItem.name}
+                            />
+                        ))}
+                    </div>
+                </AccordionDetails>
+            </Accordion>
+        );
+    }
+
     renderMarketplace(): React.JSX.Element {
         const opened = this.state.accordionOpen.__marketplace;
 
@@ -410,6 +554,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                 commonStyles.clearPadding,
                                 opened ? styles.groupSummaryExpanded : styles.groupSummary,
                                 styles.groupSurface,
+                                styles.stickySummary,
                                 { minHeight: 0 },
                             ),
                             // `clearPadding` removes the indent as well, so the label would sit right on
@@ -574,6 +719,21 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     <IconPalette style={{ marginTop: 4, marginRight: 4 }} />
                     <span style={{ verticalAlign: 'middle' }}>{I18n.t('Palette')}</span>
                     <div style={{ flex: 1 }} />
+                    <Tooltip
+                        title={I18n.t(this.state.view === 'grid' ? 'Show widgets as list' : 'Show widgets as icons')}
+                        slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                    >
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                const view: PaletteView = this.state.view === 'grid' ? 'full' : 'grid';
+                                window.localStorage.setItem('paletteView', view);
+                                this.setState({ view });
+                            }}
+                        >
+                            {this.state.view === 'grid' ? <ViewListIcon /> : <ViewGridIcon />}
+                        </IconButton>
+                    </Tooltip>
                     {!allOpened ? (
                         <Tooltip
                             title={I18n.t('Expand all')}
@@ -686,6 +846,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 >
                     {/* gap on the very top */}
                     <div style={{ width: '100%' }} />
+                    {this.renderRecent()}
                     {this.renderMarketplace()}
                     {Object.keys(this.state.widgetsList || {}).map((category, categoryKey) => {
                         let version = null;
@@ -750,6 +911,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                                     ? styles.groupSummaryExpanded
                                                     : styles.groupSummary,
                                                 styles.groupSurface,
+                                                styles.stickySummary,
                                             ),
                                             // `clearPadding` removes the indent as well, so the label would
                                             // sit right on the edge of the panel
@@ -778,11 +940,12 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                 </AccordionSummary>
                                 <AccordionDetails sx={styles.accordionDetails}>
                                     {version}
-                                    <div>
+                                    <div style={this.state.view === 'grid' ? styles.widgetsGrid : undefined}>
                                         {this.state.accordionOpen[category]
                                             ? this.state.widgetsList?.[category].map(widgetItem =>
                                                   widgetItem.name === '_tplGroup' ? null : (
                                                       <Widget
+                                                          view={this.state.view}
                                                           changeProject={this.props.changeProject}
                                                           changeView={this.props.changeView}
                                                           editMode={this.props.editMode}

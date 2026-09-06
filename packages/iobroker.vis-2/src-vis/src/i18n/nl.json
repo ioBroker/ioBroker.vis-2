@@ -805,5 +805,8 @@
   "left": "left",
   "off": "off",
   "on": "on",
-  "right": "right"
+  "right": "right",
+  "Show widgets as icons": "Widgets als pictogrammen tonen",
+  "Show widgets as list": "Widgets als lijst tonen",
+  "Recently used": "Recent gebruikt"
 }

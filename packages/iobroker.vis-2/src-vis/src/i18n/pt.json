@@ -805,5 +805,8 @@
   "left": "left",
   "off": "off",
   "on": "on",
-  "right": "right"
+  "right": "right",
+  "Show widgets as icons": "Mostrar widgets como ícones",
+  "Show widgets as list": "Mostrar widgets como lista",
+  "Recently used": "Usados recentemente"
 }

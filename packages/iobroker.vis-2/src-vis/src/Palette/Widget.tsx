@@ -57,6 +57,10 @@ const styles: Record<string, any> = {
         width: 'auto',
         borderRadius: 4,
     },
+    widgetTooltipTitle: {
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
     widgetTooltipHelp: {
         marginTop: 6,
         maxWidth: 260,
@@ -80,11 +84,62 @@ const styles: Record<string, any> = {
         marginTop: 9,
         color: '#F00',
     },
+    /*
+     * The tile of the icon view. The preview leads and the name follows underneath, so a widget is found by
+     * what it looks like - which is what one remembers of it. The tile itself stays in the colour of the
+     * panel: a fill in the colour of the widget set would be a wall of it here, and it is exactly the thing
+     * the preview has to be read against. The colour comes back on hover, on the border.
+     */
+    widgetTile: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '4px',
+        boxSizing: 'border-box',
+        width: '100%',
+        height: 74,
+        padding: '4px',
+        borderRadius: '6px',
+        borderStyle: 'solid',
+        borderWidth: 1,
+        cursor: 'grab',
+    },
+    widgetTileImage: {
+        height: 34,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    widgetTileImageWithSrc: {
+        maxWidth: '100%',
+        maxHeight: 34,
+        width: 'auto',
+        borderRadius: 4,
+    },
+    widgetTileTitle: {
+        // 10px, not 11: at 11 a single word as long as "Zeichenfolge" no longer fits the 62px a tile leaves
+        // it, and breaking a word in the middle is what makes a wall of tiles hard to read
+        fontSize: 10,
+        lineHeight: 1.15,
+        textAlign: 'center',
+        // two lines at most, the rest is in the tooltip
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        // break inside a word only when it really does not fit; a name of two words breaks at the space
+        wordBreak: 'normal',
+        overflowWrap: 'anywhere',
+    },
 };
 
 const WIDGET_ICON_HEIGHT = 34;
 
 interface WidgetProps {
+    /** How the palette draws its entries: `grid` shows the preview with the name under it, `full` the row */
+    view?: 'grid' | 'full';
     widgetSetProps?: Record<string, any>;
     widgetSet: string;
     widgetType: WidgetType;
@@ -196,7 +251,8 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         );
     };
 
-    const img = renderPreview(styles.widgetImageWithSrc, imageRef);
+    const isGrid = props.view === 'grid';
+    const img = renderPreview(isGrid ? styles.widgetTileImageWithSrc : styles.widgetImageWithSrc, imageRef);
 
     let label = props.widgetType.label ? I18n.t(props.widgetType.label) : window.vis._(props.widgetType.title || '');
     // remove legacy stuff
@@ -215,6 +271,8 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         <Tooltip
             title={
                 <Box component="div">
+                    {/* the name only in the icon view, where the tile may have had to cut it off */}
+                    {isGrid ? <div style={styles.widgetTooltipTitle}>{label}</div> : null}
                     <div>{renderPreview(styles.widgetImageTooltip)}</div>
                     {props.widgetType.help ? (
                         <div style={styles.widgetTooltipHelp}>{I18n.t(props.widgetType.help)}</div>
@@ -224,50 +282,72 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
             slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
             placement="right-end"
         >
-            <div style={{ ...styles.widget, ...style }}>
-                <span style={{ display: 'none' }}>{props.widgetTypeName}</span>
-                <div style={{ ...styles.widgetTitle, ...titleStyle }}>
-                    <div>{label}</div>
-                    {props.widgetSet === '__marketplace' && props.marketplace && (
-                        <div style={styles.widgetMarketplace}>
-                            {`${I18n.t('version')} ${props.marketplace.version}`}
-                        </div>
-                    )}
-                </div>
-                {props.widgetSet === '__marketplace' && (
-                    <>
-                        <Tooltip
-                            title={I18n.t('Uninstall')}
-                            slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
-                        >
-                            <IconButton onClick={() => props.uninstallWidget?.(props.widgetType.name)}>
-                                <DeleteIcon />
-                            </IconButton>
-                        </Tooltip>
-                        {marketplaceUpdate && (
+            {isGrid ? (
+                <Box
+                    component="div"
+                    sx={theme => ({
+                        ...styles.widgetTile,
+                        backgroundColor:
+                            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                        borderColor: theme.palette.divider,
+                        '&:hover': {
+                            // the colour of the widget set, which the fill used to carry all the time
+                            borderColor: style.backgroundColor || theme.palette.primary.main,
+                            backgroundColor:
+                                theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.09)' : 'rgba(0, 0, 0, 0.07)',
+                        },
+                    })}
+                >
+                    <span style={{ display: 'none' }}>{props.widgetTypeName}</span>
+                    <div style={styles.widgetTileImage}>{img}</div>
+                    <div style={styles.widgetTileTitle}>{label}</div>
+                </Box>
+            ) : (
+                <div style={{ ...styles.widget, ...style }}>
+                    <span style={{ display: 'none' }}>{props.widgetTypeName}</span>
+                    <div style={{ ...styles.widgetTitle, ...titleStyle }}>
+                        <div>{label}</div>
+                        {props.widgetSet === '__marketplace' && props.marketplace && (
+                            <div style={styles.widgetMarketplace}>
+                                {`${I18n.t('version')} ${props.marketplace.version}`}
+                            </div>
+                        )}
+                    </div>
+                    {props.widgetSet === '__marketplace' && (
+                        <>
                             <Tooltip
-                                title={`${I18n.t('Update to version')} ${marketplaceUpdate.version}`}
+                                title={I18n.t('Uninstall')}
                                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
                             >
-                                <IconButton
-                                    onClick={() => marketplaceUpdate && props.updateWidgets?.(marketplaceUpdate)}
-                                >
-                                    <UpdateIcon />
+                                <IconButton onClick={() => props.uninstallWidget?.(props.widgetType.name)}>
+                                    <DeleteIcon />
                                 </IconButton>
                             </Tooltip>
-                        )}
-                        {marketplaceDeleted && (
-                            <Tooltip
-                                title={I18n.t('Widget was deleted in widgeteria')}
-                                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
-                            >
-                                <DeletedIcon style={styles.widgetDeleted} />
-                            </Tooltip>
-                        )}
-                    </>
-                )}
-                <span style={styles.widgetImageContainer}>{img}</span>
-            </div>
+                            {marketplaceUpdate && (
+                                <Tooltip
+                                    title={`${I18n.t('Update to version')} ${marketplaceUpdate.version}`}
+                                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                                >
+                                    <IconButton
+                                        onClick={() => marketplaceUpdate && props.updateWidgets?.(marketplaceUpdate)}
+                                    >
+                                        <UpdateIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                            {marketplaceDeleted && (
+                                <Tooltip
+                                    title={I18n.t('Widget was deleted in widgeteria')}
+                                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                                >
+                                    <DeletedIcon style={styles.widgetDeleted} />
+                                </Tooltip>
+                            )}
+                        </>
+                    )}
+                    <span style={styles.widgetImageContainer}>{img}</span>
+                </div>
+            )}
         </Tooltip>
     );
 
@@ -308,9 +388,15 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
             ref={props.editMode ? setNodeRef : null}
             id={`widget_${props.widgetTypeName}`}
             className={`widget-${props.widgetSet}`}
+            style={isGrid ? { display: 'block' } : undefined}
             {...(props.editMode ? listeners : undefined)}
         >
-            <span ref={widthRef}>{result}</span>
+            <span
+                ref={widthRef}
+                style={isGrid ? { display: 'block' } : undefined}
+            >
+                {result}
+            </span>
         </span>
     );
 };
