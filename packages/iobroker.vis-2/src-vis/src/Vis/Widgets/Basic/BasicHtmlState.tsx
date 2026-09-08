@@ -81,7 +81,7 @@ class BasicHtmlState extends VisRxWidget<RxData> {
 
         // An attribute is text, but a state that counts in numbers or switches has to receive its own type.
         let value: string | number | boolean = this.state.rxData.value;
-        if (value === undefined || value === null) {
+        if (value == null) {
             value = false;
         } else if (value === 'true') {
             value = true;

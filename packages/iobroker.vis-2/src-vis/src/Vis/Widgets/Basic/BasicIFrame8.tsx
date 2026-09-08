@@ -146,7 +146,7 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
     getFrameNumber(): number {
         const value = this.state.values[`${this.state.rxData.oid}.val`];
 
-        if (this.state.rxData.oid === NOTHING_SELECTED || value === undefined || value === null) {
+        if (this.state.rxData.oid === NOTHING_SELECTED || value == null) {
             return 0;
         }
         if (value === 'true' || value === true) {
@@ -225,22 +225,20 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
                     this.refreshInterval = null;
                 }
                 // install refresh handler
-                this.refreshInterval =
-                    this.refreshInterval ||
-                    setInterval(() => {
-                        if (this.frameRef.current && !BasicIFrame8.isHidden(this.frameRef.current)) {
-                            const parents = BasicIFrame8.getParents(this.frameRef.current).filter(el =>
-                                BasicIFrame8.isHidden(el),
-                            );
-                            if (
-                                !parents.length ||
-                                parents[0].tagName === 'BODY' ||
-                                parents[0].id === 'materialdesign-vuetify-container'
-                            ) {
-                                this.refreshIFrame();
-                            }
+                this.refreshInterval ||= setInterval(() => {
+                    if (this.frameRef.current && !BasicIFrame8.isHidden(this.frameRef.current)) {
+                        const parents = BasicIFrame8.getParents(this.frameRef.current).filter(el =>
+                            BasicIFrame8.isHidden(el),
+                        );
+                        if (
+                            !parents.length ||
+                            parents[0].tagName === 'BODY' ||
+                            parents[0].id === 'materialdesign-vuetify-container'
+                        ) {
+                            this.refreshIFrame();
                         }
-                    }, refreshInterval);
+                    }
+                }, refreshInterval);
             } else if (this.refreshInterval) {
                 this.startedInterval = 0;
                 clearInterval(this.refreshInterval);

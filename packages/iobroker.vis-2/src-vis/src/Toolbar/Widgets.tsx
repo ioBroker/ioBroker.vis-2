@@ -135,12 +135,12 @@ const Widgets: React.FC<WidgetsProps> = props => {
                         let widgetIcon = widgetType ? widgetType.preview || '' : 'icon/question.svg';
                         if (widgetIcon.startsWith('<img')) {
                             const prev = widgetIcon.match(/src="([^"]+)"/);
-                            if (prev && prev[1]) {
+                            if (prev?.[1]) {
                                 widgetIcon = prev[1];
                             }
                         }
                         let name;
-                        if (widgets[widgetId] && widgets[widgetId].data?.name) {
+                        if (widgets[widgetId]?.data?.name) {
                             name = (
                                 <span>
                                     <span>{widgets[widgetId].data?.name}</span>
@@ -365,12 +365,16 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     : null,
                 window.innerWidth > 1410 ? { type: 'divider' } : null,
                 [
+                    // Both of these are about editing and nothing else: what is dragged, and the name plate a
+                    // widget wears while a page is built. In the runtime there is nothing to drag and no
+                    // plate to show, so they are as inactive there as everything else in this bar.
                     [
                         {
                             type: 'icon-button',
                             Icon: OpenInNewIcon,
                             name: 'Lock dragging',
                             selected: props.lockDragging,
+                            disabled: !props.editMode,
                             onAction: () => props.toggleLockDragging(),
                         },
                     ],
@@ -380,6 +384,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             Icon: props.widgetHint === 'hide' ? VisibilityOffIcon : VisibilityIcon,
                             color: props.widgetHint === 'light' ? 'white' : 'black',
                             name: `Toggle widget hint (${props.widgetHint})`,
+                            disabled: !props.editMode,
                             onAction: () => props.toggleWidgetHint(),
                         },
                     ],

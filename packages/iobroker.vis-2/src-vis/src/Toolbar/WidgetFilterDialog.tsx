@@ -39,7 +39,7 @@ const WidgetFilterDialog: React.FC<WidgetFilterDialogProps> = props => {
         const _filters: { key: AnyWidgetId; count: number }[] = [];
         const widgets = visProject[props.selectedView].widgets;
         Object.values(widgets).forEach(widget => {
-            if (widget.data && widget.data.filterkey) {
+            if (widget.data?.filterkey) {
                 widget.data.filterkey.split(',').forEach(filter => {
                     filter = filter.trim();
                     const pos = _filters.findIndex(a => a.key === filter);

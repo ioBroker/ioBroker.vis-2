@@ -177,22 +177,20 @@ export default class BasicIFrame extends VisRxWidget<RxData> {
                     this.refreshInterval = null;
                 }
                 // install refresh handler
-                this.refreshInterval =
-                    this.refreshInterval ||
-                    setInterval(() => {
-                        if (this.frameRef.current && !BasicIFrame.isHidden(this.frameRef.current)) {
-                            const parents = BasicIFrame.getParents(this.frameRef.current).filter(el =>
-                                BasicIFrame.isHidden(el),
-                            );
-                            if (
-                                !parents.length ||
-                                parents[0].tagName === 'BODY' ||
-                                parents[0].id === 'materialdesign-vuetify-container'
-                            ) {
-                                this.refreshIFrame();
-                            }
+                this.refreshInterval ||= setInterval(() => {
+                    if (this.frameRef.current && !BasicIFrame.isHidden(this.frameRef.current)) {
+                        const parents = BasicIFrame.getParents(this.frameRef.current).filter(el =>
+                            BasicIFrame.isHidden(el),
+                        );
+                        if (
+                            !parents.length ||
+                            parents[0].tagName === 'BODY' ||
+                            parents[0].id === 'materialdesign-vuetify-container'
+                        ) {
+                            this.refreshIFrame();
                         }
-                    }, refreshInterval);
+                    }
+                }, refreshInterval);
             } else if (this.refreshInterval) {
                 this.startedInterval = 0;
                 clearInterval(this.refreshInterval);

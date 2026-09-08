@@ -295,7 +295,7 @@ class BasicTable extends VisRxWidget<RxData, BasicTableState> {
         }
         const tClass = this.getTableClass();
         const detail = row._detail;
-        if (detail === undefined || detail === null) {
+        if (detail == null) {
             target.innerHTML = '';
             return;
         }
@@ -384,7 +384,7 @@ class BasicTable extends VisRxWidget<RxData, BasicTableState> {
                 key={column.index}
                 className={cellClass}
                 style={style}
-                dangerouslySetInnerHTML={{ __html: value === undefined || value === null ? '' : `${value}` }}
+                dangerouslySetInnerHTML={{ __html: value == null ? '' : `${value}` }}
             />
         );
     }
@@ -565,8 +565,7 @@ class BasicTable extends VisRxWidget<RxData, BasicTableState> {
 
         // the line that says it is selected wins until another one is clicked
         const selectedIndex =
-            this.state.selectedIndex ??
-            shown.findIndex(row => row._class && row._class.split(' ').includes('selected'));
+            this.state.selectedIndex ?? shown.findIndex(row => row._class?.split(' ').includes('selected'));
 
         return this.state.rxData.noStyle
             ? this.renderLegacy(shown, columns, selectedIndex)

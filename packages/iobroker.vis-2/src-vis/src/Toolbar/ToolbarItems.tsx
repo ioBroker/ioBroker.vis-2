@@ -353,7 +353,7 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         }
 
         let value = view && item.field ? view.settings[item.field] : null;
-        if (item.field && (value === null || value === undefined)) {
+        if (item.field && value == null) {
             value = '';
         }
 
@@ -446,7 +446,9 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         }
 
         const div = (
-            <div style={{ ...styles.toolbarBlock(this.props.theme), borderRightWidth: this.props.last ? 0 : undefined }}>
+            <div
+                style={{ ...styles.toolbarBlock(this.props.theme), borderRightWidth: this.props.last ? 0 : undefined }}
+            >
                 <div style={styles.toolbarItems}>
                     {items.map((item, key) => {
                         if (Array.isArray(item)) {

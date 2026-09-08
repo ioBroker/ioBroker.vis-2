@@ -23,10 +23,10 @@ function _translateWord(
     if (!text) {
         return '';
     }
-    lang = lang || ((window as any).systemLang as ioBroker.Languages) || 'en';
-    dictionary = dictionary || (window as any).systemDictionary || {};
+    lang ||= ((window as any).systemLang as ioBroker.Languages) || 'en';
+    dictionary ||= (window as any).systemDictionary || {};
 
-    if (dictionary && dictionary[text]) {
+    if (dictionary?.[text]) {
         let newText = dictionary[text][lang];
         if (newText) {
             return newText;

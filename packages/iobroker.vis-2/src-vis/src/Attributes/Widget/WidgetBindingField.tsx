@@ -150,7 +150,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     constructor(props: WidgetBindingFieldProps) {
         super(props);
         let value = this.props.widget[this.props.isStyle ? 'style' : 'data'][this.props.field.name] || '';
-        if (value === undefined || value === null) {
+        if (value == null) {
             value = '';
         } else {
             value = value.toString();
@@ -174,7 +174,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
         state: WidgetBindingFieldState,
     ): Partial<WidgetBindingFieldState> | null {
         let value = props.widget[props.isStyle ? 'style' : 'data']?.[props.field.name] || '';
-        if (value === undefined || value === null) {
+        if (value == null) {
             value = '';
         } else {
             value = value.toString();
@@ -188,7 +188,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     }
 
     detectOldBindingStyle(value: any): boolean {
-        this.visFormatUtils = this.visFormatUtils || new VisFormatUtils({ vis: window.vis });
+        this.visFormatUtils ||= new VisFormatUtils({ vis: window.vis });
         const oids = this.visFormatUtils.extractBinding(value as string);
         if (!oids) {
             return false;
@@ -198,8 +198,8 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     }
 
     async calculateValue(value: any): Promise<{ calculatedEditValue: string; values: Record<string, any> }> {
-        this.visFormatUtils = this.visFormatUtils || new VisFormatUtils({ vis: window.vis });
-        if (value === undefined || value === null) {
+        this.visFormatUtils ||= new VisFormatUtils({ vis: window.vis });
+        if (value == null) {
             return { calculatedEditValue: '', values: {} };
         }
         value = value.toString();
@@ -1024,7 +1024,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                                     <span style={styles.valueTitle}>{id}</span>
                                     <span>:</span>
                                     <span style={{ ...styles.space, ...styles.valueContent }}>
-                                        {`${this.state.values[id] === null || this.state.values[id] === undefined ? 'null' : this.state.values[id].toString()} [${typeof this.state.values[id]}]`}
+                                        {`${this.state.values[id] == null ? 'null' : this.state.values[id].toString()} [${typeof this.state.values[id]}]`}
                                     </span>
                                 </div>
                             ))}
@@ -1244,7 +1244,7 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
     }
 
     async insertInText(text: string, options?: ModifyOptions): Promise<void> {
-        options = options || {};
+        options ||= {};
         const selectionStart =
             options.selectionStart === undefined
                 ? (this.inputRef.current?.selectionStart ?? 0)

@@ -44,7 +44,7 @@ function replaceGroupAttr(inputStr: string, groupAttrList: WidgetData): { doesMa
         match = true;
         ms.forEach(m => {
             const val = groupAttrList[m];
-            if (val === null || val === undefined) {
+            if (val == null) {
                 newString = newString.replace(/groupAttr(\d+)/, '');
             } else {
                 newString = newString.replace(/groupAttr(\d+)/, groupAttrList[m]);
@@ -59,7 +59,7 @@ function replaceGroupAttr(inputStr: string, groupAttrList: WidgetData): { doesMa
         ms.forEach((m: string) => {
             const attr = m.substring(1, m.length - 1);
             const val = groupAttrList[attr];
-            if (val === null || val === undefined) {
+            if (val == null) {
                 newString = newString.replace(m, '');
             } else {
                 newString = newString.replace(m, val);
@@ -85,11 +85,11 @@ function extractBinding(format: string): VisBinding[] | null {
                 continue;
             }
             // If the first symbol is '"' => it is JSON
-            if (_oid && _oid[0] === '"') {
+            if (_oid?.[0] === '"') {
                 continue;
             }
             const parts = _oid.split(';');
-            result = result || [];
+            result ||= [];
             let systemOid = parts[0].trim();
             let visOid = systemOid;
 
@@ -178,7 +178,7 @@ function extractBinding(format: string): VisBinding[] | null {
             } else {
                 for (let u = 1; u < parts.length; u++) {
                     const parse = parts[u].match(/([\w\s/+*-]+)(\(.+\))?/);
-                    if (parse && parse[1]) {
+                    if (parse?.[1]) {
                         const op = parse[1].trim();
                         // operators requires parameter
                         if (
@@ -201,26 +201,26 @@ function extractBinding(format: string): VisBinding[] | null {
                                 if (arg.toString() === 'NaN') {
                                     console.log(`Invalid format of format string: ${format}`);
                                 } else {
-                                    operations = operations || [];
+                                    operations ||= [];
                                     operations.push({ op, arg });
                                 }
                             }
                         } else if (op === 'date' || op === 'momentDate') {
                             // date formatting
-                            operations = operations || [];
+                            operations ||= [];
                             let arg: string = (parse[2] || '').trim();
                             // Remove braces from {momentDate(format)}
                             arg = arg.substring(1, arg.length - 1);
                             operations.push({ op, arg });
                         } else if (op === 'array') {
                             // returns array[value]. e.g.: {id.ack;array(ack is false,ack is true)}
-                            operations = operations || [];
+                            operations ||= [];
                             let param: string = (parse[2] || '').trim();
                             param = param.substring(1, param.length - 1);
                             operations.push({ op, arg: param.split(',') }); // xxx
                         } else if (op === 'value') {
                             // value formatting
-                            operations = operations || [];
+                            operations ||= [];
                             let arg: string = parse[2] === undefined ? '(2)' : parse[2] || '';
                             arg = arg.trim();
                             arg = arg.substring(1, arg.length - 1);
@@ -228,7 +228,7 @@ function extractBinding(format: string): VisBinding[] | null {
                         } else if (op === 'pow' || op === 'round' || op === 'random') {
                             // operators have optional parameter
                             if (parse[2] === undefined) {
-                                operations = operations || [];
+                                operations ||= [];
                                 operations.push({ op });
                             } else {
                                 let argStr: string = (parse[2] || '').trim().replace(',', '.');
@@ -238,19 +238,19 @@ function extractBinding(format: string): VisBinding[] | null {
                                 if (arg.toString() === 'NaN') {
                                     console.log(`Invalid format of format string: ${format}`);
                                 } else {
-                                    operations = operations || [];
+                                    operations ||= [];
                                     operations.push({ op, arg });
                                 }
                             }
                         } else if (op === 'json') {
                             // json(objPropPath)  ex: json(prop1);  json(prop1.propA)
-                            operations = operations || [];
+                            operations ||= [];
                             let arg = (parse[2] || '').trim();
                             arg = arg.substring(1, arg.length - 1);
                             operations.push({ op, arg });
                         } else {
                             // operators without parameter
-                            operations = operations || [];
+                            operations ||= [];
                             operations.push({ op: op as VisBindingOperationType });
                         }
                     } else {
@@ -381,7 +381,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                 if (typeof data[attr] === 'string') {
                     const result = replaceGroupAttr(data[attr], parentWidgetData);
                     if (result.doesMatch) {
-                        newGroupData = newGroupData || (deepClone(data) as GroupData);
+                        newGroupData ||= deepClone(data) as GroupData;
                         newGroupData[attr] = result.newString || '';
                     }
                 }
@@ -415,7 +415,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                             linkContext.byViews[view].push(systemOid);
                         }
 
-                        linkContext.bindings[systemOid] = linkContext.bindings[systemOid] || [];
+                        linkContext.bindings[systemOid] ||= [];
                         item.type = 'data';
                         item.attr = attr;
                         item.view = view;
@@ -423,7 +423,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
 
                         linkContext.bindings[systemOid].push(item);
                     }
-                    const operation0: VisBindingOperation | undefined = item.operations && item.operations[0];
+                    const operation0: VisBindingOperation | undefined = item.operations?.[0];
 
                     // If we have more than one argument
                     if (operation0 && Array.isArray(operation0.arg)) {
@@ -440,7 +440,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                                 linkContext.byViews[view].push(_systemOid);
                             }
 
-                            linkContext.bindings[_systemOid] = linkContext.bindings[_systemOid] || [];
+                            linkContext.bindings[_systemOid] ||= [];
                             if (!linkContext.bindings[_systemOid].includes(item)) {
                                 linkContext.bindings[_systemOid].push(item);
                             }
@@ -496,7 +496,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                             }
                         }
 
-                        linkContext.visibility[vid] = linkContext.visibility[vid] || [];
+                        linkContext.visibility[vid] ||= [];
                         linkContext.visibility[vid].push({ view, widget: wid });
                     } else if (attr.startsWith('signals-oid-')) {
                         // Signal binding
@@ -511,7 +511,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                             }
                         }
 
-                        linkContext.signals[sid] = linkContext.signals[sid] || [];
+                        linkContext.signals[sid] ||= [];
 
                         linkContext.signals[sid].push({
                             view,
@@ -531,7 +531,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                             }
                         }
 
-                        linkContext.lastChanges[lcSid] = linkContext.lastChanges[lcSid] || [];
+                        linkContext.lastChanges[lcSid] ||= [];
                         linkContext.lastChanges[lcSid].push({ view, widget: wid });
                     }
                 } else if (data[attr] === 'id') {
@@ -567,7 +567,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                                 linkContext.byViews[view].push(systemOid);
                             }
 
-                            linkContext.bindings[systemOid] = linkContext.bindings[systemOid] || [];
+                            linkContext.bindings[systemOid] ||= [];
 
                             item.type = 'style';
                             item.attr = cssAttr;
@@ -577,7 +577,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                             linkContext.bindings[systemOid].push(item);
                         }
 
-                        const operation0: VisBindingOperation | undefined = item.operations && item.operations[0];
+                        const operation0: VisBindingOperation | undefined = item.operations?.[0];
 
                         if (operation0 && Array.isArray(operation0.arg)) {
                             for (let w = 0; w < operation0.arg.length; w++) {
@@ -594,7 +594,7 @@ function getUsedObjectIDsInWidget(views: Project, view: string, wid: AnyWidgetId
                                 if (linkContext.byViews && !linkContext.byViews[view].includes(_systemOid)) {
                                     linkContext.byViews[view].push(_systemOid);
                                 }
-                                linkContext.bindings[_systemOid] = linkContext.bindings[_systemOid] || [];
+                                linkContext.bindings[_systemOid] ||= [];
                                 if (!linkContext.bindings[_systemOid].includes(item)) {
                                     linkContext.bindings[_systemOid].push(item);
                                 }
@@ -683,7 +683,7 @@ function calcProject(
         callback(null, result || []);
         return;
     }
-    result = result || [];
+    result ||= [];
     const project = projects.shift();
     if (!project?.isDir) {
         setImmediate(calcProject, objects, projects, instance, result, callback);
@@ -733,7 +733,7 @@ export default function calcProjects(
                 }
             } else {
                 calcProject(objects, projects, instance, [], (err: Error | null | undefined, result) => {
-                    if (result && result.length) {
+                    if (result?.length) {
                         let total = 0;
                         for (let r = 0; r < result.length; r++) {
                             total += result[r].val;

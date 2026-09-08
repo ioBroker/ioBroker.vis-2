@@ -22,6 +22,7 @@ import {
     Search,
     Palette as IconPalette,
     History as HistoryIcon,
+    Widgets as WidgetSetIcon,
 } from '@mui/icons-material';
 
 import { I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
@@ -153,6 +154,9 @@ const styles: Record<string, any> = {
         width: 20,
         height: 20,
         marginRight: 8,
+        // a set may bring an icon of any proportion, and a wide one must be laid into the square, not
+        // pressed into it
+        objectFit: 'contain',
     },
     version: {
         fontSize: 10,
@@ -502,6 +506,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     <div style={this.state.view === 'grid' ? styles.widgetsGrid : undefined}>
                         {recent.map(widgetItem => (
                             <Widget
+                                // the same widget also stands in its own set further down, and the two must
+                                // not be the same draggable
+                                section="recent"
                                 view={this.state.view}
                                 changeProject={this.props.changeProject}
                                 changeView={this.props.changeView}
@@ -685,15 +692,13 @@ class Palette extends Component<PaletteProps, PaletteState> {
             clearTimeout(this.buildWidgetListTimeout);
             this.buildWidgetListTimeout = null;
         }
-        this.buildWidgetListTimeout =
-            this.buildWidgetListTimeout ||
-            setTimeout(
-                () => {
-                    this.buildWidgetListTimeout = null;
-                    this.buildWidgetList();
-                },
-                immediate ? 0 : 100,
-            );
+        this.buildWidgetListTimeout ||= setTimeout(
+            () => {
+                this.buildWidgetListTimeout = null;
+                this.buildWidgetList();
+            },
+            immediate ? 0 : 100,
+        );
     }
 
     render(): React.JSX.Element | null {
@@ -705,8 +710,15 @@ class Palette extends Component<PaletteProps, PaletteState> {
             return null;
         }
 
-        const allOpened = !Object.keys(this.state.widgetsList || {}).find(group => !this.state.accordionOpen[group]);
-        const allClosed = !Object.keys(this.state.widgetsList || {}).find(group => this.state.accordionOpen[group]);
+        // `__recent` counts as a group here: an empty state means it is open, so it has to be asked the same
+        // way `renderRecent` asks it, or "collapse all" would grey out while it still stands open
+        const recentShown = !this.state.filter && !!this.state.recent.length;
+        const recentOpen = recentShown && this.state.accordionOpen.__recent !== false;
+        const allOpened =
+            !Object.keys(this.state.widgetsList || {}).find(group => !this.state.accordionOpen[group]) &&
+            (!recentShown || recentOpen);
+        const allClosed =
+            !Object.keys(this.state.widgetsList || {}).find(group => this.state.accordionOpen[group]) && !recentOpen;
 
         return (
             <>
@@ -749,6 +761,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         group => (accordionOpen[group] = true),
                                     );
                                     accordionOpen.__marketplace = __marketplace;
+                                    // "recently used" is a group like any other here - only the widgeteria
+                                    // stays as it was, because opening it fetches from the internet
+                                    accordionOpen.__recent = true;
                                     window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
                                     this.setState({ accordionOpen });
                                 }}
@@ -777,6 +792,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                         group => (accordionOpen[group] = false),
                                     );
                                     accordionOpen.__marketplace = false;
+                                    accordionOpen.__recent = false;
                                     window.localStorage.setItem('widgets', JSON.stringify(accordionOpen));
                                     this.setState({ accordionOpen });
                                 }}
@@ -931,7 +947,12 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                             style={styles.groupIcon}
                                             src={this.state.widgetSetProps?.[category].icon}
                                         />
-                                    ) : null}
+                                    ) : (
+                                        // A set that brings no icon of its own gets a plain one, so that
+                                        // every header starts at the same place and the names line up
+                                        // instead of stepping in and out.
+                                        <WidgetSetIcon style={{ ...styles.groupIcon, opacity: 0.5 }} />
+                                    )}
                                     {this.state.widgetSetProps?.[category]?.label
                                         ? this.state.widgetSetProps?.[category].label.startsWith('Vis 2 - ')
                                             ? this.state.widgetSetProps?.[category].label.substring(8)

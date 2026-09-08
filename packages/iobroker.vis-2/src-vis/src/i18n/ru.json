@@ -808,5 +808,11 @@
   "right": "right",
   "Show widgets as icons": "Показывать виджеты значками",
   "Show widgets as list": "Показывать виджеты списком",
-  "Recently used": "Недавно использованные"
+  "Recently used": "Недавно использованные",
+  "vis_2_widgets_swipe_left_view": "Вид при свайпе влево",
+  "vis_2_widgets_swipe_right_view": "Вид при свайпе вправо",
+  "vis_2_widgets_swipe_up_view": "Вид при свайпе вверх",
+  "vis_2_widgets_swipe_down_view": "Вид при свайпе вниз",
+  "vis_2_widgets_swipe_no_view": "нет вида",
+  "vis_2_widgets_basic_mui": "Стиль MUI"
 }

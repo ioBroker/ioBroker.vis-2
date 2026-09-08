@@ -100,7 +100,7 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
     }
 
     const showDialog = (type: 'add' | 'rename' | 'delete', project?: string): void => {
-        project = project || props.selectedView;
+        project ||= props.selectedView;
 
         const dialogDefaultName = {
             add: 'New project',

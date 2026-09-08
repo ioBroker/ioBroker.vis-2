@@ -111,7 +111,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                                 if (data.oid && data.oid !== 'nothing_selected') {
                                     const obj = await socket.getObject(data.oid);
                                     let changed = false;
-                                    if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
+                                    if (obj?.common?.min != null) {
                                         if (data.min !== obj.common.min) {
                                             data.min = obj.common.min;
                                             changed = true;
@@ -121,7 +121,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                                             changed = true;
                                         }
                                     }
-                                    if (obj?.common?.max !== undefined && obj?.common?.max !== null) {
+                                    if (obj?.common?.max != null) {
                                         if (data.max !== obj.common.max) {
                                             data.max = obj.common.max;
                                             changed = true;
@@ -138,7 +138,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                                         }
                                     }
                                     if (!data.step) {
-                                        if (obj?.common?.step !== undefined && obj?.common?.step !== null) {
+                                        if (obj?.common?.step != null) {
                                             if (data.step !== obj.common.step) {
                                                 data.step = obj.common.step;
                                                 changed = true;
@@ -336,7 +336,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
 
     onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
         if (id === this.state.rxData.oid && state) {
-            let value = parseFloat(state.val === null || state.val === undefined ? '0' : (state.val as string)) || 0;
+            let value = parseFloat(state.val == null ? '0' : (state.val as string)) || 0;
             if (this.state.rxData.inverted) {
                 value =
                     parseFloat(this.state.rxData.max as unknown as string) -
@@ -348,7 +348,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 this.setState({ value: value.toString() });
             }
         } else if (id === this.state.rxData['oid-2'] && state) {
-            let value = parseFloat(state.val === null || state.val === undefined ? '0' : (state.val as string)) || 0;
+            let value = parseFloat(state.val == null ? '0' : (state.val as string)) || 0;
 
             if (this.state.rxData['inverted-2']) {
                 value =
@@ -388,7 +388,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
             return;
         }
 
-        this.newState = this.newState || {};
+        this.newState ||= {};
 
         const minDistance =
             isMax || this.state.rxData.type === 'range'
@@ -528,7 +528,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         }
 
         if (icon) {
-            if (icon && icon.startsWith('_PRJ_NAME/')) {
+            if (icon?.startsWith('_PRJ_NAME/')) {
                 icon = icon.replace(
                     '_PRJ_NAME/',
                     `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}/`,
@@ -547,10 +547,7 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         super.renderWidgetBody(props);
 
         props.style.overflow = 'visible';
-        const step =
-            this.state.rxData.step === undefined || this.state.rxData.step === null
-                ? 0
-                : parseFloat(this.state.rxData.step as unknown as string);
+        const step = this.state.rxData.step == null ? 0 : parseFloat(this.state.rxData.step as unknown as string);
 
         let content;
 
@@ -564,15 +561,9 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                     valueLabelFormat={value => value + (this.state.rxData.unit || '')}
                     value={[parseFloat(this.state.value) || 0, this.state.valueMax || 0]}
                     valueLabelDisplay={this.state.rxData.valueLabelDisplay || 'auto'}
-                    min={parseFloat(
-                        this.state.rxData.min === undefined || this.state.rxData.min === null
-                            ? '0'
-                            : (this.state.rxData.min as unknown as string),
-                    )}
+                    min={parseFloat(this.state.rxData.min == null ? '0' : (this.state.rxData.min as unknown as string))}
                     max={parseFloat(
-                        this.state.rxData.max === undefined || this.state.rxData.max === null
-                            ? '100'
-                            : (this.state.rxData.max as unknown as string),
+                        this.state.rxData.max == null ? '100' : (this.state.rxData.max as unknown as string),
                     )}
                     orientation={this.state.rxData.orientation || 'horizontal'}
                     disabled={!!this.state.values[`${this.state.rxData['oid-working']}.val`]}
@@ -595,15 +586,9 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                     valueLabelFormat={value => value + (this.state.rxData.unit || '')}
                     value={parseFloat(this.state.value) || 0}
                     valueLabelDisplay={this.state.rxData.valueLabelDisplay || 'auto'}
-                    min={parseFloat(
-                        this.state.rxData.min === undefined || this.state.rxData.min === null
-                            ? '0'
-                            : (this.state.rxData.min as unknown as string),
-                    )}
+                    min={parseFloat(this.state.rxData.min == null ? '0' : (this.state.rxData.min as unknown as string))}
                     max={parseFloat(
-                        this.state.rxData.max === undefined || this.state.rxData.max === null
-                            ? '100'
-                            : (this.state.rxData.max as unknown as string),
+                        this.state.rxData.max == null ? '100' : (this.state.rxData.max as unknown as string),
                     )}
                     disabled={!!this.state.values[`${this.state.rxData['oid-working']}.val`]}
                     orientation={this.state.rxData.orientation || 'horizontal'}

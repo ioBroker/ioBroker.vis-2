@@ -124,7 +124,7 @@ class VisFormatUtils {
         // format = (_format === undefined) ? (this.vis.isFloatComma) ? ".," : ",." : _format;
         // does not work...
         // using default german...
-        const format = _format === undefined || _format === null ? '.,' : _format;
+        const format = _format == null ? '.,' : _format;
 
         if (typeof value !== 'number') {
             value = parseFloat(value);
@@ -384,7 +384,7 @@ class VisFormatUtils {
             let value: any;
             if (oid.visOid) {
                 value = this.getSpecialValues(oid.visOid, view, wid, widgetData);
-                if (value === undefined || value === null) {
+                if (value == null) {
                     value = _values[oid.visOid];
                 }
             }
@@ -400,7 +400,7 @@ class VisFormatUtils {
                             }
                             value = this.getSpecialValues(evalArgs[a].visOid, view, wid, widgetData);
 
-                            if (value === undefined || value === null) {
+                            if (value == null) {
                                 value = evalArgs[a].visOid.startsWith('widgetOid.')
                                     ? _values[evalArgs[a].visOid.replace(/^widgetOid\./g, `${widgetOid}.`)]
                                     : _values[evalArgs[a].visOid];
@@ -433,7 +433,7 @@ class VisFormatUtils {
                         }
 
                         const { formula } = operation;
-                        if (formula && formula.includes('widget.')) {
+                        if (formula?.includes('widget.')) {
                             const w = deepClone(widget);
                             w.data = widgetData;
                             string += `const widget = ${JSON.stringify(w)};`;
@@ -467,28 +467,28 @@ class VisFormatUtils {
 
                         switch (operation.op) {
                             case '*':
-                                if (operationArg !== undefined && operationArg !== null) {
+                                if (operationArg != null) {
                                     value = parseFloat(value) * (operationArg as number);
                                 }
                                 break;
 
                             case '/':
-                                if (operationArg !== undefined && operationArg !== null) {
+                                if (operationArg != null) {
                                     value = parseFloat(value) / (operationArg as number);
                                 }
                                 break;
                             case '+':
-                                if (operationArg !== undefined && operationArg !== null) {
+                                if (operationArg != null) {
                                     value = parseFloat(value) + (operationArg as number);
                                 }
                                 break;
                             case '-':
-                                if (operationArg !== undefined && operationArg !== null) {
+                                if (operationArg != null) {
                                     value = parseFloat(value) - (operationArg as number);
                                 }
                                 break;
                             case '%':
-                                if (operationArg !== undefined && operationArg !== null) {
+                                if (operationArg != null) {
                                     value = parseFloat(value) % (operationArg as number);
                                 }
                                 break;
@@ -537,11 +537,7 @@ class VisFormatUtils {
                                 value = this.formatDate(value, operationArg as string);
                                 break;
                             case 'momentDate':
-                                if (
-                                    operationArg !== undefined &&
-                                    operationArg !== null &&
-                                    typeof operationArg === 'string'
-                                ) {
+                                if (operationArg != null && typeof operationArg === 'string') {
                                     const params = operationArg.split(',');
 
                                     if (params.length === 1) {
@@ -555,17 +551,11 @@ class VisFormatUtils {
                                 break;
                             case 'min':
                                 value = parseFloat(value);
-                                value =
-                                    operationArg !== undefined && operationArg !== null && value < operationArg
-                                        ? operationArg
-                                        : value;
+                                value = operationArg != null && value < operationArg ? operationArg : value;
                                 break;
                             case 'max':
                                 value = parseFloat(value);
-                                value =
-                                    operationArg !== undefined && operationArg !== null && value > operationArg
-                                        ? operationArg
-                                        : value;
+                                value = operationArg != null && value > operationArg ? operationArg : value;
                                 break;
                             case 'random':
                                 if (operationArg === undefined) {

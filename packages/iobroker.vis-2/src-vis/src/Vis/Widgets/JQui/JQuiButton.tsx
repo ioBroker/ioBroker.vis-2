@@ -112,11 +112,14 @@ class JQuiButton<
 
     constructor(props: VisBaseWidgetProps) {
         super(props);
-        (this.state as JQuiButtonState).width = 0;
-        (this.state as JQuiButtonState).height = 0;
-        (this.state as JQuiButtonState).dialogVisible = false;
-        (this.state as JQuiButtonState).showPassword = false;
-        (this.state as JQuiButtonState).password = '';
+        this.state = {
+            ...this.state,
+            width: 0,
+            height: 0,
+            dialogVisible: false,
+            showPassword: false,
+            password: false,
+        };
         this.refButton = React.createRef();
         this.refDialog = React.createRef();
     }
@@ -127,6 +130,8 @@ class JQuiButton<
             visSet: 'jqui',
             visName: 'Button Link',
             visSetLabel: 'jqui_set_label',
+            // the icon of the whole set: a button and a slider, drawn square for the 20px it is shown at
+            visSetIcon: 'widgets/jqui/img/Prev_JQui.svg',
             visWidgetLabel: 'jqui_button_link',
             visHelp: 'help_jqui_button_link', // Description in the palette
             visPrev: 'widgets/jqui/img/Prev_ButtonLink.png',
@@ -217,12 +222,13 @@ class JQuiButton<
                     label: 'Style',
                     hidden: (data: any) => !!data.externalDialog,
                     fields: [
-                        { name: 'no_style', type: 'checkbox', hidden: (data: any) => data.jquery_style },
+                        // only where it is already set: the list above is where the look is chosen now
+                        { name: 'no_style', type: 'checkbox', hidden: (data: any) => !data.no_style },
                         {
                             name: 'jquery_style',
                             label: 'jqui_jquery_style',
                             type: 'checkbox',
-                            hidden: (data: any) => data.no_style,
+                            hidden: (data: any) => !data.jquery_style,
                         },
                         {
                             name: 'padding',
@@ -232,14 +238,39 @@ class JQuiButton<
                             default: 5,
                             // hidden: (data: any) => !data.no_style && !data.jquery_style,
                         },
+                        /*
+                         * One list for the look of the widget, the two checkboxes below are the old way to
+                         * the same thing. Picking `no_style` or `jquery_style` here writes those flags -
+                         * they are what the widget reads in three dozen places, and this keeps every one of
+                         * them working untouched. A widget that already carries a flag still shows the
+                         * checkbox for it, so it can be switched off; a new one only ever sees this list.
+                         */
                         {
                             name: 'variant',
                             label: 'jqui_variant',
                             type: 'select',
                             noTranslation: true,
-                            options: ['contained', 'outlined', 'standard'],
+                            options: [
+                                { value: 'contained', label: 'contained' },
+                                { value: 'outlined', label: 'outlined' },
+                                { value: 'text', label: 'text' },
+                                // kept because widgets carry it, although a MUI button has no such variant
+                                { value: 'standard', label: 'standard' },
+                                { value: 'no_style', label: 'no style' },
+                                { value: 'jquery_style', label: 'jQuery UI' },
+                            ],
                             default: 'contained',
-                            hidden: (data: any) => data.jquery_style || data.no_style,
+                            // not `async`: there is nothing to wait for here, only the promise the type asks for
+                            onChange: (_field, data, changeData) => {
+                                const noStyle = data.variant === 'no_style';
+                                const jquery = data.variant === 'jquery_style';
+                                if (!!data.no_style !== noStyle || !!data.jquery_style !== jquery) {
+                                    data.no_style = noStyle;
+                                    data.jquery_style = jquery;
+                                    changeData(data);
+                                }
+                                return Promise.resolve();
+                            },
                         },
                         {
                             name: 'color',
@@ -499,7 +530,7 @@ class JQuiButton<
         if (timeout === true || timeout === 'true') {
             timeout = 10000;
         }
-        if (timeout === null || timeout === undefined || timeout === '') {
+        if (timeout == null || timeout === '') {
             return;
         }
         timeout = parseInt(timeout as string, 10);
@@ -507,7 +538,7 @@ class JQuiButton<
             // maybe this is seconds
             timeout *= 1000;
         }
-        timeout = timeout || 1000;
+        timeout ||= 1000;
 
         if (timeout) {
             if (show) {
@@ -604,7 +635,7 @@ class JQuiButton<
                 value === 'true' || value === true || value === '1' || value === 1 || value === 'on' || value === 'ON';
         } else if (this.setObjectType === 'number') {
             value = parseFloat(value as string);
-        } else if (value !== null && value !== undefined) {
+        } else if (value != null) {
             value = value.toString();
         }
 
@@ -870,7 +901,7 @@ class JQuiButton<
 
         // the following widgets are resizable by default
         let visResizable = this.state.data.visResizable;
-        if (visResizable === undefined || visResizable === null) {
+        if (visResizable == null) {
             if (
                 this.props.tpl === 'tplJquiButtonNav' ||
                 this.props.tpl === 'tplJquiNavPw' ||

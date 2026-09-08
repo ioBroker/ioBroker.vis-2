@@ -110,10 +110,7 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
             if (this.state.rxData.oid.includes('"')) {
                 value = this.state.rxData.oid.substring(1, this.state.rxData.oid.length - 1);
             } else if (oid) {
-                value =
-                    this.state.values[`${oid}.val`] !== null && this.state.values[`${oid}.val`] !== undefined
-                        ? this.state.values[`${oid}.val`].toString()
-                        : '';
+                value = this.state.values[`${oid}.val`] != null ? this.state.values[`${oid}.val`].toString() : '';
             } else {
                 value = '';
             }
@@ -125,7 +122,7 @@ export default class BasicValueInput extends VisRxWidget<RxData, BasicValueInput
     }
 
     onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
-        if (id === this.state.rxData.oid && state && state.val !== null && state.val !== undefined) {
+        if (id === this.state.rxData.oid && state?.val != null) {
             const valStr = state.val.toString();
             if (this.state.value.toString() !== valStr) {
                 this.setState({ value: valStr });

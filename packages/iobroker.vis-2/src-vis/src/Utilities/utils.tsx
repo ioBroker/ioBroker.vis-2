@@ -70,7 +70,7 @@ export function deepClone<T extends Record<string, any>>(object: T): T {
  */
 export function getNewWidgetIdNumber(isWidgetGroup: boolean, project: Project, offset = 0): number {
     const widgets: string[] = [];
-    project = project || store.getState().visProject;
+    project ||= store.getState().visProject;
     Object.keys(project).forEach(
         view => project[view].widgets && Object.keys(project[view].widgets).forEach(widget => widgets.push(widget)),
     );

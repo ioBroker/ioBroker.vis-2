@@ -57,7 +57,7 @@ function analyzeDraggableResizable(
     result: Partial<VisCanWidgetState> | null,
     widgetStyle: WidgetStyle,
 ): Partial<VisCanWidgetState> {
-    result = result || {};
+    result ||= {};
     result.resizable = true;
     result.draggable = true;
 
@@ -109,7 +109,9 @@ function analyzeDraggableResizable(
 }
 
 class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
-    private readonly refViews: Record<string, React.RefObject<HTMLDivElement>> = {};
+    // `null` like everywhere else: this is what `React.createRef()` gives and what the `getViewRef` of the
+    // context is declared to hand out
+    private readonly refViews: Record<string, React.RefObject<HTMLDivElement | null>> = {};
 
     readonly isCanWidget = true;
 
@@ -179,7 +181,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
         // merge bindings
         Object.keys(this.bindings).forEach(id => {
-            this.props.context.linkContext.bindings[id] = this.props.context.linkContext.bindings[id] || [];
+            this.props.context.linkContext.bindings[id] ||= [];
             this.bindings[id].forEach(item => this.props.context.linkContext.bindings[id].push(item));
         });
 
@@ -226,7 +228,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         this.unmounted = true;
 
         if (this.props.context.linkContext) {
-            if (this.props.context.linkContext && this.props.context.linkContext.unregisterChangeHandler) {
+            if (this.props.context.linkContext?.unregisterChangeHandler) {
                 this.props.context.linkContext.unregisterChangeHandler(this.props.id, this.changeHandler);
             }
         }
@@ -316,7 +318,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             // }
             Object.keys(styleObj).forEach(attr => {
                 let value = (styleObj as Record<string, string | number | null | undefined>)[attr];
-                if (attr && value !== undefined && value !== null && !attr.startsWith('_')) {
+                if (attr && value != null && !attr.startsWith('_')) {
                     if (attr === 'top' || attr === 'left' || attr === 'width' || attr === 'height') {
                         if (
                             value !== '0' &&
@@ -622,14 +624,14 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                     this.widDiv._storedDisplay = this.widDiv.style.display;
                     this.widDiv.style.display = 'none';
 
-                    if (this.widDiv && this.widDiv._customHandlers && this.widDiv._customHandlers.onHide) {
+                    if (this.widDiv?._customHandlers?.onHide) {
                         this.widDiv._customHandlers.onHide(this.widDiv, this.props.id);
                     }
                 } else {
                     this.widDiv.style.display = this.widDiv._storedDisplay || '';
                     this.widDiv._storedDisplay = '';
 
-                    if (this.widDiv && this.widDiv._customHandlers && this.widDiv._customHandlers.onShow) {
+                    if (this.widDiv?._customHandlers?.onShow) {
                         this.widDiv._customHandlers.onShow(this.widDiv, this.props.id);
                     }
                 }
@@ -802,7 +804,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
     // }
 
     isSignalVisible(index: number, widgetData?: WidgetData): boolean {
-        widgetData = widgetData || this.props.context.allWidgets[this.props.id].data;
+        widgetData ||= this.props.context.allWidgets[this.props.id].data;
 
         if (!widgetData) {
             return false;
@@ -820,7 +822,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             const condition = widgetData[`signals-cond-${index}`];
             let value = widgetData[`signals-val-${index}`];
 
-            if (val === undefined || val === null) {
+            if (val == null) {
                 // the user compares explicitly against null => use the "null" placeholder in the comparison below.
                 // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
                 if (value !== 'null' || condition === 'exist' || condition === 'not exist') {
@@ -829,7 +831,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 val = 'null';
             }
 
-            if (!condition || value === undefined || value === null) {
+            if (!condition || value == null) {
                 return condition === 'not exist';
             }
 
@@ -1109,7 +1111,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         this.IDs.push(value);
 
         if (attr === 'visibility-oid') {
-            this.props.context.linkContext.visibility[value] = this.props.context.linkContext.visibility[value] || [];
+            this.props.context.linkContext.visibility[value] ||= [];
             this.props.context.linkContext.visibility[value].push({ view: this.props.view, widget: this.props.id });
         }
 
@@ -1155,7 +1157,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         const widget = this.props.context.views[this.props.view].widgets[this.props.id];
 
         this.bindings[stateId].forEach((item: VisLinkContextBinding) => {
-            widgetStyle = widgetStyle || widgetContext.style;
+            widgetStyle ||= widgetContext.style;
 
             const value = this.props.context.formatUtils.formatBinding({
                 format: item.format,
@@ -1228,7 +1230,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                         `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${widgetData[attr].substring(9)}`;
                 }
             });
-            if (widgetStyle['background-image'] && widgetStyle['background-image'].startsWith('_PRJ_NAME')) {
+            if (widgetStyle['background-image']?.startsWith('_PRJ_NAME')) {
                 widgetStyle['background-image'] =
                     `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${widgetStyle['background-image'].substring(9)}`; // "_PRJ_NAME".length = 9
             }
@@ -1261,7 +1263,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
             // if multi-view widget dim it in edit mode
             if (this.state.multiViewWidget && this.state.editMode) {
-                if (widgetStyle.opacity === undefined || widgetStyle.opacity === null || widgetStyle.opacity > 0.3) {
+                if (widgetStyle.opacity == null || widgetStyle.opacity > 0.3) {
                     widgetStyle.opacity = 0.3;
                 }
             }
@@ -1280,7 +1282,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         _count?: number,
         cb?: () => void,
     ): void {
-        _count = _count || 0;
+        _count ||= 0;
         // console.log(`[${Date.now()}] Render widget`);
         const parentDivRef: React.RefObject<HTMLElement | null> = this.props.refParent;
         let parentDiv: HTMLElement | null;
@@ -1351,7 +1353,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                         if (!this.updateOnStyle) {
                             this.oldStyle = newStyle;
                             // update global styles
-                            if (this.props.context.allWidgets[wid] && this.props.context.allWidgets[wid].style) {
+                            if (this.props.context.allWidgets[wid]?.style) {
                                 const mStyle = this.props.context.allWidgets[wid].style;
                                 Object.keys(widgetStyle).forEach(attr => {
                                     if (typeof (widgetStyle as Record<string, unknown>)[attr] === 'function') {
@@ -1522,7 +1524,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 // by default, it is border-box
                 this.widDiv.style.boxSizing = 'border-box';
 
-                if (widgetData && widgetData.class) {
+                if (widgetData?.class) {
                     this.widDiv.className = addClass(this.widDiv.className, widgetData.class);
                 }
 
@@ -1603,16 +1605,15 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 console.log('Div not yet rendered');
             }
 
-            this.props.askView &&
-                this.props.askView('register', {
-                    id: wid,
-                    widDiv: this.widDiv || null,
-                    refService: this.refService,
-                    onMove: this.onMove,
-                    onResize: this.onResize,
-                    onTempSelect: this.onTempSelect,
-                    onCommand: this.onCommandBound,
-                });
+            this.props.askView?.('register', {
+                id: wid,
+                widDiv: this.widDiv || null,
+                refService: this.refService,
+                onMove: this.onMove,
+                onResize: this.onResize,
+                onTempSelect: this.onTempSelect,
+                onCommand: this.onCommandBound,
+            });
         } catch (e) {
             const lines = ((e as Error).toString() + (e as Error).stack?.toString()).split('\n');
             const error = `can't render ${this.props.tpl} ${wid} on "${this.props.view}": `;
@@ -1624,7 +1625,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 console.error(line);
             }
         }
-        cb && cb();
+        cb?.();
     }
 
     shouldComponentUpdate(_nextProps: VisBaseWidgetProps, nextState: VisCanWidgetState): boolean {
@@ -1696,7 +1697,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
             ? this.state.legacyViewContainers.map(view => {
                   const context = this.props.context;
                   const VisView = context.VisView;
-                  this.refViews[view] = this.refViews[view] || React.createRef();
+                  this.refViews[view] ||= React.createRef();
                   const otherRef = context.linkContext.getViewRef(view);
                   if (otherRef && otherRef !== this.refViews[view]) {
                       console.log('View is not rendered as used somewhere else!');

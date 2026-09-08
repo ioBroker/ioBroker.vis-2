@@ -49,7 +49,7 @@ export function replaceGroupAttr(
         match = true;
         ms.forEach(m => {
             const val = groupAttrList[m];
-            if (val === null || val === undefined) {
+            if (val == null) {
                 newString = newString.replace(/groupAttr(\d+)/, '');
             } else {
                 newString = newString.replace(/groupAttr(\d+)/, groupAttrList[m]);
@@ -64,7 +64,7 @@ export function replaceGroupAttr(
         ms.forEach((m: string) => {
             const attr = m.substring(1, m.length - 1);
             const val = groupAttrList[attr];
-            if (val === null || val === undefined) {
+            if (val == null) {
                 newString = newString.replace(m, '');
             } else {
                 newString = newString.replace(m, val);
@@ -89,7 +89,7 @@ export function replaceGroupAttrs(data: WidgetData, groupData: WidgetData): Widg
         if (typeof data[attr] === 'string') {
             const result = replaceGroupAttr(data[attr], groupData);
             if (result.doesMatch) {
-                newData = newData || deepClone(data);
+                newData ||= deepClone(data);
                 newData[attr] = result.newString || '';
             }
         }
@@ -182,11 +182,11 @@ export function extractBinding(format: string): VisBinding[] | null {
                 continue;
             }
             // If the first symbol is '"', so it is JSON
-            if (_oid && _oid[0] === '"') {
+            if (_oid?.[0] === '"') {
                 continue;
             }
             const parts = _oid.split(';');
-            result = result || [];
+            result ||= [];
             let systemOid = parts[0].trim();
             let visOid = systemOid;
 
@@ -275,7 +275,7 @@ export function extractBinding(format: string): VisBinding[] | null {
             } else {
                 for (let u = 1; u < parts.length; u++) {
                     const parse = parts[u].match(/([\w\s/+*-]+)(\(.+\))?/);
-                    if (parse && parse[1]) {
+                    if (parse?.[1]) {
                         const op = parse[1].trim();
                         // operators requires parameter
                         if (
@@ -298,26 +298,26 @@ export function extractBinding(format: string): VisBinding[] | null {
                                 if (arg.toString() === 'NaN') {
                                     console.log(`Invalid format of format string: ${format}`);
                                 } else {
-                                    operations = operations || [];
+                                    operations ||= [];
                                     operations.push({ op, arg });
                                 }
                             }
                         } else if (op === 'date' || op === 'momentDate') {
                             // date formatting
-                            operations = operations || [];
+                            operations ||= [];
                             let arg: string = (parse[2] || '').trim();
                             // Remove braces from {momentDate(format)}
                             arg = arg.substring(1, arg.length - 1);
                             operations.push({ op, arg });
                         } else if (op === 'array') {
                             // returns array[value]. e.g.: {id.ack;array(ack is false,ack is true)}
-                            operations = operations || [];
+                            operations ||= [];
                             let param: string = (parse[2] || '').trim();
                             param = param.substring(1, param.length - 1);
                             operations.push({ op, arg: param.split(',') }); // xxx
                         } else if (op === 'value') {
                             // value formatting
-                            operations = operations || [];
+                            operations ||= [];
                             let arg: string = parse[2] === undefined ? '(2)' : parse[2] || '';
                             arg = arg.trim();
                             arg = arg.substring(1, arg.length - 1);
@@ -325,7 +325,7 @@ export function extractBinding(format: string): VisBinding[] | null {
                         } else if (op === 'pow' || op === 'round' || op === 'random') {
                             // operators have optional parameter
                             if (parse[2] === undefined) {
-                                operations = operations || [];
+                                operations ||= [];
                                 operations.push({ op });
                             } else {
                                 let argStr: string = (parse[2] || '').trim().replace(',', '.');
@@ -335,19 +335,19 @@ export function extractBinding(format: string): VisBinding[] | null {
                                 if (arg.toString() === 'NaN') {
                                     console.log(`Invalid format of format string: ${format}`);
                                 } else {
-                                    operations = operations || [];
+                                    operations ||= [];
                                     operations.push({ op, arg });
                                 }
                             }
                         } else if (op === 'json') {
                             // json(objPropPath)  ex: json(prop1);  json(prop1.propA)
-                            operations = operations || [];
+                            operations ||= [];
                             let arg = (parse[2] || '').trim();
                             arg = arg.substring(1, arg.length - 1);
                             operations.push({ op, arg });
                         } else {
                             // operators without parameter
-                            operations = operations || [];
+                            operations ||= [];
                             operations.push({ op: op as VisBindingOperationType });
                         }
                     } else {
@@ -553,7 +553,7 @@ export function getUsedObjectIDsInWidget(
                             linkContext.byViews[view].push(systemOid);
                         }
 
-                        linkContext.bindings[systemOid] = linkContext.bindings[systemOid] || [];
+                        linkContext.bindings[systemOid] ||= [];
                         item.type = 'data';
                         item.attr = attr;
                         item.view = view;
@@ -561,7 +561,7 @@ export function getUsedObjectIDsInWidget(
 
                         linkContext.bindings[systemOid].push(item);
                     }
-                    const operation0: VisBindingOperation | undefined = item.operations && item.operations[0];
+                    const operation0: VisBindingOperation | undefined = item.operations?.[0];
 
                     // If we have more than one argument
                     if (operation0 && Array.isArray(operation0.arg)) {
@@ -578,7 +578,7 @@ export function getUsedObjectIDsInWidget(
                                 linkContext.byViews[view].push(_systemOid);
                             }
 
-                            linkContext.bindings[_systemOid] = linkContext.bindings[_systemOid] || [];
+                            linkContext.bindings[_systemOid] ||= [];
                             if (!linkContext.bindings[_systemOid].includes(item)) {
                                 linkContext.bindings[_systemOid].push(item);
                             }
@@ -619,7 +619,7 @@ export function getUsedObjectIDsInWidget(
                             }
                         }
 
-                        linkContext.visibility[vid] = linkContext.visibility[vid] || [];
+                        linkContext.visibility[vid] ||= [];
                         linkContext.visibility[vid].push({ view, widget: wid });
                     } else if (attr.startsWith('signals-oid-')) {
                         // Signal binding
@@ -634,7 +634,7 @@ export function getUsedObjectIDsInWidget(
                             }
                         }
 
-                        linkContext.signals[sid] = linkContext.signals[sid] || [];
+                        linkContext.signals[sid] ||= [];
 
                         linkContext.signals[sid].push({
                             view,
@@ -654,7 +654,7 @@ export function getUsedObjectIDsInWidget(
                             }
                         }
 
-                        linkContext.lastChanges[lcSid] = linkContext.lastChanges[lcSid] || [];
+                        linkContext.lastChanges[lcSid] ||= [];
                         linkContext.lastChanges[lcSid].push({ view, widget: wid });
                     }
                 } else if (data[attr] === 'id') {
@@ -686,11 +686,11 @@ export function getUsedObjectIDsInWidget(
                         const systemOid = item.systemOid;
                         if (systemOid) {
                             !linkContext.IDs.includes(systemOid) && linkContext.IDs.push(systemOid);
-                            if (linkContext.byViews && linkContext.byViews[view].includes(systemOid)) {
+                            if (linkContext.byViews?.[view].includes(systemOid)) {
                                 linkContext.byViews[view].push(systemOid);
                             }
 
-                            linkContext.bindings[systemOid] = linkContext.bindings[systemOid] || [];
+                            linkContext.bindings[systemOid] ||= [];
 
                             item.type = 'style';
                             item.attr = cssAttr;
@@ -700,7 +700,7 @@ export function getUsedObjectIDsInWidget(
                             linkContext.bindings[systemOid].push(item);
                         }
 
-                        const operation0: VisBindingOperation | undefined = item.operations && item.operations[0];
+                        const operation0: VisBindingOperation | undefined = item.operations?.[0];
 
                         if (operation0 && Array.isArray(operation0.arg)) {
                             for (let w = 0; w < operation0.arg.length; w++) {
@@ -717,7 +717,7 @@ export function getUsedObjectIDsInWidget(
                                 if (linkContext.byViews && !linkContext.byViews[view].includes(_systemOid)) {
                                     linkContext.byViews[view].push(_systemOid);
                                 }
-                                linkContext.bindings[_systemOid] = linkContext.bindings[_systemOid] || [];
+                                linkContext.bindings[_systemOid] ||= [];
                                 if (!linkContext.bindings[_systemOid].includes) {
                                     linkContext.bindings[_systemOid].push(item);
                                 }
@@ -812,7 +812,7 @@ export function getUrlParameter(attr: string): string | true {
 
     const sParameterName = sURLVariables.get(attr);
 
-    return sParameterName === null || sParameterName === undefined ? true : decodeURIComponent(sParameterName);
+    return sParameterName == null ? true : decodeURIComponent(sParameterName);
 }
 
 export async function readFile(
@@ -892,7 +892,7 @@ export function findWidgetUsages(
     _result?: { view: string; wid: AnyWidgetId; attr: string }[],
 ): { view: string; wid: AnyWidgetId; attr: string }[] {
     if (view) {
-        _result = _result || [];
+        _result ||= [];
         // search in a specific view
 
         Object.keys(views[view].widgets).forEach(wid => {

@@ -808,5 +808,11 @@
   "right": "right",
   "Show widgets as icons": "Показувати віджети значками",
   "Show widgets as list": "Показувати віджети списком",
-  "Recently used": "Нещодавно використані"
+  "Recently used": "Нещодавно використані",
+  "vis_2_widgets_swipe_left_view": "Вигляд при свайпі вліво",
+  "vis_2_widgets_swipe_right_view": "Вигляд при свайпі вправо",
+  "vis_2_widgets_swipe_up_view": "Вигляд при свайпі вгору",
+  "vis_2_widgets_swipe_down_view": "Вигляд при свайпі вниз",
+  "vis_2_widgets_swipe_no_view": "немає вигляду",
+  "vis_2_widgets_basic_mui": "Стиль MUI"
 }

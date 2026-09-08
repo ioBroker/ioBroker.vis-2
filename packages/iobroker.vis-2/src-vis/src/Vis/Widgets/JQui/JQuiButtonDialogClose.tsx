@@ -159,12 +159,13 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                     name: 'style',
                     hidden: (data: any) => !!data.externalDialog,
                     fields: [
-                        { name: 'no_style', type: 'checkbox', hidden: (data: any) => data.jquery_style },
+                        // only where it is already set: the list above is where the look is chosen now
+                        { name: 'no_style', type: 'checkbox', hidden: (data: any) => !data.no_style },
                         {
                             name: 'jquery_style',
                             label: 'jqui_jquery_style',
                             type: 'checkbox',
-                            hidden: (data: any) => data.no_style,
+                            hidden: (data: any) => !data.jquery_style,
                         },
                         {
                             name: 'padding',
@@ -174,14 +175,39 @@ class JQuiButtonDialogClose extends VisRxWidget<RxData, JQuiButtonDialogCloseSta
                             default: 5,
                             // hidden: (data: any) => !data.no_style && !data.jquery_style,
                         },
+                        /*
+                         * One list for the look of the widget, the two checkboxes below are the old way to
+                         * the same thing. Picking `no_style` or `jquery_style` here writes those flags -
+                         * they are what the widget reads in three dozen places, and this keeps every one of
+                         * them working untouched. A widget that already carries a flag still shows the
+                         * checkbox for it, so it can be switched off; a new one only ever sees this list.
+                         */
                         {
                             name: 'variant',
                             label: 'jqui_variant',
                             type: 'select',
                             noTranslation: true,
-                            options: ['contained', 'outlined', 'standard'],
+                            options: [
+                                { value: 'contained', label: 'contained' },
+                                { value: 'outlined', label: 'outlined' },
+                                { value: 'text', label: 'text' },
+                                // kept because widgets carry it, although a MUI button has no such variant
+                                { value: 'standard', label: 'standard' },
+                                { value: 'no_style', label: 'no style' },
+                                { value: 'jquery_style', label: 'jQuery UI' },
+                            ],
                             default: 'contained',
-                            hidden: (data: any) => data.jquery_style || data.no_style,
+                            // not `async`: there is nothing to wait for here, only the promise the type asks for
+                            onChange: (_field, data, changeData) => {
+                                const noStyle = data.variant === 'no_style';
+                                const jquery = data.variant === 'jquery_style';
+                                if (!!data.no_style !== noStyle || !!data.jquery_style !== jquery) {
+                                    data.no_style = noStyle;
+                                    data.jquery_style = jquery;
+                                    changeData(data);
+                                }
+                                return Promise.resolve();
+                            },
                         },
                         {
                             name: 'color',

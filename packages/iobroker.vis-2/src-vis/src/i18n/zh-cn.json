@@ -808,5 +808,11 @@
   "right": "right",
   "Show widgets as icons": "以图标显示部件",
   "Show widgets as list": "以列表显示部件",
-  "Recently used": "最近使用"
+  "Recently used": "最近使用",
+  "vis_2_widgets_swipe_left_view": "向左滑动时的视图",
+  "vis_2_widgets_swipe_right_view": "向右滑动时的视图",
+  "vis_2_widgets_swipe_up_view": "向上滑动时的视图",
+  "vis_2_widgets_swipe_down_view": "向下滑动时的视图",
+  "vis_2_widgets_swipe_no_view": "无视图",
+  "vis_2_widgets_basic_mui": "MUI 样式"
 }

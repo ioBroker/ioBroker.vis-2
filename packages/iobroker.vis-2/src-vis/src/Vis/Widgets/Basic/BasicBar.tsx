@@ -12,6 +12,7 @@ type RxData = {
     border?: string;
     shadow?: string;
     reverse?: boolean;
+    mui?: boolean;
 };
 
 export default class BasicBar extends VisRxWidget<RxData> {
@@ -69,6 +70,20 @@ export default class BasicBar extends VisRxWidget<RxData> {
                             name: 'reverse',
                             type: 'checkbox',
                         },
+                        /*
+                         * The look of the bar. `default: true` is what makes this a change for new widgets
+                         * only: the defaults of the fields are written into the data when a widget is placed
+                         * (see `Editor.addWidget`) and are never filled in while rendering. A bar that is
+                         * already on a page therefore has no `mui` at all, which is not `true`, and keeps the
+                         * look it was built with - while a new one is drawn the new way and can be turned
+                         * back here.
+                         */
+                        {
+                            name: 'mui',
+                            label: 'vis_2_widgets_basic_mui',
+                            type: 'checkbox',
+                            default: true,
+                        },
                     ],
                 },
             ],
@@ -120,6 +135,77 @@ export default class BasicBar extends VisRxWidget<RxData> {
             : `${Math.round(val * 100)}%`;
     }
 
+    /** How full the bar is, 0 to 100 - a value outside min..max cannot make it longer than its track */
+    getPercent(): number {
+        const min = this.state.rxData.min || this.state.rxData.min === 0 ? Number(this.state.rxData.min) : 0;
+        const max = this.state.rxData.max || this.state.rxData.max === 0 ? Number(this.state.rxData.max) : 100;
+        const value = parseFloat(this.state.values[`${this.state.rxData.oid}.val`]) || 0;
+        if (max === min) {
+            return 0;
+        }
+        return Math.min(100, Math.max(0, Math.round(((value - min) / (max - min)) * 100)));
+    }
+
+    /**
+     * The bar as MUI draws a progress bar: a track that stays visible where the bar has not reached yet,
+     * both ends rounded, and a value that slides to its new place instead of jumping.
+     */
+    renderMuiBody(): React.JSX.Element {
+        const theme = this.props.context.theme;
+        const vertical = this.state.rxData.orientation === 'vertical';
+        const percent = this.getPercent();
+        const radius = typeof theme.shape.borderRadius === 'number' ? theme.shape.borderRadius : 4;
+
+        const track: React.CSSProperties = {
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+            borderRadius: radius,
+            // the same wash MUI puts under a progress bar, so the bar reads as the filled part of something
+            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.13)' : 'rgba(0, 0, 0, 0.09)',
+            overflow: 'hidden',
+        };
+        if (this.state.rxData.border) {
+            track.border = this.state.rxData.border;
+        }
+        if (this.state.rxData.shadow) {
+            track.boxShadow = this.state.rxData.shadow;
+        }
+
+        const bar: React.CSSProperties = {
+            position: 'absolute',
+            borderRadius: radius,
+            backgroundColor: this.state.rxData.color || theme.palette.primary.main,
+            transition: 'width 0.4s ease-out, height 0.4s ease-out',
+            // which end it grows from stays what it was, so the switch changes the look and nothing else
+            ...(vertical
+                ? {
+                      left: 0,
+                      right: 0,
+                      height: `${percent}%`,
+                      ...(this.state.rxData.reverse ? { bottom: 0 } : { top: 0 }),
+                  }
+                : {
+                      top: 0,
+                      bottom: 0,
+                      width: `${percent}%`,
+                      ...(this.state.rxData.reverse ? { right: 0 } : { left: 0 }),
+                  }),
+        };
+
+        return (
+            <div className="vis-widget-body">
+                <div style={track}>
+                    <div
+                        data-oid={this.state.rxData.oid}
+                        style={bar}
+                    ></div>
+                </div>
+            </div>
+        );
+    }
+
     /**
      * Renders the widget
      *
@@ -127,6 +213,11 @@ export default class BasicBar extends VisRxWidget<RxData> {
      */
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
+
+        // a binding may hand the flag over as a string
+        if (this.state.rxData.mui === true || (this.state.rxData.mui as unknown as string) === 'true') {
+            return this.renderMuiBody();
+        }
 
         let style: React.CSSProperties;
 

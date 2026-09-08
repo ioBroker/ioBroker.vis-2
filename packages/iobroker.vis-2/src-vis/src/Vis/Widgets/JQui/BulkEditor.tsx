@@ -481,12 +481,12 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
             const colors = [...this.state.colors];
             const activeColors = [...this.state.activeColors];
             const tooltips = [...this.state.tooltips];
-            texts[index] = texts[index] || '';
-            icons[index] = icons[index] || '';
-            images[index] = images[index] || '';
-            colors[index] = colors[index] || '';
-            activeColors[index] = activeColors[index] || '';
-            tooltips[index] = tooltips[index] || '';
+            texts[index] ||= '';
+            icons[index] ||= '';
+            images[index] ||= '';
+            colors[index] ||= '';
+            activeColors[index] ||= '';
+            tooltips[index] ||= '';
 
             this.setState({
                 values,
@@ -573,7 +573,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
 
     renderLine(i: number): React.JSX.Element {
         let image = null;
-        this.textRef[i] = this.textRef[i] || React.createRef();
+        this.textRef[i] ||= React.createRef();
         if (!this.state.icons[i]) {
             const value = this.state.images[i];
 
@@ -913,7 +913,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                                         onChange={e => {
                                             let unit = this.state.unit;
                                             if (e.target.checked) {
-                                                unit = unit || '%';
+                                                unit ||= '%';
                                             } else if (unit === '%') {
                                                 unit = this.state.originalUnit || '';
                                             }
@@ -1014,11 +1014,11 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                                     newState.texts[index] = i + this.state.unit;
                                 }
                                 newState.values[index] = i.toString();
-                                newState.icons[index] = newState.icons[index] || '';
-                                newState.images[index] = newState.images[index] || '';
-                                newState.colors[index] = newState.colors[index] || '';
-                                newState.activeColors[index] = newState.activeColors[index] || '';
-                                newState.tooltips[index] = newState.tooltips[index] || '';
+                                newState.icons[index] ||= '';
+                                newState.images[index] ||= '';
+                                newState.colors[index] ||= '';
+                                newState.activeColors[index] ||= '';
+                                newState.tooltips[index] ||= '';
                                 index++;
                             }
                             newState.values[index] = this.state.max.toString();
@@ -1073,11 +1073,11 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                             if (oid && oid !== 'nothing_selected') {
                                 const obj = await this.props.socket.getObject(oid);
                                 newState.min = obj?.common?.min;
-                                if (newState.min === undefined || newState.min === null) {
+                                if (newState.min == null) {
                                     newState.min = 0;
                                 }
                                 newState.max = obj?.common?.max;
-                                if (newState.max === undefined || newState.max === null) {
+                                if (newState.max == null) {
                                     newState.max = 100;
                                 }
                                 newState.originalUnit = obj?.common?.unit || '';

@@ -242,7 +242,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.ignoreMouseEvents = false;
 
         // remember filter
-        this.oldFilter = JSON.stringify((props.viewsActiveFilter && props.viewsActiveFilter[this.props.view]) || []);
+        this.oldFilter = JSON.stringify(props.viewsActiveFilter?.[this.props.view] || []);
     }
 
     /**
@@ -370,7 +370,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             });
 
             // inform bars about changed filter
-            if (window.vis.binds.bars && window.vis.binds.bars.filterChanged) {
+            if (window.vis.binds.bars?.filterChanged) {
                 try {
                     window.vis.binds.bars.filterChanged(this.props.view, filter.join(','));
                 } catch (error) {
@@ -642,7 +642,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               if (this.ignoreMouseEvents) {
                   return;
               }
-              e && e.stopPropagation();
+              e?.stopPropagation();
               this.onMouseViewMove && window.document.removeEventListener('mousemove', this.onMouseViewMove);
               this.onMouseViewUp && window.document.removeEventListener('mouseup', this.onMouseViewUp);
               if (this.selectDiv) {
@@ -1088,7 +1088,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     onMouseWidgetUp = !this.props.context.runtime
         ? (e?: MouseEvent) => {
               const widgetsRefs = this.widgetsRefs;
-              e && e.stopPropagation();
+              e?.stopPropagation();
               this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
               this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
 
@@ -1203,8 +1203,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             const style = store.getState().visProject[this.props.view].widgets[widget].style;
             left = parseInt((style?.left as string) || '0', 10) + parseInt(ref.offsetLeft as unknown as string, 10);
             top = parseInt((style?.top as string) || '0', 10) + parseInt(ref.offsetTop as unknown as string, 10);
-            left = left || 0;
-            top = top || 0;
+            left ||= 0;
+            top ||= 0;
         }
 
         return {
@@ -1314,7 +1314,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return `${Math.round(value * 100) / 100}%`;
         });
 
-        cb && cb(results);
+        cb?.(results);
 
         return results;
     };
@@ -1333,7 +1333,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return `${Math.round((wRect as Record<string, number>)[attr])}px`;
         });
 
-        cb && cb(results);
+        cb?.(results);
 
         return results;
     };
@@ -1375,9 +1375,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.releaseDroppedOrder();
         // detect filter changes
         if (!this.props.editMode) {
-            const newFilter = JSON.stringify(
-                (this.props.viewsActiveFilter && this.props.viewsActiveFilter[this.props.view]) || [],
-            );
+            const newFilter = JSON.stringify(this.props.viewsActiveFilter?.[this.props.view] || []);
             if (this.oldFilter !== newFilter) {
                 this.oldFilter = newFilter;
                 this.changeFilter({ filter: JSON.parse(newFilter) });
@@ -1405,8 +1403,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     static renderGitter(step?: number, color?: string): React.JSX.Element {
-        color = color || '#D0D0D0';
-        step = step || 10;
+        color ||= '#D0D0D0';
+        step ||= 10;
         const bigWidth = step * 5;
         const smallWidth = step;
 
@@ -2368,7 +2366,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
 
         // apply image
-        if (settings && settings['bg-image']) {
+        if (settings?.['bg-image']) {
             backgroundStyle.backgroundImage = `url("../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${settings['bg-image'].substring(9)}")`; // "_PRJ_NAME".length = 9
             backgroundStyle.backgroundRepeat = 'no-repeat';
             backgroundStyle.backgroundPosition = 'top left';
@@ -2467,9 +2465,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 ref={this.refView}
                 id={`visview_${this.props.view.replace(/\s/g, '_')}`}
                 onMouseDown={
-                    !this.props.context.runtime
-                        ? e => this.props.editMode && this.mouseDownLocal && this.mouseDownLocal(e)
-                        : undefined
+                    !this.props.context.runtime ? e => this.props.editMode && this.mouseDownLocal?.(e) : undefined
                 }
                 onDragStart={
                     // Nothing in the editor is dragged natively: the palette and the views list use dnd-kit,
@@ -2480,9 +2476,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     !this.props.context.runtime && this.props.editMode ? e => e.preventDefault() : undefined
                 }
                 onDoubleClick={
-                    this.props.context.runtime
-                        ? () => this.props.editMode && this.doubleClickOnView && this.doubleClickOnView()
-                        : undefined
+                    this.props.context.runtime ? () => this.props.editMode && this.doubleClickOnView?.() : undefined
                 }
                 style={style}
             >

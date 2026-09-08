@@ -123,7 +123,7 @@ class BasicValueStringImg extends VisRxWidget<RxData> {
         props.style.height ??= 40;
 
         const value = this.state.values[`${this.state.rxData.oid}.val`];
-        let src = value === undefined || value === null ? '' : `${value as string}`;
+        let src = value == null ? '' : `${value as string}`;
         if (src && this.refreshStamp) {
             src += `${src.includes('?') ? '&' : '?'}_refts=${this.refreshStamp}`;
         }

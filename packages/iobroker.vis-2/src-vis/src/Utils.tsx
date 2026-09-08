@@ -18,7 +18,20 @@ export const DndPreview = (): React.JSX.Element => {
     const { active } = useDndContext();
     const preview = (active?.data.current as DndPreviewData | undefined)?.preview;
 
-    return <DragOverlay zIndex={1000}>{preview ?? null}</DragOverlay>;
+    /*
+     * `dropAnimation={null}`: by default dnd-kit flies the preview back to the element it was taken from.
+     * That is right for a list one sorts, where a cancelled drag has to show that nothing moved - but a
+     * widget taken from the palette is not moved out of it at all. It is a copy, and once it has landed on
+     * the view the copy under the cursor has done its job and has to be gone.
+     */
+    return (
+        <DragOverlay
+            zIndex={1000}
+            dropAnimation={null}
+        >
+            {preview ?? null}
+        </DragOverlay>
+    );
 };
 
 /**

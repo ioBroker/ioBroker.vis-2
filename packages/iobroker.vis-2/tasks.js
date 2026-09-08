@@ -47,7 +47,7 @@ async function generateSvgFiles() {
         const files = readdirSync(`${svgPath}svg/${folder}`);
 
         files.forEach(file => {
-            result[file] = result[file] || {};
+            result[file] ||= {};
             let data = readFileSync(`${svgPath}svg/${folder}/${file}`).toString('utf8');
             // add currentColor
             data = data.replace(/<path /g, '<path fill="currentColor" ');
@@ -213,10 +213,10 @@ function copyFolder(source, target, ignore) {
         files.forEach(file => {
             const curSource = path.join(source, file).replace(/\\/g, '/');
             const curTarget = path.join(target, file).replace(/\\/g, '/');
-            if (ignore && ignore.includes(file)) {
+            if (ignore?.includes(file)) {
                 return;
             }
-            if (ignore && ignore.find(pattern => pattern.startsWith('.') && file.endsWith(pattern))) {
+            if (ignore?.find(pattern => pattern.startsWith('.') && file.endsWith(pattern))) {
                 // check that file is smaller than 8MB
                 if (lstatSync(curSource).size > 8 * 1024 * 1024) {
                     return;

@@ -98,7 +98,7 @@ function ringSegment(from: number, to: number, inner: number, outer: number): st
 
 /** Read a setting that is a number, and fall back when it is empty or not a number */
 function num(value: number | string | undefined, fallback: number): number {
-    if (value === undefined || value === null || value === '') {
+    if (value == null || value === '') {
         return fallback;
     }
     const parsed = parseFloat(value as string);
@@ -129,7 +129,8 @@ class JqPlotGauge extends VisRxWidget<RxData> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplJqplotGauge',
-            visSet: 'jqplot',
+            // it is one single widget - a set of its own for it only made the palette longer
+            visSet: 'basic',
             visName: 'MeterGauge',
             visPrev: 'widgets/jqplot/img/Prev_MeterGauge.svg',
             visAttrs: [
@@ -148,7 +149,7 @@ class JqPlotGauge extends VisRxWidget<RxData> {
                 {
                     name: 'ticks',
                     fields: [
-                        { name: 'ticks', type: 'text' },
+                        { name: 'ticks', type: 'text', tooltip: 'ticks_tooltip' },
                         { name: 'showTickLabels', type: 'checkbox', default: true },
                         { name: 'tickPadding', type: 'slider', min: 0, max: 50, step: 1 },
                         // read by the can.js widget although its attribute list never offered it
@@ -158,8 +159,8 @@ class JqPlotGauge extends VisRxWidget<RxData> {
                 {
                     name: 'intervals',
                     fields: [
-                        { name: 'intervals', type: 'text' },
-                        { name: 'intervalColors', type: 'text' },
+                        { name: 'intervals', type: 'text', tooltip: 'intervals_tooltip' },
+                        { name: 'intervalColors', type: 'text', tooltip: 'intervalColors_tooltip' },
                         { name: 'intervalInnerRadius', type: 'slider', min: 0, max: 550, step: 1 },
                         { name: 'intervalOuterRadius', type: 'slider', min: 0, max: 550, step: 1 },
                     ],
@@ -191,8 +192,8 @@ class JqPlotGauge extends VisRxWidget<RxData> {
             visWidgetLabel: 'jqplot_meter_gauge', // Label of widget
             visHelp: 'help_jqplot_meter_gauge', // Description in the palette
             visDefaultStyle: {
-                width: 460,
-                height: 280,
+                width: 230,
+                height: 140,
             },
         } as const;
     }

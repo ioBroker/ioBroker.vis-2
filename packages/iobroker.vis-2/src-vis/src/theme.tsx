@@ -17,13 +17,10 @@ export default function createTheme(
     const success = '#73b6a8';
     let theme: VisTheme = Theme(themeName, overrides) as VisTheme;
 
-    // No radius override: the editor keeps square corners - rounded panels read as dated here.
-    // "trennt, umrandet aber nicht" - the kit separates with a hairline instead of framing with a border.
-    // The value is the one of the dark sheet; in the light theme that light blue would be invisible, so
-    // there the MUI divider stays. It is applied where it is needed rather than as `palette.divider`: with
-    // `cssVariables` MUI builds --mui-palette-divider from `colorSchemes`, so neither a later assignment
-    // nor a palette override in createTheme would reach it.
-    const hairline = themeName === 'dark' || theme.palette.mode === 'dark' ? 'rgba(126, 195, 240, 0.14)' : theme.palette.divider;
+    // No radius override: the editor keeps square corners - rounded panels read as dated here. The hairline
+    // that separates instead of a frame is `palette.divider`, which is what the places that draw one use -
+    // and it cannot be swapped out from here: with `cssVariables` MUI builds --mui-palette-divider from
+    // `colorSchemes`, so neither a later assignment nor a palette override in createTheme would reach it.
 
     if (cssVariables) {
         // With CSS variables MUI resolves the text color of a `color="default"` Fab from the palette

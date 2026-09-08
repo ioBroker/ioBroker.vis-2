@@ -15,6 +15,8 @@
 
 import React from 'react';
 
+import { MenuItem, Select } from '@mui/material';
+
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 
@@ -25,6 +27,7 @@ type RxData = {
     text_true: string;
     text_false: string;
     autoFocus: boolean;
+    mui?: boolean;
 };
 
 /**
@@ -51,6 +54,14 @@ class BasicValueBoolSelect extends VisRxWidget<RxData> {
                         { name: 'text_true', type: 'text' },
                         { name: 'text_false', type: 'text' },
                         { name: 'autoFocus', type: 'checkbox' },
+                        /*
+                         * The look of the control. `default: true` is what makes this a change for new
+                         * widgets only: the defaults of the fields are written into the data when a widget is
+                         * placed (see `Editor.addWidget`) and are never filled in while rendering, so a
+                         * widget that is already on a page has no `mui` at all - and keeps the look it was
+                         * built with until this is switched on for it.
+                         */
+                        { name: 'mui', label: 'vis_2_widgets_basic_mui', type: 'checkbox', default: true },
                     ],
                 },
             ],
@@ -95,23 +106,44 @@ class BasicValueBoolSelect extends VisRxWidget<RxData> {
         const oid = this.state.rxData.oid;
         const autoFocus = this.state.rxData.autoFocus === true || (this.state.rxData.autoFocus as unknown) === 'true';
 
+        // a binding may hand the flag over as a string
+        const mui = this.state.rxData.mui === true || (this.state.rxData.mui as unknown as string) === 'true';
+        const value = this.isOn() ? '1' : '0';
+        const write = (newValue: string): void => {
+            if (!this.props.editMode && oid && oid !== 'nothing_selected') {
+                this.props.context.setValue(oid, newValue);
+            }
+        };
+
         return (
             <div className="vis-widget-body">
                 <span dangerouslySetInnerHTML={{ __html: this.state.rxData.html_prepend ?? '' }} />
-                <select
-                    id={`${this.props.id}_select`}
-                    data-oid={oid}
-                    autoFocus={autoFocus}
-                    value={this.isOn() ? '1' : '0'}
-                    onChange={
-                        this.props.editMode
-                            ? undefined
-                            : e => oid && oid !== 'nothing_selected' && this.props.context.setValue(oid, e.target.value)
-                    }
-                >
-                    <option value="0">{this.state.rxData.text_false}</option>
-                    <option value="1">{this.state.rxData.text_true}</option>
-                </select>
+                {mui ? (
+                    <Select
+                        id={`${this.props.id}_select`}
+                        data-oid={oid}
+                        autoFocus={autoFocus}
+                        variant="standard"
+                        size="small"
+                        fullWidth
+                        value={value}
+                        onChange={e => write(e.target.value)}
+                    >
+                        <MenuItem value="0">{this.state.rxData.text_false}</MenuItem>
+                        <MenuItem value="1">{this.state.rxData.text_true}</MenuItem>
+                    </Select>
+                ) : (
+                    <select
+                        id={`${this.props.id}_select`}
+                        data-oid={oid}
+                        autoFocus={autoFocus}
+                        value={value}
+                        onChange={this.props.editMode ? undefined : e => write(e.target.value)}
+                    >
+                        <option value="0">{this.state.rxData.text_false}</option>
+                        <option value="1">{this.state.rxData.text_true}</option>
+                    </select>
+                )}
                 <span dangerouslySetInnerHTML={{ __html: this.state.rxData.html_append ?? '' }} />
             </div>
         );

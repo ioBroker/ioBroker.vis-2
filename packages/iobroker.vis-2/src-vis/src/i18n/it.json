@@ -808,5 +808,11 @@
   "right": "right",
   "Show widgets as icons": "Mostra i widget come icone",
   "Show widgets as list": "Mostra i widget come elenco",
-  "Recently used": "Usati di recente"
+  "Recently used": "Usati di recente",
+  "vis_2_widgets_swipe_left_view": "Vista scorrendo a sinistra",
+  "vis_2_widgets_swipe_right_view": "Vista scorrendo a destra",
+  "vis_2_widgets_swipe_up_view": "Vista scorrendo verso l’alto",
+  "vis_2_widgets_swipe_down_view": "Vista scorrendo verso il basso",
+  "vis_2_widgets_swipe_no_view": "nessuna vista",
+  "vis_2_widgets_basic_mui": "Stile MUI"
 }

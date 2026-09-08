@@ -94,6 +94,10 @@ const ICONS: Record<string, React.JSX.Element> = {
 
 type GroupAction = 'add' | 'delete' | 'down' | 'up' | 'clone';
 
+/** The edge length of the little preview in the header of the attributes panel */
+const WIDGET_ICON_HEIGHT = 28;
+const IMAGE_TYPES = ['.png', '.jpg', '.svg', '.gif', '.apng', '.avif', '.webp'];
+
 const styles: Record<string, any> = {
     groupSurface: (theme: VisTheme): React.CSSProperties => ({
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
@@ -235,12 +239,29 @@ const styles: Record<string, any> = {
         maxWidth: '100%',
         maxHeight: '100%',
     },
+    /*
+     * The name plate of the selected widget: one row, one line, as high as the space the group list below
+     * leaves for it (`calc(100% - 34px)`). Everything in it keeps its size except the widget title, which
+     * is the one part that may be cut off when the panel is narrow.
+     */
+    widgetHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 34,
+        padding: '0 4px',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+    },
     widgetIcon: {
         overflow: 'hidden',
-        width: 40,
-        height: 40,
-        display: 'inline-block',
-        marginRight: 4,
+        width: WIDGET_ICON_HEIGHT,
+        height: WIDGET_ICON_HEIGHT,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     icon: {
         width: '100%',
@@ -249,9 +270,21 @@ const styles: Record<string, any> = {
     },
     widgetImage: {
         display: 'block',
-        width: 30,
-        height: 30,
-        transformOrigin: '0 0',
+        width: WIDGET_ICON_HEIGHT,
+        height: WIDGET_ICON_HEIGHT,
+        // a legacy preview is scaled down in `componentDidUpdate`, and it should shrink towards its middle
+        transformOrigin: '50% 50%',
+    },
+    devButtons: {
+        marginLeft: 'auto',
+        flexShrink: 0,
+        display: 'flex',
+        gap: 4,
+    },
+    devButton: {
+        minWidth: 34,
+        padding: '0 6px',
+        fontSize: 11,
     },
     iconFolder: {
         verticalAlign: 'middle',
@@ -265,22 +298,25 @@ const styles: Record<string, any> = {
         lineHeight: '36px',
     },
     coloredWidgetSet: {
-        padding: '0 3px',
-        borderRadius: 3,
+        padding: '1px 5px',
+        borderRadius: 4,
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: '16px',
+        flexShrink: 0,
     },
     widgetName: {
-        verticalAlign: 'top',
-        display: 'inline-block',
+        fontWeight: 'bold',
+        flexShrink: 0,
     },
     widgetType: {
-        verticalAlign: 'top',
-        display: 'inline-block',
         fontSize: 12,
         fontStyle: 'italic',
-        marginLeft: 8,
-    },
-    widgetNameText: {
-        lineHeight: '20px',
+        opacity: 0.8,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        // a flex item refuses to become narrower than its text unless it is told it may
+        minWidth: 0,
     },
     fieldHelp: (theme: VisTheme) => ({
         fontSize: 12,
@@ -289,9 +325,6 @@ const styles: Record<string, any> = {
         color: theme.palette.mode === 'dark' ? '#00931a' : '#014807',
     }),
 };
-
-const WIDGET_ICON_HEIGHT = 34;
-const IMAGE_TYPES = ['.png', '.jpg', '.svg', '.gif', '.apng', '.avif', '.webp'];
 
 interface PaletteGroup extends WidgetAttributesGroupInfoStored {
     isStyle?: boolean;
@@ -359,7 +392,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         const accordionOpenStr = window.localStorage.getItem('attributesWidget');
         let accordionOpen: Record<string, 0 | 1 | 2>;
-        if (accordionOpenStr && accordionOpenStr[0] === '{') {
+        if (accordionOpenStr?.[0] === '{') {
             try {
                 accordionOpen = JSON.parse(accordionOpenStr) as Record<string, 0 | 1 | 2>;
                 // convert from old
@@ -1182,7 +1215,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             let widgetIcon = preview || '';
             if (widgetIcon.startsWith('<img')) {
                 const prev = widgetIcon.match(/src="([^"]+)"/);
-                if (prev && prev[1]) {
+                if (prev?.[1]) {
                     widgetIcon = prev[1];
                 }
             }
@@ -1237,30 +1270,43 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 widgetLabel = `${I18n.t('version')} ${marketplace.version}`;
             }
             list = (
-                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                <div style={styles.widgetHeader}>
                     {widgetIcon ? <div style={styles.widgetIcon}>{img}</div> : null}
                     <div style={styles.widgetName}>{this.props.selectedWidgets[0]}</div>
-                    <div style={styles.widgetType}>
+                    {setLabel ? (
                         <div
                             style={{
-                                ...styles.widgetNameText,
-                                ...(widgetBackColor ? styles.coloredWidgetSet : undefined),
-                                fontWeight: 'bold',
+                                ...styles.coloredWidgetSet,
                                 color: widgetColor,
                                 backgroundColor: widgetBackColor,
                             }}
                         >
                             {setLabel}
                         </div>
-                        <div style={styles.widgetNameText}>{widgetLabel}</div>
-                    </div>
+                    ) : null}
+                    {/* Many a widget is called after the set it comes from, and saying that twice says nothing */}
+                    {widgetLabel && widgetLabel !== setLabel ? (
+                        <div style={styles.widgetType}>{widgetLabel}</div>
+                    ) : null}
                     {!widgets[this.props.selectedWidgets[0]].marketplace && (
                         <>
                             {window.location.port === '3000' ? (
-                                <Button onClick={() => this.setState({ cssDialogOpened: true })}>CSS</Button>
-                            ) : null}
-                            {window.location.port === '3000' ? (
-                                <Button onClick={() => this.setState({ jsDialogOpened: true })}>JS</Button>
+                                <div style={styles.devButtons}>
+                                    <Button
+                                        size="small"
+                                        sx={styles.devButton}
+                                        onClick={() => this.setState({ cssDialogOpened: true })}
+                                    >
+                                        CSS
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        sx={styles.devButton}
+                                        onClick={() => this.setState({ jsDialogOpened: true })}
+                                    >
+                                        JS
+                                    </Button>
+                                </div>
                             ) : null}
                             {this.state.cssDialogOpened ? (
                                 <WidgetCSS
@@ -1295,7 +1341,12 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 </div>
             );
         } else {
-            list = this.props.selectedWidgets.join(', ');
+            list = (
+                <div style={styles.widgetHeader}>
+                    <div style={styles.widgetName}>{I18n.t('%s widgets', this.props.selectedWidgets.length)}</div>
+                    <div style={styles.widgetType}>{this.props.selectedWidgets.join(', ')}</div>
+                </div>
+            );
         }
         return (
             <div
@@ -1329,7 +1380,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
             window.localStorage.setItem('attributesWidget', JSON.stringify(accordionOpen));
             this.setState({ accordionOpen }, cb ? () => cb() : undefined);
         } else {
-            cb && cb();
+            cb?.();
         }
         setTimeout(() => this.setState({ transitionTime: 200 }), 500);
     }
@@ -1369,7 +1420,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
         if (direction === 'delete') {
             if (indexTo) {
                 const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
-                if (!lastGroup || lastGroup.index === undefined) {
+                if (lastGroup?.index === undefined) {
                     return;
                 }
                 for (let idx = index; idx < lastGroup.index; idx++) {
@@ -1423,7 +1474,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         if (direction === 'clone') {
             const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
-            if (!lastGroup || lastGroup.index === undefined || indexTo === undefined) {
+            if (lastGroup?.index === undefined || indexTo === undefined) {
                 return;
             }
             // move all indexes after the current one
@@ -1466,7 +1517,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         if (direction === 'add') {
             const lastGroup = fields.find(f => f.singleName === iterable.group && f.iterable?.isLast);
-            if (!lastGroup || lastGroup.index === undefined || indexTo === undefined) {
+            if (lastGroup?.index === undefined || indexTo === undefined) {
                 return;
             }
             // add one line
@@ -1676,7 +1727,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                                     selectedWidget
                                                 ][type] as Record<string, number | string | boolean | null>
                                             )[groupField.name];
-                                            if (value !== null && value !== undefined) {
+                                            if (value != null) {
                                                 found = true;
                                                 break;
                                             }
@@ -1939,12 +1990,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                 style={styles.colorize}
                                 onClick={() =>
                                     this.props.cssClone(field.name, newValue => {
-                                        if (newValue !== null && newValue !== undefined) {
+                                        if (newValue != null) {
                                             const project = deepClone(store.getState().visProject);
                                             this.props.selectedWidgets.forEach(wid => {
                                                 if (project[this.props.selectedView].widgets[wid]) {
-                                                    project[this.props.selectedView].widgets[wid].style =
-                                                        project[this.props.selectedView].widgets[wid].style || {};
+                                                    project[this.props.selectedView].widgets[wid].style ||= {};
                                                     (
                                                         project[this.props.selectedView].widgets[wid].style as Record<
                                                             string,
@@ -2110,29 +2160,25 @@ class Widget extends Component<WidgetProps, WidgetState> {
 
         // detect triggers from parent to open all groups
         if (this.props.triggerAllOpened !== this.state.triggerAllOpened) {
-            this.triggerTimer =
-                this.triggerTimer ||
-                setTimeout(() => {
-                    this.triggerTimer = null;
-                    const accordionOpen: { [groupName: string]: 0 | 1 | 2 } = {};
-                    this.state.fields?.forEach(group => (accordionOpen[group.name] = 1));
-                    this.setState({ triggerAllOpened: this.props.triggerAllOpened }, () =>
-                        this.setAccordionState(accordionOpen),
-                    );
-                }, 50);
+            this.triggerTimer ||= setTimeout(() => {
+                this.triggerTimer = null;
+                const accordionOpen: { [groupName: string]: 0 | 1 | 2 } = {};
+                this.state.fields?.forEach(group => (accordionOpen[group.name] = 1));
+                this.setState({ triggerAllOpened: this.props.triggerAllOpened }, () =>
+                    this.setAccordionState(accordionOpen),
+                );
+            }, 50);
         }
         // detect triggers from parent to close all groups
         if (this.props.triggerAllClosed !== this.state.triggerAllClosed) {
-            this.triggerTimer =
-                this.triggerTimer ||
-                setTimeout(() => {
-                    this.triggerTimer = null;
-                    const accordionOpen: { [groupName: string]: 0 | 1 | 2 } = {};
-                    this.state.fields?.forEach(group => (accordionOpen[group.name] = 0));
-                    this.setState({ triggerAllClosed: this.props.triggerAllClosed }, () =>
-                        this.setAccordionState(accordionOpen),
-                    );
-                }, 50);
+            this.triggerTimer ||= setTimeout(() => {
+                this.triggerTimer = null;
+                const accordionOpen: { [groupName: string]: 0 | 1 | 2 } = {};
+                this.state.fields?.forEach(group => (accordionOpen[group.name] = 0));
+                this.setState({ triggerAllClosed: this.props.triggerAllClosed }, () =>
+                    this.setAccordionState(accordionOpen),
+                );
+            }, 50);
         }
 
         let jsonCustomFields = null;

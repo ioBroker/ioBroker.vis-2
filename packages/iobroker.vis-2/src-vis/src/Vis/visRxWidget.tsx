@@ -479,7 +479,7 @@ export class VisRxWidget<
         this.linkContext.IDs.push(value);
 
         if (attr === 'visibility-oid') {
-            this.linkContext.visibility[value] = this.linkContext.visibility[value] || [];
+            this.linkContext.visibility[value] ||= [];
             this.linkContext.visibility[value].push({ view: this.props.view, widget: this.props.id });
         }
 
@@ -608,7 +608,7 @@ export class VisRxWidget<
      * @param newState the new state
      */
     checkVisibility(stateId?: string | null, newState?: typeof this.newState): boolean {
-        newState = newState || this.state;
+        newState ||= this.state;
 
         if (!this.isWidgetVisibleForGroup(newState)) {
             return false;
@@ -688,7 +688,7 @@ export class VisRxWidget<
             }
         }
 
-        return value === undefined || value === null ? '' : value.toString();
+        return value == null ? '' : value.toString();
     }
 
     wrapContent(
@@ -717,7 +717,7 @@ export class VisRxWidget<
         // apply style from the element
         Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
-            if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value != null && POSSIBLE_MUI_STYLES.includes(attr)) {
                 attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 style[attr] = value;
             }
@@ -788,7 +788,7 @@ export class VisRxWidget<
 
         Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
-            if (value !== null && value !== undefined && POSSIBLE_MUI_STYLES.includes(attr)) {
+            if (value != null && POSSIBLE_MUI_STYLES.includes(attr)) {
                 const name = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                 (muiStyle as Record<string, number | string | boolean | null | undefined>)[name] = value;
                 if (FRAME_MUI_STYLES.includes(attr)) {
@@ -824,7 +824,7 @@ export class VisRxWidget<
 
         Object.keys(this.state.rxStyle || {}).forEach(attr => {
             const value = (this.state.rxStyle as Record<string, number | string | boolean | null | undefined>)[attr];
-            if (value !== null && value !== undefined) {
+            if (value != null) {
                 if (!this.wrappedContent || !POSSIBLE_MUI_STYLES.includes(attr)) {
                     attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
 
@@ -865,7 +865,7 @@ export class VisRxWidget<
     getWidgetView(view: string, props?: Partial<VisViewProps>): React.JSX.Element {
         const context = this.props.context;
         const VisViewComponent = context.VisView;
-        props = props || {};
+        props ||= {};
 
         return (
             <VisViewComponent
@@ -896,7 +896,7 @@ export class VisRxWidget<
             isRelative?: boolean;
         },
     ): React.JSX.Element | null {
-        props = props || {};
+        props ||= {};
 
         // old (can) widgets require props.refParent
         return this.props.context.VisView.getOneWidget(props.index || 0, this.props.context.views[view].widgets[wid], {
@@ -931,7 +931,7 @@ export class VisRxWidget<
             /** The value the state value needs to match */
             let targetValue = this.state.rxData[`signals-val-${index}`] ?? 'true';
 
-            if (val === undefined || val === null) {
+            if (val == null) {
                 // the user compares explicitly against null => use the "null" placeholder in the comparison below.
                 // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
                 if (targetValue !== 'null' || condition === 'exist' || condition === 'not exist') {
@@ -940,7 +940,7 @@ export class VisRxWidget<
                 val = 'null';
             }
 
-            if (!condition || targetValue === undefined || targetValue === null) {
+            if (!condition || targetValue == null) {
                 return condition === 'not exist';
             }
 
@@ -1024,7 +1024,7 @@ export class VisRxWidget<
 
     static text2style(textStyle: string, style: React.CSSProperties): React.CSSProperties {
         if (textStyle) {
-            style = style || {};
+            style ||= {};
             const parts = textStyle.split(';');
             parts.forEach(part => {
                 const [attr, value] = part.split(':');
@@ -1258,7 +1258,7 @@ export class VisRxWidget<
                 const attrs = Object.keys(oWidget.data);
                 attrs.forEach(attr => {
                     if (attr.startsWith('widget') && oWidget.data[attr]) {
-                        const ref = this.props.askView && this.props.askView('getRef', { id: oWidget.data[attr] });
+                        const ref = this.props.askView?.('getRef', { id: oWidget.data[attr] });
                         ref && refs.push(ref);
                     }
                 });

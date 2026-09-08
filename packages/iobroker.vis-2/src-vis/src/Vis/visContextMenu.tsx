@@ -134,12 +134,7 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                   let widgetName = '';
                   let showSelect = coordinatesWidgets.length > 1;
                   // let marketplaceUpdate;
-                  if (
-                      view &&
-                      coordinatesWidgets[0] &&
-                      view.widgets[coordinatesWidgets[0]] &&
-                      view.widgets[coordinatesWidgets[0]].tpl
-                  ) {
+                  if (view && coordinatesWidgets[0] && view.widgets[coordinatesWidgets[0]]?.tpl) {
                       if (view.widgets[coordinatesWidgets[0]].data?.locked) {
                           showSelect = true;
                       }
@@ -245,7 +240,7 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                                             const newId = `f${gIdx.toString().padStart(6, '0')}`;
                                             gIdx++;
 
-                                            if (widget.data && widget.data.members) {
+                                            if (widget.data?.members) {
                                                 const members: SingleWidgetId[] = [];
                                                 for (let m = 0; m < widget.data.members.length; m++) {
                                                     const member: SingleWidgetId = widget.data.members[m];

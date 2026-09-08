@@ -8,6 +8,7 @@ import {
     useSensor,
     useSensors,
     type DragEndEvent,
+    type DragStartEvent,
 } from '@dnd-kit/core';
 import ReactSplit, { SplitDirection } from '@devbookhq/splitter';
 
@@ -99,6 +100,7 @@ import VisContextMenu from './Vis/visContextMenu';
 import Runtime, { type RuntimeProps, type RuntimeState } from './Runtime';
 import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages } from './Vis/visUtils';
+import { getAdornerLayer } from './Vis/visAdornerLayer';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
 import type { VisEngineHandlers } from './Vis/visView';
 import registerBasicWords from '@/Vis/Widgets/Basic/i18n';
@@ -278,19 +280,23 @@ const ViewDrop: React.FC<ViewDropProps> = props => {
     );
 };
 
-/** Where the pointer was when the drag started - a mouse event carries it directly, a touch event in its list */
-function activatorPoint(event: Event | null): { x: number; y: number } | null {
+/** Where the pointer is - a mouse event carries it directly, a touch event in one of its lists */
+function pointerPoint(event: Event | null): { x: number; y: number } | null {
     if (event && 'clientX' in event) {
         const mouseEvent = event as MouseEvent;
         return { x: mouseEvent.clientX, y: mouseEvent.clientY };
     }
-    const touch = (event as TouchEvent | null)?.touches?.[0];
+    // `touches` is empty once the finger is lifted, and then only `changedTouches` still knows where it was
+    const touchEvent = event as TouchEvent | null;
+    const touch = touchEvent?.touches?.[0] || touchEvent?.changedTouches?.[0];
     return touch ? { x: touch.clientX, y: touch.clientY } : null;
 }
 
 interface EditorDndProps {
     addMarketplaceWidget: Editor['addMarketplaceWidget'];
     addWidget: Editor['addWidget'];
+    /** The view a dropped widget lands in - it decides in which frame the drop point is measured */
+    selectedView: string;
     children: React.ReactNode;
 }
 
@@ -299,8 +305,8 @@ interface EditorDndProps {
  *
  * react-dnd needed two backends for this, one built on the native drag events of the browser and one on touch
  * events, and only one of them could be active. dnd-kit works on pointer events, so the two sensors below
- * cover mouse and finger at the same time. There is no `getClientOffset()` either: where the widget landed is
- * where the drag started plus how far it was moved.
+ * cover mouse and finger at the same time. It has no `getClientOffset()` though, and the `delta` it offers
+ * instead is not the same thing, so the pointer is followed here for the length of a drag.
  */
 const EditorDnd: React.FC<EditorDndProps> = props => {
     const sensors = useSensors(
@@ -310,21 +316,66 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
         useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
     );
 
+    /*
+     * Where the pointer is, watched for the length of a drag.
+     *
+     * dnd-kit reports the drag as a start point plus a `delta`, but that delta is not the way the pointer
+     * went: it carries the scroll of the containers the dragged item belongs to as well, so that a list which
+     * scrolls under the cursor still hands over the right item. The palette is such a list, and a widget
+     * taken from a palette scrolled down by 258 pixels therefore landed 258 pixels above the cursor - it was
+     * exactly right as long as the palette stood at the top, which is why it was easy to miss.
+     *
+     * The pointer itself has no such second meaning, so it is read from the events directly.
+     */
+    const pointer = useRef<{ x: number; y: number } | null>(null);
+    const trackPointer = useRef((event: Event): void => {
+        const point = pointerPoint(event);
+        if (point) {
+            pointer.current = point;
+        }
+    }).current;
+
+    const POINTER_EVENTS = ['pointermove', 'pointerup', 'touchmove', 'touchend'];
+
+    const watchPointer = (on: boolean): void =>
+        POINTER_EVENTS.forEach(name =>
+            on
+                ? window.addEventListener(name, trackPointer, { capture: true, passive: true })
+                : window.removeEventListener(name, trackPointer, true),
+        );
+
+    const onDragStart = (event: DragStartEvent): void => {
+        pointer.current = pointerPoint(event.activatorEvent);
+        watchPointer(true);
+    };
+
     const onDragEnd = (event: DragEndEvent): void => {
+        watchPointer(false);
+
         const target = event.over?.data.current as ViewDropData | undefined;
         const item = event.active.data.current as WidgetDragData | undefined;
         if (target?.kind !== 'view' || item?.kind !== 'widget') {
             return;
         }
 
-        const rect = target.getRect();
-        const start = activatorPoint(event.activatorEvent);
-        if (!rect || !start) {
+        /*
+         * Where the widget lands has to be measured in the frame its `left` and `top` will be read in: the
+         * view. The drop area is only the pane the view sits in, and the two are not the same box - the pane
+         * scrolls, and a view taller than the pane then begins above it. Measured against the pane, a widget
+         * dropped on a scrolled view landed as far above the cursor as the view was scrolled down.
+         *
+         * The marks layer is that frame: an absolutely positioned child of the view, so it carries the scroll
+         * and every offset the view has, and it is the same box the name plates and resize handles of the
+         * widgets are already measured against.
+         */
+        const rect = getAdornerLayer(props.selectedView)?.getBoundingClientRect() ?? target.getRect();
+        const drop = pointer.current;
+        if (!rect || !drop) {
             return;
         }
 
-        const x = start.x + event.delta.x - rect.x;
-        const y = start.y + event.delta.y - rect.y;
+        const x = drop.x - rect.x;
+        const y = drop.y - rect.y;
 
         if (item.widgetSet === '__marketplace') {
             void props.addMarketplaceWidget((item.widgetType as MarketplaceWidgetRevision).id, x, y);
@@ -336,7 +387,10 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
     return (
         <DndContext
             sensors={sensors}
+            onDragStart={onDragStart}
             onDragEnd={onDragEnd}
+            // a drag that is called off - the escape key - has to take the watcher with it as well
+            onDragCancel={() => watchPointer(false)}
         >
             <DndPreview />
             {props.children}
@@ -612,7 +666,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     setProjectsDialog = (isOpen: boolean): void => this.setState({ projectsDialog: isOpen });
 
     loadSelectedWidgets(selectedView: string): AnyWidgetId[] {
-        selectedView = selectedView || this.state.selectedView;
+        selectedView ||= this.state.selectedView;
         const selectedWidgets: AnyWidgetId[] = safeParseLS<AnyWidgetId[]>(
             `${this.state.projectName}.${selectedView}.widgets`,
             [],
@@ -620,11 +674,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
         // Check that all selectedWidgets exist
         for (let i = selectedWidgets.length - 1; i >= 0; i--) {
-            if (
-                !store.getState().visProject[selectedView] ||
-                !store.getState().visProject[selectedView].widgets ||
-                !store.getState().visProject[selectedView].widgets[selectedWidgets[i]]
-            ) {
+            if (!store.getState().visProject[selectedView]?.widgets?.[selectedWidgets[i]]) {
                 selectedWidgets.splice(i, 1);
             }
         }
@@ -682,7 +732,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     if (field.name === 'oid') {
                         widgets[newKey].data.oid = 'nothing_selected';
                     }
-                    if (field.default !== undefined && field.default !== null) {
+                    if (field.default != null) {
                         widgets[newKey].data[field.name] = field.default;
                         widgets[newKey].data[`g_${group.name}`] = true;
                     }
@@ -707,7 +757,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
         // Custom init of widgets
         if (tplWidget.init && widgetSet) {
-            if (window.vis && window.vis.binds[widgetSet] && window.vis.binds[widgetSet][tplWidget.init]) {
+            if (window.vis?.binds[widgetSet]?.[tplWidget.init]) {
                 window.vis.binds[widgetSet][tplWidget.init](widgetType, widgets[newKey].data);
             }
         }
@@ -775,7 +825,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             // If this widget is a member of a group, remove it from the group too
             if (widgets[selectedWidget].groupid) {
                 const group = widgets[widgets[selectedWidget].groupid];
-                group?.data?.members && group.data.members.splice(group.data.members.indexOf(selectedWidget), 1);
+                group?.data?.members?.splice(group.data.members.indexOf(selectedWidget), 1);
             }
 
             delete widgets[selectedWidget];
@@ -1543,7 +1593,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     Object.assign(currentStyle, percentStyle);
                 }
                 (Object.keys(currentStyle) as (keyof WidgetStyle)[]).forEach(key => {
-                    if (currentStyle[key] === undefined || currentStyle[key] === null) {
+                    if (currentStyle[key] == null) {
                         delete currentStyle[key];
                     }
                 });
@@ -1552,7 +1602,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 const currentData = tempProject[item.view].widgets[item.wid].data;
                 Object.assign(currentData, item.data);
                 Object.keys(currentData).forEach(key => {
-                    if (currentData[key] === undefined || currentData[key] === null) {
+                    if (currentData[key] == null) {
                         delete currentData[key];
                     }
                 });
@@ -1566,7 +1616,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 const order = viewSettings.order;
                 delete viewSettings.order;
                 const widget = tempProject[this.state.selectedView].widgets[this.state.selectedGroup];
-                widget.data = widget.data || ({} as GroupData);
+                widget.data ||= {} as GroupData;
                 widget.data.members = order;
             }
 
@@ -1598,7 +1648,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (onStealStyle) {
             onStealStyle(attr, cb);
         } else {
-            cb && cb(attr); // cancel selection
+            cb?.(attr); // cancel selection
         }
     };
 
@@ -1608,7 +1658,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         cb?: (...args: any) => any,
     ): void => {
         if (cb) {
-            this.visEngineHandlers[view] = this.visEngineHandlers[view] || {};
+            this.visEngineHandlers[view] ||= {};
             if (name === 'onStealStyle') {
                 this.visEngineHandlers[view].onStealStyle = cb as VisEngineHandlers['onStealStyle'];
             } else if (name === 'pxToPercent') {
@@ -1977,7 +2027,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         const isGroupEdited = !!this.state.selectedGroup && view === this.state.selectedView;
                         const viewSettings = isGroupEdited ? {} : store.getState().visProject[view].settings || {};
                         let icon = viewSettings.navigationIcon || viewSettings.navigationImage;
-                        if (icon && icon.startsWith('_PRJ_NAME/')) {
+                        if (icon?.startsWith('_PRJ_NAME/')) {
                             icon = `../${this.adapterName}.${this.instance}/${this.state.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
                         }
 
@@ -2561,6 +2611,19 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 .vis-editor-column > :first-child {
     margin-top: 0;
 }
+/* The columns are the chrome of the editor, not text one reads: dragging the divider between them, or a
+   widget out of the palette, would otherwise sweep a selection across every label it passes - and once a
+   selection stands, the browser drags THAT on the next attempt. What one types or wants to copy stays
+   selectable, the fields and the code blocks say so for themselves. */
+.vis-editor-column {
+    user-select: none;
+}
+.vis-editor-column input,
+.vis-editor-column textarea,
+.vis-editor-column pre,
+.vis-editor-column [contenteditable='true'] {
+    user-select: text;
+}
 @keyframes colorBlink {
     0% {
         color: #FF0000;
@@ -2622,7 +2685,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             viewsManager={this.state.viewsManager}
                             setViewsManager={this.setViewsManager}
                             projectsDialog={
-                                this.state.projects && this.state.projects.length
+                                this.state.projects?.length
                                     ? this.state.projectsDialog
                                     : !this.state.createFirstProjectDialog
                             }
@@ -2668,6 +2731,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         >
                             <EditorDnd
                                 addWidget={this.addWidget}
+                                selectedView={this.state.selectedView}
                                 addMarketplaceWidget={this.addMarketplaceWidget}
                             >
                                 {this.state.hidePalette && this.state.hideAttributes ? this.renderWorkspace() : null}

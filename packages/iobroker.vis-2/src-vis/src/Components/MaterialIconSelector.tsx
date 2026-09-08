@@ -279,9 +279,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                 filtered = Object.keys(this.list.customIcons);
             } else {
                 filtered = (this.index || [])
-                    .filter(
-                        icon => !icon.unsupported_families || !icon.unsupported_families.includes(this.state.iconType),
-                    )
+                    .filter(icon => !icon.unsupported_families?.includes(this.state.iconType))
                     .map(icon => icon.name);
             }
 
@@ -305,7 +303,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
 
     onSelect(): void {
         // If upload
-        if (this.state.selectedIcon && this.state.selectedIcon.startsWith('data:')) {
+        if (this.state.selectedIcon?.startsWith('data:')) {
             this.props.onClose(this.state.selectedIcon);
         } else {
             const typedList = this.list[this.state.iconType];

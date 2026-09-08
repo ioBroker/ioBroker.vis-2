@@ -22,14 +22,14 @@
  * @returns true if the value is to be shown as off
  */
 export function isFalse(value: unknown, min?: string | number, max?: string | number): boolean {
-    if (min !== undefined && min !== null && min !== '') {
+    if (min != null && min !== '') {
         let val: unknown = value;
         if (val === 'true') {
             val = true;
         } else if (val === 'false') {
             val = false;
         }
-        if (max !== undefined && max !== null && max !== '') {
+        if (max != null && max !== '') {
             let maxValue: unknown = max;
             if (maxValue === 'false') {
                 maxValue = false;
@@ -50,8 +50,7 @@ export function isFalse(value: unknown, min?: string | number, max?: string | nu
     }
 
     if (
-        value === undefined ||
-        value === null ||
+        value == null ||
         value === false ||
         value === 'false' ||
         value === 'FALSE' ||

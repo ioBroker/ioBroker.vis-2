@@ -14,7 +14,7 @@ export function getViewsWithDifferentValues(
         settings: Record<string, any>,
     ) => boolean,
 ): string[] | null {
-    views = views || Object.keys(project).filter(v => v !== '___settings' && v !== selectedView);
+    views ||= Object.keys(project).filter(v => v !== '___settings' && v !== selectedView);
     if (!views.length) {
         return null;
     }
@@ -24,9 +24,9 @@ export function getViewsWithDifferentValues(
     if (field.type === 'checkbox') {
         value = !!value;
     } else if (field.attr === 'navigationOrientation') {
-        value = value || 'vertical';
+        value ||= 'vertical';
     } else {
-        value = value || '';
+        value ||= '';
     }
 
     const viewsWithDifferentValue: string[] = [];
@@ -45,9 +45,9 @@ export function getViewsWithDifferentValues(
         if (field.type === 'checkbox') {
             val = !!val;
         } else if (field.attr === 'navigationOrientation') {
-            val = val || 'vertical';
+            val ||= 'vertical';
         } else {
-            val = val || '';
+            val ||= '';
         }
 
         if (val !== value) {

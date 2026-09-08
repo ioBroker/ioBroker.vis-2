@@ -322,7 +322,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                     setLabel: info?.visSetLabel || undefined,
                     setColor: info?.visSetColor || undefined,
                     order:
-                        info?.visOrder === undefined || info?.visOrder === null
+                        info?.visOrder == null
                             ? 1000
                             : typeof info.visOrder === 'string'
                               ? parseInt(info.visOrder, 10)
@@ -776,7 +776,7 @@ export const parseAttributes = (
                     field.type = 'text';
                 }
 
-                if (field.type && field.type.startsWith('id,')) {
+                if (field.type?.startsWith('id,')) {
                     const options = field.type.split(',');
                     field.type = options[0] as RxWidgetAttributeType;
                     field.filter = options[1];
@@ -801,7 +801,7 @@ export const parseAttributes = (
                         field.step = (field.max - field.min) / 100;
                     }
                 }
-                if (field.type && field.type.startsWith('style,')) {
+                if (field.type?.startsWith('style,')) {
                     const options = field.type.split(',');
                     field.type = options[0] as RxWidgetAttributeType;
                     field.filterFile = options[1];
@@ -956,7 +956,7 @@ export const parseAttributes = (
                     field.singleName = field.name;
                     field.name = `${field.name}${i}`;
                     field.index = i;
-                    if (group.fields && group.fields[ii]) {
+                    if (group.fields?.[ii]) {
                         if (typeof group.fields[ii].hidden === 'function') {
                             field.hidden = group.fields[ii].hidden;
                         }

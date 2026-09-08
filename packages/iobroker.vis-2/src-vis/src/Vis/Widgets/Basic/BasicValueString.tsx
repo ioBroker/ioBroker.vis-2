@@ -77,7 +77,7 @@ class BasicValueString extends VisRxWidget<RxData> {
         props.style.width ??= 50;
         props.style.height ??= 20;
 
-        const oid = this.state.rxData.oid && this.state.rxData.oid.includes('"') ? '' : this.state.rxData.oid || '';
+        const oid = this.state.rxData.oid?.includes('"') ? '' : this.state.rxData.oid || '';
 
         let body;
         if (this.props.editMode && this.state.rxData.test_html) {

@@ -473,25 +473,23 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
     detectWakeUp(): void {
         this.oldTime = Date.now();
-        this.wakeUpDetectorInterval =
-            this.wakeUpDetectorInterval ||
-            setInterval(() => {
-                const currentTime = Date.now();
-                if (currentTime > this.oldTime + 10000) {
-                    this.oldTime = currentTime;
-                    this.wakeUpCallbacks.forEach(item => {
-                        if (typeof item.cb === 'function') {
-                            try {
-                                item.cb(item.wid);
-                            } catch (error) {
-                                console.error(`Cannot wakeup ${item.wid}: ${error as Error}`);
-                            }
+        this.wakeUpDetectorInterval ||= setInterval(() => {
+            const currentTime = Date.now();
+            if (currentTime > this.oldTime + 10000) {
+                this.oldTime = currentTime;
+                this.wakeUpCallbacks.forEach(item => {
+                    if (typeof item.cb === 'function') {
+                        try {
+                            item.cb(item.wid);
+                        } catch (error) {
+                            console.error(`Cannot wakeup ${item.wid}: ${error as Error}`);
                         }
-                    });
-                } else {
-                    this.oldTime = currentTime;
-                }
-            }, 2500);
+                    }
+                });
+            } else {
+                this.oldTime = currentTime;
+            }
+        }, 2500);
     }
 
     componentDidMount(): void {
@@ -835,9 +833,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
                 const index = this.onChangeCallbacks.findIndex(
                     item =>
-                        item.callback === callback &&
-                        (arg === undefined || arg === null || item.arg === arg) &&
-                        (!wid || item.wid === wid),
+                        item.callback === callback && (arg == null || item.arg === arg) && (!wid || item.wid === wid),
                 );
 
                 if (index >= 0) {
@@ -1110,12 +1106,12 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 const oid = widgetData['visibility-oid'];
                 const condition = widgetData['visibility-cond'];
                 if (oid) {
-                    if (val === undefined || val === null) {
+                    if (val == null) {
                         val = this.canStates.attr(`${oid}.val`);
                     }
                     let value = widgetData['visibility-val'];
 
-                    if (val === undefined || val === null) {
+                    if (val == null) {
                         // the user compares explicitly against null => use the "null" placeholder in the comparison below.
                         // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
                         if (value !== 'null' || condition === 'exist' || condition === 'not exist') {
@@ -1124,7 +1120,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                         val = 'null';
                     }
 
-                    if (!condition || value === undefined || value === null) {
+                    if (!condition || value == null) {
                         return condition === 'not exist';
                     }
 
@@ -1573,7 +1569,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         ref: React.RefObject<HTMLDivElement | null>,
         onCommand: (command: ViewCommand, data?: ViewCommandOptions) => any,
     ): void => {
-        if (this.refViews[view] && this.refViews[view].ref === ref) {
+        if (this.refViews[view]?.ref === ref) {
             console.error(`Someone tries to register same ref for view ${view}`);
         } else {
             if (this.refViews[view]) {
@@ -1584,7 +1580,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     };
 
     unregisterViewRef = (view: string, ref: React.RefObject<HTMLDivElement | null>): void => {
-        if (this.refViews[view] && this.refViews[view].ref === ref) {
+        if (this.refViews[view]?.ref === ref) {
             delete this.refViews[view];
         } else if (this.refViews[view]) {
             this.refViews[view] && console.error(`Someone tries to unregister new ref for view ${view}`);
@@ -1598,7 +1594,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         let w: number;
         let h: number;
 
-        if (height !== undefined && height !== null) {
+        if (height != null) {
             w = resultRequiredOrX as number;
             h = height;
             resultRequiredOrX = false;
@@ -1614,7 +1610,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         const { visProject } = store.getState();
         // First, find all with the best fitting width
         Object.keys(visProject).forEach(view => {
-            if (view !== '___settings' && visProject[view].settings && visProject[view].settings.useAsDefault) {
+            if (view !== '___settings' && visProject[view].settings?.useAsDefault) {
                 const ww = parseInt(visProject[view].settings.sizex as unknown as string, 10);
                 // If difference less than 20%
                 if (Math.abs(ww - w) / ww < 0.2) {
@@ -1807,7 +1803,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 timeout: setTimeout(
                     () => {
                         if (this.statesDebounce[id]) {
-                            if (this.statesDebounce[id].state !== null && this.statesDebounce[id].state !== undefined) {
+                            if (this.statesDebounce[id].state != null) {
                                 this._setValue(id, this.statesDebounce[id].state);
                             }
 
@@ -1997,7 +1993,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     onUserCommand(instance: string, command: string, data: any): boolean {
         const currentInstance = (window.localStorage.getItem('visInstance') || '').replace(/^"/, '').replace(/"$/, '');
 
-        if (instance === null || instance === undefined) {
+        if (instance == null) {
             instance = '';
         } else {
             instance = instance.toString();
@@ -2241,7 +2237,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         if (state.lc !== undefined) {
             o[`${id}.lc`] = state.lc;
         }
-        if (state.q !== undefined && state.q !== null) {
+        if (state.q != null) {
             o[`${id}.q`] = state.q;
         }
 
@@ -2306,7 +2302,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     createCanState(id: string): void {
         const _val = `${id}.val`;
 
-        if (this.canStates[_val as any] === undefined || this.canStates[_val as any] === null) {
+        if (this.canStates[_val as any] == null) {
             const now = Date.now();
             const o: Record<string, any> = {};
             // set all together

@@ -102,13 +102,13 @@ class JQuiWriteState<
                                         | null
                                         | undefined;
                                     let changed = false;
-                                    if (obj?.common?.min !== undefined && obj?.common?.min !== null) {
+                                    if (obj?.common?.min != null) {
                                         if (data.min !== obj.common.min) {
                                             data.min = obj.common.min;
                                             changed = true;
                                         }
                                     }
-                                    if (obj?.common?.max !== undefined && obj?.common?.max !== null) {
+                                    if (obj?.common?.max != null) {
                                         if (data.max !== obj.common.max) {
                                             data.max = obj.common.max;
                                             changed = true;
@@ -124,7 +124,7 @@ class JQuiWriteState<
                                         }
                                     }
                                     if (!data.step) {
-                                        if (obj?.common?.step !== undefined && obj?.common?.step !== null) {
+                                        if (obj?.common?.step != null) {
                                             if (data.step !== obj.common.step) {
                                                 data.step = obj.common.step;
                                                 changed = true;
@@ -305,7 +305,7 @@ class JQuiWriteState<
 
     onStateUpdated(id: string, state: Partial<ioBroker.State> | null | undefined): void {
         if (id === this.state.rxData.oid && state) {
-            const value = state.val === null || state.val === undefined ? '' : state.val;
+            const value = state.val == null ? '' : state.val;
 
             if (this.state.value !== value.toString()) {
                 this.setState({ value: value.toString() });
@@ -335,7 +335,7 @@ class JQuiWriteState<
                 break;
             case 'oid': {
                 value = this.state.values[`${this.state.rxData.value_oid}.val`];
-                if (value === undefined || value === null) {
+                if (value == null) {
                     return;
                 }
                 break;
@@ -433,21 +433,21 @@ class JQuiWriteState<
 
     getIsActive(): boolean {
         let actualValue = this.state.value;
-        if (actualValue === undefined || actualValue === null) {
+        if (actualValue == null) {
             actualValue = '';
         }
 
         switch (this.state.rxData.type) {
             case 'value': {
                 let desiredValue = this.state.rxData.value;
-                if (desiredValue === undefined || desiredValue === null) {
+                if (desiredValue == null) {
                     desiredValue = '';
                 }
                 return actualValue.toString() === desiredValue.toString();
             }
             case 'oid': {
                 let oidValue = this.state.values[`${this.state.rxData.value_oid}.val`];
-                if (oidValue === undefined || oidValue === null) {
+                if (oidValue == null) {
                     oidValue = '';
                 }
                 return actualValue.toString() === oidValue.toString();

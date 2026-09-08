@@ -75,7 +75,7 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
         ? (viewSettings as Record<string, any>)?.[field.attr]
         : (viewSettings as Record<string, any>)?.style[field.attr];
     let value: any = rawValue;
-    if (value === null || value === undefined) {
+    if (value == null) {
         value = '';
     }
 
@@ -342,7 +342,7 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
             slotProps={{
                 input: {
                     endAdornment:
-                        field.clearButton && rawValue !== null && rawValue !== undefined ? (
+                        field.clearButton && rawValue != null ? (
                             <IconButton
                                 size="small"
                                 onClick={() => change(null)}

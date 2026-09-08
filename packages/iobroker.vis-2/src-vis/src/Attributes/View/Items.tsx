@@ -370,8 +370,8 @@ export function getFields(
                             delete project[selectedView].settings.sizey;
                             delete project[selectedView].settings.resolution;
                         } else if (e.target.value === 'user') {
-                            project[selectedView].settings.sizex = project[selectedView].settings.sizex || 0;
-                            project[selectedView].settings.sizey = project[selectedView].settings.sizey || 0;
+                            project[selectedView].settings.sizex ||= 0;
+                            project[selectedView].settings.sizey ||= 0;
                             project[selectedView].settings.resolution = e.target.value || 'none';
                             // const _resolutionSelectX = `${project[selectedView].settings.sizex}x${project[selectedView].settings.sizey}`;
                             // if (resolution.find(item => item.value === _resolutionSelectX)) {

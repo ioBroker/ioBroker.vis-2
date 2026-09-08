@@ -808,5 +808,11 @@
   "right": "right",
   "Show widgets as icons": "Widgets als pictogrammen tonen",
   "Show widgets as list": "Widgets als lijst tonen",
-  "Recently used": "Recent gebruikt"
+  "Recently used": "Recent gebruikt",
+  "vis_2_widgets_swipe_left_view": "Weergave bij vegen naar links",
+  "vis_2_widgets_swipe_right_view": "Weergave bij vegen naar rechts",
+  "vis_2_widgets_swipe_up_view": "Weergave bij vegen omhoog",
+  "vis_2_widgets_swipe_down_view": "Weergave bij vegen omlaag",
+  "vis_2_widgets_swipe_no_view": "geen weergave",
+  "vis_2_widgets_basic_mui": "MUI-stijl"
 }

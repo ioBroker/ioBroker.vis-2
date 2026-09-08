@@ -238,16 +238,16 @@ export default class BasicBulb extends VisRxWidget<RxData> {
     // eslint-disable-next-line class-methods-use-this
     isFalse(val: any, min?: string | number, max?: string | number): boolean {
         // a state that was never written has the value null, and that is "off" for every configuration
-        if (val === undefined || val === null) {
+        if (val == null) {
             return true;
         }
 
-        if (min !== undefined && min !== null && min !== '') {
+        if (min != null && min !== '') {
             if (typeof val !== 'string') {
                 val = val.toString();
             }
 
-            if (max !== undefined && max !== null && max !== '') {
+            if (max != null && max !== '') {
                 return val !== max;
             }
 

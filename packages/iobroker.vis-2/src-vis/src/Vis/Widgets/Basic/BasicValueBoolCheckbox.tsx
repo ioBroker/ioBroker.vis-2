@@ -15,6 +15,8 @@
 
 import React from 'react';
 
+import { Checkbox } from '@mui/material';
+
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 import { isFalse } from '../Utils/boolValue';
@@ -24,6 +26,7 @@ type RxData = {
     html_prepend: string;
     html_append: string;
     autoFocus: boolean;
+    mui?: boolean;
 };
 
 /**
@@ -48,6 +51,14 @@ class BasicValueBoolCheckbox extends VisRxWidget<RxData> {
                         { name: 'html_prepend', type: 'html' },
                         { name: 'html_append', type: 'html' },
                         { name: 'autoFocus', type: 'checkbox' },
+                        /*
+                         * The look of the control. `default: true` is what makes this a change for new
+                         * widgets only: the defaults of the fields are written into the data when a widget is
+                         * placed (see `Editor.addWidget`) and are never filled in while rendering, so a
+                         * widget that is already on a page has no `mui` at all - and keeps the look it was
+                         * built with until this is switched on for it.
+                         */
+                        { name: 'mui', label: 'vis_2_widgets_basic_mui', type: 'checkbox', default: true },
                     ],
                 },
             ],
@@ -72,22 +83,44 @@ class BasicValueBoolCheckbox extends VisRxWidget<RxData> {
         const checked = !isFalse(this.state.values[`${oid}.val`]);
         const autoFocus = this.state.rxData.autoFocus === true || (this.state.rxData.autoFocus as unknown) === 'true';
 
+        // a binding may hand the flag over as a string
+        const mui = this.state.rxData.mui === true || (this.state.rxData.mui as unknown as string) === 'true';
+
         return (
             <div className="vis-widget-body">
                 <span dangerouslySetInnerHTML={{ __html: this.state.rxData.html_prepend ?? '' }} />
-                <input
-                    type="checkbox"
-                    name={`${this.props.id}_checkbox`}
-                    id={`${this.props.id}_checkbox`}
-                    data-oid={oid}
-                    autoFocus={autoFocus}
-                    checked={checked}
-                    // the editor shows the state of the widget but must not write it
-                    readOnly={this.props.editMode}
-                    onChange={
-                        this.props.editMode ? undefined : e => oid && this.props.context.setValue(oid, e.target.checked)
-                    }
-                />
+                {mui ? (
+                    <Checkbox
+                        id={`${this.props.id}_checkbox`}
+                        data-oid={oid}
+                        autoFocus={autoFocus}
+                        checked={checked}
+                        size="small"
+                        // the editor shows the state of the widget but must not write it
+                        readOnly={this.props.editMode}
+                        onChange={
+                            this.props.editMode
+                                ? undefined
+                                : e => oid && this.props.context.setValue(oid, e.target.checked)
+                        }
+                    />
+                ) : (
+                    <input
+                        type="checkbox"
+                        name={`${this.props.id}_checkbox`}
+                        id={`${this.props.id}_checkbox`}
+                        data-oid={oid}
+                        autoFocus={autoFocus}
+                        checked={checked}
+                        // the editor shows the state of the widget but must not write it
+                        readOnly={this.props.editMode}
+                        onChange={
+                            this.props.editMode
+                                ? undefined
+                                : e => oid && this.props.context.setValue(oid, e.target.checked)
+                        }
+                    />
+                )}
                 <span dangerouslySetInnerHTML={{ __html: this.state.rxData.html_append ?? '' }} />
             </div>
         );

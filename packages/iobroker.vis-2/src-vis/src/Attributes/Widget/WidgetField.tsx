@@ -96,7 +96,7 @@ function collectClasses(): Record<string, ClassesValue> {
                             .replace(':before', '')
                             .replace(':after', '');
 
-                        if (!_style || _style[0] !== '.' || _style.includes(':')) {
+                        if (_style?.[0] !== '.' || _style.includes(':')) {
                             continue;
                         }
 
@@ -114,7 +114,7 @@ function collectClasses(): Record<string, ClassesValue> {
                             name = name[0].toUpperCase() + name.substring(1);
                             let fff = document.styleSheets[sSheet].href || '';
 
-                            if (fff && fff.includes('/')) {
+                            if (fff?.includes('/')) {
                                 fff = fff.substring(fff.lastIndexOf('/') + 1);
                             }
 
@@ -162,9 +162,9 @@ function getStylesOptions(options: {
     // Fill the list with styles
     const _internalList = window.collectClassesValue;
 
-    options.filterName = options.filterName || '';
-    options.filterAttrs = options.filterAttrs || '';
-    options.filterFile = options.filterFile || '';
+    options.filterName ||= '';
+    options.filterAttrs ||= '';
+    options.filterFile ||= '';
 
     let gStyles: Record<string, ClassesValue> = {};
 
@@ -178,10 +178,10 @@ function getStylesOptions(options: {
 
         Object.keys(_internalList).forEach((style: string) =>
             files.forEach(file => {
-                if (!options.filterFile || (_internalList[style].file && _internalList[style].file.includes(file))) {
+                if (!options.filterFile || _internalList[style].file?.includes(file)) {
                     let isFound = !filters;
 
-                    isFound = isFound || !!filters?.find(filter => style.includes(filter));
+                    isFound ||= !!filters?.find(filter => style.includes(filter));
 
                     if (isFound) {
                         isFound = !attrs;
@@ -371,8 +371,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             }
         } else if (funcs.length === 3) {
             if (
-                window.vis.binds[funcs[0]] &&
-                window.vis.binds[funcs[0]][funcs[1]] &&
+                window.vis.binds[funcs[0]]?.[funcs[1]] &&
                 typeof window.vis.binds[funcs[0]][funcs[1]][funcs[2]] === 'function'
             ) {
                 try {
@@ -451,6 +450,14 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             }
         });
 
+        // Nothing to save if nothing came out different. A field is often left the way it was found - the
+        // same entry picked again in a select, the same colour handed back by the picker, a value a widget's
+        // `onChange` normalised to what it already was - and each of those wrote the project, pushed an undo
+        // step and re-rendered every widget of the view.
+        if (JSON.stringify(project) === JSON.stringify(store.getState().visProject)) {
+            return;
+        }
+
         props.changeProject(project);
     };
 
@@ -523,7 +530,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }, [propValue]);
 
     let value: string | number | boolean | null = cachedValue;
-    if (value === undefined || value === null) {
+    if (value == null) {
         if (field.default) {
             value = field.default;
         } else {
@@ -661,8 +668,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             }
                             // initialize field
                             if (
-                                window.vis.widgets[props.selectedWidgets[0]] &&
-                                window.vis.widgets[props.selectedWidgets[0]].data &&
+                                window.vis.widgets[props.selectedWidgets[0]]?.data &&
                                 window.vis.widgets[props.selectedWidgets[0]].data[field.name] === undefined
                             ) {
                                 window.vis.widgets[props.selectedWidgets[0]].data[field.name] = '';
@@ -686,7 +692,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }
 
     if (field.type === 'id' || field.type === 'hid') {
-        if (value && (!objectCache || value !== objectCache._id)) {
+        if (value && value !== objectCache?._id) {
             props.socket
                 .getObject(value as string)
                 .then(objectData => setObjectCache(objectData || null))
@@ -1044,9 +1050,12 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }
 
     if (field.type === 'slider') {
-        // make space before a slider element, as if it is at a minimum it overlaps with the label
+        // make space before a slider element, as if it is at a minimum it overlaps with the label.
+        // `width: 100%` because the cell around this is a flex container: without a width of its own the row
+        // shrinks to what its content asks for, and the slider asks for `calc(100% - 50px)` of exactly this
+        // row - which then collapsed it to the width of its handle.
         return (
-            <div style={{ display: 'flex' }}>
+            <div style={{ display: 'flex', width: '100%' }}>
                 <div style={{ width: 5 }}></div>
                 <Slider
                     disabled={disabled}
@@ -1855,7 +1864,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     slotProps={{
                         input: {
                             endAdornment:
-                                field.clearButton && cachedValue !== null && cachedValue !== undefined ? (
+                                field.clearButton && cachedValue != null ? (
                                     <IconButton
                                         tabIndex={-1}
                                         size="small"

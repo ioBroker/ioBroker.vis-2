@@ -77,7 +77,7 @@ class BasicValueStringRaw extends VisRxWidget<RxData> {
             body = this.state.rxData.test_html;
         } else {
             const value = this.state.values[`${this.state.rxData.oid}.val`];
-            body = value === undefined || value === null ? '' : `${value as string}`;
+            body = value == null ? '' : `${value as string}`;
         }
 
         return (

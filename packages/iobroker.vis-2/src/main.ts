@@ -140,7 +140,7 @@ class VisAdapter extends Adapter {
         dir: string,
         sets?: { path: string; name: string; pack: ioBroker.AdapterObject }[],
     ): { path: string; name: string; pack: ioBroker.AdapterObject }[] {
-        sets = sets || [];
+        sets ||= [];
         if (!existsSync(dir)) {
             return sets;
         }

@@ -266,10 +266,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 return Promise.resolve();
                             },
                             hidden: (data, index) =>
-                                data.type === 'slider' ||
-                                data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data.type === 'slider' || data[`value${index}`] === '' || data[`value${index}`] == null,
                         },
                         {
                             name: 'onlyIcon',
@@ -284,28 +281,21 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                             hidden: (data, index) =>
                                 !!data[`onlyIcon${index}`] ||
                                 data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data[`value${index}`] == null,
                         },
                         {
                             name: 'color',
                             type: 'color',
                             label: 'color',
                             hidden: (data, index) =>
-                                data.type === 'slider' ||
-                                data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data.type === 'slider' || data[`value${index}`] === '' || data[`value${index}`] == null,
                         },
                         {
                             name: 'activeColor',
                             type: 'color',
                             label: 'jqui_active_color',
                             hidden: (data, index) =>
-                                data.type === 'slider' ||
-                                data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data.type === 'slider' || data[`value${index}`] === '' || data[`value${index}`] == null,
                         },
                         {
                             name: 'image',
@@ -315,8 +305,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 data.type === 'slider' ||
                                 !!data.icon ||
                                 data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data[`value${index}`] == null,
                         },
                         {
                             name: 'icon',
@@ -326,18 +315,14 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                 data.type === 'slider' ||
                                 !!data.image ||
                                 data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data[`value${index}`] == null,
                         },
                         {
                             name: 'tooltip',
                             label: 'jqui_tooltip',
                             type: 'text',
                             hidden: (data, index) =>
-                                data.type === 'slider' ||
-                                data[`value${index}`] === '' ||
-                                data[`value${index}`] === null ||
-                                data[`value${index}`] === undefined,
+                                data.type === 'slider' || data[`value${index}`] === '' || data[`value${index}`] == null,
                         },
                     ],
                 },
@@ -471,7 +456,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
 
     onStateUpdated(id: string, state: ioBroker.State): void {
         if (id === this.state.rxData.oid && state) {
-            const value = state.val === null || state.val === undefined ? '' : state.val;
+            const value = state.val == null ? '' : state.val;
 
             if (this.state.value !== value.toString()) {
                 this.setState({ value: value.toString() });
@@ -589,7 +574,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
             color = rxData[`activeColor${i}`];
         }
 
-        text = text || rxData[`value${i}`];
+        text ||= rxData[`value${i}`];
 
         return <span style={{ color }}>{text}</span>;
     }

@@ -165,21 +165,45 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                 {
                     name: 'style',
                     fields: [
-                        { name: 'no_style', type: 'checkbox', hidden: (data: RxData): boolean => data.jquery_style },
+                        // only where it is already set: the list above is where the look is chosen now
+                        { name: 'no_style', type: 'checkbox', hidden: (data: RxData): boolean => !data.no_style },
                         {
                             name: 'jquery_style',
                             label: 'jqui_jquery_style',
                             type: 'checkbox',
-                            hidden: (data: RxData): boolean => data.no_style,
+                            hidden: (data: RxData): boolean => !data.jquery_style,
                         },
                         {
+                            /*
+                             * One list for the look of the widget, the two checkboxes below are the old way to
+                             * the same thing. Picking `no_style` or `jquery_style` here writes those flags -
+                             * they are what the widget reads in three dozen places, and this keeps every one of
+                             * them working untouched. A widget that already carries a flag still shows the
+                             * checkbox for it, so it can be switched off; a new one only ever sees this list.
+                             */
                             name: 'variant',
                             label: 'jqui_variant',
                             type: 'select',
                             noTranslation: true,
-                            options: ['filled', 'outlined', 'standard'],
+                            options: [
+                                { value: 'standard', label: 'standard' },
+                                { value: 'outlined', label: 'outlined' },
+                                { value: 'filled', label: 'filled' },
+                                { value: 'no_style', label: 'no style' },
+                                { value: 'jquery_style', label: 'jQuery UI' },
+                            ],
                             default: 'standard',
-                            hidden: (data: RxData): boolean => data.jquery_style || data.no_style,
+                            // not `async`: there is nothing to wait for here, only the promise the type asks for
+                            onChange: (_field, data, changeData) => {
+                                const noStyle = data.variant === 'no_style';
+                                const jquery = data.variant === 'jquery_style';
+                                if (!!data.no_style !== noStyle || !!data.jquery_style !== jquery) {
+                                    data.no_style = noStyle;
+                                    data.jquery_style = jquery;
+                                    changeData(data);
+                                }
+                                return Promise.resolve();
+                            },
                         },
                         {
                             name: 'size',
@@ -212,7 +236,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
 
         try {
             const input = await this.props.context.socket.getState(this.state.rxData.oid);
-            if (input && input.val !== undefined && input.val !== null) {
+            if (input?.val != null) {
                 input.val = input.val.toString();
                 this.setState({ input: input.val });
             }
@@ -294,7 +318,7 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
                 <TextField
                     fullWidth
                     value={
-                        this.state.input === null || this.state.input === undefined
+                        this.state.input == null
                             ? ''
                             : this.state.rxData.asString
                               ? this.state.input.toString()

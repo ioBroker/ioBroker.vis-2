@@ -529,7 +529,7 @@ class BasicFilterDropdown extends VisRxWidget<RxData> {
                 items = [];
             }
         }
-        items = items || [];
+        items ||= [];
         return items;
     }
 

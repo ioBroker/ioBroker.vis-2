@@ -47,7 +47,7 @@ const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void)
             <MenuItem
                 key={key}
                 onClick={() => {
-                    item.onClick && item.onClick();
+                    item.onClick?.();
                     onClose();
                 }}
                 onMouseEnter={() => item.onHover?.(true)}
@@ -57,7 +57,7 @@ const contextMenuItems = (items: MenuItem[], open: boolean, onClose: () => void)
                 onContextMenu={e => {
                     e.stopPropagation();
                     e.preventDefault();
-                    item.onClick && item.onClick();
+                    item.onClick?.();
                     onClose();
                 }}
             >

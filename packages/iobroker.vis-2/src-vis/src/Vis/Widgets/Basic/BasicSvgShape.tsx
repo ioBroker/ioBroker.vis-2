@@ -123,7 +123,7 @@ export default class BasicSvgShape extends VisRxWidget<RxData> {
     }
 
     static circlePoints(radius: number, num: number, step?: number): string {
-        step = step || 360 / num;
+        step ||= 360 / num;
         const points = [];
         let text = '';
         const radian = Math.PI / 180;

@@ -140,6 +140,15 @@ const WIDGET_ICON_HEIGHT = 34;
 interface WidgetProps {
     /** How the palette draws its entries: `grid` shows the preview with the name under it, `full` the row */
     view?: 'grid' | 'full';
+    /**
+     * Which part of the palette this entry is drawn in - empty for the widget set it belongs to.
+     *
+     * The same widget appears twice as soon as it is in "recently used" as well, and both entries would
+     * otherwise be called the same: dnd-kit keeps its draggables by id, so the second one to register took
+     * the place of the first and a drag started on one moved the other. The id in the DOM would be a
+     * duplicate too - the GUI test looks a widget up by it.
+     */
+    section?: string;
     widgetSetProps?: Record<string, any>;
     widgetSet: string;
     widgetType: WidgetType;
@@ -185,7 +194,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         style.backgroundColor = props.widgetType.color;
     } else if (props.widgetSetProps?.color) {
         style.backgroundColor = props.widgetSetProps.color;
-    } else if (window.visSets && window.visSets[props.widgetSet]?.color) {
+    } else if (window.visSets?.[props.widgetSet]?.color) {
         style.backgroundColor = window.visSets[props.widgetSet].color;
     }
 
@@ -217,6 +226,8 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
                         src={m[1]}
                         style={imageStyle}
                         alt={props.widgetType.name}
+                        // the entry is the draggable, not the picture inside it
+                        draggable={false}
                     />
                 );
             }
@@ -230,6 +241,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
                     src={props.widgetType.preview}
                     style={imageStyle}
                     alt={props.widgetType.name}
+                    draggable={false}
                     onError={e => {
                         if (e.target) {
                             (e.target as HTMLImageElement).onerror = null;
@@ -252,6 +264,8 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
     };
 
     const isGrid = props.view === 'grid';
+    /** Unique for this entry, not only for the widget type - see `section` */
+    const entryId = `widget_${props.section ? `${props.section}_` : ''}${props.widgetTypeName}`;
     const img = renderPreview(isGrid ? styles.widgetTileImageWithSrc : styles.widgetImageWithSrc, imageRef);
 
     let label = props.widgetType.label ? I18n.t(props.widgetType.label) : window.vis._(props.widgetType.title || '');
@@ -358,7 +372,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
     // `attributes` of dnd-kit are left out on purpose: they would put `role="button"` on this span, and a
     // palette entry has real buttons of its own inside it for the marketplace widgets
     const { listeners, setNodeRef } = useDraggable({
-        id: `widget_${props.widgetTypeName}`,
+        id: entryId,
         disabled: !props.editMode,
         data: {
             kind: 'widget',
@@ -386,7 +400,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
     return (
         <span
             ref={props.editMode ? setNodeRef : null}
-            id={`widget_${props.widgetTypeName}`}
+            id={entryId}
             className={`widget-${props.widgetSet}`}
             style={isGrid ? { display: 'block' } : undefined}
             {...(props.editMode ? listeners : undefined)}

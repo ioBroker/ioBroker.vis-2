@@ -85,6 +85,15 @@ export interface VisBaseWidgetState {
     /** The editor waits for the click that picks the style of a widget, so this widget shows no handles */
     stealMode?: boolean;
     /**
+     * The marks of this widget are away because it is being moved.
+     *
+     * State and not a `style.display` written into the marks div: the div belongs to a portal and React may
+     * build it anew during the gesture - as soon as the name plate or the handles come or go for one render.
+     * A fresh div has no display of its own, so the plate came back in the middle of the drag and stood at
+     * the place the gesture started, while the widget went on with the cursor.
+     */
+    marksHidden?: boolean;
+    /**
      * Geometry of a running gesture, in pixels. It overrides the position of the widget while it is dragged, so
      * that render() stays the only place that positions the widget - a re-render during the gesture can then not
      * reset it. It is dropped again as soon as the moved position has arrived through the project.
@@ -280,7 +289,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
         if (style) {
             delete style._originalData;
-            if (style['background-image'] && style['background-image'].startsWith('_PRJ_NAME')) {
+            if (style['background-image']?.startsWith('_PRJ_NAME')) {
                 if (!style._originalData) {
                     style._originalData = JSON.stringify(style);
                 }
@@ -292,17 +301,16 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
     componentDidMount(): void {
         // register service ref by view for resize and move only in edit mode
-        this.props.askView &&
-            this.props.askView('register', {
-                id: this.props.id,
-                uuid: this.uuid,
-                widDiv: this.widDiv,
-                refService: this.refService,
-                onMove: this.onMove,
-                onResize: this.onResize,
-                onTempSelect: this.onTempSelect,
-                onCommand: this.onCommandBound,
-            });
+        this.props.askView?.('register', {
+            id: this.props.id,
+            uuid: this.uuid,
+            widDiv: this.widDiv,
+            refService: this.refService,
+            onMove: this.onMove,
+            onResize: this.onResize,
+            onTempSelect: this.onTempSelect,
+            onCommand: this.onCommandBound,
+        });
 
         this.updateMarksRect();
     }
@@ -408,7 +416,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         this.pressTimeout = undefined;
 
         // delete service ref from view only in edit mode
-        this.props.askView && this.props.askView('unregister', { id: this.props.id, uuid: this.uuid });
+        this.props.askView?.('unregister', { id: this.props.id, uuid: this.uuid });
     }
 
     // this method may be not in form onCommand = command => {}, as it can be overloaded
@@ -476,8 +484,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // The marks were hidden when the move started, see onMove(). They come back through onMove(save)
             // after a real move, but the view only sends that when the mouse moved - a press without a move,
             // which is how a widget is selected, ends here and nowhere else.
-            if (this.refMarks.current) {
-                this.refMarks.current.style.display = '';
+            if (this.state.marksHidden) {
+                this.setState({ marksHidden: false });
             }
 
             if (command === 'stopResize') {
@@ -608,31 +616,27 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
 
         if (props.editMode !== state.editMode) {
-            newState = newState || {};
+            newState ||= {};
             newState.editMode = props.editMode;
             newState.applyBindings = true;
         }
 
         if (props.context.widgetHint !== state.widgetHint) {
-            newState = newState || {};
+            newState ||= {};
             newState.widgetHint = props.context.widgetHint;
         }
 
-        const selected =
-            !state.multiViewWidget &&
-            props.editMode &&
-            props.selectedWidgets &&
-            props.selectedWidgets.includes(props.id);
+        const selected = !state.multiViewWidget && props.editMode && props.selectedWidgets?.includes(props.id);
         const selectedOne = selected && props.selectedWidgets.length === 1;
 
         if (selected !== state.selected || selectedOne !== state.selectedOne) {
-            newState = newState || {};
+            newState ||= {};
             newState.selected = selected;
             newState.selectedOne = selectedOne;
         }
 
         if (!!widget.usedInWidget !== !!state.usedInWidget) {
-            newState = newState || {};
+            newState ||= {};
             newState.usedInWidget = !!widget.usedInWidget;
         }
 
@@ -900,9 +904,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // The marks of this widget go away for the gesture. The handles have nothing to do while it is
             // being moved, and a relative widget is not moved by its own render at all - the view draws a copy
             // under the cursor - so its marks could not follow it and would stand still beside the copy.
-            if (this.refMarks.current) {
-                this.refMarks.current.style.display = 'none';
-            }
+            this.setState({ marksHidden: true });
         } else if (this.movement && y !== undefined && x !== undefined) {
             // move widget
             const leftPx = this.movement.left + x;
@@ -920,9 +922,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
             // End of movement
             if (save) {
-                if (this.refMarks.current) {
-                    this.refMarks.current.style.display = '';
-                }
+                this.setState({ marksHidden: false });
 
                 if (this.props.isRelative) {
                     // A relative widget carries no position of its own; where it lands is decided by the order,
@@ -952,7 +952,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         if (!ref) {
             return;
         }
-        if (selected === null || selected === undefined) {
+        if (selected == null) {
             // restore original state
             if (this.props.selectedWidgets.includes(this.props.id)) {
                 if (!ref.className.includes('vis-editmode-selected')) {
@@ -1304,7 +1304,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             let val = states[`${oid}.val`];
             let value = widgetData['visibility-val'];
 
-            if (val === undefined || val === null) {
+            if (val == null) {
                 // the user compares explicitly against null => use the "null" placeholder in the comparison below.
                 // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
                 if (value !== 'null' || condition === 'exist' || condition === 'not exist') {
@@ -1313,7 +1313,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 val = 'null';
             }
 
-            if (!condition || value === undefined || value === null) {
+            if (!condition || value == null) {
                 return condition === 'not exist';
             }
 
@@ -1635,17 +1635,15 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     }
 
     startUpdateInterval(): void {
-        this.updateInterval =
-            this.updateInterval ||
-            setInterval(() => {
-                const timeIntervalEl = (this.widDiv || this.refService.current)?.querySelector<HTMLDivElement>(
-                    '.time-interval',
-                );
-                if (timeIntervalEl) {
-                    const time = parseInt(timeIntervalEl.dataset.time || '', 10);
-                    timeIntervalEl.innerHTML = this.formatInterval(time, timeIntervalEl.dataset.moment === 'true');
-                }
-            }, 10_000);
+        this.updateInterval ||= setInterval(() => {
+            const timeIntervalEl = (this.widDiv || this.refService.current)?.querySelector<HTMLDivElement>(
+                '.time-interval',
+            );
+            if (timeIntervalEl) {
+                const time = parseInt(timeIntervalEl.dataset.time || '', 10);
+                timeIntervalEl.innerHTML = this.formatInterval(time, timeIntervalEl.dataset.moment === 'true');
+            }
+        }, 10_000);
     }
 
     formatDate(
@@ -1664,7 +1662,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             format = `${this.props.context.dateFormat || 'DD.MM.YYYY'} hh:mm:ss`;
         }
 
-        format = format || this.props.context.dateFormat || 'DD.MM.YYYY';
+        format ||= this.props.context.dateFormat || 'DD.MM.YYYY';
 
         if (!value) {
             return '';
@@ -1851,7 +1849,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
      */
     static parseZIndex(style: WidgetStyle | undefined): number | null {
         const value = (style as Record<string, unknown> | undefined)?.['z-index'];
-        if (value === undefined || value === null || value === '') {
+        if (value == null || value === '') {
             return null;
         }
         const zIndex = parseInt(value as string, 10);
@@ -1997,8 +1995,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
 
         if (!this.props.isRelative) {
-            style.top = style.top || 0;
-            style.left = style.left || 0;
+            style.top ||= 0;
+            style.left ||= 0;
         }
 
         // convert string to number+'px'
@@ -2039,7 +2037,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                                 string | number
                             >
                         )?.[attr];
-                        if (styleVal !== undefined && styleVal !== null) {
+                        if (styleVal != null) {
                             // try to steal style by canWidget
                             if (!styleVal.toString().includes('{')) {
                                 anyStyle[attr] = VisBaseWidget.correctStylePxValue(styleVal);
@@ -2155,7 +2153,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
         // if multi-view widget and it is not "canJS", dim it in edit mode
         if (!this.isCanWidget && this.state.multiViewWidget && this.state.editMode) {
-            if (style.opacity === undefined || style.opacity === null || (style.opacity as number) > 0.5) {
+            if (style.opacity == null || (style.opacity as number) > 0.5) {
                 style.opacity = 0.5;
             }
         }
@@ -2245,8 +2243,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                           // No geometry here on purpose: `applyMarks()` is the only writer of it. Rendering it
                           // from the last measurement as well made React put a stale position into the DOM
                           // after every render, and the two writers then drifted apart - the marks followed the
-                          // first gesture and stayed behind on every one after it.
-                          style={{ position: 'absolute', pointerEvents: 'none' }}
+                          // first gesture and stayed behind on every one after it. Whether they are shown at
+                          // all is the other way round: that is rendered, so that it survives a new div.
+                          style={{
+                              position: 'absolute',
+                              pointerEvents: 'none',
+                              display: this.state.marksHidden ? 'none' : undefined,
+                          }}
                       >
                           {widgetName}
                           {resizeHandlers}

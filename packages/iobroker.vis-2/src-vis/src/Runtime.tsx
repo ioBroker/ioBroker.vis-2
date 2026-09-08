@@ -520,9 +520,7 @@ export default class Runtime<
 
                     if (!this.state.runtime && this.getNewWidgetId && this.getNewGroupId) {
                         // If the widget is not unique, change its name (only in editor mode)
-                        if (
-                            Object.keys(project).find(v => v !== view && project[v].widgets && project[v].widgets[wid])
-                        ) {
+                        if (Object.keys(project).find(v => v !== view && project[v].widgets?.[wid])) {
                             const _newWid: AnyWidgetId =
                                 wid[0] === 'g' ? this.getNewGroupId(project) : this.getNewWidgetId(project);
                             console.log(`Rename widget ${wid} to ${_newWid}`);
@@ -562,7 +560,7 @@ export default class Runtime<
             widgetIDs.forEach(widgetId => {
                 const oWidget = oView.widgets[widgetId];
                 // if widget must be shown in more than one view
-                if (oWidget.data && oWidget.data['multi-views']) {
+                if (oWidget.data?.['multi-views']) {
                     const views: string[] = oWidget.data['multi-views'].split(',');
                     views.forEach(viewId => {
                         if (viewId !== view && project[viewId]) {

@@ -108,7 +108,7 @@ class BasicSvgBool extends VisRxWidget<RxData> {
         const val = parseFloat(str);
         let opacity = this.state.rxData.svg_opacity;
         if (this.props.editMode) {
-            if (opacity === undefined || opacity === null || (opacity as unknown as string) === '') {
+            if (opacity == null || (opacity as unknown as string) === '') {
                 opacity = 1;
             }
 
@@ -117,15 +117,7 @@ class BasicSvgBool extends VisRxWidget<RxData> {
             }
         }
         let svg;
-        if (
-            val === 0 ||
-            str === 'false' ||
-            str === '0' ||
-            str === 'off' ||
-            str === false ||
-            str === null ||
-            str === undefined
-        ) {
+        if (val === 0 || str === 'false' || str === '0' || str === 'off' || str === false || str == null) {
             svg = this.state.rxData.svg_false;
         } else {
             svg = this.state.rxData.svg_true;

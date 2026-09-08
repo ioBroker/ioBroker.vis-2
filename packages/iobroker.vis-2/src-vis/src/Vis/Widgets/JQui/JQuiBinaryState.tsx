@@ -220,7 +220,8 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
                             name: 'jquery_style',
                             label: 'jqui_jquery_style',
                             type: 'checkbox',
-                            hidden: (data: any) => data.type !== 'button',
+                            // only where it is already set: the list is where the look is chosen now
+                            hidden: (data: any) => !data.jquery_style,
                         },
                         {
                             name: 'padding',
@@ -235,9 +236,28 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
                             label: 'jqui_variant',
                             type: 'select',
                             noTranslation: true,
-                            options: ['contained', 'outlined', 'standard'],
+                            options: [
+                                { value: 'contained', label: 'contained' },
+                                { value: 'outlined', label: 'outlined' },
+                                { value: 'text', label: 'text' },
+                                // kept because widgets carry it, although a MUI button has no such variant
+                                { value: 'standard', label: 'standard' },
+                                { value: 'no_style', label: 'no style' },
+                                { value: 'jquery_style', label: 'jQuery UI' },
+                            ],
                             default: 'contained',
                             hidden: (data: any) => data.type !== 'button' && data.type !== 'radio',
+                            // not `async`: there is nothing to wait for here, only the promise the type asks for
+                            onChange: (_field, data, changeData) => {
+                                const noStyle = data.variant === 'no_style';
+                                const jquery = data.variant === 'jquery_style';
+                                if (!!data.no_style !== noStyle || !!data.jquery_style !== jquery) {
+                                    data.no_style = noStyle;
+                                    data.jquery_style = jquery;
+                                    changeData(data);
+                                }
+                                return Promise.resolve();
+                            },
                         },
                         {
                             name: 'orientation',
@@ -472,7 +492,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             value = this.state.isOn;
         }
 
-        if (value === undefined || value === null) {
+        if (value == null) {
             value = false;
         }
         if (this.state.rxData.invert) {
@@ -499,7 +519,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             if (icon) {
                 invert = this.state.rxData.invert_icon_false;
                 height = this.state.rxData.imageHeight_false;
-                color = color || this.state.rxData.icon_color_false;
+                color ||= this.state.rxData.icon_color_false;
             }
         }
         const style: CSSProperties = {};
@@ -594,10 +614,8 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             color = this.state.rxData.color_true;
         }
 
-        text =
-            text ||
-            (this.state.rxData.text_false !== undefined ? this.state.rxData.text_false : this.state.rxData.off_text); // back compatibility with radio on/off
-        color = color || this.state.rxData.color_false;
+        text ||= this.state.rxData.text_false !== undefined ? this.state.rxData.text_false : this.state.rxData.off_text; // back compatibility with radio on/off
+        color ||= this.state.rxData.color_false;
 
         if (this.state.rxData.equal_text_length && this.state.rxData.text_false && this.state.rxData.text_true) {
             // get the length of false text

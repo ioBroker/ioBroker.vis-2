@@ -58,7 +58,7 @@ const Views = (props: ViewsProps): React.JSX.Element => {
         parentId?: string | null,
         cb?: (dialogName: string) => void,
     ): void => {
-        view = view || props.selectedView;
+        view ||= props.selectedView;
 
         const dialogDefaultName: Record<string, string> = {
             add: I18n.t('New view'),

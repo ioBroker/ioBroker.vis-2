@@ -44,13 +44,13 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplSTab',
-            visSet: 'tabs',
+            // it is one single widget - a set of its own for it only made the palette longer. Its label and
+            // its icon went with it: they name the SET, and left here they would have renamed "Basic".
+            visSet: 'basic',
             visName: 'SliderTabs',
-            visSetLabel: 'Tabs',
             visPrev: 'widgets/tabs/img/Prev_SliderTabs.png',
             visWidgetLabel: 'vis_2_widgets_widgets_tabs_label', // Label of widget
             visHelp: 'help_tabs_slider_tabs', // Description in the palette
-            visSetIcon: 'widgets/tabs/img/Prev_SliderTabs.png', // Icon of a widget set
             visAttrs: [
                 {
                     name: 'common',
@@ -220,7 +220,7 @@ class TabsSliderTabs extends VisRxWidget<RxData, TabsSliderTabsState> {
             let image = this.state.rxData[`image_tab_${t + 1}`];
             const size = this.state.rxData[`icon_size_${t + 1}`];
             const title = this.state.rxData[`title_tab_${t + 1}`];
-            if (image && image.startsWith('_PRJ_NAME/')) {
+            if (image?.startsWith('_PRJ_NAME/')) {
                 image = image.replace(
                     '_PRJ_NAME/',
                     `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}/`,

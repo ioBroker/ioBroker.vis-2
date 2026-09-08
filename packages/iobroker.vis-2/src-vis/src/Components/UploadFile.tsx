@@ -50,7 +50,7 @@ const UploadFile = (props: UploadFileProps): React.JSX.Element => {
                 reader.onload = (evt: ProgressEvent<FileReader>): void => {
                     setWorking(false);
                     const result = evt.target?.result;
-                    if (result === null || result === undefined) {
+                    if (result == null) {
                         return;
                     }
                     setFileData(result);

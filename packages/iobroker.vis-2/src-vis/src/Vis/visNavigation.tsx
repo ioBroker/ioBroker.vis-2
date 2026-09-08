@@ -575,7 +575,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
     }
 
     render(): React.JSX.Element | null {
-        if (!this.props.context.views || !this.props.context.views[this.props.view]) {
+        if (!this.props.context.views?.[this.props.view]) {
             return null;
         }
 
