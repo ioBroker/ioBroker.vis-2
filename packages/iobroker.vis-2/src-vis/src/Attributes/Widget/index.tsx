@@ -513,7 +513,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     name: `signals-smallIcon-${i}`,
                     type: 'icon64',
                     default: '',
-                    label: `signals-smallIcon-${i}`,
+                    // one label for every signal, as the neighbouring fields of this group have it. A label
+                    // per index needs a word per index: there were three, the third of them read "[3]", and
+                    // the signals beyond them had none at all once six of them became possible (#562)
+                    label: 'signals-smallIcon',
                     hidden: `!!data["signals-icon-${i}"]`,
                 },
                 {
