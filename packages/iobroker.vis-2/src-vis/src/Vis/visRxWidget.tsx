@@ -91,9 +91,13 @@ export const POSSIBLE_MUI_STYLES = [
 
 /**
  * These styles draw a visible frame, so they must be applied either to the widget itself or to the MUI
- * component inside it, but never to both, as the frame would be drawn twice
+ * component inside it, but never to both, as the frame would be drawn twice.
+ *
+ * `border-radius` is not one of them: it paints nothing, it only rounds what is painted. The widget keeps
+ * its own background - only the frame moves to the component - so the radius has to stay on the widget as
+ * well, or its square background fills in the corners the component rounded away.
  */
-const FRAME_MUI_STYLES = ['border', 'border-color', 'border-style', 'border-width', 'border-radius', 'box-shadow'];
+const FRAME_MUI_STYLES = ['border', 'border-color', 'border-style', 'border-width', 'box-shadow'];
 
 export class VisRxWidget<
     TRxData extends Record<string, any>,
