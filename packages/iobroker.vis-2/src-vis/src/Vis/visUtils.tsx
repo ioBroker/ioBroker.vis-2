@@ -921,8 +921,11 @@ export function applyTitleAndIcon(
     icon: string | undefined,
     options: { themeType: ThemeType; adapterName: string; instance: number; projectName: string },
 ): void {
-    title ||= window.location.pathname.includes('edit.html') ? 'Editor.vis' : 'ioBroker.vis';
-    icon ||= window.location.pathname.includes('edit.html') ? './faviconEdit.ico' : './favicon.ico';
+    // The title and the icon of the project name the runtime. The editor keeps its own, or its tab could not
+    // be told apart from the runtime tab of the same project - which is what they are there for (#537).
+    const editor = window.location.pathname.includes('edit.html');
+    title = editor ? 'Editor.vis' : title || 'ioBroker.vis';
+    icon = editor ? './faviconEdit.ico' : icon || './favicon.ico';
     window.document.title = title;
 
     if (icon.startsWith('../')) {
