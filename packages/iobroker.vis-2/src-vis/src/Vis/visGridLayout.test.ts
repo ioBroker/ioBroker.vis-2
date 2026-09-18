@@ -6,7 +6,9 @@ import type { Box } from './visViewGeometry';
 import {
     applyGridDrop,
     buildGridSections,
+    clampGridSpan,
     computeGridDrop,
+    getDefaultGridSpan,
     getGridCellCss,
     getGridCellSpan,
     getGridLayout,
@@ -415,6 +417,73 @@ describe('getGridSpanFromSize', () => {
 
     it('does not limit the rows - a section grows downwards', () => {
         expect(getGridSpanFromSize(100, 1000, metrics).rows).toBe(16);
+    });
+});
+
+describe('clampGridSpan', () => {
+    it('keeps the cells within the limits of the type', () => {
+        const limits = { minColumns: 3, maxColumns: 8, minRows: 2, maxRows: 4 };
+        expect(clampGridSpan({ columns: 1, rows: 1 }, limits)).toEqual({ columns: 3, rows: 2 });
+        expect(clampGridSpan({ columns: 12, rows: 9 }, limits)).toEqual({ columns: 8, rows: 4 });
+        expect(clampGridSpan({ columns: 6, rows: 3 }, limits)).toEqual({ columns: 6, rows: 3 });
+    });
+
+    it('turns the whole width into the most columns the type allows', () => {
+        expect(clampGridSpan({ columns: 'full', rows: 1 }, { maxColumns: 6 })).toEqual({ columns: 6, rows: 1 });
+        expect(clampGridSpan({ columns: 'full', rows: 1 }, { minColumns: 6 })).toEqual({ columns: 'full', rows: 1 });
+    });
+
+    it('does not limit a row that follows the content', () => {
+        expect(clampGridSpan({ columns: 4, rows: 'auto' }, { minRows: 3 }).rows).toBe('auto');
+    });
+
+    it('changes nothing without limits, or with limits that are no numbers', () => {
+        expect(clampGridSpan({ columns: 5, rows: 7 }, undefined)).toEqual({ columns: 5, rows: 7 });
+        const junk = { minColumns: 'many', maxRows: 0 } as unknown as Parameters<typeof clampGridSpan>[1];
+        expect(clampGridSpan({ columns: 5, rows: 7 }, junk)).toEqual({ columns: 5, rows: 7 });
+    });
+});
+
+describe('getDefaultGridSpan', () => {
+    it('takes the cells the type names', () => {
+        expect(getDefaultGridSpan({ columns: 4, rows: 1 }, { width: '500px', height: '500px' }, layout)).toEqual({
+            columns: 4,
+            rows: 1,
+        });
+        expect(getDefaultGridSpan({ columns: 'full', rows: 'auto' }, undefined, layout)).toEqual({
+            columns: 'full',
+            rows: 'auto',
+        });
+    });
+
+    it('derives what the type leaves out from the size of its default style', () => {
+        expect(getDefaultGridSpan({ rows: 1 }, { width: '246px', height: '500px' }, layout)).toEqual({
+            columns: 6,
+            rows: 1,
+        });
+        expect(getDefaultGridSpan(undefined, { width: '246px', height: '120px' }, layout)).toEqual({
+            columns: 6,
+            rows: 2,
+        });
+    });
+
+    it('takes a row of its own that follows the content when nothing says a size', () => {
+        expect(getDefaultGridSpan(undefined, undefined, layout)).toEqual({ columns: 'full', rows: 'auto' });
+    });
+
+    it('keeps the derived size within the limits of the type', () => {
+        expect(getDefaultGridSpan({ maxColumns: 4 }, { width: '500px', height: '56px' }, layout)).toEqual({
+            columns: 4,
+            rows: 1,
+        });
+    });
+
+    it('ignores what a widget set declares that is no size', () => {
+        const junk = { columns: 0, rows: 'tall' } as unknown as Parameters<typeof getDefaultGridSpan>[0];
+        expect(getDefaultGridSpan(junk, { width: '246px', height: '120px' }, layout)).toEqual({
+            columns: 6,
+            rows: 2,
+        });
     });
 });
 

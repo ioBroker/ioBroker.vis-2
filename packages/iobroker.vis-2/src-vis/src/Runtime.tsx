@@ -201,7 +201,7 @@ export default class Runtime<
     protected onFontsUpdate?(fonts: string[]): void;
 
     protected registerCallback?: (
-        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx',
+        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx' | 'gridDropTarget',
         view: string,
         cb?: (...args: any) => any,
     ) => void;

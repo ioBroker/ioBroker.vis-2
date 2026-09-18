@@ -81,6 +81,8 @@ export default class BasicValueFloat extends VisRxWidget<RxData> {
                 width: 60,
                 height: 18,
             },
+            // in the grid layout a quarter of a section, the size of a value next to three others
+            visDefaultGrid: { columns: 3, rows: 1 },
         } as const;
     }
 

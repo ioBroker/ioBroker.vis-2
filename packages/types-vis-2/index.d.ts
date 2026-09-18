@@ -1707,7 +1707,7 @@ export interface VisContext {
     registerEditorCallback:
         | null
         | ((
-              name: 'onStealStyle' | 'onPxToPercent' | 'pxToPercent' | 'onPercentToPx',
+              name: 'onStealStyle' | 'onPxToPercent' | 'pxToPercent' | 'onPercentToPx' | 'gridDropTarget',
               view: string,
               cb?: (...args: any) => any,
           ) => void);
@@ -1813,6 +1813,18 @@ export interface RxWidgetInfoGroup {
     readonly hidden?: string | RxWidgetInfoFieldPredicate;
 }
 
+/** The size of a widget type in the grid layout, see `RxWidgetInfo.visDefaultGrid` */
+export interface RxWidgetInfoGrid {
+    /** Columns of a section - it has 12 per section column it occupies - or `full` for its whole width */
+    readonly columns?: number | 'full';
+    /** Rows of a section, or `auto` to take the height of the content */
+    readonly rows?: number | 'auto';
+    readonly minColumns?: number;
+    readonly maxColumns?: number;
+    readonly minRows?: number;
+    readonly maxRows?: number;
+}
+
 export interface RxWidgetInfo {
     /** Unique ID of the widget. Starts with 'tpl...' */
     readonly id: string;
@@ -1844,6 +1856,12 @@ export interface RxWidgetInfo {
     visAttrs: readonly RxWidgetInfoGroup[];
     /** Default style for widget */
     readonly visDefaultStyle?: WidgetStyle;
+    /**
+     * How many cells of the grid layout a widget of this type occupies when it is put into a section, and within
+     * which limits it may be resized there. What is missing is derived from the width and height of
+     * `visDefaultStyle`.
+     */
+    readonly visDefaultGrid?: RxWidgetInfoGrid;
     /** Position in the widget set */
     readonly visOrder?: number;
     /** required, that width is always equal to height (quadratic widget) */

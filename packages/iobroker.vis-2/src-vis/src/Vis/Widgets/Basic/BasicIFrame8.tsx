@@ -117,6 +117,8 @@ export default class BasicIFrame8 extends VisRxWidget<RxData> {
                 width: 600,
                 height: 320,
             },
+            // a page shown in the grid layout takes the whole width of its section
+            visDefaultGrid: { columns: 'full', rows: 5, minRows: 2 },
         } as const;
     }
 

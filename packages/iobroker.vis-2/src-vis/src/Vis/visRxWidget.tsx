@@ -198,6 +198,7 @@ export class VisRxWidget<
         }
 
         this.resizeLocked = !!options.visResizeLocked;
+        this.gridLimits = options.visDefaultGrid || null;
 
         // find in fields visResizable name
         // if resizable exists, take the resizable from data

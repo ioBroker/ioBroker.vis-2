@@ -96,6 +96,8 @@ class BasicViewInWidget extends VisRxWidget<RxData, BasicViewInWidgetState> {
                 width: 300,
                 height: 200,
             },
+            // a view shown in the grid layout takes the whole width of its section
+            visDefaultGrid: { columns: 'full', rows: 4, minRows: 2 },
         } as const;
     }
 

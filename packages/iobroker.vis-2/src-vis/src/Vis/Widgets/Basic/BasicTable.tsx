@@ -128,6 +128,8 @@ class BasicTable extends VisRxWidget<RxData, BasicTableState> {
                 width: 300,
                 height: 150,
             },
+            // in the grid layout a table takes the whole width and grows with its rows
+            visDefaultGrid: { columns: 'full', rows: 'auto' },
         } as const;
     }
 

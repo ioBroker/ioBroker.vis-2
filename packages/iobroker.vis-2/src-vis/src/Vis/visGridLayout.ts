@@ -8,7 +8,7 @@
  *  http://creativecommons.org/licenses/by-nc/4.0/
  */
 
-import type { AnyWidgetId, ViewSection, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
+import type { AnyWidgetId, RxWidgetInfoGrid, ViewSection, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
 
 import type { Box } from './visViewGeometry';
 
@@ -291,6 +291,68 @@ function getRowSpan(style: WidgetStyle | undefined | null, layout: GridLayout): 
 
     // a height in percent means nothing in a row that grows with the content, and neither does none
     return 'auto';
+}
+
+/**
+ * Keep the cells within the limits of the widget type. `full` is as wide as the section - which may be more than
+ * the type allows, so a maximum turns it into that many columns. `auto` follows the content and has no limits.
+ *
+ * @param span - the cells
+ * @param limits - the limits of the widget type, see `RxWidgetInfo.visDefaultGrid`
+ */
+export function clampGridSpan(span: GridCellSpan, limits: RxWidgetInfoGrid | undefined | null): GridCellSpan {
+    const clamp = (value: number, min: unknown, max: unknown): number => {
+        const low = toNumber(min, 1);
+        const high = toNumber(max, 1);
+        let result = value;
+        if (high !== null) {
+            result = Math.min(result, Math.floor(high));
+        }
+        if (low !== null) {
+            result = Math.max(result, Math.ceil(low));
+        }
+        return result;
+    };
+
+    const maxColumns = toNumber(limits?.maxColumns, 1);
+    return {
+        columns:
+            span.columns === 'full'
+                ? maxColumns === null
+                    ? 'full'
+                    : Math.floor(maxColumns)
+                : clamp(span.columns, limits?.minColumns, limits?.maxColumns),
+        rows: span.rows === 'auto' ? 'auto' : clamp(span.rows, limits?.minRows, limits?.maxRows),
+    };
+}
+
+/**
+ * The cells a widget of a type gets when it is put into a section.
+ *
+ * What `visDefaultGrid` names wins; whatever it leaves out comes from the size of `visDefaultStyle`, as for a
+ * widget that was placed in pixels. Both are kept within the limits of the type.
+ *
+ * @param defaults - `visDefaultGrid` of the widget type
+ * @param defaultStyle - `visDefaultStyle` of the widget type
+ * @param layout - the grid layout of the view
+ */
+export function getDefaultGridSpan(
+    defaults: RxWidgetInfoGrid | undefined | null,
+    defaultStyle: WidgetStyle | undefined | null,
+    layout: GridLayout,
+): GridCellSpan {
+    // the widget sets come from other adapters, so what they declare is read as carefully as the settings
+    const fromStyle = getGridCellSpan(defaultStyle, layout);
+    const columns = defaults?.columns === 'full' ? 'full' : toNumber(defaults?.columns, 1);
+    const rows = defaults?.rows === 'auto' ? 'auto' : toNumber(defaults?.rows, 1);
+
+    return clampGridSpan(
+        {
+            columns: columns === null ? fromStyle.columns : columns === 'full' ? 'full' : Math.round(columns),
+            rows: rows === null ? fromStyle.rows : rows === 'auto' ? 'auto' : Math.round(rows),
+        },
+        defaults,
+    );
 }
 
 /**

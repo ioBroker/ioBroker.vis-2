@@ -81,6 +81,8 @@ export default abstract class BasicValueListBase<
                 width: 60,
                 height: 20,
             },
+            // in the grid layout a quarter of a section, the size of a value next to three others
+            visDefaultGrid: { columns: 3, rows: 1 },
         };
     }
 

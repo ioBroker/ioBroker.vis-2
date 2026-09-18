@@ -35,9 +35,11 @@ import type {
     VisWidgetCommand,
     VisBaseWidgetProps,
     ViewSettings,
+    RxWidgetInfoGrid,
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
 import {
+    clampGridSpan,
     getGridCellCss,
     getGridCellSpan,
     getGridLayout,
@@ -242,6 +244,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         | { default: boolean; desiredSize?: { width: number; height: number } | boolean };
 
     protected isCanWidget?: boolean;
+
+    /** The cells a widget of this type may occupy in the grid layout, see `RxWidgetInfo.visDefaultGrid` */
+    protected gridLimits: RxWidgetInfoGrid | null = null;
 
     constructor(props: VisBaseWidgetProps) {
         super(props);
@@ -893,10 +898,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                             resizeStyle.height ?? movement.height,
                             metrics,
                         );
-                        gridSpan = {
-                            columns: resizeStyle.width === undefined ? base.columns : cells.columns,
-                            rows: resizeStyle.height === undefined ? base.rows : cells.rows,
-                        };
+                        gridSpan = clampGridSpan(
+                            {
+                                columns: resizeStyle.width === undefined ? base.columns : cells.columns,
+                                rows: resizeStyle.height === undefined ? base.rows : cells.rows,
+                            },
+                            this.gridLimits,
+                        );
                         const shown = this.state.gridGesture?.span;
                         if (shown?.columns !== gridSpan.columns || shown?.rows !== gridSpan.rows) {
                             this.setState({ gridGesture: { span: gridSpan, base } });

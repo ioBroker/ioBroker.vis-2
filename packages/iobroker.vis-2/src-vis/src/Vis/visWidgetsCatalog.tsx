@@ -15,6 +15,7 @@ import type {
     VisTheme,
     AnyWidgetId,
     AdditionalIconSet,
+    RxWidgetInfoGrid,
 } from '@iobroker/types-vis-2';
 import type VisRxWidget from '@/Vis/visRxWidget';
 
@@ -247,6 +248,8 @@ export interface WidgetType {
     order?: number;
     hidden?: boolean;
     style?: WidgetStyle;
+    /** The cells in the grid layout, see `RxWidgetInfo.visDefaultGrid` */
+    grid?: RxWidgetInfoGrid;
     customPalette?: (context: CustomPaletteProperties) => React.JSX.Element;
 
     adapter?: string;
@@ -350,6 +353,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                 params: widgetInfo.visAttrs,
                 set: widgetInfo.visSet,
                 style: widgetInfo.visDefaultStyle,
+                grid: widgetInfo.visDefaultGrid,
                 label: widgetInfo.visWidgetLabel
                     ? i18nPrefix + widgetInfo.visWidgetLabel
                     : widgetInfo.visWidgetLabel === ''

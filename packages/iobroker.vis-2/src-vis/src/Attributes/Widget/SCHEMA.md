@@ -76,6 +76,11 @@ class MyWidget extends Generic {
                 width: 240,
                 height: 120
             },
+            visDefaultGrid: { // optional: cells in the grid layout of a view (12 columns per section column, rows of 56px)
+                columns: 6,   // or 'full' for the whole width of the section; derived from visDefaultStyle.width if missing
+                rows: 2,      // or 'auto' to take the height of the content; derived from visDefaultStyle.height if missing
+                minColumns: 3, // optional limits for resizing in the editor: minColumns, maxColumns, minRows, maxRows
+            },
             visPrev: 'widgets/vis-2-widgets-material/img/prev_switches.png', // preview image
         };
     }

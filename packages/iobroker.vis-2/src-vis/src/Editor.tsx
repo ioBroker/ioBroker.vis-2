@@ -101,6 +101,7 @@ import Runtime, { type RuntimeProps, type RuntimeState } from './Runtime';
 import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages } from './Vis/visUtils';
 import { getAdornerLayer } from './Vis/visAdornerLayer';
+import { getDefaultGridSpan, getGridLayout } from './Vis/visGridLayout';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
 import type { VisEngineHandlers } from './Vis/visView';
 import registerBasicWords from '@/Vis/Widgets/Basic/i18n';
@@ -380,7 +381,8 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
         if (item.widgetSet === '__marketplace') {
             void props.addMarketplaceWidget((item.widgetType as MarketplaceWidgetRevision).id, x, y);
         } else {
-            void props.addWidget((item.widgetType as WidgetType).name, x, y);
+            // the point on the screen as well: in the grid layout it decides the section the widget goes into
+            void props.addWidget((item.widgetType as WidgetType).name, x, y, undefined, undefined, drop);
         }
     };
 
@@ -682,12 +684,24 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         return selectedWidgets;
     }
 
+    /**
+     * Put a new widget of this type onto the selected view.
+     *
+     * @param widgetType - the type of the widget
+     * @param x - where it goes, relative to the view
+     * @param y - where it goes, relative to the view
+     * @param data - data to take over, used by tests
+     * @param style - style to take over, used by tests
+     * @param dropPoint - where it was dropped, in client coordinates. In the grid layout it becomes a cell of the
+     *     section under this point instead of an absolute widget at x/y.
+     */
     addWidget = async (
         widgetType: string,
         x: number,
         y: number,
         data?: Partial<WidgetData>,
         style?: Partial<WidgetStyle>,
+        dropPoint?: { x: number; y: number } | null,
     ): Promise<AnyWidgetId> => {
         // whichever way it was added - dropped from the palette, pasted, or by a wizard - this is where a
         // widget of this type comes into being, so this is where the palette learns that it was used
@@ -746,6 +760,24 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             if (widgets[newKey].style.position === 'relative') {
                 widgets[newKey].style.width = '100%';
             }
+        }
+
+        // In the grid layout a widget dropped onto a section becomes a cell of it, as big as its type asks for
+        const gridTarget =
+            dropPoint && !this.state.selectedGroup
+                ? this.visEngineHandlers[this.state.selectedView]?.gridDropTarget?.(dropPoint.x, dropPoint.y, newKey)
+                : null;
+        if (gridTarget) {
+            const viewSettings = project[this.state.selectedView].settings;
+            const span = getDefaultGridSpan(tplWidget.grid, tplWidget.style, getGridLayout(viewSettings));
+            const newStyle = widgets[newKey].style;
+            delete newStyle.left;
+            delete newStyle.top;
+            newStyle.position = 'relative';
+            newStyle.gridColumns = span.columns;
+            newStyle.gridRows = span.rows;
+            viewSettings.sections = gridTarget.sections;
+            viewSettings.order = gridTarget.order;
         }
 
         // used by tests
@@ -1653,7 +1685,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     };
 
     registerCallback = (
-        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx',
+        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx' | 'gridDropTarget',
         view: string,
         cb?: (...args: any) => any,
     ): void => {
@@ -1667,6 +1699,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 this.visEngineHandlers[view].onPxToPercent = cb as VisEngineHandlers['onPxToPercent'];
             } else if (name === 'onPercentToPx') {
                 this.visEngineHandlers[view].onPercentToPx = cb as VisEngineHandlers['onPercentToPx'];
+            } else if (name === 'gridDropTarget') {
+                this.visEngineHandlers[view].gridDropTarget = cb as VisEngineHandlers['gridDropTarget'];
             } else {
                 throw new Error(`Unknown callback name: ${name as string}`);
             }

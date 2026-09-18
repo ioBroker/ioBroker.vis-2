@@ -1001,14 +1001,28 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return;
         }
 
+        const { sectionBoxes, widgetBoxes } = this.measureGridSections(drag.sections);
+        const sections = computeGridDrop(drag.sections, drag.wid, sectionBoxes, widgetBoxes, x, y);
+        if (sections !== drag.sections) {
+            this.gridDragNow = { ...drag, sections };
+            this.setState({ gridDrag: this.gridDragNow });
+        }
+    }
+
+    /** Where the sections of the grid layout and their widgets are on the screen, for computeGridDrop() */
+    private measureGridSections(sections: GridSection[]): {
+        sectionBoxes: Partial<Record<string, Box>>;
+        widgetBoxes: Partial<Record<AnyWidgetId, Box>>;
+    } {
         const sectionBoxes: Partial<Record<string, Box>> = {};
         const widgetBoxes: Partial<Record<AnyWidgetId, Box>> = {};
-        for (const section of drag.sections) {
+        for (const section of sections) {
             const sectionBox = this.refGridSections[section.id]?.current?.getBoundingClientRect();
             if (sectionBox) {
                 sectionBoxes[section.id] = sectionBox;
             }
             for (const wid of section.widgets) {
+                // the can.js div is the cell of a vis-1 widget, its service div only lies over it
                 const element = this.widgetsRefs[wid]?.widDiv || this.widgetsRefs[wid]?.refService?.current;
                 const box = element?.getBoundingClientRect();
                 if (box) {
@@ -1016,13 +1030,35 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 }
             }
         }
-
-        const sections = computeGridDrop(drag.sections, drag.wid, sectionBoxes, widgetBoxes, x, y);
-        if (sections !== drag.sections) {
-            this.gridDragNow = { ...drag, sections };
-            this.setState({ gridDrag: this.gridDragNow });
-        }
+        return { sectionBoxes, widgetBoxes };
     }
+
+    /**
+     * Where a new widget lands that is dropped from the palette onto this view: the view settings with it put into
+     * the section under the point - before or after the widget there, or at the end of the section - or null if the
+     * view has no grid layout or the point is over no section. The editor then makes it a cell of that section;
+     * anywhere else it becomes an absolute widget, as ever.
+     *
+     * @param clientX - where it was dropped, in client coordinates
+     * @param clientY - where it was dropped, in client coordinates
+     * @param wid - the id the new widget will get
+     */
+    gridDropTarget = (
+        clientX: number,
+        clientY: number,
+        wid: AnyWidgetId,
+    ): { sections: ViewSection[]; order: AnyWidgetId[] } | null => {
+        if (!this.isGridLayout()) {
+            return null;
+        }
+        const { sectionBoxes, widgetBoxes } = this.measureGridSections(this.lastGridSections);
+        const sections = computeGridDrop(this.lastGridSections, wid, sectionBoxes, widgetBoxes, clientX, clientY);
+        if (sections === this.lastGridSections) {
+            return null;
+        }
+        const settings = store.getState().visProject[this.props.view]?.settings;
+        return applyGridDrop(settings?.sections, settings?.order, sections, wid);
+    };
 
     /**
      * Put the dragged widget where the cursor is.
@@ -1564,6 +1600,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     this.props.context.registerEditorCallback('onPxToPercent', this.props.view, this.onPxToPercent);
                     this.props.context.registerEditorCallback('pxToPercent', this.props.view, this.pxToPercent);
                     this.props.context.registerEditorCallback('onPercentToPx', this.props.view, this.onPercentToPx);
+                    this.props.context.registerEditorCallback('gridDropTarget', this.props.view, this.gridDropTarget);
                 }
             } else {
                 this.registerDone = false;
@@ -1571,6 +1608,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 this.props.context.registerEditorCallback('onPxToPercent', this.props.view);
                 this.props.context.registerEditorCallback('pxToPercent', this.props.view);
                 this.props.context.registerEditorCallback('onPercentToPx', this.props.view);
+                this.props.context.registerEditorCallback('gridDropTarget', this.props.view);
             }
         }
     }
@@ -3029,6 +3067,7 @@ export interface VisEngineHandlers {
 
     onPxToPercent: (wids: AnyWidgetId[], attr: string, cb: (results: (string | null)[]) => void) => (string | null)[];
     onPercentToPx: (wids: AnyWidgetId[], attr: string, cb: (results: (string | null)[]) => void) => (string | null)[];
+    gridDropTarget: VisView['gridDropTarget'];
 }
 
 export default VisView;
