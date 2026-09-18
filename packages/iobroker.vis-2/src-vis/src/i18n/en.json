@@ -903,5 +903,7 @@
   "Add section": "Add section",
   "Narrower": "Narrower",
   "Wider": "Wider",
-  "Remove section": "Remove section"
+  "Remove section": "Remove section",
+  "Only from view width (px)": "Only from view width (px)",
+  "Only up to view width (px)": "Only up to view width (px)"
 }

@@ -38,6 +38,10 @@ import type {
     RxWidgetInfoGrid,
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
+import { isShownAtWidth } from './visWidthVisibility';
+
+/** How much of a widget the editor shows that is not shown at the width of its view */
+export const WIDTH_HIDDEN_OPACITY = 0.3;
 import {
     clampGridSpan,
     getGridCellCss,
@@ -1978,6 +1982,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         };
     }
 
+    /** The widget is not shown at the width its view has now, see visWidthVisibility.ts */
+    protected isHiddenByWidth(): boolean {
+        const widget = this.props.context.views[this.props.view]?.widgets[this.props.id];
+        return !!this.props.viewWidth && !isShownAtWidth(widget?.data, this.props.viewWidth);
+    }
+
     /** The cells this widget of the grid layout occupies according to its style, without a running resize */
     protected getRenderedGridSpan(): GridCellSpan {
         return getGridCellSpan(
@@ -2322,6 +2332,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             if (style.opacity == null || (style.opacity as number) > 0.5) {
                 style.opacity = 0.5;
             }
+        }
+
+        // Not shown at this width of the view: the runtime leaves it out, the editor shows it dimmed so that it can
+        // still be selected and edited. A can.js widget is dimmed in calcData(), its body is not rendered here.
+        if (!this.isCanWidget && this.state.editMode && this.isHiddenByWidth()) {
+            style.opacity = WIDTH_HIDDEN_OPACITY;
         }
 
         const overlay =

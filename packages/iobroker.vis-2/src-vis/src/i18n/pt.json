@@ -828,5 +828,7 @@
   "Add section": "Adicionar seção",
   "Narrower": "Mais estreito",
   "Wider": "Mais largo",
-  "Remove section": "Remover seção"
+  "Remove section": "Remover seção",
+  "Only from view width (px)": "Somente a partir da largura da página (px)",
+  "Only up to view width (px)": "Somente até a largura da página (px)"
 }

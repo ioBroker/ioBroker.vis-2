@@ -828,5 +828,7 @@
   "Add section": "添加分区",
   "Narrower": "更窄",
   "Wider": "更宽",
-  "Remove section": "删除分区"
+  "Remove section": "删除分区",
+  "Only from view width (px)": "仅从页面宽度起 (px)",
+  "Only up to view width (px)": "仅到页面宽度为止 (px)"
 }

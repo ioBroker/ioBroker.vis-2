@@ -903,5 +903,7 @@
   "Add section": "Abschnitt hinzufügen",
   "Narrower": "Schmaler",
   "Wider": "Breiter",
-  "Remove section": "Abschnitt entfernen"
+  "Remove section": "Abschnitt entfernen",
+  "Only from view width (px)": "Erst ab Seitenbreite (px)",
+  "Only up to view width (px)": "Nur bis Seitenbreite (px)"
 }

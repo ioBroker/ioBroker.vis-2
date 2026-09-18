@@ -828,5 +828,7 @@
   "Add section": "Додати секцію",
   "Narrower": "Вужче",
   "Wider": "Ширше",
-  "Remove section": "Видалити секцію"
+  "Remove section": "Видалити секцію",
+  "Only from view width (px)": "Лише від ширини сторінки (px)",
+  "Only up to view width (px)": "Лише до ширини сторінки (px)"
 }

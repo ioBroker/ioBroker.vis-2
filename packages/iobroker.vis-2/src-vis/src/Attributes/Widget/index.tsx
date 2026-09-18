@@ -469,6 +469,9 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         options: ['hide', 'disabled'],
                         default: 'hide',
                     },
+                    // shown only at some widths of the view, see visWidthVisibility.ts
+                    { name: 'visibility-min-width', label: 'Only from view width (px)', type: 'number', min: 0 },
+                    { name: 'visibility-max-width', label: 'Only up to view width (px)', type: 'number', min: 0 },
                 ],
             },
         ];

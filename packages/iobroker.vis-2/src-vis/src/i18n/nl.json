@@ -828,5 +828,7 @@
   "Add section": "Sectie toevoegen",
   "Narrower": "Smaller",
   "Wider": "Breder",
-  "Remove section": "Sectie verwijderen"
+  "Remove section": "Sectie verwijderen",
+  "Only from view width (px)": "Pas vanaf paginabreedte (px)",
+  "Only up to view width (px)": "Alleen tot paginabreedte (px)"
 }

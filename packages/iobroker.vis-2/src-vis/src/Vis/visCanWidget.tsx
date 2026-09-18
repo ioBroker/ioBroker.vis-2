@@ -35,7 +35,7 @@ import type {
 
 import { calculateOverflow, isVarFinite, deepClone } from '@/Utilities/utils';
 import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget, isIdAttribute, isIdValue } from './visUtils';
-import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
+import VisBaseWidget, { type VisBaseWidgetState, WIDTH_HIDDEN_OPACITY } from './visBaseWidget';
 import { ensureLegacyLibs, isLegacyLibsLoaded } from './visLoadLegacy';
 import { getGridCellCss } from './visGridLayout';
 
@@ -483,6 +483,14 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
      */
     componentDidUpdate(prevProps?: VisBaseWidgetProps, prevState?: Readonly<VisCanWidgetState>): void {
         super.componentDidUpdate(prevProps, prevState);
+
+        // The view got another width, which may dim the widget or show it fully again. calcData() does that too,
+        // but only runs when the widget itself changes.
+        if (this.widDiv && this.state.editMode && prevProps?.viewWidth !== this.props.viewWidth) {
+            this.widDiv.style.opacity = this.isHiddenByWidth()
+                ? String(WIDTH_HIDDEN_OPACITY)
+                : String(this.props.context.allWidgets[this.props.id]?.style?.opacity ?? '');
+        }
 
         // The cells of a resize in the grid layout. The can.js div is the cell, and calcData() only knows the cells
         // of the style; once the project carries the new ones, it applies them itself.
@@ -1290,6 +1298,11 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 if (widgetStyle.opacity == null || widgetStyle.opacity > 0.3) {
                     widgetStyle.opacity = 0.3;
                 }
+            }
+
+            // not shown at this width of the view, see VisBaseWidget.render()
+            if (this.state.editMode && this.isHiddenByWidth()) {
+                widgetStyle.opacity = WIDTH_HIDDEN_OPACITY;
             }
         } catch (e) {
             console.warn(`[${wid}] Cannot bind data of widget: ${e as Error}`);

@@ -65,6 +65,7 @@ import {
     gridDropIsDone,
     newSectionId,
 } from './visGridLayout';
+import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
@@ -125,6 +126,8 @@ interface CreateWidgetOptions {
     index?: number;
     /** The widget is a cell of a section of the grid layout */
     gridCell?: boolean;
+    /** The width of the view, for the widths the widget is shown at, see visWidthVisibility.ts */
+    viewWidth?: number;
 }
 
 interface VisViewState {
@@ -232,6 +235,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     /** The element the resize observer watches, to notice when the relative view appears or goes */
     private observedRelativeView: HTMLDivElement | null = null;
 
+    /** A widget of the view is shown only at some widths of it, see visWidthVisibility.ts; set by render() */
+    private usesWidthVisibility = false;
+
     /**
      * Watches the sections and the cells of the grid layout in the editor. A widget that changes its cells moves
      * the ones after it without rendering them, and so does a widget that is dropped elsewhere. This tells them,
@@ -326,11 +332,14 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     /**
-     * Watch the size of the relative view. It is only rendered while the view has relative widgets, so it can
-     * appear and go at every render.
+     * Watch the size of the relative view - or of the view itself while it has no relative widgets: the widths the
+     * widgets may be shown at are measured against it as well, see visWidthVisibility.ts. The relative view is only
+     * rendered while the view has relative widgets, so what is watched can change at every render.
      */
     private observeRelativeView(): void {
-        const element = this.refRelativeView.current;
+        // A view of absolute widgets only is watched only if a widget depends on its width: every change of the
+        // width renders the whole view again.
+        const element = this.refRelativeView.current || (this.usesWidthVisibility ? this.refView.current : null);
         if (element === this.observedRelativeView) {
             return;
         }
@@ -1614,11 +1623,27 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     updateViewWidth(): void {
-        if (this.refRelativeView.current) {
-            if (this.refRelativeView.current.offsetWidth !== this.state.width) {
-                this.setState({ width: this.refRelativeView.current.offsetWidth });
-            }
+        // the view itself while there is no relative view, see observeRelativeView()
+        const element = this.refRelativeView.current || (this.usesWidthVisibility ? this.refView.current : null);
+        if (element && element.offsetWidth !== this.state.width) {
+            this.setState({ width: element.offsetWidth });
         }
+    }
+
+    /**
+     * The width the widgets are shown or hidden at, see visWidthVisibility.ts: the width of the view.
+     *
+     * With a screen size, the editor shows what that screen would show, and a limited screen is that size anyway.
+     * The relative view already has that width; without one the view itself is as wide as the editor, so the size
+     * is taken directly.
+     */
+    getVisibilityWidth(): number {
+        const settings = store.getState().visProject[this.props.view]?.settings;
+        const sizex = parseFloat(settings?.sizex as unknown as string);
+        if (!this.refRelativeView.current && sizex > 0 && (this.props.editMode || VisView.isScreenLimited(settings))) {
+            return sizex;
+        }
+        return this.state.width;
     }
 
     componentDidUpdate(): void {
@@ -1722,6 +1747,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 wid: options.id,
             })
         ) {
+            return null;
+        }
+
+        // Not shown at this width of the view. The editor shows it anyway, dimmed, so that it can be edited.
+        if (!options.editMode && options.viewWidth && !isShownAtWidth(widget?.data, options.viewWidth)) {
             return null;
         }
         // context, id, isRelative, refParent, askView, mouseDownOnView, view,
@@ -2163,8 +2193,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      *
      * @param widgets - the relative widgets the view shows, in their order
      * @param moveAllowed - the selected widgets may be moved
+     * @param viewWidth - the width the widgets are shown or hidden at, see getVisibilityWidth()
      */
-    renderGridSections(widgets: AnyWidgetId[], moveAllowed: boolean): React.JSX.Element[] | null {
+    renderGridSections(widgets: AnyWidgetId[], moveAllowed: boolean, viewWidth: number): React.JSX.Element[] | null {
         const view = this.props.view;
         const project = store.getState().visProject;
         const settings = project[view].settings;
@@ -2239,6 +2270,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                                 id,
                                 isRelative: true,
                                 gridCell: true,
+                                viewWidth,
                                 mouseDownOnView: this.mouseDownOnView,
                                 moveAllowed,
                                 ignoreMouseEvents: this.ignoreMouseEvents,
@@ -2410,6 +2442,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         // the widgets are rendered into the limited screen div, so the CanJS widgets must be placed there too
         const screenLimited = VisView.isScreenLimited(settings);
 
+        // Already before the widgets are rendered for the first time, so that the view is measured before they
+        // are. Grouped widgets count too: the width is handed on into their group.
+        this.usesWidthVisibility = Object.values(contextView.widgets || {}).some(widget =>
+            hasWidthVisibility(widget?.data),
+        );
+
         if (this.props.view === this.props.activeView && this.props.editMode && !this.keysHandlerInstalled) {
             this.installKeyHandlers();
         } else if ((this.props.view !== this.props.activeView || !this.props.editMode) && this.keysHandlerInstalled) {
@@ -2499,6 +2537,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 const listAbsoluteWidgetsOrder: AnyWidgetId[] = [];
                 const filterWidgets = contextView.filterWidgets;
                 const filterInvert = contextView.filterInvert;
+                const viewWidth = this.getVisibilityWidth();
 
                 // calculate the order of relative widgets
                 Object.keys(widgets).forEach(id => {
@@ -2532,6 +2571,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         })
                     ) {
                         // do not show widget because user has no access
+                        return;
+                    }
+
+                    // The same for a widget that is not shown at this width of the view: in the grid layout it
+                    // must not leave an empty cell behind. The editor shows it, dimmed, so that it can be edited.
+                    if (!this.props.editMode && !isShownAtWidth(widget.data, viewWidth)) {
                         return;
                     }
 
@@ -2632,6 +2677,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         editMode: this.props.editMode,
                         id,
                         isRelative: false,
+                        viewWidth,
                         mouseDownOnView: this.mouseDownOnView,
                         moveAllowed,
                         ignoreMouseEvents: this.ignoreMouseEvents,
@@ -2652,7 +2698,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 );
 
                 if (this.isGridLayout()) {
-                    rxRelativeWidgets = this.renderGridSections(listRelativeWidgetsOrder, moveAllowed);
+                    rxRelativeWidgets = this.renderGridSections(listRelativeWidgetsOrder, moveAllowed, viewWidth);
                 } else if (listRelativeWidgetsOrder.length) {
                     let columnIndex = 0;
 
@@ -2695,6 +2741,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             editMode: this.props.editMode, // the relative widget cannot be multi-view
                             id,
                             isRelative: true,
+                            viewWidth,
                             mouseDownOnView: this.mouseDownOnView,
                             moveAllowed,
                             ignoreMouseEvents: this.ignoreMouseEvents,
@@ -2748,6 +2795,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         editMode: this.props.editMode,
                         id: this.props.selectedGroup,
                         isRelative: false,
+                        viewWidth,
                         mouseDownOnView: this.mouseDownOnView,
                         moveAllowed,
                         ignoreMouseEvents: this.ignoreMouseEvents,

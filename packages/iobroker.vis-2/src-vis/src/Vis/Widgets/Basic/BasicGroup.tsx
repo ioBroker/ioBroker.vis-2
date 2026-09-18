@@ -240,6 +240,8 @@ class BasicGroup extends VisRxWidget<RxData, BasicGroupState> {
                     relativeWidgetOrder: groupWidgets,
                     viewsActiveFilter: this.props.viewsActiveFilter || {},
                     customSettings: this.props.customSettings,
+                    // a member can be shown at some widths of the view only, like any widget
+                    viewWidth: this.props.viewWidth,
                 });
             });
         }

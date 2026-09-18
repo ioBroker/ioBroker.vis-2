@@ -105,6 +105,8 @@ export interface VisBaseWidgetProps {
     customSettings: Record<string, any>;
     /** The widget is a cell of a section of the grid layout: it takes its size from `style.gridColumns/gridRows` */
     gridCell?: boolean;
+    /** The width of the view in px, for the data attributes `visibility-min-width` and `visibility-max-width` */
+    viewWidth?: number;
 }
 
 export type ViewCommand = 'updateContainers' | 'changeFilter' | 'closeDialog' | 'openDialog' | 'collectFilters';
