@@ -1252,7 +1252,20 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                           widgetStyle.position === 'static' ||
                           widgetStyle.position === 'sticky');
 
-            if (isRelative) {
+            if (isRelative && this.props.gridCell) {
+                // the can.js div is the cell of the grid, see VisBaseWidget.getGridCellStyle()
+                delete widgetStyle.top;
+                delete widgetStyle.left;
+                delete widgetStyle['margin-bottom'];
+                Object.assign(
+                    widgetStyle,
+                    VisBaseWidget.getGridCellStyle(
+                        widgetStyle,
+                        this.props.context.views[this.props.view].settings,
+                        this.props.relativeWidgetOrder.indexOf(wid),
+                    ),
+                );
+            } else if (isRelative) {
                 delete widgetStyle.top;
                 delete widgetStyle.left;
                 if (isVarFinite(this.props.context.views[this.props.view].settings.rowGap)) {

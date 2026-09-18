@@ -323,6 +323,17 @@ html {
     box-sizing: border-box;
 }
 
+/* An outline and not a border: a border would take from the width of the cells */
+.vis-grid-section-edit {
+    outline: 1px dashed #888888;
+    outline-offset: 2px;
+}
+
+/* the widgets no section lists */
+.vis-grid-section-edit.vis-grid-section-implicit {
+    outline-style: dotted;
+}
+
 .vis-signals-blink {
     animation: vis-blink-animation 1s steps(5, start) infinite;
 }

@@ -31,6 +31,8 @@ interface VisWidgetErrorBoundaryProps {
     isRelative: boolean;
     /** Style of the crashed widget. The placeholder takes over its position, so the rest of the view stays intact */
     style?: WidgetStyle;
+    /** The widget is a cell of the grid layout: its place and size there, which the placeholder takes over */
+    gridCellStyle?: React.CSSProperties;
     editMode: boolean;
     /** Projects with `___settings.ignoreNotLoaded` show nothing instead of a placeholder in the runtime */
     ignoreNotLoaded?: boolean;
@@ -117,6 +119,10 @@ class VisWidgetErrorBoundary extends Component<VisWidgetErrorBoundaryProps, VisW
             style.top = widgetStyle.top || 0;
             // without the original z-index the placeholder could end up behind the widgets that still work
             style.zIndex = widgetStyle['z-index'] || undefined;
+        }
+
+        if (this.props.gridCellStyle) {
+            Object.assign(style, this.props.gridCellStyle);
         }
 
         const onSelect = this.props.editMode ? this.props.onSelect : undefined;

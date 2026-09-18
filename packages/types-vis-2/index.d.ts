@@ -103,6 +103,8 @@ export interface VisBaseWidgetProps {
     ) => void;
     refParent: React.RefObject<HTMLElement | null>;
     customSettings: Record<string, any>;
+    /** The widget is a cell of a section of the grid layout: it takes its size from `style.gridColumns/gridRows` */
+    gridCell?: boolean;
 }
 
 export type ViewCommand = 'updateContainers' | 'changeFilter' | 'closeDialog' | 'openDialog' | 'collectFilters';
@@ -887,6 +889,10 @@ export interface WidgetStyle {
 
     /** relative property, if the widget must be shown on the new line */
     newLine?: boolean;
+    /** grid layout: how many of the columns of its section the widget occupies (12 per section column), or all */
+    gridColumns?: number | 'full' | null;
+    /** grid layout: how many rows the widget occupies, or `auto` to take the height of its content */
+    gridRows?: number | 'auto' | null;
     'box-sizing'?: 'content-box' | 'border-box' | 'initial' | 'inherit' | null;
     noPxToPercent?: boolean;
 }
@@ -1044,8 +1050,37 @@ export interface ViewSettings {
     /** relative widget order */
     order?: AnyWidgetId[];
 
+    /** How the relative widgets are arranged: in columns (default) or in the sections of a grid */
+    layout?: 'columns' | 'grid' | null;
+    /** grid layout: the sections, in the order they are shown */
+    sections?: ViewSection[];
+    /** grid layout: the narrowest a section column may get, in px (default 320) */
+    sectionMinWidth?: number;
+    /** grid layout: the widest a section column may get, in px (default 500) */
+    sectionMaxWidth?: number;
+    /** grid layout: the space between the sections, in px (default 32) */
+    sectionGap?: number;
+    /** grid layout: the most section columns next to each other (default 4) */
+    maxSections?: number;
+    /** grid layout: let a later section fill a gap that an earlier, wider one left */
+    denseSections?: boolean;
+    /** grid layout: the height of one row inside a section, in px (default 56) */
+    gridRowHeight?: number;
+    /** grid layout: the space between the widgets inside a section, in px (default 8) */
+    gridGap?: number;
+
     /** For material wizard */
     wizardId?: string;
+}
+
+/** A section of the grid layout of a view */
+export interface ViewSection {
+    /** Unique within the view */
+    id: string;
+    /** The widgets of the section, in the order they are shown */
+    widgets: AnyWidgetId[];
+    /** How many section columns the section occupies (default 1) */
+    columnSpan?: number;
 }
 
 export interface View {

@@ -34,8 +34,10 @@ import type {
     VisRxWidgetStateValues,
     VisWidgetCommand,
     VisBaseWidgetProps,
+    ViewSettings,
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
+import { getGridCellCss, getGridCellSpan, getGridLayout } from './visGridLayout';
 
 interface HTMLDivElementResizers extends HTMLDivElement {
     _storedOpacity?: string;
@@ -1058,6 +1060,11 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             resizeHandlers = ['s', 'e', 'se'];
         }
 
+        // In the grid layout the cells decide the size; a resize in pixels would not change what is shown
+        if (this.props.gridCell) {
+            resizeHandlers = [];
+        }
+
         const RESIZERS_OPACITY = 0.9;
         const RESIZERS_OPACITY_DISABLED = 0.5;
 
@@ -1856,6 +1863,32 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         return isFinite(zIndex) ? zIndex : null;
     }
 
+    /**
+     * The style of a widget that is a cell of a section of the grid layout, see visGridLayout.ts.
+     *
+     * The cells it occupies decide its place and its size, so they replace the position and the size of its
+     * style: the widget stretches over its cells, which is what `auto` does in a grid.
+     *
+     * @param widgetStyle - the style of the widget, with the bindings applied
+     * @param settings - the settings of the view, for the size of the cells
+     * @param order - the position of the widget in its section
+     */
+    static getGridCellStyle(
+        widgetStyle: WidgetStyle | undefined | null,
+        settings: ViewSettings | undefined,
+        order: number,
+    ): React.CSSProperties {
+        return {
+            ...getGridCellCss(getGridCellSpan(widgetStyle, getGridLayout(settings)), order),
+            position: 'relative',
+            width: 'auto',
+            height: 'auto',
+            // A grid item is at least as wide as its content otherwise: it would reach into the cells next to it.
+            // A string, as VisCanWidget.applyStyle() skips every falsy value.
+            minWidth: '0',
+        };
+    }
+
     static correctStylePxValue(value?: string | number | null): string | number | undefined {
         if (typeof value === 'string') {
             if (isVarFinite(value)) {
@@ -1974,7 +2007,12 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
         }
 
-        if (this.props.isRelative && isVarFinite(this.props.context.views[this.props.view].settings?.rowGap)) {
+        // the grid layout has gaps of its own
+        if (
+            this.props.isRelative &&
+            !this.props.gridCell &&
+            isVarFinite(this.props.context.views[this.props.view].settings?.rowGap)
+        ) {
             style.marginBottom =
                 parseFloat((this.props.context.views[this.props.view].settings?.rowGap as string) || '0') || 0;
         }
@@ -1986,6 +2024,19 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
         if (doNotTakeHeight) {
             delete style.height;
+        }
+
+        // The widget body has taken over the size of the widget style by now, so the cells override it here. Not
+        // for a can.js widget: its service div lies over the can.js div, and it is that div which sits in the grid.
+        if (this.props.gridCell && !this.isCanWidget) {
+            Object.assign(
+                style,
+                VisBaseWidget.getGridCellStyle(
+                    this.state.rxStyle || this.state.style,
+                    this.props.context.views[this.props.view].settings,
+                    this.props.relativeWidgetOrder.indexOf(this.props.id),
+                ),
+            );
         }
 
         // in group edit mode show it in the top left corner
@@ -2096,7 +2147,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                         selected && 'vis-editmode-widget-name-selected',
                         this.state.widgetHint,
                         widgetNameBottom && 'vis-editmode-widget-name-bottom',
-                        this.props.isRelative && resizable && 'vis-editmode-widget-name-long',
+                        this.props.isRelative && resizable && !this.props.gridCell && 'vis-editmode-widget-name-long',
                     )}
                     style={{
                         top: widgetNameBottom ? undefined : `calc(-14px - ${borderWidth})`,
@@ -2122,8 +2173,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                             )}
                         />
                     )}
+                    {/* full width and line break are the column layout's; in the grid layout the cells say it */}
                     {this.state.multiViewWidget ||
                     !this.props.isRelative ||
+                    this.props.gridCell ||
                     !resizable ||
                     widget.usedInWidget ? null : (
                         <ExpandIcon
@@ -2135,7 +2188,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                             )}
                         />
                     )}
-                    {this.state.multiViewWidget || !this.props.isRelative || widget.usedInWidget ? null : (
+                    {this.state.multiViewWidget ||
+                    !this.props.isRelative ||
+                    this.props.gridCell ||
+                    widget.usedInWidget ? null : (
                         <KeyboardReturn
                             titleAccess={I18n.t('Toggle line break')}
                             onMouseDown={e => this.onToggleLineBreak(e)}

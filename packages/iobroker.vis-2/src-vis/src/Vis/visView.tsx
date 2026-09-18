@@ -51,6 +51,14 @@ import {
     snapToGrid,
     snapToWidgets,
 } from './visViewGeometry';
+import {
+    buildGridSections,
+    getGridLayout,
+    getGridMaxWidth,
+    getSectionColumnCount,
+    GRID_COLUMNS,
+    GRID_COLUMNS_VAR,
+} from './visGridLayout';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
@@ -109,6 +117,8 @@ interface CreateWidgetOptions {
     viewsActiveFilter: Record<string, string[]>;
     customSettings: Record<string, any> | undefined;
     index?: number;
+    /** The widget is a cell of a section of the grid layout */
+    gridCell?: boolean;
 }
 
 interface VisViewState {
@@ -181,6 +191,19 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     private readonly refLimitScreen: React.RefObject<HTMLDivElement | null>;
 
     private readonly refRelativeColumnsView: React.RefObject<HTMLDivElement | null>[];
+
+    /** The divs of the sections of the grid layout, by section id: the can.js widgets are inserted into them */
+    private readonly refGridSections: Record<string, React.RefObject<HTMLDivElement | null>> = {};
+
+    /**
+     * Measures the relative view whenever its size changes. The section columns of the grid layout - and the
+     * columns of the column layout - follow its width, and a window or a container that gets narrower does not
+     * necessarily render the view again.
+     */
+    private resizeObserver: ResizeObserver | null = null;
+
+    /** The element the resize observer watches, to notice when the relative view appears or goes */
+    private observedRelativeView: HTMLDivElement | null = null;
 
     private widgetsRefs: Record<AnyWidgetId, WidgetReference>;
 
@@ -262,8 +285,26 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.forceUpdate();
     }
 
+    /**
+     * Watch the size of the relative view. It is only rendered while the view has relative widgets, so it can
+     * appear and go at every render.
+     */
+    private observeRelativeView(): void {
+        const element = this.refRelativeView.current;
+        if (element === this.observedRelativeView) {
+            return;
+        }
+        this.resizeObserver?.disconnect();
+        this.observedRelativeView = element;
+        if (element && typeof ResizeObserver !== 'undefined') {
+            this.resizeObserver ||= new ResizeObserver(() => this.updateViewWidth());
+            this.resizeObserver.observe(element);
+        }
+    }
+
     async componentDidMount(): Promise<void> {
         this.updateViewWidth();
+        this.observeRelativeView();
         this.announceAdornerLayer();
 
         await this.promiseToCollect;
@@ -278,6 +319,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             clearTimeout(this.droppedOrderTimer);
             this.droppedOrderTimer = null;
         }
+        this.resizeObserver?.disconnect();
+        this.resizeObserver = null;
+        this.observedRelativeView = null;
         this.announcedAdornerLayer = null;
         registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
@@ -745,7 +789,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               // A single relative widget can be dragged to another place in the order. Take the order it starts
               // from and the size the placeholder has to reserve; both stay fixed for the whole gesture.
-              if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup) {
+              // Not in the grid layout: there a widget belongs to a section, and the order is the one of the
+              // section, which this gesture does not know about.
+              if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup && !this.isGridLayout()) {
                   const draggedId = this.selectedWidgets[0];
                   const order = this.getRelativeWidgetOrder();
                   const element = widgetsRefs[draggedId]?.refService?.current;
@@ -781,6 +827,14 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
               });
           };
+
+    /**
+     * The relative widgets are arranged in the sections of a grid, and not in columns. A group that is being
+     * edited shows its members as they are in the group.
+     */
+    isGridLayout(): boolean {
+        return !this.props.selectedGroup && store.getState().visProject[this.props.view]?.settings?.layout === 'grid';
+    }
 
     /** The order of the relative widgets the last render used */
     getRelativeWidgetOrder(): AnyWidgetId[] {
@@ -1371,6 +1425,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.announceAdornerLayer();
         this.registerEditorHandlers();
         this.updateViewWidth();
+        this.observeRelativeView();
 
         this.releaseDroppedOrder();
         // detect filter changes
@@ -1481,6 +1536,15 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 view={options.view}
                 isRelative={options.isRelative}
                 style={widget.style}
+                gridCellStyle={
+                    options.gridCell
+                        ? VisBaseWidget.getGridCellStyle(
+                              widget.style,
+                              options.context.views[options.view]?.settings,
+                              options.relativeWidgetOrder.indexOf(options.id),
+                          )
+                        : undefined
+                }
                 editMode={options.editMode}
                 ignoreNotLoaded={options.context.views.___settings?.ignoreNotLoaded}
                 onSelect={
@@ -1786,7 +1850,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 relativeStyle.height = '100%';
             }
 
-            relativeStyle.display = settings.style?.display || 'flex';
+            // in the grid layout this is only the frame that is measured; the grid inside it is centered
+            relativeStyle.display = settings.layout === 'grid' ? 'block' : settings.style?.display || 'flex';
 
             if (relativeStyle.display === 'flex') {
                 relativeStyle.flexWrap = 'wrap';
@@ -1802,6 +1867,106 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         relativeStyle.left = 0;
 
         return relativeStyle;
+    }
+
+    /**
+     * Render the relative widgets in the sections of the grid layout, see visGridLayout.ts.
+     *
+     * The sections flow over the section columns that fit into the width of the view, and each section is a grid
+     * of `GRID_COLUMNS` columns per section column that it occupies. Every widget in it is a cell of that grid.
+     *
+     * @param widgets - the relative widgets the view shows, in their order
+     * @param moveAllowed - the selected widgets may be moved
+     */
+    renderGridSections(widgets: AnyWidgetId[], moveAllowed: boolean): React.JSX.Element[] | null {
+        const view = this.props.view;
+        const project = store.getState().visProject;
+        const settings = project[view].settings;
+        const layout = getGridLayout(settings);
+        const columnCount = getSectionColumnCount(this.state.width, layout);
+        // the editor keeps the empty sections, so that they can be filled
+        const sections = buildGridSections(settings?.sections, widgets, columnCount, this.props.editMode);
+        if (!sections.length) {
+            return null;
+        }
+
+        const renderedSections = sections.map(section => {
+            this.refGridSections[section.id] ||= React.createRef();
+            const refSection = this.refGridSections[section.id];
+            const columns = GRID_COLUMNS * section.columnSpan;
+
+            const style = {
+                // the widgets limit their columns to this, see getGridCellCss()
+                [GRID_COLUMNS_VAR]: columns,
+                gridColumn: `span ${section.columnSpan}`,
+                display: 'grid',
+                gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                gridAutoRows: `minmax(${layout.rowHeight}px, auto)`,
+                gridAutoFlow: 'row dense',
+                gap: layout.gridGap,
+                position: 'relative',
+                // an empty section, as the editor shows it, would have no height at all
+                minHeight: layout.rowHeight,
+            } as React.CSSProperties;
+
+            return (
+                <div
+                    key={section.id}
+                    ref={refSection}
+                    data-section={section.id}
+                    className={Utils.clsx(
+                        'vis-grid-section',
+                        this.props.editMode && 'vis-grid-section-edit',
+                        section.implicit && 'vis-grid-section-implicit',
+                    )}
+                    style={style}
+                >
+                    {section.widgets.map((id, index) =>
+                        VisView.getOneWidget(index, project[view].widgets[id], {
+                            context: this.props.context,
+                            editMode: this.props.editMode,
+                            id,
+                            isRelative: true,
+                            gridCell: true,
+                            mouseDownOnView: this.mouseDownOnView,
+                            moveAllowed,
+                            ignoreMouseEvents: this.ignoreMouseEvents,
+                            onIgnoreMouseEvents: this.onIgnoreMouseEvents,
+                            // the can.js widgets are inserted into the section, in the order of the section
+                            refParent: refSection,
+                            askView: this.askView,
+                            relativeWidgetOrder: section.widgets,
+                            selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
+                            selectedGroup: null,
+                            view,
+                            customSettings: this.props.customSettings,
+                            viewsActiveFilter: this.props.viewsActiveFilter,
+                        }),
+                    )}
+                </div>
+            );
+        });
+
+        return [
+            <div
+                key="grid"
+                className="vis-grid-view"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                    gridAutoFlow: layout.denseSections ? 'row dense' : 'row',
+                    // a section is as high as its widgets, not as the highest one next to it
+                    alignItems: 'start',
+                    gap: layout.sectionGap,
+                    padding: layout.gridGap,
+                    boxSizing: 'border-box',
+                    maxWidth: getGridMaxWidth(columnCount, layout),
+                    margin: '0 auto',
+                }}
+            >
+                {renderedSections}
+            </div>,
+        ];
     }
 
     getCountOfRelativeColumns(settings: ViewSettings, relativeWidgetsCount: number): number {
@@ -2155,7 +2320,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     }),
                 );
 
-                if (listRelativeWidgetsOrder.length) {
+                if (this.isGridLayout()) {
+                    rxRelativeWidgets = this.renderGridSections(listRelativeWidgetsOrder, moveAllowed);
+                } else if (listRelativeWidgetsOrder.length) {
                     let columnIndex = 0;
 
                     // While a relative widget is dragged, the tentative order decides the layout, so the other
