@@ -1050,7 +1050,7 @@ export interface ViewSettings {
     /** relative widget order */
     order?: AnyWidgetId[];
 
-    /** How the relative widgets are arranged: in columns (default) or in the sections of a grid */
+    /** How the relative widgets are arranged: in the sections of a grid, or - anything else - in columns */
     layout?: 'columns' | 'grid' | null;
     /** grid layout: the sections, in the order they are shown */
     sections?: ViewSection[];

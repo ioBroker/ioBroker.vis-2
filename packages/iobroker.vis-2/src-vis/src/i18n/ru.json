@@ -814,5 +814,19 @@
   "vis_2_widgets_swipe_up_view": "Вид при свайпе вверх",
   "vis_2_widgets_swipe_down_view": "Вид при свайпе вниз",
   "vis_2_widgets_swipe_no_view": "нет вида",
-  "vis_2_widgets_basic_mui": "Стиль MUI"
+  "vis_2_widgets_basic_mui": "Стиль MUI",
+  "Layout": "Макет",
+  "Columns": "Колонки",
+  "Grid with sections": "Сетка с секциями",
+  "Min. section width": "Мин. ширина секции",
+  "Max. section width": "Макс. ширина секции",
+  "Max. sections side by side": "Макс. секций в ряд",
+  "Section gap": "Отступ между секциями",
+  "Grid row height": "Высота строки сетки",
+  "Grid gap": "Отступ в сетке",
+  "Fill gaps between sections": "Заполнять пробелы между секциями",
+  "Add section": "Добавить секцию",
+  "Narrower": "Уже",
+  "Wider": "Шире",
+  "Remove section": "Удалить секцию"
 }

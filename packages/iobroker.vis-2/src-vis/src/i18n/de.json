@@ -889,5 +889,19 @@
   "vis_2_widgets_swipe_up_view": "Ansicht beim Wischen nach oben",
   "vis_2_widgets_swipe_down_view": "Ansicht beim Wischen nach unten",
   "vis_2_widgets_swipe_no_view": "keine Ansicht",
-  "vis_2_widgets_basic_mui": "MUI-Stil"
+  "vis_2_widgets_basic_mui": "MUI-Stil",
+  "Layout": "Layout",
+  "Columns": "Spalten",
+  "Grid with sections": "Raster mit Abschnitten",
+  "Min. section width": "Min. Abschnittsbreite",
+  "Max. section width": "Max. Abschnittsbreite",
+  "Max. sections side by side": "Max. Abschnitte nebeneinander",
+  "Section gap": "Abstand der Abschnitte",
+  "Grid row height": "Höhe einer Rasterzeile",
+  "Grid gap": "Abstand im Raster",
+  "Fill gaps between sections": "Lücken zwischen Abschnitten füllen",
+  "Add section": "Abschnitt hinzufügen",
+  "Narrower": "Schmaler",
+  "Wider": "Breiter",
+  "Remove section": "Abschnitt entfernen"
 }

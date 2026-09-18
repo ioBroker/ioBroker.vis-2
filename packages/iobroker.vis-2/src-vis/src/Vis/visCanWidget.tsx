@@ -37,6 +37,7 @@ import { calculateOverflow, isVarFinite, deepClone } from '@/Utilities/utils';
 import { replaceGroupAttr, addClass, getUsedObjectIDsInWidget, isIdAttribute, isIdValue } from './visUtils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 import { ensureLegacyLibs, isLegacyLibsLoaded } from './visLoadLegacy';
+import { getGridCellCss } from './visGridLayout';
 
 interface WidgetDataWithParsedFilter extends WidgetData {
     wid: SingleWidgetId;
@@ -482,6 +483,15 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
      */
     componentDidUpdate(prevProps?: VisBaseWidgetProps, prevState?: Readonly<VisCanWidgetState>): void {
         super.componentDidUpdate(prevProps, prevState);
+
+        // The cells of a resize in the grid layout. The can.js div is the cell, and calcData() only knows the cells
+        // of the style; once the project carries the new ones, it applies them itself.
+        const gridGesture = this.state.gridGesture;
+        if (this.widDiv && this.props.gridCell && gridGesture) {
+            const css = getGridCellCss(gridGesture.span, this.props.relativeWidgetOrder.indexOf(this.props.id));
+            this.widDiv.style.gridColumn = css.gridColumn;
+            this.widDiv.style.gridRow = css.gridRow;
+        }
 
         const gesture = this.state.gesture;
         if (!this.widDiv || !gesture) {
@@ -1263,6 +1273,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                         widgetStyle,
                         this.props.context.views[this.props.view].settings,
                         this.props.relativeWidgetOrder.indexOf(wid),
+                        this.state.gridGesture?.span,
                     ),
                 );
             } else if (isRelative) {

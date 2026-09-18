@@ -2,15 +2,22 @@ import { describe, expect, it } from 'vitest';
 
 import type { AnyWidgetId, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
 
+import type { Box } from './visViewGeometry';
 import {
+    applyGridDrop,
     buildGridSections,
+    computeGridDrop,
     getGridCellCss,
     getGridCellSpan,
     getGridLayout,
     getGridMaxWidth,
+    getGridSpanFromSize,
     getSectionColumnCount,
     GRID_LAYOUT_DEFAULTS,
+    type GridSection,
+    gridDropIsDone,
     IMPLICIT_SECTION_ID,
+    newSectionId,
 } from './visGridLayout';
 
 const layout = getGridLayout(undefined);
@@ -81,7 +88,7 @@ describe('buildGridSections', () => {
 
     it('keeps the order of the section and not the one of the view', () => {
         const sections = buildGridSections([{ id: 'a', widgets: w('w2', 'w1') }], w('w1', 'w2'), 1, false);
-        expect(sections).toEqual([{ id: 'a', columnSpan: 1, widgets: w('w2', 'w1') }]);
+        expect(sections).toEqual([{ id: 'a', columnSpan: 1, widgets: w('w2', 'w1'), index: 0 }]);
     });
 
     it('puts the widgets no section lists into a section at the end, in the order of the view', () => {
@@ -144,6 +151,19 @@ describe('buildGridSections', () => {
         );
         const ids = sections.map(s => s.id);
         expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it('remembers where a section is in the settings, as its id may have been made unique', () => {
+        const sections = buildGridSections(
+            [
+                { id: 'a', widgets: w('gone') },
+                { id: 'a', widgets: w('w1') },
+            ],
+            w('w1'),
+            1,
+            false,
+        );
+        expect(sections.map(s => [s.id, s.index])).toEqual([['a_1', 1]]);
     });
 
     it('survives sections that were edited into something else by hand', () => {
@@ -234,5 +254,177 @@ describe('getGridCellCss', () => {
 
     it('never gives a negative order', () => {
         expect(getGridCellCss({ columns: 1, rows: 1 }, -1).order).toBe(0);
+    });
+});
+
+const box = (left: number, top: number, right: number, bottom: number): Box => ({ left, top, right, bottom });
+const ids = (...list: string[]): AnyWidgetId[] => list as AnyWidgetId[];
+
+describe('computeGridDrop', () => {
+    // s1 holds w1 and w2 next to each other, s2 holds w3; both sections have free space below their widgets
+    const sections: GridSection[] = [
+        { id: 's1', columnSpan: 1, widgets: ids('w1', 'w2'), index: 0 },
+        { id: 's2', columnSpan: 1, widgets: ids('w3'), index: 1 },
+    ];
+    const sectionBoxes = { s1: box(0, 0, 100, 100), s2: box(200, 0, 300, 100) };
+    const widgetBoxes = { w1: box(0, 0, 40, 40), w2: box(50, 0, 90, 40), w3: box(200, 0, 240, 40) };
+    const drop = (x: number, y: number, dragged = 'w1'): GridSection[] =>
+        computeGridDrop(sections, dragged as AnyWidgetId, sectionBoxes, widgetBoxes, x, y);
+    const widgetsOf = (result: GridSection[]): AnyWidgetId[][] => result.map(s => s.widgets);
+
+    it('puts the widget after the one under the lower right half of which the cursor is', () => {
+        expect(widgetsOf(drop(85, 35))).toEqual([ids('w2', 'w1'), ids('w3')]);
+    });
+
+    it('puts the widget before the one under the upper left half of which the cursor is', () => {
+        expect(widgetsOf(drop(5, 5, 'w2'))).toEqual([ids('w2', 'w1'), ids('w3')]);
+    });
+
+    it('decides by the diagonal, so a wide widget has its before and after on the left and the right', () => {
+        const wide = { ...widgetBoxes, w2: box(0, 50, 400, 90) };
+        const at = (x: number): AnyWidgetId[][] =>
+            widgetsOf(computeGridDrop(sections, 'w3', sectionBoxes, wide, x, 60));
+        expect(at(20)).toEqual([ids('w1', 'w3', 'w2'), []]);
+        expect(at(380)).toEqual([ids('w1', 'w2', 'w3'), []]);
+    });
+
+    it('moves the widget into another section, before the widget there', () => {
+        expect(widgetsOf(drop(205, 5))).toEqual([ids('w2'), ids('w1', 'w3')]);
+    });
+
+    it('puts the widget at the end of another section over its free space - that fills an empty one', () => {
+        expect(widgetsOf(drop(280, 80))).toEqual([ids('w2'), ids('w3', 'w1')]);
+    });
+
+    it('changes nothing over the free space of its own section, over a gap or over itself', () => {
+        expect(drop(50, 80)).toBe(sections);
+        expect(drop(150, 50)).toBe(sections);
+        expect(drop(10, 10)).toBe(sections);
+    });
+
+    it('gives the same sections back when the widget already sits where the cursor points', () => {
+        // before w2 is where w1 is already
+        expect(drop(55, 5)).toBe(sections);
+    });
+
+    it('does not change the sections it was given', () => {
+        drop(205, 5);
+        expect(widgetsOf(sections)).toEqual([ids('w1', 'w2'), ids('w3')]);
+    });
+});
+
+describe('applyGridDrop', () => {
+    const settingsSections = [
+        { id: 'a', widgets: ids('w1', 'hidden', 'w2'), columnSpan: 2 },
+        { id: 'b', widgets: ids('w3') },
+    ];
+    const order = ids('w1', 'w2', 'w3', 'w4', 'w5');
+    const rendered = (a: string[], b: string[], rest: string[]): GridSection[] => [
+        { id: 'a', columnSpan: 2, widgets: ids(...a), index: 0 },
+        { id: 'b', columnSpan: 1, widgets: ids(...b), index: 1 },
+        { id: IMPLICIT_SECTION_ID, columnSpan: 2, widgets: ids(...rest), implicit: true },
+    ];
+
+    it('moves the widget into another section and keeps everything else of the sections', () => {
+        const result = applyGridDrop(
+            settingsSections,
+            order,
+            rendered(['w2'], ['w1', 'w3'], ['w4', 'w5']),
+            ids('w1')[0],
+        );
+        expect(result.sections).toEqual([
+            { id: 'a', widgets: ids('hidden', 'w2'), columnSpan: 2 },
+            { id: 'b', widgets: ids('w1', 'w3') },
+        ]);
+        expect(result.order).toEqual(order);
+    });
+
+    it('keeps the widgets the editor does not show at their place', () => {
+        const result = applyGridDrop(settingsSections, order, rendered(['w2', 'w1'], ['w3'], []), ids('w1')[0]);
+        expect(result.sections[0].widgets).toEqual(ids('hidden', 'w2', 'w1'));
+    });
+
+    it('takes a widget dropped among the widgets of no section out of every section and moves it in the order', () => {
+        const result = applyGridDrop(
+            settingsSections,
+            order,
+            rendered(['w2'], ['w3'], ['w4', 'w1', 'w5']),
+            ids('w1')[0],
+        );
+        expect(result.sections.map(s => s.widgets)).toEqual([ids('hidden', 'w2'), ids('w3')]);
+        expect(result.order).toEqual(ids('w2', 'w3', 'w4', 'w1', 'w5'));
+    });
+
+    it('works for a view that has neither sections nor an order yet', () => {
+        const dropped: GridSection[] = [
+            { id: IMPLICIT_SECTION_ID, columnSpan: 1, widgets: ids('w2', 'w1'), implicit: true },
+        ];
+        expect(applyGridDrop(undefined, undefined, dropped, ids('w1')[0])).toEqual({
+            sections: [],
+            order: ids('w1'),
+        });
+    });
+
+    it('leaves what it cannot read alone and does not change what it was given', () => {
+        const junk = [null, ...settingsSections] as unknown as typeof settingsSections;
+        const dropped: GridSection[] = [
+            { id: 'a', columnSpan: 1, widgets: ids('w2'), index: 1 },
+            { id: 'b', columnSpan: 1, widgets: ids('w1', 'w3'), index: 2 },
+        ];
+        const result = applyGridDrop(junk, order, dropped, ids('w1')[0]);
+        expect(result.sections[0]).toBeNull();
+        expect(result.sections[2].widgets).toEqual(ids('w1', 'w3'));
+        expect(settingsSections[0].widgets).toEqual(ids('w1', 'hidden', 'w2'));
+        expect(settingsSections[1].widgets).toEqual(ids('w3'));
+    });
+});
+
+describe('gridDropIsDone', () => {
+    const at = (a: string[], b: string[]): GridSection[] => [
+        { id: 'a', columnSpan: 1, widgets: ids(...a) },
+        { id: 'b', columnSpan: 1, widgets: ids(...b) },
+    ];
+    const w1 = ids('w1')[0];
+
+    it('is done when the project shows the widget where it was dropped', () => {
+        expect(gridDropIsDone(at(['w2'], ['w1', 'w3']), at(['w2'], ['w1', 'w3']), w1)).toBe(true);
+    });
+
+    it('is not done while the project still shows the widget where it came from', () => {
+        expect(gridDropIsDone(at(['w1', 'w2'], ['w3']), at(['w2'], ['w1', 'w3']), w1)).toBe(false);
+    });
+
+    it('is done when the view shows other widgets now', () => {
+        expect(gridDropIsDone(at(['w1', 'w2'], ['w3', 'w4']), at(['w2'], ['w1', 'w3']), w1)).toBe(true);
+    });
+});
+
+describe('getGridSpanFromSize', () => {
+    const metrics = { columns: 12, width: 370, gap: 8, rowHeight: 56 };
+
+    it('takes the nearest cells', () => {
+        // a column is (370 + 8) / 12 = 31.5px with its gap, a row 64px
+        expect(getGridSpanFromSize(181, 120, metrics)).toEqual({ columns: 6, rows: 2 });
+        expect(getGridSpanFromSize(200, 150, metrics)).toEqual({ columns: 7, rows: 2 });
+    });
+
+    it('takes at least one cell and not more columns than the section has', () => {
+        expect(getGridSpanFromSize(1, 1, metrics)).toEqual({ columns: 1, rows: 1 });
+        expect(getGridSpanFromSize(1000, 1000, metrics).columns).toBe(12);
+    });
+
+    it('does not limit the rows - a section grows downwards', () => {
+        expect(getGridSpanFromSize(100, 1000, metrics).rows).toBe(16);
+    });
+});
+
+describe('newSectionId', () => {
+    it('numbers the sections', () => {
+        expect(newSectionId(undefined)).toBe('s1');
+        expect(newSectionId([{ id: 's1', widgets: [] }])).toBe('s2');
+    });
+
+    it('does not take an id that is there already', () => {
+        expect(newSectionId([{ id: 's2', widgets: [] }])).toBe('s3');
     });
 });

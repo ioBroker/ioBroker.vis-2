@@ -334,6 +334,59 @@ html {
     outline-style: dotted;
 }
 
+/* Below the section, in the gap to the next row, so that they cover no widget */
+.vis-grid-section-controls {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    display: flex;
+    gap: 2px;
+    z-index: 1;
+}
+
+.vis-grid-section-controls button {
+    width: 20px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid #888888;
+    border-radius: 3px;
+    background: #ffffff;
+    color: #333333;
+    font: 12px/1 Arial, sans-serif;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.vis-grid-section-controls button:hover:not(:disabled) {
+    opacity: 1;
+    border-color: #0d72b8;
+    color: #0d72b8;
+}
+
+.vis-grid-section-controls button:disabled {
+    cursor: default;
+    opacity: 0.3;
+}
+
+.vis-grid-section-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border: 1px dashed #888888;
+    border-radius: 4px;
+    color: #888888;
+    font: 14px Arial, sans-serif;
+    cursor: pointer;
+    user-select: none;
+}
+
+.vis-grid-section-add:hover {
+    border-color: #0d72b8;
+    color: #0d72b8;
+}
+
 .vis-signals-blink {
     animation: vis-blink-animation 1s steps(5, start) infinite;
 }

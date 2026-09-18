@@ -814,5 +814,19 @@
   "vis_2_widgets_swipe_up_view": "Vista ao deslizar para cima",
   "vis_2_widgets_swipe_down_view": "Vista ao deslizar para baixo",
   "vis_2_widgets_swipe_no_view": "sem vista",
-  "vis_2_widgets_basic_mui": "Estilo MUI"
+  "vis_2_widgets_basic_mui": "Estilo MUI",
+  "Layout": "Layout",
+  "Columns": "Colunas",
+  "Grid with sections": "Grade com seções",
+  "Min. section width": "Largura mín. da seção",
+  "Max. section width": "Largura máx. da seção",
+  "Max. sections side by side": "Máx. de seções lado a lado",
+  "Section gap": "Espaço entre seções",
+  "Grid row height": "Altura da linha da grade",
+  "Grid gap": "Espaço na grade",
+  "Fill gaps between sections": "Preencher espaços entre seções",
+  "Add section": "Adicionar seção",
+  "Narrower": "Mais estreito",
+  "Wider": "Mais largo",
+  "Remove section": "Remover seção"
 }

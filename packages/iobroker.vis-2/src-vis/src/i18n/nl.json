@@ -814,5 +814,19 @@
   "vis_2_widgets_swipe_up_view": "Weergave bij vegen omhoog",
   "vis_2_widgets_swipe_down_view": "Weergave bij vegen omlaag",
   "vis_2_widgets_swipe_no_view": "geen weergave",
-  "vis_2_widgets_basic_mui": "MUI-stijl"
+  "vis_2_widgets_basic_mui": "MUI-stijl",
+  "Layout": "Lay-out",
+  "Columns": "Kolommen",
+  "Grid with sections": "Raster met secties",
+  "Min. section width": "Min. sectiebreedte",
+  "Max. section width": "Max. sectiebreedte",
+  "Max. sections side by side": "Max. secties naast elkaar",
+  "Section gap": "Ruimte tussen secties",
+  "Grid row height": "Hoogte van rasterrij",
+  "Grid gap": "Ruimte in raster",
+  "Fill gaps between sections": "Gaten tussen secties opvullen",
+  "Add section": "Sectie toevoegen",
+  "Narrower": "Smaller",
+  "Wider": "Breder",
+  "Remove section": "Sectie verwijderen"
 }

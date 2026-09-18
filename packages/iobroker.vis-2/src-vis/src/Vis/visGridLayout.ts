@@ -10,6 +10,8 @@
 
 import type { AnyWidgetId, ViewSection, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
 
+import type { Box } from './visViewGeometry';
+
 /**
  * The grid layout of a view, what it works out without touching the DOM or the store.
  *
@@ -62,6 +64,18 @@ export interface GridSection {
     widgets: AnyWidgetId[];
     /** It is the section of the widgets no section lists, and not one of the view settings */
     implicit?: boolean;
+    /** Where the section is in `settings.sections`; the id cannot tell, as it is made unique for rendering */
+    index?: number;
+}
+
+/** What the size of the cells of a section is, as it is rendered */
+export interface GridMetrics {
+    /** The columns of the section */
+    columns: number;
+    /** The width of the section, in px */
+    width: number;
+    gap: number;
+    rowHeight: number;
 }
 
 /** How many cells of its section a widget occupies */
@@ -185,6 +199,7 @@ export function buildGridSections(
                 id,
                 columnSpan: Math.min(columnCount, Math.floor(toNumber(section.columnSpan, 1) ?? 1)),
                 widgets: sectionWidgets,
+                index,
             });
         }
     });
@@ -294,4 +309,206 @@ export function getGridCellCss(span: GridCellSpan, order: number): GridCellCss {
         gridRow: span.rows === 'auto' ? 'auto' : `span ${span.rows}`,
         order: Math.max(0, order),
     };
+}
+
+/** The point lies in the box, edges included */
+function contains(box: Box | undefined, x: number, y: number): boolean {
+    return !!box && x >= box.left && x <= box.right && y >= box.top && y <= box.bottom;
+}
+
+/** Where a widget is in the sections: the id of its section and its position there, or null */
+function findWidget(sections: GridSection[], wid: AnyWidgetId): string | null {
+    for (const section of sections) {
+        const pos = section.widgets.indexOf(wid);
+        if (pos !== -1) {
+            return `${section.id}:${pos}`;
+        }
+    }
+    return null;
+}
+
+/**
+ * Where a widget lands while it is dragged over the sections.
+ *
+ * Over another widget, it goes before or after that one. The widgets flow in rows, so the upper left half of
+ * the widget under the cursor - cut along the diagonal from the lower left to the upper right corner - means
+ * before it, the lower right half after it. That works for a wide widget as well as for a tall one. Over the
+ * free space of another section, the widget goes to the end of that section; that is how an empty section is
+ * filled. Anywhere else, and over the free space of its own section, nothing changes, so the layout does not
+ * flicker while the cursor crosses a gap.
+ *
+ * @param sections - the sections as they are rendered, with the dragged widget at its current place
+ * @param dragged - the widget being dragged
+ * @param sectionBoxes - the rectangle of each section, by section id
+ * @param widgetBoxes - the rectangle of each widget, by id; the one of the dragged widget is not used
+ * @param x - the cursor, in client coordinates
+ * @param y - the cursor, in client coordinates
+ * @returns the sections with the dragged widget at its new place, or `sections` itself if nothing changes
+ */
+export function computeGridDrop(
+    sections: GridSection[],
+    dragged: AnyWidgetId,
+    sectionBoxes: Partial<Record<string, Box>>,
+    widgetBoxes: Partial<Record<AnyWidgetId, Box>>,
+    x: number,
+    y: number,
+): GridSection[] {
+    let targetSection: GridSection | undefined;
+    let targetWidget: AnyWidgetId | null = null;
+    let after = false;
+
+    for (const section of sections) {
+        for (const wid of section.widgets) {
+            const box = widgetBoxes[wid];
+            if (wid !== dragged && box && contains(box, x, y)) {
+                targetSection = section;
+                targetWidget = wid;
+                const width = box.right - box.left || 1;
+                const height = box.bottom - box.top || 1;
+                after = (x - box.left) / width + (y - box.top) / height > 1;
+                break;
+            }
+        }
+        if (targetSection) {
+            break;
+        }
+    }
+
+    if (!targetSection) {
+        targetSection = sections.find(section => contains(sectionBoxes[section.id], x, y));
+        if (!targetSection || targetSection.widgets.includes(dragged)) {
+            return sections;
+        }
+    }
+
+    const targetId = targetSection.id;
+    const next = sections.map(section => ({ ...section, widgets: section.widgets.filter(wid => wid !== dragged) }));
+    const target = next.find(section => section.id === targetId)!;
+    if (targetWidget) {
+        const pos = target.widgets.indexOf(targetWidget);
+        target.widgets.splice(after ? pos + 1 : pos, 0, dragged);
+    } else {
+        target.widgets.push(dragged);
+    }
+
+    return findWidget(next, dragged) === findWidget(sections, dragged) ? sections : next;
+}
+
+/**
+ * Put `id` into `list` next to where it was shown: before the widget that followed it, or after the one that
+ * preceded it. The lists of the settings may hold widgets the editor does not show - filtered, or not
+ * accessible to this user - so the position in the shown list is not the one in the stored list.
+ */
+function placeNear(
+    list: AnyWidgetId[],
+    id: AnyWidgetId,
+    before: AnyWidgetId | undefined,
+    next: AnyWidgetId | undefined,
+): AnyWidgetId[] {
+    const result = list.filter(wid => wid !== id);
+    if (next !== undefined && result.includes(next)) {
+        result.splice(result.indexOf(next), 0, id);
+    } else if (before !== undefined && result.includes(before)) {
+        result.splice(result.indexOf(before) + 1, 0, id);
+    } else {
+        result.push(id);
+    }
+    return result;
+}
+
+/**
+ * The view settings after a widget was dropped into the sections.
+ *
+ * The widget leaves every section it was in. Dropped into a section of the settings, it is listed there; dropped
+ * into the section of the widgets no section lists, it moves in `order` instead, since that is where the order
+ * of those widgets comes from. Everything else stays as it was, the widgets the editor does not show included.
+ *
+ * @param settingsSections - `settings.sections` as they are stored
+ * @param settingsOrder - `settings.order` as it is stored
+ * @param dropped - the sections as the widget was dropped into them, see computeGridDrop()
+ * @param dragged - the widget that was dropped
+ */
+export function applyGridDrop(
+    settingsSections: ViewSection[] | undefined | null,
+    settingsOrder: AnyWidgetId[] | undefined | null,
+    dropped: GridSection[],
+    dragged: AnyWidgetId,
+): { sections: ViewSection[]; order: AnyWidgetId[] } {
+    const sections = (Array.isArray(settingsSections) ? settingsSections : []).map(section =>
+        // what buildGridSections() skips is kept as it is - repairing it is not the job of a drop
+        section && typeof section === 'object'
+            ? {
+                  ...section,
+                  widgets: (Array.isArray(section.widgets) ? section.widgets : []).filter(w => w !== dragged),
+              }
+            : section,
+    );
+    let order = Array.isArray(settingsOrder) ? [...settingsOrder] : [];
+
+    const target = dropped.find(section => section.widgets.includes(dragged));
+    if (target) {
+        const pos = target.widgets.indexOf(dragged);
+        const before = target.widgets[pos - 1];
+        const next = target.widgets[pos + 1];
+        const section = target.index === undefined || target.implicit ? undefined : sections[target.index];
+        if (section) {
+            section.widgets = placeNear(section.widgets, dragged, before, next);
+        } else {
+            order = placeNear(order, dragged, before, next);
+        }
+    }
+
+    return { sections, order };
+}
+
+/**
+ * Whether the sections a widget was dropped into have done their job and may be let go of: the dragged widget
+ * arrived where it was dropped, or the view does not show the same widgets any more. droppedOrderIsDone()
+ * decides the same for the column layout.
+ *
+ * @param rendered - the sections the project gives, as the last render worked them out
+ * @param dropped - the sections the widget was dropped into
+ * @param dragged - the widget that was dragged
+ */
+export function gridDropIsDone(rendered: GridSection[], dropped: GridSection[], dragged: AnyWidgetId): boolean {
+    if (findWidget(rendered, dragged) === findWidget(dropped, dragged)) {
+        return true;
+    }
+    const widgets = (sections: GridSection[]): string =>
+        sections
+            .flatMap(section => section.widgets)
+            .sort()
+            .join(',');
+    return widgets(rendered) !== widgets(dropped);
+}
+
+/**
+ * The cells a widget of this size would occupy in its section: the nearest whole cells, at least one, and not
+ * more columns than the section has.
+ *
+ * @param width - the width of the widget, in px
+ * @param height - the height of the widget, in px
+ * @param metrics - the cells of the section
+ */
+export function getGridSpanFromSize(
+    width: number,
+    height: number,
+    metrics: GridMetrics,
+): { columns: number; rows: number } {
+    // n cells are n cells and n - 1 gaps wide, so one cell more is a cell and a gap more
+    const columnPitch = (metrics.width + metrics.gap) / Math.max(1, metrics.columns);
+    return {
+        columns: Math.max(1, Math.min(metrics.columns, Math.round((width + metrics.gap) / columnPitch))),
+        rows: Math.max(1, Math.round((height + metrics.gap) / (metrics.rowHeight + metrics.gap))),
+    };
+}
+
+/** An id for a new section that none of the sections has */
+export function newSectionId(sections: ViewSection[] | undefined | null): string {
+    const ids = new Set((Array.isArray(sections) ? sections : []).map(section => section?.id));
+    let n = ids.size + 1;
+    while (ids.has(`s${n}`)) {
+        n++;
+    }
+    return `s${n}`;
 }

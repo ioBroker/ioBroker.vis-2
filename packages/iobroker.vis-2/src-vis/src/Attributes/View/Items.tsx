@@ -10,6 +10,7 @@ import { background, theme as ViewTheme } from '@/Attributes/ViewData';
 import { store } from '@/Store';
 import type { Project, View } from '@iobroker/types-vis-2';
 import commonStyles from '@/Utilities/styles';
+import { GRID_LAYOUT_DEFAULTS } from '@/Vis/visGridLayout';
 
 export interface Field {
     label: string;
@@ -34,6 +35,8 @@ export interface Field {
     error?: string | ((settings: Record<string, any>) => boolean);
     width?: number;
     value?: any;
+    /** What an unset value means; a slider shows it, but it is not written into the settings */
+    default?: string | number | boolean;
     onChange?: (e: SelectChangeEvent<string | number>) => void;
     marks?:
         | boolean
@@ -790,6 +793,19 @@ export function getFields(
             },
             */
                 {
+                    // how the relative widgets are arranged
+                    type: 'select',
+                    label: 'Layout',
+                    attr: 'layout',
+                    notStyle: true,
+                    // a view from before the grid layout has none at all, and that is the column layout
+                    value: view.settings?.layout === 'grid' ? 'grid' : 'columns',
+                    options: [
+                        { label: 'Columns', value: 'columns' },
+                        { label: 'Grid with sections', value: 'grid' },
+                    ],
+                },
+                {
                     type: 'slider',
                     label: 'Column width',
                     attr: 'columnWidth',
@@ -797,6 +813,7 @@ export function getFields(
                     max: 2000,
                     step: 10,
                     notStyle: true,
+                    hidden: 'data.layout === "grid"',
                 },
                 {
                     type: 'slider',
@@ -806,6 +823,7 @@ export function getFields(
                     max: 200,
                     step: 1,
                     notStyle: true,
+                    hidden: 'data.layout === "grid"',
                 },
                 {
                     type: 'slider',
@@ -815,6 +833,81 @@ export function getFields(
                     max: 200,
                     step: 1,
                     notStyle: true,
+                    hidden: 'data.layout === "grid"',
+                },
+                // the grid layout, see visGridLayout.ts; an unset value takes the default there
+                {
+                    type: 'slider',
+                    label: 'Min. section width',
+                    attr: 'sectionMinWidth',
+                    default: GRID_LAYOUT_DEFAULTS.sectionMinWidth,
+                    min: 200,
+                    max: 1000,
+                    step: 10,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'slider',
+                    label: 'Max. section width',
+                    attr: 'sectionMaxWidth',
+                    default: GRID_LAYOUT_DEFAULTS.sectionMaxWidth,
+                    min: 200,
+                    max: 2000,
+                    step: 10,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'slider',
+                    label: 'Max. sections side by side',
+                    attr: 'maxSections',
+                    default: GRID_LAYOUT_DEFAULTS.maxSections,
+                    min: 1,
+                    max: 8,
+                    step: 1,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'slider',
+                    label: 'Section gap',
+                    attr: 'sectionGap',
+                    default: GRID_LAYOUT_DEFAULTS.sectionGap,
+                    min: 0,
+                    max: 100,
+                    step: 1,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'slider',
+                    label: 'Grid row height',
+                    attr: 'gridRowHeight',
+                    default: GRID_LAYOUT_DEFAULTS.rowHeight,
+                    min: 20,
+                    max: 200,
+                    step: 1,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'slider',
+                    label: 'Grid gap',
+                    attr: 'gridGap',
+                    default: GRID_LAYOUT_DEFAULTS.gridGap,
+                    min: 0,
+                    max: 50,
+                    step: 1,
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
+                },
+                {
+                    type: 'checkbox',
+                    label: 'Fill gaps between sections',
+                    attr: 'denseSections',
+                    notStyle: true,
+                    hidden: 'data.layout !== "grid"',
                 },
             ] as Field[],
         },

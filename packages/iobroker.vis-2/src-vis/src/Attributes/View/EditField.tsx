@@ -289,7 +289,8 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
                     style={commonStyles.fieldContentSlider}
                     size="small"
                     onChange={(_e, newValue) => change(Array.isArray(newValue) ? newValue[0] : newValue)}
-                    value={typeof value === 'number' ? value : 0}
+                    // an unset value is shown where its default is, and not at the start
+                    value={typeof value === 'number' ? value : typeof field.default === 'number' ? field.default : 0}
                     min={field.min}
                     max={field.max}
                     step={field.step}
@@ -299,6 +300,7 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
                 <Input
                     style={commonStyles.fieldContentSliderInput}
                     value={value}
+                    placeholder={field.default === undefined ? undefined : String(field.default)}
                     disabled={!editMode || disabled}
                     size="small"
                     onChange={e => change(parseFloat(e.target.value))}

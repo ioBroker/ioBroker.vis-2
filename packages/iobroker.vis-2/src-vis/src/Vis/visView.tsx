@@ -16,7 +16,7 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 
-import { Utils } from '@iobroker/gui-components';
+import { I18n, Utils } from '@iobroker/gui-components';
 
 import type VisRxWidget from '@/Vis/visRxWidget';
 import createTheme from '@/theme';
@@ -34,6 +34,7 @@ import type {
     WidgetReference,
     ViewCommand,
     ViewCommandOptions,
+    ViewSection,
 } from '@iobroker/types-vis-2';
 import { hasWidgetAccess, isVarFinite } from '@/Utilities/utils';
 import { registerAdornerLayer } from './visAdornerLayer';
@@ -52,12 +53,17 @@ import {
     snapToWidgets,
 } from './visViewGeometry';
 import {
+    applyGridDrop,
     buildGridSections,
+    computeGridDrop,
     getGridLayout,
     getGridMaxWidth,
     getSectionColumnCount,
     GRID_COLUMNS,
     GRID_COLUMNS_VAR,
+    type GridSection,
+    gridDropIsDone,
+    newSectionId,
 } from './visGridLayout';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
@@ -147,6 +153,18 @@ interface VisViewState {
          */
         dropped?: boolean;
     } | null;
+    /**
+     * A widget of the grid layout is being dragged to another place, see computeGridDrop().
+     *
+     * The same as `relativeDrag`, only that the layout is a list of sections and not a single order: the view is
+     * rendered from these sections while the gesture runs, with a placeholder in the slot the widget would drop
+     * into, and after the drop until the project carries the new sections.
+     */
+    gridDrag: {
+        wid: AnyWidgetId;
+        sections: GridSection[];
+        dropped?: boolean;
+    } | null;
 }
 
 class VisView extends React.Component<VisViewProps, VisViewState> {
@@ -165,6 +183,15 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     /** Order of the relative widgets as the last render used it - the drag gesture starts from it */
     private lastRelativeOrder: AnyWidgetId[] = [];
+
+    /** The sections of the grid layout as the project gives them, as the last render worked them out */
+    private lastGridSections: GridSection[] = [];
+
+    /**
+     * The drag in the grid layout as the gesture has it at this moment. `state.gridDrag` follows it for rendering,
+     * but a quick gesture is over before React has rendered it, so the gesture itself reads this.
+     */
+    private gridDragNow: VisViewState['gridDrag'] = null;
 
     /** Half transparent copy of a dragged relative widget, see createDragGhost() */
     private dragGhost: HTMLElement | null = null;
@@ -204,6 +231,18 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     /** The element the resize observer watches, to notice when the relative view appears or goes */
     private observedRelativeView: HTMLDivElement | null = null;
+
+    /**
+     * Watches the sections and the cells of the grid layout in the editor. A widget that changes its cells moves
+     * the ones after it without rendering them, and so does a widget that is dropped elsewhere. This tells them,
+     * so that their marks - and the service divs of the can.js widgets, which lie over them - follow.
+     */
+    private gridCellObserver: ResizeObserver | null = null;
+
+    /** The arrangement of the sections the last render showed, and the one the observer was set up for */
+    private renderedGridLayout = '';
+
+    private observedGridLayout = '';
 
     private widgetsRefs: Record<AnyWidgetId, WidgetReference>;
 
@@ -248,6 +287,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             width: 0,
             menuWidth: (window.localStorage.getItem('vis.menuWidth') as null | 'narrow' | 'full' | 'hidden') || 'full',
             relativeDrag: null,
+            gridDrag: null,
         };
 
         this.refView = React.createRef();
@@ -302,6 +342,38 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
     }
 
+    /**
+     * Watch the sections and cells of the grid layout, see `gridCellObserver`. It is set up anew whenever the
+     * arrangement changed, since that brings other elements. A fresh observation reports at once, which tells the
+     * widgets about the arrangement that just changed as well.
+     */
+    private observeGridCells(): void {
+        if (!this.props.editMode || !this.isGridLayout() || typeof ResizeObserver === 'undefined') {
+            this.gridCellObserver?.disconnect();
+            this.observedGridLayout = '';
+            return;
+        }
+        if (this.renderedGridLayout === this.observedGridLayout) {
+            return;
+        }
+        this.observedGridLayout = this.renderedGridLayout;
+
+        const observer = (this.gridCellObserver ||= new ResizeObserver(() => this.updateWidgetPositions()));
+        observer.disconnect();
+        Object.values(this.refGridSections).forEach(ref => {
+            const section = ref.current;
+            if (section) {
+                observer.observe(section);
+                Array.from(section.children).forEach(cell => observer.observe(cell));
+            }
+        });
+    }
+
+    /** Tell every widget of the view that it may have been moved without being rendered */
+    private updateWidgetPositions(): void {
+        Object.values(this.widgetsRefs).forEach(ref => ref?.onCommand?.('updatePosition'));
+    }
+
     async componentDidMount(): Promise<void> {
         this.updateViewWidth();
         this.observeRelativeView();
@@ -322,6 +394,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.resizeObserver?.disconnect();
         this.resizeObserver = null;
         this.observedRelativeView = null;
+        this.gridCellObserver?.disconnect();
+        this.gridCellObserver = null;
         this.announcedAdornerLayer = null;
         registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
@@ -787,11 +861,29 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
               });
 
+              const gridLayout = this.isGridLayout();
+
+              // In the grid layout a single widget is dragged over the sections instead; it starts from the
+              // sections as they are rendered.
+              if (!isResize && this.selectedWidgets.length === 1 && gridLayout) {
+                  const draggedId = this.selectedWidgets[0];
+                  // the can.js div is the cell of a vis-1 widget, its service div only lies over it
+                  const element = widgetsRefs[draggedId]?.widDiv || widgetsRefs[draggedId]?.refService?.current;
+                  const rect = element?.getBoundingClientRect();
+                  if (element && rect && this.lastGridSections.some(section => section.widgets.includes(draggedId))) {
+                      if (this.droppedOrderTimer) {
+                          clearTimeout(this.droppedOrderTimer);
+                          this.droppedOrderTimer = null;
+                      }
+                      this.createDragGhost(element, rect, e.clientX, e.clientY);
+                      this.gridDragNow = { wid: draggedId, sections: this.lastGridSections };
+                      this.setState({ gridDrag: this.gridDragNow });
+                  }
+              }
+
               // A single relative widget can be dragged to another place in the order. Take the order it starts
               // from and the size the placeholder has to reserve; both stay fixed for the whole gesture.
-              // Not in the grid layout: there a widget belongs to a section, and the order is the one of the
-              // section, which this gesture does not know about.
-              if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup && !this.isGridLayout()) {
+              if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup && !gridLayout) {
                   const draggedId = this.selectedWidgets[0];
                   const order = this.getRelativeWidgetOrder();
                   const element = widgetsRefs[draggedId]?.refService?.current;
@@ -894,6 +986,41 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         if (this.dragGhost) {
             this.dragGhost.remove();
             this.dragGhost = null;
+        }
+    }
+
+    /**
+     * Put the widget dragged in the grid layout where the cursor is, see computeGridDrop().
+     *
+     * @param x client x of the cursor
+     * @param y client y of the cursor
+     */
+    updateGridDrag(x: number, y: number): void {
+        const drag = this.gridDragNow;
+        if (!drag || drag.dropped) {
+            return;
+        }
+
+        const sectionBoxes: Partial<Record<string, Box>> = {};
+        const widgetBoxes: Partial<Record<AnyWidgetId, Box>> = {};
+        for (const section of drag.sections) {
+            const sectionBox = this.refGridSections[section.id]?.current?.getBoundingClientRect();
+            if (sectionBox) {
+                sectionBoxes[section.id] = sectionBox;
+            }
+            for (const wid of section.widgets) {
+                const element = this.widgetsRefs[wid]?.widDiv || this.widgetsRefs[wid]?.refService?.current;
+                const box = element?.getBoundingClientRect();
+                if (box) {
+                    widgetBoxes[wid] = box;
+                }
+            }
+        }
+
+        const sections = computeGridDrop(drag.sections, drag.wid, sectionBoxes, widgetBoxes, x, y);
+        if (sections !== drag.sections) {
+            this.gridDragNow = { ...drag, sections };
+            this.setState({ gridDrag: this.gridDragNow });
         }
     }
 
@@ -1024,6 +1151,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               // test compares against getBoundingClientRect(), which is relative to the viewport.
               this.moveDragGhost(e.clientX, e.clientY);
               this.updateRelativeDragOrder(e.clientX, e.clientY);
+              this.updateGridDrag(e.clientX, e.clientY);
 
               this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                   const onMove = widgetsRefs[wid]?.onMove;
@@ -1166,6 +1294,41 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                       this.droppedOrderTimer ||= setTimeout(() => {
                           this.droppedOrderTimer = null;
                           this.setState({ relativeDrag: null });
+                      }, 5_000);
+                  } else {
+                      this.clearRelativeDrag();
+                  }
+              }
+
+              // Where the button was let go counts too: a quick gesture may bring no move in between, or one that
+              // already ends it (see the check of `e.buttons` in onMouseWidgetMove)
+              const gridMoved =
+                  !!this.movement &&
+                  (!!this.movement.moved ||
+                      (!!e && (e.pageX !== this.movement.startX || e.pageY !== this.movement.startY)));
+              if (e && gridMoved) {
+                  this.updateGridDrag(e.clientX, e.clientY);
+              }
+              const gridDrag = this.gridDragNow;
+              this.gridDragNow = null;
+              if (gridDrag && !gridDrag.dropped) {
+                  const changed = gridMoved && !gridDropIsDone(this.lastGridSections, gridDrag.sections, gridDrag.wid);
+                  if (changed) {
+                      // the sections the widget was dropped into become the sections of the view
+                      const settings = store.getState().visProject[this.props.view].settings;
+                      const { sections, order } = applyGridDrop(
+                          settings?.sections,
+                          settings?.order,
+                          gridDrag.sections,
+                          gridDrag.wid,
+                      );
+                      this.props.context.onWidgetsChanged?.(null, this.props.view, { sections, order });
+                      // keep rendering from them until the project carries them, see releaseDroppedOrder()
+                      this.setState({ gridDrag: { ...gridDrag, dropped: true } });
+                      // the last resort, for the same reason as for the relative widgets above
+                      this.droppedOrderTimer ||= setTimeout(() => {
+                          this.droppedOrderTimer = null;
+                          this.setState({ gridDrag: null });
                       }, 5_000);
                   } else {
                       this.clearRelativeDrag();
@@ -1426,6 +1589,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.registerEditorHandlers();
         this.updateViewWidth();
         this.observeRelativeView();
+        this.observeGridCells();
 
         this.releaseDroppedOrder();
         // detect filter changes
@@ -1438,21 +1602,33 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
     }
 
-    /** Forget the order a drag was dropped into, and with it the timer that would have done it */
+    /**
+     * Forget the order - or the sections of the grid layout - a drag was dropped into, and with it the timer that
+     * would have done it
+     */
     private clearRelativeDrag(): void {
+        this.gridDragNow = null;
         if (this.droppedOrderTimer) {
             clearTimeout(this.droppedOrderTimer);
             this.droppedOrderTimer = null;
         }
-        if (this.state.relativeDrag) {
-            this.setState({ relativeDrag: null });
+        if (this.state.relativeDrag || this.state.gridDrag) {
+            this.setState({ relativeDrag: null, gridDrag: null });
         }
     }
 
-    /** Let go of the order a drag was dropped into, once `droppedOrderIsDone` says it has served its purpose */
+    /**
+     * Let go of the order a drag was dropped into, once `droppedOrderIsDone` says it has served its purpose - or of
+     * the sections, once `gridDropIsDone` says so
+     */
     private releaseDroppedOrder(): void {
         const relativeDrag = this.state.relativeDrag;
-        if (relativeDrag?.dropped && droppedOrderIsDone(this.lastRelativeOrder, relativeDrag.order, relativeDrag.wid)) {
+        const gridDrag = this.state.gridDrag;
+        if (
+            (relativeDrag?.dropped &&
+                droppedOrderIsDone(this.lastRelativeOrder, relativeDrag.order, relativeDrag.wid)) ||
+            (gridDrag?.dropped && gridDropIsDone(this.lastGridSections, gridDrag.sections, gridDrag.wid))
+        ) {
             this.clearRelativeDrag();
         }
     }
@@ -1850,8 +2026,18 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 relativeStyle.height = '100%';
             }
 
-            // in the grid layout this is only the frame that is measured; the grid inside it is centered
-            relativeStyle.display = settings.layout === 'grid' ? 'block' : settings.style?.display || 'flex';
+            if (settings.layout === 'grid') {
+                // The grid is part of the flow of the view and not laid over it: the sections below each other on
+                // a phone are much higher than the screen, and the view - and with it its background - has to
+                // grow with them. This div is only the frame that is measured; the grid inside it is centered.
+                relativeStyle.display = 'block';
+                relativeStyle.position = 'relative';
+                relativeStyle.minHeight = relativeStyle.height;
+                delete relativeStyle.height;
+                return relativeStyle;
+            }
+
+            relativeStyle.display = settings.style?.display || 'flex';
 
             if (relativeStyle.display === 'flex') {
                 relativeStyle.flexWrap = 'wrap';
@@ -1870,6 +2056,68 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     /**
+     * Change the sections of the grid layout in the view settings.
+     *
+     * @param change - gets a copy of the stored sections and gives the new ones back
+     */
+    changeGridSections(change: (sections: ViewSection[]) => ViewSection[]): void {
+        const stored = store.getState().visProject[this.props.view]?.settings?.sections;
+        const sections = (Array.isArray(stored) ? stored : []).map(section =>
+            section && typeof section === 'object' ? { ...section } : section,
+        );
+        this.props.context.onWidgetsChanged?.(null, this.props.view, { sections: change(sections) });
+    }
+
+    /**
+     * The controls the editor shows under a section: narrower, wider and remove. The widgets of a removed section
+     * stay relative and go to the section of the widgets no section lists.
+     *
+     * @param index - where the section is in the view settings
+     * @param maxSections - the most section columns the view has
+     */
+    renderGridSectionControls(index: number, maxSections: number): React.JSX.Element {
+        const stored = store.getState().visProject[this.props.view]?.settings?.sections?.[index];
+        const span = Math.max(1, Math.floor(Number(stored?.columnSpan) || 1));
+        const setSpan = (columnSpan: number): void =>
+            this.changeGridSections(sections => {
+                sections[index] = { ...sections[index], columnSpan };
+                return sections;
+            });
+
+        return (
+            <div
+                className="vis-grid-section-controls"
+                // not the start of a selection frame on the view
+                onMouseDown={e => e.stopPropagation()}
+            >
+                <button
+                    type="button"
+                    title={I18n.t('Narrower')}
+                    disabled={span <= 1}
+                    onClick={() => setSpan(span - 1)}
+                >
+                    −
+                </button>
+                <button
+                    type="button"
+                    title={I18n.t('Wider')}
+                    disabled={span >= maxSections}
+                    onClick={() => setSpan(span + 1)}
+                >
+                    +
+                </button>
+                <button
+                    type="button"
+                    title={I18n.t('Remove section')}
+                    onClick={() => this.changeGridSections(sections => sections.filter((_, i) => i !== index))}
+                >
+                    ✕
+                </button>
+            </div>
+        );
+    }
+
+    /**
      * Render the relative widgets in the sections of the grid layout, see visGridLayout.ts.
      *
      * The sections flow over the section columns that fit into the width of the view, and each section is a grid
@@ -1885,12 +2133,21 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         const layout = getGridLayout(settings);
         const columnCount = getSectionColumnCount(this.state.width, layout);
         // the editor keeps the empty sections, so that they can be filled
-        const sections = buildGridSections(settings?.sections, widgets, columnCount, this.props.editMode);
-        if (!sections.length) {
+        this.lastGridSections = buildGridSections(settings?.sections, widgets, columnCount, this.props.editMode);
+        // while a widget is dragged, and until the project carries where it was dropped, the drag decides
+        const gridDrag = this.state.gridDrag;
+        const sections = gridDrag ? gridDrag.sections : this.lastGridSections;
+        if (!sections.length && !this.props.editMode) {
             return null;
         }
+        // what observeGridCells() compares, to set itself up anew when the arrangement changed
+        this.renderedGridLayout = JSON.stringify([
+            columnCount,
+            !!gridDrag && !gridDrag.dropped,
+            sections.map(section => [section.id, section.columnSpan, section.widgets]),
+        ]);
 
-        const renderedSections = sections.map(section => {
+        const renderedSections: React.JSX.Element[] = sections.map(section => {
             this.refGridSections[section.id] ||= React.createRef();
             const refSection = this.refGridSections[section.id];
             const columns = GRID_COLUMNS * section.columnSpan;
@@ -1921,31 +2178,67 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     )}
                     style={style}
                 >
+                    {this.props.editMode && !section.implicit && section.index !== undefined
+                        ? this.renderGridSectionControls(section.index, layout.maxSections)
+                        : null}
                     {section.widgets.map((id, index) =>
-                        VisView.getOneWidget(index, project[view].widgets[id], {
-                            context: this.props.context,
-                            editMode: this.props.editMode,
-                            id,
-                            isRelative: true,
-                            gridCell: true,
-                            mouseDownOnView: this.mouseDownOnView,
-                            moveAllowed,
-                            ignoreMouseEvents: this.ignoreMouseEvents,
-                            onIgnoreMouseEvents: this.onIgnoreMouseEvents,
-                            // the can.js widgets are inserted into the section, in the order of the section
-                            refParent: refSection,
-                            askView: this.askView,
-                            relativeWidgetOrder: section.widgets,
-                            selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
-                            selectedGroup: null,
-                            view,
-                            customSettings: this.props.customSettings,
-                            viewsActiveFilter: this.props.viewsActiveFilter,
-                        }),
+                        // The slot the dragged widget would drop into; the widget itself follows the cursor as a
+                        // copy, see createDragGhost()
+                        gridDrag && !gridDrag.dropped && id === gridDrag.wid ? (
+                            <div
+                                key={`placeholder_${id}`}
+                                className="vis-editmode-widget-shadow"
+                                style={VisBaseWidget.getGridCellStyle(
+                                    project[view].widgets[id]?.style,
+                                    settings,
+                                    index,
+                                )}
+                            />
+                        ) : (
+                            VisView.getOneWidget(index, project[view].widgets[id], {
+                                context: this.props.context,
+                                editMode: this.props.editMode,
+                                id,
+                                isRelative: true,
+                                gridCell: true,
+                                mouseDownOnView: this.mouseDownOnView,
+                                moveAllowed,
+                                ignoreMouseEvents: this.ignoreMouseEvents,
+                                onIgnoreMouseEvents: this.onIgnoreMouseEvents,
+                                // the can.js widgets are inserted into the section, in the order of the section
+                                refParent: refSection,
+                                askView: this.askView,
+                                relativeWidgetOrder: section.widgets,
+                                selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
+                                selectedGroup: null,
+                                view,
+                                customSettings: this.props.customSettings,
+                                viewsActiveFilter: this.props.viewsActiveFilter,
+                            })
+                        ),
                     )}
                 </div>
             );
         });
+
+        if (this.props.editMode) {
+            // after the sections of the settings, before the widgets no section lists
+            const implicitAt = renderedSections.length - (sections[sections.length - 1]?.implicit ? 1 : 0);
+            renderedSections.splice(
+                implicitAt,
+                0,
+                <div
+                    key="_add"
+                    className="vis-grid-section-add"
+                    style={{ minHeight: layout.rowHeight }}
+                    title={I18n.t('Add section')}
+                    onMouseDown={e => e.stopPropagation()}
+                    onClick={() => this.changeGridSections(list => [...list, { id: newSectionId(list), widgets: [] }])}
+                >
+                    + {I18n.t('Add section')}
+                </div>,
+            );
+        }
 
         return [
             <div
@@ -2437,7 +2730,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         let className = 'vis-view';
         const style: React.CSSProperties = {
             width: '100%',
-            height: '100%',
+            // The grid layout is in the flow of the view, so the view grows with it; `.vis-view` keeps it at least
+            // as high as the screen. See getRelativeStyle().
+            height: this.isGridLayout() && !VisView.isScreenLimited(settings) ? 'auto' : '100%',
         };
 
         if (this.state.loadedjQueryTheme !== this.getJQueryThemeName() && this.props.view) {

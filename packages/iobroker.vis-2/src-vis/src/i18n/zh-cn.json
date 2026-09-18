@@ -814,5 +814,19 @@
   "vis_2_widgets_swipe_up_view": "向上滑动时的视图",
   "vis_2_widgets_swipe_down_view": "向下滑动时的视图",
   "vis_2_widgets_swipe_no_view": "无视图",
-  "vis_2_widgets_basic_mui": "MUI 样式"
+  "vis_2_widgets_basic_mui": "MUI 样式",
+  "Layout": "布局",
+  "Columns": "列",
+  "Grid with sections": "分区网格",
+  "Min. section width": "分区最小宽度",
+  "Max. section width": "分区最大宽度",
+  "Max. sections side by side": "最多并排分区数",
+  "Section gap": "分区间距",
+  "Grid row height": "网格行高",
+  "Grid gap": "网格间距",
+  "Fill gaps between sections": "填充分区之间的空隙",
+  "Add section": "添加分区",
+  "Narrower": "更窄",
+  "Wider": "更宽",
+  "Remove section": "删除分区"
 }

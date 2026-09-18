@@ -37,7 +37,15 @@ import type {
     ViewSettings,
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
-import { getGridCellCss, getGridCellSpan, getGridLayout } from './visGridLayout';
+import {
+    getGridCellCss,
+    getGridCellSpan,
+    getGridLayout,
+    getGridSpanFromSize,
+    GRID_COLUMNS_VAR,
+    type GridCellSpan,
+    type GridMetrics,
+} from './visGridLayout';
 
 interface HTMLDivElementResizers extends HTMLDivElement {
     _storedOpacity?: string;
@@ -110,6 +118,15 @@ export interface VisBaseWidgetState {
         /** Only the values this gesture changes: a resize from the right edge sets the width and nothing else */
         style: GestureStyle;
         base: GestureStyle;
+    } | null;
+    /**
+     * The cells a widget of the grid layout is resized to. The same as `gesture` for the size in pixels: the
+     * render takes the cells from here while the gesture runs and until the project carries them. `base` are the
+     * cells it had when the gesture started.
+     */
+    gridGesture?: {
+        span: GridCellSpan;
+        base: GridCellSpan;
     } | null;
     style: WidgetStyleState;
     usedInWidget: boolean;
@@ -386,6 +403,16 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     componentDidUpdate(_prevProps?: VisBaseWidgetProps, _prevState?: Readonly<TState>): void {
         this.updateMarksRect();
 
+        // the cells of a resize in the grid layout, by the same rules as the geometry below
+        const gridGesture = this.state.gridGesture;
+        if (gridGesture && !this.movement) {
+            const current = this.getRenderedGridSpan();
+            const same = (a: GridCellSpan, b: GridCellSpan): boolean => a.columns === b.columns && a.rows === b.rows;
+            if (same(current, gridGesture.span) || !same(current, gridGesture.base)) {
+                this.setState({ gridGesture: null });
+            }
+        }
+
         const gesture = this.state.gesture;
         // while the gesture is running it is the truth and must stay
         if (!gesture || this.movement) {
@@ -450,6 +477,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         if (command === 'cancelStealMode') {
             this.setState({ stealMode: false });
             return true;
+        }
+
+        // The widget was moved without being rendered - it flows in a layout that another widget changed - so its
+        // marks have to be put back onto it. Not reported as handled: VisCanWidget moves its service div as well.
+        if (command === 'updatePosition') {
+            this.updateMarksRect();
+            return false;
         }
 
         if (command === 'startMove' || command === 'startResize') {
@@ -798,6 +832,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
 
             /** What this gesture changed, so that the same values are rendered, applied and finally saved */
             let resizeStyle: GestureStyle = {};
+            /** The same for a widget of the grid layout, which is resized in whole cells */
+            let gridSpan: GridCellSpan | null = null;
 
             if (x === undefined) {
                 // start resizing
@@ -845,11 +881,34 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     }
                 }
 
-                // render() applies it to the service div, so a re-render during the gesture cannot reset it
-                this.setState({ gesture: { style: resizeStyle, base: { ...this.renderedBaseGeometry } } });
+                if (this.props.gridCell) {
+                    // In the grid layout the cells decide the size, so the pixels are turned into the nearest cells
+                    // at once: the widget snaps from cell to cell, and the others flow around it while it does.
+                    // Only what the handle changes - the right edge leaves the rows as they are.
+                    const metrics = this.getGridMetrics();
+                    const base = this.state.gridGesture?.base || this.getRenderedGridSpan();
+                    if (metrics) {
+                        const cells = getGridSpanFromSize(
+                            resizeStyle.width ?? movement.width,
+                            resizeStyle.height ?? movement.height,
+                            metrics,
+                        );
+                        gridSpan = {
+                            columns: resizeStyle.width === undefined ? base.columns : cells.columns,
+                            rows: resizeStyle.height === undefined ? base.rows : cells.rows,
+                        };
+                        const shown = this.state.gridGesture?.span;
+                        if (shown?.columns !== gridSpan.columns || shown?.rows !== gridSpan.rows) {
+                            this.setState({ gridGesture: { span: gridSpan, base } });
+                        }
+                    }
+                } else {
+                    // render() applies it to the service div, so a re-render during the gesture cannot reset it
+                    this.setState({ gesture: { style: resizeStyle, base: { ...this.renderedBaseGeometry } } });
 
-                // the can.js div of a vis-1 widget is not rendered by React; VisCanWidget applies the same
-                // gesture geometry to it in its componentDidUpdate
+                    // the can.js div of a vis-1 widget is not rendered by React; VisCanWidget applies the same
+                    // gesture geometry to it in its componentDidUpdate
+                }
             }
 
             // end of resize
@@ -864,6 +923,25 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 });
                 this.resize = false;
                 window.document.body.style.cursor = '';
+
+                if (this.props.gridCell) {
+                    // the cells are saved and not the pixels, and only if they changed
+                    const base = this.state.gridGesture?.base || this.getRenderedGridSpan();
+                    this.movement = undefined;
+                    if (gridSpan && (gridSpan.columns !== base.columns || gridSpan.rows !== base.rows)) {
+                        // the cells stay in `gridGesture` until the project carries them, see componentDidUpdate()
+                        this.props.context.onWidgetsChanged?.([
+                            {
+                                wid: this.props.id,
+                                view: this.props.view,
+                                style: { gridColumns: gridSpan.columns, gridRows: gridSpan.rows, noPxToPercent: true },
+                            },
+                        ]);
+                    } else {
+                        this.setState({ gridGesture: null });
+                    }
+                    return;
+                }
 
                 // The values this gesture changed must come from the computation and not from the DOM: this
                 // call carries the last position itself, so React has not rendered it yet and reading the
@@ -1033,8 +1111,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         /** The square at a corner, centred on it, so it reaches half of this into the widget */
         const HANDLE = 8;
 
-        const widgetWidth100 = widget.style.width === '100%';
-        const widgetHeight100 = widget.style.height === '100%';
+        // in the grid layout the cells give the size, whatever the style says
+        const widgetWidth100 = !this.props.gridCell && widget.style.width === '100%';
+        const widgetHeight100 = !this.props.gridCell && widget.style.height === '100%';
 
         // The blue of the editor, the same one the selection is washed in
         const color = '#0d72b8';
@@ -1060,9 +1139,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             resizeHandlers = ['s', 'e', 'se'];
         }
 
-        // In the grid layout the cells decide the size; a resize in pixels would not change what is shown
+        // In the grid layout the widget flows with the others, so only its right and its lower edge can be pulled
         if (this.props.gridCell) {
-            resizeHandlers = [];
+            resizeHandlers = resizeHandlers.filter(handler => handler === 'e' || handler === 's' || handler === 'se');
         }
 
         const RESIZERS_OPACITY = 0.9;
@@ -1872,14 +1951,16 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
      * @param widgetStyle - the style of the widget, with the bindings applied
      * @param settings - the settings of the view, for the size of the cells
      * @param order - the position of the widget in its section
+     * @param span - the cells of a running resize, which win over the ones of the style
      */
     static getGridCellStyle(
         widgetStyle: WidgetStyle | undefined | null,
         settings: ViewSettings | undefined,
         order: number,
+        span?: GridCellSpan | null,
     ): React.CSSProperties {
         return {
-            ...getGridCellCss(getGridCellSpan(widgetStyle, getGridLayout(settings)), order),
+            ...getGridCellCss(span || getGridCellSpan(widgetStyle, getGridLayout(settings)), order),
             position: 'relative',
             width: 'auto',
             height: 'auto',
@@ -1887,6 +1968,26 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             // A string, as VisCanWidget.applyStyle() skips every falsy value.
             minWidth: '0',
         };
+    }
+
+    /** The cells this widget of the grid layout occupies according to its style, without a running resize */
+    protected getRenderedGridSpan(): GridCellSpan {
+        return getGridCellSpan(
+            this.state.rxStyle || this.state.style,
+            getGridLayout(this.props.context.views[this.props.view].settings),
+        );
+    }
+
+    /** The cells of the section this widget of the grid layout sits in, as they are rendered */
+    private getGridMetrics(): GridMetrics | null {
+        // the can.js div is the cell of a vis-1 widget, the service div the one of every other
+        const section = (this.widDiv || this.refService.current)?.parentElement;
+        const columns = parseInt(section?.style.getPropertyValue(GRID_COLUMNS_VAR) || '', 10);
+        if (!section || !columns) {
+            return null;
+        }
+        const layout = getGridLayout(this.props.context.views[this.props.view].settings);
+        return { columns, width: section.clientWidth, gap: layout.gridGap, rowHeight: layout.rowHeight };
     }
 
     static correctStylePxValue(value?: string | number | null): string | number | undefined {
@@ -2035,6 +2136,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     this.state.rxStyle || this.state.style,
                     this.props.context.views[this.props.view].settings,
                     this.props.relativeWidgetOrder.indexOf(this.props.id),
+                    this.state.gridGesture?.span,
                 ),
             );
         }
