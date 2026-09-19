@@ -789,8 +789,13 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         }
 
         if (!this.props.selectedWidgets.includes(this.props.id)) {
-            // set select
+            // Select it - and let the same press move it at once, as in every other editor; there is no need to
+            // click a widget first before it can be dragged. `moveAllowed` is about the selection that is about to
+            // be replaced, so what counts here is whether this widget can be moved on its own.
             this.props.context.setSelectedWidgets?.([this.props.id]);
+            if (this.isMovableAlone()) {
+                this.props.mouseDownOnView(e, this.props.id, this.props.isRelative);
+            }
         } else if (this.props.moveAllowed && this.state.draggable !== false) {
             // Relative widgets start the gesture as well: it reorders them, and it is what offers to include a
             // widget into a container. That only absolute widgets may be dragged together with each other is
@@ -805,6 +810,22 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             );
         }
         this.lastClick = Date.now();
+    }
+
+    /**
+     * The widget can be moved when it is the only one selected: it is draggable, not a copy from another view, not
+     * part of another widget, and positioned in a way a move can change - absolute, or relative in the flow.
+     */
+    private isMovableAlone(): boolean {
+        const widget = this.props.context.views[this.props.view]?.widgets[this.props.id];
+        const position = widget?.style?.position;
+        return (
+            !!widget &&
+            this.state.draggable !== false &&
+            !this.state.multiViewWidget &&
+            !widget.usedInWidget &&
+            (!position || position === 'absolute' || position === 'relative')
+        );
     }
 
     isResizable(): boolean {

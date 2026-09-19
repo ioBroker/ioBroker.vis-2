@@ -98,7 +98,7 @@ export default class BasicValueFloat extends VisRxWidget<RxData> {
      * separators are applied and again inside the thousands formatting, as it was there - the results are the
      * same, and a project that has the old widget must not change its display.
      *
-     * @returns the text to show; an empty string when there is no number
+     * @returns the text to show; `--` when there is no number to show
      */
     formatFloat(): string {
         const data = this.state.rxData;
@@ -113,6 +113,13 @@ export default class BasicValueFloat extends VisRxWidget<RxData> {
         if (data.factor !== undefined && data.factor !== '') {
             val *= parseFloat(data.factor as string);
         }
+
+        // The state has no value yet, is empty, is no number, or the factor is none: "NaN" says nothing to whoever
+        // looks at the dashboard, so the widget shows the dashes that stand for "no value" instead
+        if (!isFinite(val)) {
+            return '--';
+        }
+
         if (data.digits !== undefined && data.digits !== '') {
             val = val.toFixed(parseFloat(data.digits as string));
         }

@@ -4,6 +4,8 @@ import type { AnyWidgetId } from '@iobroker/types-vis-2';
 
 import {
     type Box,
+    AUTO_SCROLL_MAX_SPEED,
+    autoScrollSpeed,
     computeRelativeOrder,
     computeRulers,
     droppedOrderIsDone,
@@ -203,5 +205,50 @@ describe('droppedOrderIsDone', () => {
 
     it('lets go when the dragged widget itself is gone', () => {
         expect(droppedOrderIsDone(ids('w1', 'w2'), ids('w3', 'w1', 'w2'), 'w3')).toBe(true);
+    });
+});
+
+describe('autoScrollSpeed', () => {
+    // a pane of 800 x 600 at (100, 100); its zones are 40px wide
+    const pane = box(100, 100, 900, 700);
+    const max = AUTO_SCROLL_MAX_SPEED;
+
+    it('does not scroll in the middle of the pane', () => {
+        expect(autoScrollSpeed({ x: 500, y: 400 }, pane)).toEqual({ x: 0, y: 0 });
+        expect(autoScrollSpeed({ x: 500, y: 140 }, pane)).toEqual({ x: 0, y: 0 });
+    });
+
+    it('scrolls up near the upper edge, the faster the closer', () => {
+        const near = autoScrollSpeed({ x: 500, y: 130 }, pane).y;
+        const closer = autoScrollSpeed({ x: 500, y: 110 }, pane).y;
+        expect(near).toBeLessThan(0);
+        expect(closer).toBeLessThan(near);
+        expect(autoScrollSpeed({ x: 500, y: 100 }, pane).y).toBe(-max);
+    });
+
+    it('scrolls at full speed with the cursor beyond the edge, over the toolbar above the pane', () => {
+        expect(autoScrollSpeed({ x: 500, y: 20 }, pane)).toEqual({ x: 0, y: -max });
+    });
+
+    it('scrolls down near the lower edge and sideways near the sides', () => {
+        expect(autoScrollSpeed({ x: 500, y: 690 }, pane).y).toBeGreaterThan(0);
+        expect(autoScrollSpeed({ x: 890, y: 400 }, pane).x).toBeGreaterThan(0);
+        expect(autoScrollSpeed({ x: 105, y: 400 }, pane).x).toBeLessThan(0);
+    });
+
+    it('scrolls at least one pixel as soon as the cursor is in the zone', () => {
+        expect(autoScrollSpeed({ x: 500, y: 139.9 }, pane).y).toBe(-1);
+    });
+
+    it('gives a small pane a smaller zone, so that its middle stays calm', () => {
+        // a quarter of 100px is 25px instead of 40px
+        const small = box(0, 0, 100, 100);
+        expect(autoScrollSpeed({ x: 50, y: 50 }, small)).toEqual({ x: 0, y: 0 });
+        expect(autoScrollSpeed({ x: 50, y: 30 }, small).y).toBe(0);
+        expect(autoScrollSpeed({ x: 50, y: 10 }, small).y).toBeLessThan(0);
+    });
+
+    it('does not scroll a pane without size', () => {
+        expect(autoScrollSpeed({ x: 0, y: 0 }, box(0, 0, 0, 0))).toEqual({ x: 0, y: 0 });
     });
 });

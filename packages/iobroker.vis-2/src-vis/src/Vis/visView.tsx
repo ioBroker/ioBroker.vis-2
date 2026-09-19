@@ -44,6 +44,7 @@ import VisBaseWidget from './visBaseWidget';
 import VisCanWidget from './visCanWidget';
 import { addClass, parseDimension } from './visUtils';
 import {
+    autoScrollSpeed,
     type Box,
     computeRelativeOrder,
     computeRulers,
@@ -72,6 +73,9 @@ import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
 
 const MAX_COLUMNS = 8;
 
+/** How far the mouse has to move, in pixels, before a press on a widget becomes a drag and not a click */
+const DRAG_THRESHOLD = 3;
+
 export type { ViewCommand, ViewCommandOptions };
 
 declare global {
@@ -92,6 +96,11 @@ interface VisViewMovement {
     simpleMode?: boolean;
     isResize?: boolean;
     startWidget?: DOMRect;
+    /** The pane the view scrolls in, see updateAutoScroll() */
+    scroller?: HTMLElement | null;
+    /** How far the pane was scrolled when the gesture started */
+    scrollLeft?: number;
+    scrollTop?: number;
 }
 
 interface ViewElement extends HTMLDivElement {
@@ -181,8 +190,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     /** Selected widgets. Only the editor passes them, in the runtime nothing is selected. */
     private get selectedWidgets(): AnyWidgetId[] {
-        return this.props.selectedWidgets || [];
+        return this.gestureSelection || this.props.selectedWidgets || [];
     }
+
+    /**
+     * The widget a running gesture works on when the press selected it only now, see mouseDownOnView(): the new
+     * selection is on its way through the props.
+     */
+    private gestureSelection: AnyWidgetId[] | null = null;
+
+    /** Takes the pressed relative widget out of the flow, once the mouse really moves - see mouseDownOnView() */
+    private startDragOnMove: (() => void) | null = null;
 
     /** Order of the relative widgets as the last render used it - the drag gesture starts from it */
     private lastRelativeOrder: AnyWidgetId[] = [];
@@ -195,6 +213,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      * but a quick gesture is over before React has rendered it, so the gesture itself reads this.
      */
     private gridDragNow: VisViewState['gridDrag'] = null;
+
+    /** The last move of a running gesture, replayed while the pane scrolls by itself, see updateAutoScroll() */
+    private lastMoveEvent: MouseEvent | null = null;
+
+    /** The next step of the pane scrolling by itself */
+    private autoScrollFrame: number | null = null;
 
     /** Half transparent copy of a dragged relative widget, see createDragGhost() */
     private dragGhost: HTMLElement | null = null;
@@ -405,6 +429,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.observedRelativeView = null;
         this.gridCellObserver?.disconnect();
         this.gridCellObserver = null;
+        this.stopAutoScroll();
+        window.removeEventListener('mousemove', this.onWindowMoveDuringGesture);
         this.announcedAdornerLayer = null;
         registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
@@ -590,6 +616,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
 
+              this.gestureSelection = null;
               this.props.context.setSelectedWidgets?.([]);
 
               this.onMouseViewMove && window.document.addEventListener('mousemove', this.onMouseViewMove);
@@ -810,6 +837,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
 
+              // A press on a widget that is not selected yet selects it and moves it at once, see
+              // VisBaseWidget.onMouseDown(). The new selection only comes back through the props with the next
+              // render, so this gesture works on the pressed widget until then.
+              this.gestureSelection = this.props.selectedWidgets?.includes(wid) ? null : [wid];
+
               if (
                   this.props.context.disableInteraction ||
                   this.props.context.lockDragging ||
@@ -844,6 +876,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               this.onMouseWidgetMove && this.refView.current?.addEventListener('mousemove', this.onMouseWidgetMove);
               this.onMouseWidgetUp && window.document.addEventListener('mouseup', this.onMouseWidgetUp);
 
+              // outside the view as well, so that the pane scrolls with the cursor over the toolbar above it
+              window.addEventListener('mousemove', this.onWindowMoveDuringGesture);
+
+              const scroller = VisView.findScrollParent(this.refView.current);
               this.movement = {
                   moved: false,
                   startX: e.pageX,
@@ -851,6 +887,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   isResize,
                   x: 0,
                   y: 0,
+                  scroller,
+                  scrollLeft: scroller?.scrollLeft || 0,
+                  scrollTop: scroller?.scrollTop || 0,
               };
 
               const widgetsRefs = this.widgetsRefs;
@@ -871,48 +910,63 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               });
 
               const gridLayout = this.isGridLayout();
+              const { clientX, clientY } = e;
+
+              // A relative widget is taken out of the flow for the drag and a placeholder holds its slot. That is
+              // done only once the mouse really moves (see onMouseWidgetMove): a press that is only a click - the
+              // one that selects the widget, say - must not swap it for the placeholder and back.
+              this.startDragOnMove = null;
 
               // In the grid layout a single widget is dragged over the sections instead; it starts from the
               // sections as they are rendered.
               if (!isResize && this.selectedWidgets.length === 1 && gridLayout) {
                   const draggedId = this.selectedWidgets[0];
-                  // the can.js div is the cell of a vis-1 widget, its service div only lies over it
-                  const element = widgetsRefs[draggedId]?.widDiv || widgetsRefs[draggedId]?.refService?.current;
-                  const rect = element?.getBoundingClientRect();
-                  if (element && rect && this.lastGridSections.some(section => section.widgets.includes(draggedId))) {
-                      if (this.droppedOrderTimer) {
-                          clearTimeout(this.droppedOrderTimer);
-                          this.droppedOrderTimer = null;
+                  this.startDragOnMove = () => {
+                      // the can.js div is the cell of a vis-1 widget, its service div only lies over it
+                      const element =
+                          this.widgetsRefs[draggedId]?.widDiv || this.widgetsRefs[draggedId]?.refService?.current;
+                      const rect = element?.getBoundingClientRect();
+                      if (
+                          element &&
+                          rect &&
+                          this.lastGridSections.some(section => section.widgets.includes(draggedId))
+                      ) {
+                          if (this.droppedOrderTimer) {
+                              clearTimeout(this.droppedOrderTimer);
+                              this.droppedOrderTimer = null;
+                          }
+                          this.createDragGhost(element, rect, clientX, clientY);
+                          this.gridDragNow = { wid: draggedId, sections: this.lastGridSections };
+                          this.setState({ gridDrag: this.gridDragNow });
                       }
-                      this.createDragGhost(element, rect, e.clientX, e.clientY);
-                      this.gridDragNow = { wid: draggedId, sections: this.lastGridSections };
-                      this.setState({ gridDrag: this.gridDragNow });
-                  }
+                  };
               }
 
               // A single relative widget can be dragged to another place in the order. Take the order it starts
               // from and the size the placeholder has to reserve; both stay fixed for the whole gesture.
               if (!isResize && this.selectedWidgets.length === 1 && !this.props.selectedGroup && !gridLayout) {
                   const draggedId = this.selectedWidgets[0];
-                  const order = this.getRelativeWidgetOrder();
-                  const element = widgetsRefs[draggedId]?.refService?.current;
-                  const rect = element?.getBoundingClientRect();
-                  if (order.includes(draggedId) && element && rect) {
-                      if (this.droppedOrderTimer) {
-                          // the previous drop is over - this gesture brings its own order
-                          clearTimeout(this.droppedOrderTimer);
-                          this.droppedOrderTimer = null;
+                  this.startDragOnMove = () => {
+                      const order = this.getRelativeWidgetOrder();
+                      const element = this.widgetsRefs[draggedId]?.refService?.current;
+                      const rect = element?.getBoundingClientRect();
+                      if (order.includes(draggedId) && element && rect) {
+                          if (this.droppedOrderTimer) {
+                              // the previous drop is over - this gesture brings its own order
+                              clearTimeout(this.droppedOrderTimer);
+                              this.droppedOrderTimer = null;
+                          }
+                          this.createDragGhost(element, rect, clientX, clientY);
+                          this.setState({
+                              relativeDrag: {
+                                  wid: draggedId,
+                                  order,
+                                  width: rect.width,
+                                  height: rect.height,
+                              },
+                          });
                       }
-                      this.createDragGhost(element, rect, e.clientX, e.clientY);
-                      this.setState({
-                          relativeDrag: {
-                              wid: draggedId,
-                              order,
-                              width: rect.width,
-                              height: rect.height,
-                          },
-                      });
-                  }
+                  };
               }
 
               this.selectedWidgets.forEach((_wid: AnyWidgetId) => {
@@ -997,6 +1051,118 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.dragGhost = null;
         }
     }
+
+    /**
+     * The element the view scrolls in: the pane of the editor, or the page.
+     *
+     * @param element - the view
+     */
+    static findScrollParent(element: HTMLElement | null): HTMLElement | null {
+        for (let el = element; el && el !== window.document.body; el = el.parentElement) {
+            const style = window.getComputedStyle(el);
+            if (
+                (/(auto|scroll|overlay)/.test(style.overflowY) && el.scrollHeight > el.clientHeight) ||
+                (/(auto|scroll|overlay)/.test(style.overflowX) && el.scrollWidth > el.clientWidth)
+            ) {
+                return el;
+            }
+        }
+        const page = window.document.scrollingElement as HTMLElement | null;
+        return page && page.scrollHeight > page.clientHeight ? page : null;
+    }
+
+    /** The part of the scrolled pane that is on the screen; the whole window for the page itself */
+    static getPaneBox(scroller: HTMLElement): Box {
+        if (scroller === window.document.scrollingElement) {
+            return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+        }
+        return scroller.getBoundingClientRect();
+    }
+
+    /** The mouse has left the small circle around the point the gesture started at, see onMouseWidgetMove() */
+    private isBeyondDragThreshold(e: { pageX: number; pageY: number }): boolean {
+        return (
+            !!this.movement &&
+            (Math.abs(e.pageX - (this.movement.startX || 0)) > DRAG_THRESHOLD ||
+                Math.abs(e.pageY - (this.movement.startY || 0)) > DRAG_THRESHOLD)
+        );
+    }
+
+    /** How far the pane has scrolled since the gesture started */
+    private getGestureScroll(): { x: number; y: number } {
+        const scroller = this.movement?.scroller;
+        if (!scroller || !this.movement) {
+            return { x: 0, y: 0 };
+        }
+        return {
+            x: scroller.scrollLeft - (this.movement.scrollLeft || 0),
+            y: scroller.scrollTop - (this.movement.scrollTop || 0),
+        };
+    }
+
+    /**
+     * Let the pane scroll by itself while something is dragged near its edge, see autoScrollSpeed().
+     *
+     * A section further up is out of sight while a widget is dragged in a section further down, and the mouse
+     * alone can never reach it. So the pane scrolls one step per frame for as long as the cursor stays near the
+     * edge - also while the mouse rests - and after each step the last move is replayed: the widget, or the slot it
+     * would drop into, follows the content that scrolls by underneath the cursor.
+     *
+     * @param clientX - the cursor
+     * @param clientY - the cursor
+     */
+    private updateAutoScroll(clientX: number, clientY: number): void {
+        const scroller = this.movement?.scroller;
+        const speed = scroller ? autoScrollSpeed({ x: clientX, y: clientY }, VisView.getPaneBox(scroller)) : null;
+        if (!speed || (!speed.x && !speed.y)) {
+            this.stopAutoScroll();
+        } else if (this.autoScrollFrame === null) {
+            this.autoScrollFrame = window.requestAnimationFrame(this.autoScrollStep);
+        }
+    }
+
+    private autoScrollStep = (): void => {
+        this.autoScrollFrame = null;
+        const scroller = this.movement?.scroller;
+        const event = this.lastMoveEvent;
+        if (!scroller || !event || !this.onMouseWidgetMove) {
+            return;
+        }
+        const speed = autoScrollSpeed({ x: event.clientX, y: event.clientY }, VisView.getPaneBox(scroller));
+        const { scrollLeft, scrollTop } = scroller;
+        scroller.scrollLeft += speed.x;
+        scroller.scrollTop += speed.y;
+        if (scroller.scrollLeft === scrollLeft && scroller.scrollTop === scrollTop) {
+            // the end of the pane; the next move of the mouse starts it again if there is more to scroll
+            return;
+        }
+        // the move measures everything anew, and asks for the next step if the cursor is still near the edge
+        this.onMouseWidgetMove(event);
+    };
+
+    private stopAutoScroll(): void {
+        if (this.autoScrollFrame !== null) {
+            window.cancelAnimationFrame(this.autoScrollFrame);
+            this.autoScrollFrame = null;
+        }
+    }
+
+    /**
+     * The mouse moves outside the view while a gesture runs - over the toolbar above the pane, say. The gesture itself
+     * only follows the mouse over the view, as ever; this only keeps the pane scrolling towards the cursor.
+     */
+    private onWindowMoveDuringGesture = (e: MouseEvent): void => {
+        if (!this.movement || this.refView.current?.contains(e.target as Node)) {
+            return;
+        }
+        if (!(e.buttons & 1)) {
+            // let go where the view could not see it
+            this.onMouseWidgetUp?.(e);
+            return;
+        }
+        this.lastMoveEvent = e;
+        this.updateAutoScroll(e.clientX, e.clientY);
+    };
 
     /**
      * Put the widget dragged in the grid layout where the cursor is, see computeGridDrop().
@@ -1140,9 +1306,35 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
               const widgetsRefs = this.widgetsRefs;
+              this.lastMoveEvent = e;
+
+              // A press is only a click until the mouse has left a small circle around the point it was pressed
+              // at. Otherwise the hand that clicks a widget to select it shifts it by a pixel.
+              if (!this.movement.moved) {
+                  if (!this.isBeyondDragThreshold(e)) {
+                      return;
+                  }
+                  // the drag of a relative widget begins now, see mouseDownOnView()
+                  const startDrag = this.startDragOnMove;
+                  this.startDragOnMove = null;
+                  startDrag?.();
+              }
               this.movement.moved = true;
-              this.movement.x = e.pageX - (this.movement.startX || 0);
-              this.movement.y = e.pageY - (this.movement.startY || 0);
+              // The pane may have scrolled since the gesture started, see updateAutoScroll(): whatever is dragged
+              // has come that much further in the view, although the cursor has not moved on the screen.
+              const scrolled = this.getGestureScroll();
+              this.movement.x = e.pageX - (this.movement.startX || 0) + scrolled.x;
+              this.movement.y = e.pageY - (this.movement.startY || 0) + scrolled.y;
+
+              // Where the widget started, measured on the screen as it is scrolled now - the view and the other
+              // widgets it snaps to are measured there as well.
+              const started = this.movement.startWidget;
+              const startWidget = {
+                  left: (started?.left || 0) - scrolled.x,
+                  top: (started?.top || 0) - scrolled.y,
+                  right: (started?.right || 0) - scrolled.x,
+                  bottom: (started?.bottom || 0) - scrolled.y,
+              };
 
               const viewRect = this.refView.current.getBoundingClientRect();
 
@@ -1151,15 +1343,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                       (store.getState().visProject[this.props.view].settings?.gridSize || 0) as unknown as string,
                       10,
                   );
-                  const snapped = snapToGrid(
-                      this.movement,
-                      {
-                          left: this.movement.startWidget?.left || 0,
-                          top: this.movement.startWidget?.top || 0,
-                      },
-                      viewRect,
-                      gridSize,
-                  );
+                  const snapped = snapToGrid(this.movement, startWidget, viewRect, gridSize);
                   this.movement.x = snapped.x;
                   this.movement.y = snapped.y;
               }
@@ -1176,16 +1360,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                           others.push(box);
                       }
                   }
-                  const snapped = snapToWidgets(
-                      this.movement,
-                      {
-                          left: this.movement.startWidget?.left || 0,
-                          top: this.movement.startWidget?.top || 0,
-                          right: this.movement.startWidget?.right || 0,
-                          bottom: this.movement.startWidget?.bottom || 0,
-                      },
-                      others,
-                  );
+                  const snapped = snapToWidgets(this.movement, startWidget, others);
                   this.movement.x = snapped.x;
                   this.movement.y = snapped.y;
               }
@@ -1197,6 +1372,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               this.moveDragGhost(e.clientX, e.clientY);
               this.updateRelativeDragOrder(e.clientX, e.clientY);
               this.updateGridDrag(e.clientX, e.clientY);
+              this.updateAutoScroll(e.clientX, e.clientY);
 
               this.selectedWidgets.forEach((wid: AnyWidgetId) => {
                   const onMove = widgetsRefs[wid]?.onMove;
@@ -1318,6 +1494,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               e?.stopPropagation();
               this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
               this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
+              window.removeEventListener('mousemove', this.onWindowMoveDuringGesture);
+              this.stopAutoScroll();
+              this.lastMoveEvent = null;
+
+              // A quick gesture may bring no move between the press and the release: the drag that the move would
+              // have started is started now, so that the release below can drop it
+              const startDrag = this.startDragOnMove;
+              this.startDragOnMove = null;
+              if (startDrag && e && this.movement && this.isBeyondDragThreshold(e)) {
+                  startDrag();
+              }
 
               this.removeDragGhost();
 
@@ -1399,8 +1586,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
               });
 
-              // if only one widget selected => check if it can be added to another widget
-              if (this.selectedWidgets.length === 1 && widgetsRefs[this.selectedWidgets[0]]?.refService?.current) {
+              // If only one widget was moved: check if it can be added to another widget. Only after a move - a
+              // press that only selects a widget that lies over a container must not ask.
+              if (
+                  this.movement?.moved &&
+                  this.selectedWidgets.length === 1 &&
+                  widgetsRefs[this.selectedWidgets[0]]?.refService?.current
+              ) {
                   for (const wid in widgetsRefs) {
                       const widgetId = wid as AnyWidgetId;
                       // do not add to itself
@@ -1441,6 +1633,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
               }
 
               this.showRulers(true);
+              // the gesture is over; from now on the selection comes from the props again
+              this.gestureSelection = null;
           }
         : null;
 
@@ -1653,6 +1847,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.updateViewWidth();
         this.observeRelativeView();
         this.observeGridCells();
+
+        // the selection a press made has arrived through the props, see mouseDownOnView() - it also ends there when
+        // the press did not become a gesture at all
+        if (this.gestureSelection?.every(wid => this.props.selectedWidgets?.includes(wid))) {
+            this.gestureSelection = null;
+        }
 
         this.releaseDroppedOrder();
         // detect filter changes

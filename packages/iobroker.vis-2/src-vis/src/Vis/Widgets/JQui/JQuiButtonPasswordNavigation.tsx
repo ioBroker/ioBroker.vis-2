@@ -2,7 +2,7 @@
  *  ioBroker.vis-2
  *  https://github.com/ioBroker/ioBroker.vis-2
  *
- *  Copyright (c) 2023-2025 Denis Haev https://github.com/GermanBluefox,
+ *  Copyright (c) 2023-2026 Denis Haev https://github.com/GermanBluefox,
  *  Creative Common Attribution-NonCommercial (CC BY-NC)
  *
  *  http://creativecommons.org/licenses/by-nc/4.0/
@@ -22,7 +22,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import JQuiButton from './JQuiButton';
 
-class JQuiButtonPasswordNavigation extends JQuiButton {
+export default class JQuiButtonPasswordNavigation extends JQuiButton {
     static getWidgetInfo(): RxWidgetInfo {
         const widgetInfo = JQuiButton.getWidgetInfo() as unknown as RxWidgetInfoWriteable;
 
@@ -78,5 +78,3 @@ class JQuiButtonPasswordNavigation extends JQuiButton {
         return JQuiButtonPasswordNavigation.getWidgetInfo();
     }
 }
-
-export default JQuiButtonPasswordNavigation;

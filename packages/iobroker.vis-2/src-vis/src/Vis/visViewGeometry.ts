@@ -240,3 +240,42 @@ export function selectionRect(movement: { x: number; y: number; w: number; h: nu
         height: Math.abs(movement.h),
     };
 }
+
+/** How close to an edge of the scrolled pane a dragged widget makes it scroll, in pixels */
+export const AUTO_SCROLL_ZONE = 40;
+
+/** How far the pane scrolls per frame at most - with the cursor on its edge or beyond it, in pixels */
+export const AUTO_SCROLL_MAX_SPEED = 20;
+
+/**
+ * How far the pane a widget is dragged in has to scroll by itself, per frame.
+ *
+ * Near an edge it scrolls towards that edge, the faster the closer the cursor is, and at full speed on the edge or
+ * beyond it - over the toolbar above the pane, say. That is how a widget reaches a place that is scrolled out of
+ * sight: a section further up is only on the screen once the pane has scrolled there.
+ *
+ * @param pointer - the cursor, in client coordinates
+ * @param pane - the visible rectangle of the scrolled pane
+ * @returns how far to scroll to the right and down; negative is to the left and up, 0 is not at all
+ */
+export function autoScrollSpeed(pointer: { x: number; y: number }, pane: Box): { x: number; y: number } {
+    const speed = (position: number, start: number, end: number): number => {
+        // a small pane gets a smaller zone, so that its middle does not scroll at all
+        const zone = Math.min(AUTO_SCROLL_ZONE, (end - start) / 4);
+        if (zone <= 0) {
+            return 0;
+        }
+        if (position < start + zone) {
+            return -Math.ceil(AUTO_SCROLL_MAX_SPEED * Math.min(1, (start + zone - position) / zone));
+        }
+        if (position > end - zone) {
+            return Math.ceil(AUTO_SCROLL_MAX_SPEED * Math.min(1, (position - (end - zone)) / zone));
+        }
+        return 0;
+    };
+
+    return {
+        x: speed(pointer.x, pane.left, pane.right),
+        y: speed(pointer.y, pane.top, pane.bottom),
+    };
+}
