@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { AnyWidgetId, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
+import type { AnyWidgetId, ViewSection, ViewSettings, WidgetStyle } from '@iobroker/types-vis-2';
 
 import type { Box } from './visViewGeometry';
 import {
@@ -9,6 +9,10 @@ import {
     clampGridSpan,
     computeGridDrop,
     getDefaultGridSpan,
+    getNewViewSettings,
+    getSectionFrameStyle,
+    hasSectionHeader,
+    SECTION_PANEL,
     getGridCellCss,
     getGridCellSpan,
     getGridLayout,
@@ -484,6 +488,83 @@ describe('getDefaultGridSpan', () => {
             columns: 6,
             rows: 2,
         });
+    });
+});
+
+describe('getSectionFrameStyle', () => {
+    const paper = '#1e1e1e';
+    const section = (props: Record<string, unknown>): ViewSection => ({ id: 's1', widgets: [], ...props });
+
+    it('gives a section that sets nothing no frame, as before', () => {
+        expect(getSectionFrameStyle(section({}), paper)).toEqual({});
+        expect(getSectionFrameStyle(undefined, paper)).toEqual({});
+    });
+
+    it('makes a panel a card in the paper color of the theme', () => {
+        expect(getSectionFrameStyle(section({ variant: 'panel' }), paper)).toEqual({
+            background: paper,
+            borderRadius: 12,
+            padding: 12,
+            boxShadow: SECTION_PANEL.boxShadow,
+        });
+    });
+
+    it('lets what the section sets win over the panel', () => {
+        const style = getSectionFrameStyle(
+            section({ variant: 'panel', background: 'red', borderRadius: 0, padding: 4 }),
+            paper,
+        );
+        expect(style).toMatchObject({
+            background: 'red',
+            borderRadius: 0,
+            padding: 4,
+            boxShadow: SECTION_PANEL.boxShadow,
+        });
+    });
+
+    it('draws a border only with a width', () => {
+        expect(getSectionFrameStyle(section({ borderColor: 'red' }), paper).border).toBeUndefined();
+        expect(
+            getSectionFrameStyle(section({ borderWidth: 2, borderColor: 'red', borderStyle: 'dashed' }), paper),
+        ).toEqual({
+            border: '2px dashed red',
+        });
+        expect(getSectionFrameStyle(section({ borderWidth: '1' }), paper).border).toBe('1px solid currentColor');
+    });
+
+    it('takes a solid border for a style it does not know', () => {
+        expect(getSectionFrameStyle(section({ borderWidth: 1, borderStyle: 'groove; color: red' }), paper).border).toBe(
+            '1px solid currentColor',
+        );
+    });
+
+    it('ignores what is no number', () => {
+        expect(
+            getSectionFrameStyle(section({ borderRadius: 'round', padding: -3, borderWidth: 'thick' }), paper),
+        ).toEqual({});
+    });
+});
+
+describe('hasSectionHeader', () => {
+    it('has a header with a title or an icon only', () => {
+        expect(hasSectionHeader({ id: 's1', widgets: [], title: 'Kitchen' })).toBe(true);
+        expect(hasSectionHeader({ id: 's1', widgets: [], icon: 'data:image/svg+xml;base64,AA' })).toBe(true);
+        expect(hasSectionHeader({ id: 's1', widgets: [], title: '' })).toBe(false);
+        expect(hasSectionHeader(undefined)).toBe(false);
+    });
+});
+
+describe('getNewViewSettings', () => {
+    it('starts a new view in the grid layout with one empty section', () => {
+        const settings = getNewViewSettings();
+        expect(settings.layout).toBe('grid');
+        expect(settings.sections).toEqual([{ id: 's1', widgets: [] }]);
+    });
+
+    it('gives every view its own settings, so that editing one view changes no other', () => {
+        const first = getNewViewSettings();
+        first.sections?.[0].widgets.push('w000001');
+        expect(getNewViewSettings().sections?.[0].widgets).toEqual([]);
     });
 });
 

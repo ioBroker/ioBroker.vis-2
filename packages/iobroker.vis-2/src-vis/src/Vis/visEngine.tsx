@@ -138,6 +138,8 @@ interface VisEngineProps {
     visCommonCss: string;
     visUserCss: string;
     selectedGroup: GroupWidgetId | null;
+    /** The section of the grid layout that is edited in the attributes */
+    selectedSection?: string | null;
     widgetHint: 'light' | 'dark' | 'hide';
     themeType: ThemeType;
     themeName: ThemeName;
@@ -154,6 +156,7 @@ interface VisEngineProps {
     setLoadingText?: Editor['setLoadingText'];
     onFontsUpdate?: Editor['onFontsUpdate'];
     setSelectedGroup?: Editor['setSelectedGroup'];
+    setSelectedSection?: Editor['setSelectedSection'];
     onConfirmDialog: (
         message: string,
         title: string,
@@ -2532,6 +2535,7 @@ ${this.scripts}
             registerEditorCallback: this.props.runtime ? null : (this.props.registerEditorCallback ?? null),
             runtime: this.props.runtime,
             setSelectedGroup: this.props.runtime ? null : (this.props.setSelectedGroup ?? null),
+            setSelectedSection: this.props.runtime ? null : (this.props.setSelectedSection ?? null),
             setSelectedWidgets: this.props.runtime ? null : this.props.setSelectedWidgets,
             setTimeInterval: this.setTimeInterval,
             setTimeStart: this.setTimeStart,
@@ -2570,6 +2574,7 @@ ${this.scripts}
                         viewsActiveFilter={this.viewsActiveFilter}
                         key={view}
                         selectedGroup={this.props.runtime ? undefined : (this.props.selectedGroup ?? undefined)}
+                        selectedSection={this.props.runtime ? undefined : this.props.selectedSection}
                         selectedWidgets={this.props.runtime ? undefined : this.props.selectedWidgets}
                         view={view}
                     />

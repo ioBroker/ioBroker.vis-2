@@ -9,6 +9,7 @@ import { store } from '@/Store';
 import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
 import { useFocus } from '@/Utils';
 import IODialog from '@/Components/IODialog';
+import { getNewViewSettings } from '@/Vis/visGridLayout';
 import type { Project, SingleWidgetId } from '@iobroker/types-vis-2';
 
 interface ViewDialogProps {
@@ -45,9 +46,8 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
         project[props.dialogName.trim()] = {
             name: props.dialogName,
             parentId: props.dialogParentId,
-            settings: {
-                style: {},
-            },
+            // a new view uses the grid layout with sections
+            settings: getNewViewSettings(),
             widgets: {},
             activeWidgets: [],
             filterList: [],

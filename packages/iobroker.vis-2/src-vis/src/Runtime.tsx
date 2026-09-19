@@ -47,6 +47,7 @@ import { applyTitleAndIcon, extractBinding, findWidgetUsages, readFile } from '.
 import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
+import { getNewViewSettings } from './Vis/visGridLayout';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -113,6 +114,11 @@ export interface RuntimeState extends GenericAppState {
     userGroups: Record<ioBroker.ObjectIDs.Group, ioBroker.GroupObject>;
     splitSizes: [number, number, number];
     selectedGroup: GroupWidgetId | null;
+    /**
+     * The section of the grid layout that is edited in the attributes, and the view it belongs to - the ids of
+     * sections repeat from view to view. Only the editor sets it.
+     */
+    selectedSection?: { view: string; id: string } | null;
     projectsDialog: boolean;
     showImportDialog: boolean;
     lockDragging: boolean;
@@ -184,6 +190,8 @@ export default class Runtime<
     ) => Promise<void>;
 
     protected setSelectedGroup?: (selectedGroup: GroupWidgetId) => void;
+
+    protected setSelectedSection?: (sectionId: string | null) => void;
 
     protected onWidgetsChanged?: (
         changedData:
@@ -1176,9 +1184,8 @@ export default class Runtime<
                 },
                 default: {
                     name: 'Default',
-                    settings: {
-                        style: {},
-                    },
+                    // a new view uses the grid layout with sections
+                    settings: getNewViewSettings(),
                     widgets: {},
                     activeWidgets: {},
                 },
@@ -1412,6 +1419,10 @@ export default class Runtime<
                 onLoaded={() => this.onWidgetsLoaded()}
                 selectedGroup={this.state.selectedGroup}
                 setSelectedGroup={this.setSelectedGroup}
+                selectedSection={
+                    this.state.selectedSection?.view === this.state.selectedView ? this.state.selectedSection.id : null
+                }
+                setSelectedSection={this.setSelectedSection}
                 onWidgetsChanged={this.onWidgetsChanged}
                 projectName={this.state.projectName}
                 lockDragging={this.state.lockDragging}

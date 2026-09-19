@@ -16,7 +16,7 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 
-import { I18n, Utils } from '@iobroker/gui-components';
+import { I18n, Icon, Utils } from '@iobroker/gui-components';
 
 import type VisRxWidget from '@/Vis/visRxWidget';
 import createTheme from '@/theme';
@@ -60,6 +60,8 @@ import {
     getGridLayout,
     getGridMaxWidth,
     getSectionColumnCount,
+    getSectionFrameStyle,
+    hasSectionHeader,
     GRID_COLUMNS,
     GRID_COLUMNS_VAR,
     type GridSection,
@@ -1192,7 +1194,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         const sectionBoxes: Partial<Record<string, Box>> = {};
         const widgetBoxes: Partial<Record<AnyWidgetId, Box>> = {};
         for (const section of sections) {
-            const sectionBox = this.refGridSections[section.id]?.current?.getBoundingClientRect();
+            // the whole frame of the section - its header and padding too - is where a widget can be dropped into it
+            const grid = this.refGridSections[section.id]?.current;
+            const sectionBox = (grid?.parentElement || grid)?.getBoundingClientRect();
             if (sectionBox) {
                 sectionBoxes[section.id] = sectionBox;
             }
@@ -2360,6 +2364,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             >
                 <button
                     type="button"
+                    title={I18n.t('Edit section')}
+                    className={
+                        this.props.selectedSection === stored?.id ? 'vis-grid-section-control-active' : undefined
+                    }
+                    // shows the section in the attributes - also the one that has no widget yet to be selected
+                    onClick={() => stored?.id && this.props.context.setSelectedSection?.(stored.id)}
+                >
+                    ✎
+                </button>
+                <button
+                    type="button"
                     title={I18n.t('Narrower')}
                     disabled={span <= 1}
                     onClick={() => setSpan(span - 1)}
@@ -2416,15 +2431,19 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             sections.map(section => [section.id, section.columnSpan, section.widgets]),
         ]);
 
+        const paperColor = this.props.context.theme?.palette?.background?.paper || '#fff';
+
         const renderedSections: React.JSX.Element[] = sections.map(section => {
             this.refGridSections[section.id] ||= React.createRef();
             const refSection = this.refGridSections[section.id];
             const columns = GRID_COLUMNS * section.columnSpan;
+            // the section as it is stored, with its look; the one of the widgets no section lists has none
+            const stored =
+                section.implicit || section.index === undefined ? undefined : settings?.sections?.[section.index];
 
-            const style = {
+            const gridStyle = {
                 // the widgets limit their columns to this, see getGridCellCss()
                 [GRID_COLUMNS_VAR]: columns,
-                gridColumn: `span ${section.columnSpan}`,
                 display: 'grid',
                 gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
                 gridAutoRows: `minmax(${layout.rowHeight}px, auto)`,
@@ -2435,58 +2454,87 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 minHeight: layout.rowHeight,
             } as React.CSSProperties;
 
+            // The frame carries the look of the section and its header; the grid of its cells lies inside it, so
+            // the cells are measured without the padding and the header, see VisBaseWidget.getGridMetrics()
             return (
                 <div
                     key={section.id}
-                    ref={refSection}
                     data-section={section.id}
                     className={Utils.clsx(
-                        'vis-grid-section',
+                        'vis-grid-section-frame',
                         this.props.editMode && 'vis-grid-section-edit',
                         section.implicit && 'vis-grid-section-implicit',
+                        this.props.editMode &&
+                            stored &&
+                            this.props.selectedSection === stored.id &&
+                            'vis-grid-section-selected',
                     )}
-                    style={style}
+                    style={{
+                        gridColumn: `span ${section.columnSpan}`,
+                        position: 'relative',
+                        boxSizing: 'border-box',
+                        minWidth: 0,
+                        ...getSectionFrameStyle(stored, paperColor),
+                    }}
                 >
-                    {this.props.editMode && !section.implicit && section.index !== undefined
+                    {this.props.editMode && stored && section.index !== undefined
                         ? this.renderGridSectionControls(section.index, layout.maxSections)
                         : null}
-                    {section.widgets.map((id, index) =>
-                        // The slot the dragged widget would drop into; the widget itself follows the cursor as a
-                        // copy, see createDragGhost()
-                        gridDrag && !gridDrag.dropped && id === gridDrag.wid ? (
-                            <div
-                                key={`placeholder_${id}`}
-                                className="vis-editmode-widget-shadow"
-                                style={VisBaseWidget.getGridCellStyle(
-                                    project[view].widgets[id]?.style,
-                                    settings,
-                                    index,
-                                )}
-                            />
-                        ) : (
-                            VisView.getOneWidget(index, project[view].widgets[id], {
-                                context: this.props.context,
-                                editMode: this.props.editMode,
-                                id,
-                                isRelative: true,
-                                gridCell: true,
-                                viewWidth,
-                                mouseDownOnView: this.mouseDownOnView,
-                                moveAllowed,
-                                ignoreMouseEvents: this.ignoreMouseEvents,
-                                onIgnoreMouseEvents: this.onIgnoreMouseEvents,
-                                // the can.js widgets are inserted into the section, in the order of the section
-                                refParent: refSection,
-                                askView: this.askView,
-                                relativeWidgetOrder: section.widgets,
-                                selectedWidgets: this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
-                                selectedGroup: null,
-                                view,
-                                customSettings: this.props.customSettings,
-                                viewsActiveFilter: this.props.viewsActiveFilter,
-                            })
-                        ),
-                    )}
+                    {hasSectionHeader(stored) ? (
+                        <div className="vis-grid-section-header">
+                            {stored?.icon ? (
+                                <Icon
+                                    src={stored.icon}
+                                    className="vis-grid-section-header-icon"
+                                />
+                            ) : null}
+                            {stored?.title ? <span>{stored.title}</span> : null}
+                        </div>
+                    ) : null}
+                    <div
+                        ref={refSection}
+                        className="vis-grid-section"
+                        style={gridStyle}
+                    >
+                        {section.widgets.map((id, index) =>
+                            // The slot the dragged widget would drop into; the widget itself follows the cursor as a
+                            // copy, see createDragGhost()
+                            gridDrag && !gridDrag.dropped && id === gridDrag.wid ? (
+                                <div
+                                    key={`placeholder_${id}`}
+                                    className="vis-editmode-widget-shadow"
+                                    style={VisBaseWidget.getGridCellStyle(
+                                        project[view].widgets[id]?.style,
+                                        settings,
+                                        index,
+                                    )}
+                                />
+                            ) : (
+                                VisView.getOneWidget(index, project[view].widgets[id], {
+                                    context: this.props.context,
+                                    editMode: this.props.editMode,
+                                    id,
+                                    isRelative: true,
+                                    gridCell: true,
+                                    viewWidth,
+                                    mouseDownOnView: this.mouseDownOnView,
+                                    moveAllowed,
+                                    ignoreMouseEvents: this.ignoreMouseEvents,
+                                    onIgnoreMouseEvents: this.onIgnoreMouseEvents,
+                                    // the can.js widgets are inserted into the section, in the order of the section
+                                    refParent: refSection,
+                                    askView: this.askView,
+                                    relativeWidgetOrder: section.widgets,
+                                    selectedWidgets:
+                                        this.movement?.selectedWidgetsWithRectangle || this.selectedWidgets,
+                                    selectedGroup: null,
+                                    view,
+                                    customSettings: this.props.customSettings,
+                                    viewsActiveFilter: this.props.viewsActiveFilter,
+                                })
+                            ),
+                        )}
+                    </div>
                 </div>
             );
         });

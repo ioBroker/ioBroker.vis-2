@@ -1083,6 +1083,22 @@ export interface ViewSection {
     widgets: AnyWidgetId[];
     /** How many section columns the section occupies (default 1) */
     columnSpan?: number;
+    /** The title in the header of the section; without title and icon the section has no header */
+    title?: string;
+    /** The icon in the header of the section, as an `icon64` value */
+    icon?: string;
+    /** `panel` gives the section the look of a card: the paper color of the theme, rounded corners and a shadow */
+    variant?: 'plain' | 'panel' | null;
+    /** Any CSS background; wins over the one of the `panel` */
+    background?: string | null;
+    /** in px; 0 or none is no border */
+    borderWidth?: number | null;
+    borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | null;
+    borderColor?: string | null;
+    /** in px; wins over the one of the `panel` */
+    borderRadius?: number | null;
+    /** the space between the border and the widgets, in px; wins over the one of the `panel` */
+    padding?: number | null;
 }
 
 export interface View {
@@ -1715,6 +1731,8 @@ export interface VisContext {
           ) => void);
     runtime: boolean;
     setSelectedGroup: null | ((groupId: GroupWidgetId) => void);
+    /** Select a section of the grid layout, to edit it in the attributes; only the editor passes it */
+    setSelectedSection?: null | ((sectionId: string | null) => void);
     setSelectedWidgets: null | ((widgets: AnyWidgetId[], view?: string, cb?: () => void) => void);
     setTimeInterval: (timeInterval: string) => void;
     setTimeStart: (timeStart: string) => void;
@@ -1742,6 +1760,8 @@ export interface VisViewProps {
     editMode: boolean;
     selectedWidgets?: AnyWidgetId[];
     selectedGroup?: GroupWidgetId;
+    /** The section of the grid layout that is edited in the attributes, by its id */
+    selectedSection?: string | null;
     viewsActiveFilter: Record<string, string[]>;
     customSettings?: Record<string, any>;
     onIgnoreMouseEvents?: (ignore: boolean) => void;

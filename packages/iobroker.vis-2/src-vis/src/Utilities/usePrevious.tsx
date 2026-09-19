@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-function usePrevious(value: string[]): string[] {
+function usePrevious<T>(value: T): T {
     const ref = useRef<any>(undefined);
 
     useEffect(() => {

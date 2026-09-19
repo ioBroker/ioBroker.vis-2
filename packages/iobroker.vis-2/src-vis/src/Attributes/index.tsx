@@ -16,8 +16,10 @@ import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
 import CSS from './CSS';
 import Scripts from './Scripts';
 import View from './View';
+import Section from './Section';
 import Widget from './Widget';
 import usePrevious from '@/Utilities/usePrevious';
+import { store } from '@/Store';
 
 const styles: Record<string, any> = {
     blockHeader: (theme: VisTheme) => theme.classes.blockHeader,
@@ -28,6 +30,7 @@ const styles: Record<string, any> = {
 
 const tabs: Record<string, JSXElementConstructor<any> | ((props: Record<string, any>) => ReactNode)> = {
     View,
+    Section,
     Widget,
     CSS,
     Scripts,
@@ -45,6 +48,8 @@ interface AttributesProps {
     adapterId: string;
     userGroups: Editor['state']['userGroups'];
     selectedWidgets: string[];
+    /** The section of the grid layout selected with its pencil, see Editor.setSelectedSection() */
+    selectedSection: string | null;
     widgetsLoaded: boolean;
     selectedView: string;
     changeProject: Editor['changeProject'];
@@ -65,6 +70,7 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
     const [triggerAllClosed, setTriggerAllClosed] = useState(0);
 
     const prevSelectedWidgets = usePrevious(props.selectedWidgets);
+    const prevSelectedSection = usePrevious(props.selectedSection);
 
     useEffect(() => {
         if (selected === 'Widget' && !props.selectedWidgets.length) {
@@ -75,11 +81,23 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
         }
     }, [props.selectedWidgets]);
 
+    // a section selected with its pencil is to be edited now
+    useEffect(() => {
+        if (props.selectedSection && props.selectedSection !== prevSelectedSection) {
+            setSelected('Section');
+        }
+    }, [props.selectedSection]);
+
     if (!props.openedViews.length) {
         return null;
     }
 
-    const TabContent: JSXElementConstructor<any> | ((props_: Record<string, any>) => ReactNode) = tabs[selected];
+    // only a view in the grid layout has sections
+    const gridLayout = store.getState().visProject[props.selectedView]?.settings?.layout === 'grid';
+    const tabList = gridLayout ? ['View', 'Section', 'Widget', 'CSS', 'Scripts'] : ['View', 'Widget', 'CSS', 'Scripts'];
+    const current = tabList.includes(selected) ? selected : 'View';
+
+    const TabContent: JSXElementConstructor<any> | ((props_: Record<string, any>) => ReactNode) = tabs[current];
 
     return (
         <>
@@ -96,7 +114,7 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
                 <IconAttributes style={{ marginTop: 4, marginRight: 4 }} />
                 {I18n.t('Attributes')}
                 <div style={{ flex: 1 }}></div>
-                {selected === 'View' || selected === 'Widget' ? (
+                {current === 'View' || current === 'Widget' ? (
                     <div style={{ textAlign: 'right' }}>
                         {!isAllOpened ? (
                             <Tooltip
@@ -151,11 +169,11 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
             </Typography>
             <Tabs
                 sx={styles.viewTabs}
-                value={selected || 'View'}
+                value={current}
                 variant="scrollable"
                 scrollButtons="auto"
             >
-                {['View', 'Widget', 'CSS', 'Scripts'].map(tab => (
+                {tabList.map(tab => (
                     <Tab
                         label={I18n.t(tab)}
                         value={tab}
@@ -170,10 +188,10 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
                 ))}
             </Tabs>
             <div style={{ height: 'calc(100% - 89px', overflowY: 'hidden' }}>
-                {selected === 'Widget' &&
+                {current === 'Widget' &&
                 !(props.widgetsLoaded && props.selectedView && props.selectedWidgets?.length) ? null : (
                     <TabContent
-                        key={selected}
+                        key={current}
                         {...props}
                         adapterId={props.adapterId}
                         adapterName={props.adapterName}

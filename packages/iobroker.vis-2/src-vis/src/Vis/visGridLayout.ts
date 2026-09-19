@@ -565,6 +565,87 @@ export function getGridSpanFromSize(
     };
 }
 
+/** The look of a section of the `panel` variant, apart from its color, which comes from the theme */
+export const SECTION_PANEL = {
+    borderRadius: 12,
+    padding: 12,
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 1px rgba(0, 0, 0, 0.14)',
+} as const;
+
+const BORDER_STYLES = ['solid', 'dashed', 'dotted', 'double'];
+
+/** The CSS of the frame of a section, see getSectionFrameStyle() */
+export interface SectionFrameStyle {
+    background?: string;
+    border?: string;
+    borderRadius?: number;
+    padding?: number;
+    boxShadow?: string;
+}
+
+/**
+ * How the frame around a section looks: the `panel` variant first - a card in the paper color of the theme - and
+ * over it whatever the section sets itself. A section that sets nothing has no frame at all, as before.
+ *
+ * @param section - the section as it is stored in the view settings
+ * @param paperColor - the color of a card in the theme of the view
+ */
+export function getSectionFrameStyle(section: ViewSection | undefined | null, paperColor: string): SectionFrameStyle {
+    const style: SectionFrameStyle = {};
+    if (!section || typeof section !== 'object') {
+        return style;
+    }
+
+    if (section.variant === 'panel') {
+        style.background = paperColor;
+        style.borderRadius = SECTION_PANEL.borderRadius;
+        style.padding = SECTION_PANEL.padding;
+        style.boxShadow = SECTION_PANEL.boxShadow;
+    }
+
+    if (typeof section.background === 'string' && section.background) {
+        style.background = section.background;
+    }
+
+    const borderWidth = toNumber(section.borderWidth, 0);
+    if (borderWidth) {
+        const borderStyle = BORDER_STYLES.includes(section.borderStyle as string) ? section.borderStyle : 'solid';
+        style.border = `${borderWidth}px ${borderStyle} ${section.borderColor || 'currentColor'}`;
+    }
+
+    const borderRadius = toNumber(section.borderRadius, 0);
+    if (borderRadius !== null) {
+        style.borderRadius = borderRadius;
+    }
+
+    const padding = toNumber(section.padding, 0);
+    if (padding !== null) {
+        style.padding = padding;
+    }
+
+    return style;
+}
+
+/** A section has a header when it has a title or an icon */
+export function hasSectionHeader(section: ViewSection | undefined | null): boolean {
+    return !!section && typeof section === 'object' && !!(section.title || section.icon);
+}
+
+/**
+ * The settings a new view starts with: the grid layout, with one empty section to drop the first widgets into -
+ * without a section, a widget dropped from the palette would become an absolute one.
+ *
+ * Only new views get it. A view without `layout` keeps the column layout: that is what every view had before the
+ * grid layout existed, and its relative widgets would move into the grid otherwise.
+ */
+export function getNewViewSettings(): ViewSettings {
+    return {
+        style: {},
+        layout: 'grid',
+        sections: [{ id: 's1', widgets: [] }],
+    };
+}
+
 /** An id for a new section that none of the sections has */
 export function newSectionId(sections: ViewSection[] | undefined | null): string {
     const ids = new Set((Array.isArray(sections) ? sections : []).map(section => section?.id));

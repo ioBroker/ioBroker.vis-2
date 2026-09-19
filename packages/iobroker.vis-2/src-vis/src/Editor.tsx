@@ -1591,7 +1591,24 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 JSON.stringify(selectedWidgets),
             );
 
-            await this.setStateAsync({ selectedWidgets });
+            // a selected widget shows its own section in the attributes, see setSelectedSection()
+            await this.setStateAsync(
+                selectedWidgets.length ? { selectedWidgets, selectedSection: null } : { selectedWidgets },
+            );
+        }
+    };
+
+    /**
+     * Select a section of the grid layout of the selected view, to edit it in the attributes. That is the way to a
+     * section without widgets; the section of a selected widget is shown anyway. The widgets are deselected, so that
+     * the attributes show this section and not the one of a widget.
+     *
+     * @param sectionId - the id of the section, or null to select none
+     */
+    setSelectedSection = (sectionId: string | null): void => {
+        this.setState({ selectedSection: sectionId ? { view: this.state.selectedView, id: sectionId } : null });
+        if (sectionId && this.state.selectedWidgets.length) {
+            void this.setSelectedWidgets([]);
         }
     };
 
@@ -2297,6 +2314,11 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     projectName={this.state.projectName}
                     themeType={this.state.themeType}
                     selectedWidgets={this.state.editMode ? this.state.selectedWidgets : []}
+                    selectedSection={
+                        this.state.editMode && this.state.selectedSection?.view === this.state.selectedView
+                            ? this.state.selectedSection.id
+                            : null
+                    }
                     widgetsLoaded={this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED}
                     socket={this.socket}
                     fonts={this.state.fonts}

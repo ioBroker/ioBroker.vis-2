@@ -334,6 +334,34 @@ html {
     outline-style: dotted;
 }
 
+/* The section that is edited in the attributes */
+.vis-grid-section-edit.vis-grid-section-selected {
+    outline: 2px solid #0d72b8;
+}
+
+/* Title and icon over the widgets of a section */
+.vis-grid-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.vis-grid-section-header-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.vis-grid-section-controls button.vis-grid-section-control-active {
+    opacity: 1;
+    border-color: #0d72b8;
+    color: #0d72b8;
+}
+
 /* Below the section, in the gap to the next row, so that they cover no widget */
 .vis-grid-section-controls {
     position: absolute;
