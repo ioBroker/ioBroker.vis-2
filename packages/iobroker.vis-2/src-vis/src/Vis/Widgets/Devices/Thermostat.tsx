@@ -2,19 +2,7 @@ import React from 'react';
 
 import { CircularSliderWithChildren } from 'react-circular-slider-svg';
 
-import {
-    Box,
-    Button,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    IconButton,
-    LinearProgress,
-    Slider,
-    Tab,
-    Tabs,
-    Tooltip,
-} from '@mui/material';
+import { Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Slider, Tab, Tabs, Tooltip } from '@mui/material';
 
 import {
     WbSunny as WbSunnyIcon,
@@ -43,11 +31,7 @@ import type {
     VisRxWidgetStateValues,
 } from '@iobroker/types-vis-2';
 
-/**
- * The chart of the history, which brings echarts with it. It is only shown in the dialog of the widget, so it is
- * loaded when the dialog is opened and not with the page.
- */
-const ObjectChart = React.lazy(() => import('./Components/ObjectChart'));
+import HistoryChart from './Components/HistoryChart';
 import Generic from './Generic';
 
 const BUTTONS: Record<string, React.JSX.Element> = {
@@ -701,29 +685,27 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                     )}
                     {this.state.isChart && this.state.dialogTab === 1 && (
                         <div style={{ height: '100%' }}>
-                            <React.Suspense fallback={<LinearProgress />}>
-                                <ObjectChart
-                                    t={(key: string): string => Generic.t(key)}
-                                    lang={Generic.getLanguage()}
-                                    socket={this.props.context.socket}
-                                    obj={this.state.tempStateObject || this.state.tempObject}
-                                    obj2={!this.state.tempStateObject ? null : this.state.tempObject}
-                                    objLineType={this.state.tempStateObject ? 'line' : 'step'}
-                                    obj2LineType="step"
-                                    themeType={this.props.context.themeType}
-                                    historyInstance={Generic.getHistoryInstance(
-                                        this.state.tempStateObject || this.state.tempObject,
-                                        this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
-                                    )}
-                                    historyInstance2={Generic.getHistoryInstance(
-                                        this.state.tempStateObject,
-                                        this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
-                                    )}
-                                    noToolbar={false}
-                                    systemConfig={this.props.context.systemConfig}
-                                    dateFormat={this.props.context.systemConfig.common.dateFormat}
-                                />
-                            </React.Suspense>
+                            <HistoryChart
+                                t={(key: string): string => Generic.t(key)}
+                                socket={this.props.context.socket}
+                                obj={this.state.tempStateObject || this.state.tempObject}
+                                obj2={!this.state.tempStateObject ? null : this.state.tempObject}
+                                // the set point is held until it is changed, the measured temperature moves on
+                                objStep={!this.state.tempStateObject}
+                                obj2Step
+                                chartTitle={this.state.rxData.widgetTitle}
+                                themeType={this.props.context.themeType}
+                                historyInstance={Generic.getHistoryInstance(
+                                    this.state.tempStateObject || this.state.tempObject,
+                                    this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
+                                )}
+                                historyInstance2={Generic.getHistoryInstance(
+                                    // the second line is the set point, so it is its instance that logs it
+                                    this.state.tempObject,
+                                    this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
+                                )}
+                                isFloatComma={this.props.context.systemConfig?.common?.isFloatComma}
+                            />
                         </div>
                     )}
                 </DialogContent>

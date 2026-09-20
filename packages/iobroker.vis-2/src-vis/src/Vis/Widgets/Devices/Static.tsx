@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Dialog, DialogContent, DialogTitle, IconButton, LinearProgress, Switch } from '@mui/material';
+import { Dialog, DialogContent, DialogTitle, IconButton, Switch } from '@mui/material';
 
 import { Close as IconClose } from '@mui/icons-material';
 
@@ -8,11 +8,7 @@ import { Icon } from '@iobroker/gui-components';
 import type { RxRenderWidgetProps, RxWidgetInfo, VisRxWidgetProps, VisRxWidgetState } from '@iobroker/types-vis-2';
 
 import Generic from './Generic';
-/**
- * The chart of the history, which brings echarts with it. It is only shown in the dialog of the widget, so it is
- * loaded when the dialog is opened and not with the page.
- */
-const ObjectChart = React.lazy(() => import('./Components/ObjectChart'));
+import HistoryChart from './Components/HistoryChart';
 
 const styles: Record<string, any> = {
     newValueLight: {
@@ -357,27 +353,21 @@ class Static extends Generic<StaticRxData, StaticState> {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    <React.Suspense fallback={<LinearProgress />}>
-                        <ObjectChart
-                            t={(word: string) => Generic.t(word)}
-                            lang={Generic.getLanguage()}
-                            socket={this.props.context.socket}
-                            obj={this.state.objects[index]}
-                            chartTitle={
-                                this.state.rxData[`title${index}`] ||
-                                Generic.getText(this.state.objects[index].common?.name)
-                            }
-                            title=""
-                            themeType={this.props.context.themeType}
-                            historyInstance={Generic.getHistoryInstance(
-                                this.state.objects[index],
-                                this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
-                            )}
-                            noToolbar={false}
-                            systemConfig={this.props.context.systemConfig}
-                            dateFormat={this.props.context.systemConfig.common.dateFormat}
-                        />
-                    </React.Suspense>
+                    <HistoryChart
+                        t={(word: string) => Generic.t(word)}
+                        socket={this.props.context.socket}
+                        obj={this.state.objects[index]}
+                        chartTitle={
+                            this.state.rxData[`title${index}`] ||
+                            Generic.getText(this.state.objects[index].common?.name)
+                        }
+                        themeType={this.props.context.themeType}
+                        historyInstance={Generic.getHistoryInstance(
+                            this.state.objects[index],
+                            this.props.context.systemConfig?.common?.defaultHistory || 'history.0',
+                        )}
+                        isFloatComma={this.props.context.systemConfig?.common?.isFloatComma}
+                    />
                 </DialogContent>
             </Dialog>
         );
