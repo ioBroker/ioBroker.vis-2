@@ -664,6 +664,10 @@ export interface HistoryChartProps {
     /** The second state is held until the next value arrives. */
     obj2Step?: boolean;
     chartTitle?: string;
+    /** The color of the first line; without it the chart takes its own. */
+    color?: string;
+    /** The color of the second line. */
+    color2?: string;
     themeType: ThemeType;
     /** The system writes a comma instead of a point. */
     isFloatComma?: boolean;
@@ -712,7 +716,7 @@ export default function HistoryChart(props: HistoryChartProps): React.JSX.Elemen
                     object: obj,
                     instance: historyInstance,
                     step: props.objStep,
-                    color: DEFAULT_COLORS[0],
+                    color: props.color || DEFAULT_COLORS[0],
                 });
             }
             const instance2 = historyInstance2 || historyInstance;
@@ -721,7 +725,7 @@ export default function HistoryChart(props: HistoryChartProps): React.JSX.Elemen
                     object: obj2,
                     instance: instance2,
                     step: props.obj2Step,
-                    color: DEFAULT_COLORS[1],
+                    color: props.color2 || DEFAULT_COLORS[1],
                 });
             }
             if (!wanted.length) {
@@ -772,7 +776,17 @@ export default function HistoryChart(props: HistoryChartProps): React.JSX.Elemen
             setSeries(result);
             setLoading(false);
         },
-        [obj, obj2, historyInstance, historyInstance2, socket, props.objStep, props.obj2Step],
+        [
+            obj,
+            obj2,
+            historyInstance,
+            historyInstance2,
+            socket,
+            props.objStep,
+            props.obj2Step,
+            props.color,
+            props.color2,
+        ],
     );
 
     useEffect(() => {

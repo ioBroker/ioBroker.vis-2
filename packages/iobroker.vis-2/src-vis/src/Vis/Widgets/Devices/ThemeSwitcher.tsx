@@ -73,6 +73,12 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
                 height: 48,
                 position: 'absolute',
             },
+            // one cell of a section is plenty for a button with a sun on it
+            visDefaultGrid: {
+                columns: 1,
+                rows: 1,
+                maxColumns: 2,
+            },
             visPrev: 'widgets/devices/img/prev_theme_switcher.png',
         };
     }
@@ -152,9 +158,13 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
             return (
                 <Button
                     variant={this.state.rxData.variant}
+                    // the button is as wide as the sun and the moon on it, not as wide as the cell it stands in
                     style={{
-                        width: '100%',
+                        minWidth: 0,
+                        width: 'auto',
                         height: '100%',
+                        aspectRatio: '1 / 1',
+                        padding: 0,
                     }}
                     onClick={e => {
                         e.stopPropagation();
