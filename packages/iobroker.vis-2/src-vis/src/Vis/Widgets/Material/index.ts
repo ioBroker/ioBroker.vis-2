@@ -5,9 +5,13 @@ import translations from './translations';
 import Blinds from './Blinds';
 import Camera from './Camera';
 import Clock from './Clock';
+import Lock from './Lock';
+import Navigate from './Navigate';
 import Security from './Security';
 import SimpleState from './SimpleState';
+import Static from './Static';
 import ThemeSwitcher from './ThemeSwitcher';
+import Thermostat from './Thermostat';
 import Vacuum from './Vacuum';
 import WasherDryer from './WasherDryer';
 
@@ -19,6 +23,19 @@ import WasherDryer from './WasherDryer';
  */
 I18n.extendTranslations(translations);
 
-const MATERIAL_WIDGETS = [Blinds, Camera, Clock, Security, SimpleState, ThemeSwitcher, Vacuum, WasherDryer];
+const MATERIAL_WIDGETS = [
+    Blinds,
+    Camera,
+    Clock,
+    Lock,
+    Navigate,
+    Security,
+    SimpleState,
+    Static,
+    ThemeSwitcher,
+    Thermostat,
+    Vacuum,
+    WasherDryer,
+];
 
 export default MATERIAL_WIDGETS;
