@@ -2280,6 +2280,12 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         overflow: this.state.editMode
                             ? 'auto'
                             : store.getState().visProject.___settings?.bodyOverflow || 'auto',
+                        // In edit mode the room for the scrollbar is kept free. A widget whose height follows
+                        // its width - a responsive layout of a widget set, say - otherwise flickers: it grows
+                        // a little too tall, the bar appears, the canvas is 10px narrower, the widget becomes
+                        // shorter, the bar goes, and it starts over. In the runtime the page belongs to the
+                        // project, so nothing is reserved there.
+                        scrollbarGutter: this.state.editMode ? 'stable' : undefined,
                     }}
                 >
                     {this.state.showCode ? <pre>{JSON.stringify(store.getState().visProject, null, 2)}</pre> : null}
