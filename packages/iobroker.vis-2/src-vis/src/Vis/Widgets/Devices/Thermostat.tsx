@@ -70,6 +70,8 @@ const styles: Record<string, any> = {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
+        // dragging the ring must not paint the temperature blue
+        userSelect: 'none',
         '& svg circle': {
             cursor: 'pointer',
         },

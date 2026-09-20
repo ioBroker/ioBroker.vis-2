@@ -117,6 +117,7 @@ export default function ColorWheel(props: WheelProps): React.JSX.Element {
                 margin: 'auto',
                 borderRadius: '50%',
                 touchAction: 'none',
+                userSelect: 'none',
                 cursor: disabled ? undefined : 'pointer',
                 background:
                     'radial-gradient(circle closest-side, #FFFFFF, rgba(255, 255, 255, 0) 100%), ' +
@@ -182,6 +183,7 @@ export function ShadeSlider(props: ShadeSliderProps): React.JSX.Element {
                 margin: '8px 0',
                 borderRadius: 8,
                 touchAction: 'none',
+                userSelect: 'none',
                 cursor: disabled ? undefined : 'pointer',
                 background: `linear-gradient(to right, #000000, ${hsvaToHex({ ...hsva, v: 100 })})`,
             }}
