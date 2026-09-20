@@ -45,9 +45,12 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
                             name: 'themeName',
                             type: 'select',
                             noTranslation: true,
+                            // the modern ones are the successors of dark and light, see ThemeName of the components
                             options: [
                                 { value: 'dark', label: 'dark' },
                                 { value: 'light', label: 'light' },
+                                { value: 'modernDark', label: 'modernDark' },
+                                { value: 'modernLight', label: 'modernLight' },
                             ],
                             default: 'light',
                             label: 'theme_name',
@@ -83,16 +86,29 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
         };
     }
 
+    /**
+     * The theme of the browser, in the family the view already uses.
+     *
+     * A view that runs on `modernLight` should become `modernDark` when the browser turns dark, not `dark`.
+     *
+     * @param dark true when the browser asks for a dark theme
+     * @returns the name of the theme to set
+     */
+    browserTheme(dark: boolean): ThemeName {
+        const current = this.props.context.themeName;
+        const modern = current === 'modernDark' || current === 'modernLight';
+        if (dark) {
+            return modern ? 'modernDark' : 'dark';
+        }
+        return modern ? 'modernLight' : 'light';
+    }
+
     componentDidMount(): void {
         super.componentDidMount();
-        let themeName: ThemeName;
         // get browser theme
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            // dark mode
-            themeName = 'dark';
-        } else {
-            themeName = 'light';
-        }
+        let themeName: ThemeName = this.browserTheme(
+            !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches,
+        );
 
         if (this.state.rxData.themeType === 'system') {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', this.onThemeChanged);
@@ -102,9 +118,7 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
             themeName = this.state.rxData.themeName;
         } else if (this.state.rxData.themeType === 'variable') {
             // get the last theme from local storage
-            themeName =
-                (window.localStorage.getItem('App.themeName') as ThemeName) ||
-                (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            themeName = (window.localStorage.getItem('App.themeName') as ThemeName) || themeName;
         }
         this.setState({ themeName }, () => this.setViewTheme(themeName));
     }
@@ -113,8 +127,10 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
         this.props.context?.toggleTheme?.(themeName || this.state.rxData.themeName);
     }
 
-    onThemeChanged = (event: { matches: boolean }): void =>
-        this.setState({ themeName: event.matches ? 'dark' : 'light' });
+    onThemeChanged = (event: { matches: boolean }): void => {
+        const themeName = this.browserTheme(event.matches);
+        this.setState({ themeName }, () => this.setViewTheme(themeName));
+    };
 
     componentWillUnmount(): void {
         if (this.state.rxData.themeType === 'system') {
@@ -158,19 +174,26 @@ export default class ThemeSwitcher extends Generic<ThemeSwitcherRxData, ThemeSwi
             return (
                 <Button
                     variant={this.state.rxData.variant}
-                    // the button is as wide as the sun and the moon on it, not as wide as the cell it stands in
+                    // the button fills the widget, whatever size it was given
                     style={{
                         minWidth: 0,
-                        width: 'auto',
+                        width: '100%',
                         height: '100%',
-                        aspectRatio: '1 / 1',
                         padding: 0,
                     }}
                     onClick={e => {
                         e.stopPropagation();
                         const themeName = this.state.themeName;
 
-                        const newThemeName = themeName === 'dark' ? 'light' : 'dark';
+                        // the switch stays in the family: modernLight turns into modernDark, not into dark
+                        const newThemeName: ThemeName =
+                            themeName === 'modernLight'
+                                ? 'modernDark'
+                                : themeName === 'modernDark'
+                                  ? 'modernLight'
+                                  : themeName === 'dark'
+                                    ? 'light'
+                                    : 'dark';
 
                         window.localStorage.setItem('App.themeName', newThemeName);
                         this.setState({ themeName: newThemeName }, () => this.setViewTheme(newThemeName));

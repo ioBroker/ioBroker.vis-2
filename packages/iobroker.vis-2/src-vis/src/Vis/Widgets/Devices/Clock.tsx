@@ -405,6 +405,9 @@ export default class Clock extends Generic<ClockRxData, ClockState> {
                                   y="18"
                                   stroke="currentColor"
                                   fontSize={6}
+                                  // the group turns the number to its place on the dial, and here it turns back
+                                  // around itself, so that 4 to 8 do not stand on their heads
+                                  transform={`rotate(${-30 * (idx + 1)} 50 16)`}
                               >
                                   {idx + 1}
                               </text>
