@@ -11,7 +11,6 @@ import {
     getDefaultGridSpan,
     getNewViewSettings,
     getSectionFrameStyle,
-    hasSectionHeader,
     SECTION_PANEL,
     getGridCellCss,
     getGridCellSpan,
@@ -23,6 +22,7 @@ import {
     type GridSection,
     gridDropIsDone,
     IMPLICIT_SECTION_ID,
+    moveSectionBeside,
     newSectionId,
 } from './visGridLayout';
 
@@ -543,14 +543,50 @@ describe('getSectionFrameStyle', () => {
             getSectionFrameStyle(section({ borderRadius: 'round', padding: -3, borderWidth: 'thick' }), paper),
         ).toEqual({});
     });
+
+    it('covers the section with its background image, from the project or from anywhere', () => {
+        expect(
+            getSectionFrameStyle(section({ backgroundImage: '_PRJ_NAME/img/kitchen.jpg' }), paper, '../vis-2.0/main'),
+        ).toEqual({
+            backgroundImage: 'url("../vis-2.0/main/img/kitchen.jpg")',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+        });
+        expect(getSectionFrameStyle(section({ backgroundImage: 'https://x.org/a.png' }), paper).backgroundImage).toBe(
+            'url("https://x.org/a.png")',
+        );
+    });
+
+    it('lets an own shadow win over the one of the panel', () => {
+        expect(getSectionFrameStyle(section({ variant: 'panel', boxShadow: ' 0 0 4px red ' }), paper).boxShadow).toBe(
+            '0 0 4px red',
+        );
+    });
+
+    it('gives the text color to the widgets and blurs what lies behind for the glass look', () => {
+        expect(getSectionFrameStyle(section({ color: '#fff', glass: 8 }), paper)).toEqual({
+            color: '#fff',
+            backdropFilter: 'blur(8px)',
+        });
+        expect(getSectionFrameStyle(section({ glass: 0 }), paper).backdropFilter).toBeUndefined();
+    });
 });
 
-describe('hasSectionHeader', () => {
-    it('has a header with a title or an icon only', () => {
-        expect(hasSectionHeader({ id: 's1', widgets: [], title: 'Kitchen' })).toBe(true);
-        expect(hasSectionHeader({ id: 's1', widgets: [], icon: 'data:image/svg+xml;base64,AA' })).toBe(true);
-        expect(hasSectionHeader({ id: 's1', widgets: [], title: '' })).toBe(false);
-        expect(hasSectionHeader(undefined)).toBe(false);
+describe('moveSectionBeside', () => {
+    it('puts the dragged section in front of or after the target', () => {
+        expect(moveSectionBeside([0, 1, 2, 3], 0, 2, true)).toEqual([1, 0, 2, 3]);
+        expect(moveSectionBeside([0, 1, 2, 3], 0, 2, false)).toEqual([1, 2, 0, 3]);
+        expect(moveSectionBeside([0, 1, 2, 3], 3, 0, true)).toEqual([3, 0, 1, 2]);
+    });
+
+    it('works on an order that was already changed by the drag', () => {
+        expect(moveSectionBeside([1, 2, 0, 3], 0, 1, true)).toEqual([0, 1, 2, 3]);
+    });
+
+    it('changes nothing over itself or over what is not in the order', () => {
+        const order = [0, 1, 2];
+        expect(moveSectionBeside(order, 1, 1, true)).toBe(order);
+        expect(moveSectionBeside(order, 1, 7, true)).toBe(order);
     });
 });
 

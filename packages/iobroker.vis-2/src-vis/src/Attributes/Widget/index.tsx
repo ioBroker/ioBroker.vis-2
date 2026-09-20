@@ -68,6 +68,7 @@ import IODialog from '../../Components/IODialog';
 import WidgetCSS from './WidgetCSS';
 import WidgetJS from './WidgetJS';
 import WidgetBindingField from './WidgetBindingField';
+import FieldHelp, { hasFieldHelp } from '../FieldHelp';
 
 /**
  * The mark in front of the name of a group, so that a group is found by its shape and not by reading every
@@ -470,8 +471,20 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         default: 'hide',
                     },
                     // shown only at some widths of the view, see visWidthVisibility.ts
-                    { name: 'visibility-min-width', label: 'Only from view width (px)', type: 'number', min: 0 },
-                    { name: 'visibility-max-width', label: 'Only up to view width (px)', type: 'number', min: 0 },
+                    {
+                        name: 'visibility-min-width',
+                        label: 'Only from view width (px)',
+                        type: 'number',
+                        min: 0,
+                        helpImage: 'visibilityMinWidth',
+                    },
+                    {
+                        name: 'visibility-max-width',
+                        label: 'Only up to view width (px)',
+                        type: 'number',
+                        min: 0,
+                        helpImage: 'visibilityMaxWidth',
+                    },
                 ],
             },
         ];
@@ -570,29 +583,38 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 name: 'css_common',
                 isStyle: true,
                 fields: [
-                    { name: 'position', type: 'nselect', options: ['', 'relative', 'sticky'] },
+                    {
+                        name: 'position',
+                        type: 'nselect',
+                        options: ['', 'relative', 'sticky'],
+                        helpImage: 'position',
+                        tooltip: 'help_position',
+                    },
                     { name: 'display', type: 'nselect', options: ['', 'inline-block'] },
-                    { name: 'left', type: 'dimension' },
-                    { name: 'top', type: 'dimension' },
-                    { name: 'width', type: 'dimension' },
-                    { name: 'height', type: 'dimension' },
+                    { name: 'left', type: 'dimension', helpImage: 'leftTop' },
+                    { name: 'top', type: 'dimension', helpImage: 'leftTop' },
+                    { name: 'width', type: 'dimension', helpImage: 'size' },
+                    { name: 'height', type: 'dimension', helpImage: 'size' },
                     {
                         name: 'z-index',
+                        helpImage: 'zIndex',
                         type: 'number',
                         min: -200,
                         max: 200,
                     },
                     {
                         name: 'overflow-x',
+                        helpImage: 'overflowX',
                         type: 'nselect',
                         options: ['', 'visible', 'hidden', 'scroll', 'auto', 'initial', 'inherit'],
                     },
                     {
                         name: 'overflow-y',
+                        helpImage: 'overflowY',
                         type: 'nselect',
                         options: ['', 'visible', 'hidden', 'scroll', 'auto', 'initial', 'inherit'],
                     },
-                    { name: 'opacity', type: 'text' },
+                    { name: 'opacity', type: 'text', helpImage: 'opacity' },
                     {
                         name: 'cursor',
                         type: 'auto',
@@ -637,7 +659,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                             'inherit',
                         ],
                     },
-                    { name: 'transform' },
+                    { name: 'transform', helpImage: 'transform' },
                 ],
             },
             {
@@ -729,9 +751,10 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 isStyle: true,
                 fields: [
                     // { name: 'box-sizing', type: 'nselect', options: ['', 'border-box', 'content-box']  },
-                    { name: 'border-width' },
+                    { name: 'border-width', helpImage: 'border' },
                     {
                         name: 'border-style',
+                        helpImage: 'border',
                         type: 'nselect',
                         options: [
                             '',
@@ -746,24 +769,24 @@ class Widget extends Component<WidgetProps, WidgetState> {
                             'hidden',
                         ],
                     },
-                    { name: 'border-color', type: 'color' },
-                    { name: 'border-radius' },
+                    { name: 'border-color', type: 'color', helpImage: 'border' },
+                    { name: 'border-radius', helpImage: 'borderRadius' },
                 ],
             },
             {
                 name: 'css_shadow_padding',
                 isStyle: true,
                 fields: [
-                    { name: 'padding' },
-                    { name: 'padding-left' },
-                    { name: 'padding-top' },
-                    { name: 'padding-right' },
-                    { name: 'padding-bottom' },
-                    { name: 'box-shadow' },
-                    { name: 'margin-left' },
-                    { name: 'margin-top' },
-                    { name: 'margin-right' },
-                    { name: 'margin-bottom' },
+                    { name: 'padding', helpImage: 'padding' },
+                    { name: 'padding-left', helpImage: 'paddingLeft' },
+                    { name: 'padding-top', helpImage: 'paddingTop' },
+                    { name: 'padding-right', helpImage: 'paddingRight' },
+                    { name: 'padding-bottom', helpImage: 'paddingBottom' },
+                    { name: 'box-shadow', helpImage: 'boxShadow' },
+                    { name: 'margin-left', helpImage: 'marginLeft' },
+                    { name: 'margin-top', helpImage: 'marginTop' },
+                    { name: 'margin-right', helpImage: 'marginRight' },
+                    { name: 'margin-bottom', helpImage: 'marginBottom' },
                 ],
             },
             {
@@ -1908,6 +1931,8 @@ class Widget extends Component<WidgetProps, WidgetState> {
             labelStyle.fontStyle = 'italic';
         }
 
+        const helpText = field.tooltip ? I18n.t(field.tooltip) : undefined;
+
         const isBoundField = (this.state.bindFields || []).includes(
             group.isStyle ? `style_${field.name}` : `data_${field.name}`,
         );
@@ -1926,11 +1951,15 @@ class Widget extends Component<WidgetProps, WidgetState> {
                         disabled && styles.fieldTitleDisabled,
                         error && styles.fieldTitleError,
                     )}
-                    title={field.tooltip ? I18n.t(field.tooltip) : undefined}
                     style={labelStyle}
                 >
                     {ICONS[field.singleName || field.name] ? ICONS[field.singleName || field.name] : null}
-                    {label}
+                    <FieldHelp
+                        image={field.helpImage}
+                        text={helpText}
+                    >
+                        <span>{label}</span>
+                    </FieldHelp>
                     {field.type === 'image' &&
                     !this.state.isDifferent?.[field.name] &&
                     selectedWidget?.data[field.name] ? (
@@ -2013,7 +2042,14 @@ class Widget extends Component<WidgetProps, WidgetState> {
                             />
                         </Box>
                     ) : null}
-                    {field.tooltip ? <InfoIcon style={styles.infoIcon} /> : null}
+                    {hasFieldHelp(field.helpImage, helpText) ? (
+                        <FieldHelp
+                            image={field.helpImage}
+                            text={helpText}
+                        >
+                            <InfoIcon style={styles.infoIcon} />
+                        </FieldHelp>
+                    ) : null}
                 </Box>
                 <Box
                     component="td"

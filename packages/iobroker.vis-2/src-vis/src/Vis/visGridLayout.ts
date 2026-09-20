@@ -30,6 +30,9 @@ export const GRID_COLUMNS = 12;
 /** The CSS custom property through which a section tells its widgets how many columns it has */
 export const GRID_COLUMNS_VAR = '--vis-grid-columns';
 
+/** The CSS custom property through which a section tells its widgets how high a row of its cells is, in px */
+export const GRID_ROW_HEIGHT_VAR = '--vis-grid-row-height';
+
 /** The section that takes the relative widgets no section lists */
 export const IMPLICIT_SECTION_ID = '_implicit';
 
@@ -577,10 +580,15 @@ const BORDER_STYLES = ['solid', 'dashed', 'dotted', 'double'];
 /** The CSS of the frame of a section, see getSectionFrameStyle() */
 export interface SectionFrameStyle {
     background?: string;
+    backgroundImage?: string;
+    backgroundSize?: string;
+    backgroundPosition?: string;
     border?: string;
     borderRadius?: number;
     padding?: number;
     boxShadow?: string;
+    color?: string;
+    backdropFilter?: string;
 }
 
 /**
@@ -589,8 +597,13 @@ export interface SectionFrameStyle {
  *
  * @param section - the section as it is stored in the view settings
  * @param paperColor - the color of a card in the theme of the view
+ * @param projectPath - where the files of the project are, for an image given as `_PRJ_NAME/...`
  */
-export function getSectionFrameStyle(section: ViewSection | undefined | null, paperColor: string): SectionFrameStyle {
+export function getSectionFrameStyle(
+    section: ViewSection | undefined | null,
+    paperColor: string,
+    projectPath?: string,
+): SectionFrameStyle {
     const style: SectionFrameStyle = {};
     if (!section || typeof section !== 'object') {
         return style;
@@ -605,6 +618,15 @@ export function getSectionFrameStyle(section: ViewSection | undefined | null, pa
 
     if (typeof section.background === 'string' && section.background) {
         style.background = section.background;
+    }
+
+    if (typeof section.backgroundImage === 'string' && section.backgroundImage) {
+        const src = section.backgroundImage.startsWith('_PRJ_NAME')
+            ? `${projectPath || '.'}${section.backgroundImage.substring('_PRJ_NAME'.length)}`
+            : section.backgroundImage;
+        style.backgroundImage = `url("${src}")`;
+        style.backgroundSize = 'cover';
+        style.backgroundPosition = 'center';
     }
 
     const borderWidth = toNumber(section.borderWidth, 0);
@@ -623,12 +645,20 @@ export function getSectionFrameStyle(section: ViewSection | undefined | null, pa
         style.padding = padding;
     }
 
-    return style;
-}
+    if (typeof section.boxShadow === 'string' && section.boxShadow.trim()) {
+        style.boxShadow = section.boxShadow.trim();
+    }
 
-/** A section has a header when it has a title or an icon */
-export function hasSectionHeader(section: ViewSection | undefined | null): boolean {
-    return !!section && typeof section === 'object' && !!(section.title || section.icon);
+    if (typeof section.color === 'string' && section.color) {
+        style.color = section.color;
+    }
+
+    const glass = toNumber(section.glass, 0);
+    if (glass) {
+        style.backdropFilter = `blur(${glass}px)`;
+    }
+
+    return style;
 }
 
 /**
@@ -644,6 +674,24 @@ export function getNewViewSettings(): ViewSettings {
         layout: 'grid',
         sections: [{ id: 's1', widgets: [] }],
     };
+}
+
+/**
+ * The order of the sections after one of them was dragged beside another one. The sections flow in this order:
+ * along a row and then into the next one.
+ *
+ * @param order - the places of the sections in the stored list, in the order they are shown
+ * @param dragged - the place of the dragged section in the stored list
+ * @param target - the place of the section it is dropped beside
+ * @param before - in front of that section, or after it
+ */
+export function moveSectionBeside(order: number[], dragged: number, target: number, before: boolean): number[] {
+    if (dragged === target || !order.includes(dragged) || !order.includes(target)) {
+        return order;
+    }
+    const result = order.filter(place => place !== dragged);
+    result.splice(result.indexOf(target) + (before ? 0 : 1), 0, dragged);
+    return result;
 }
 
 /** An id for a new section that none of the sections has */

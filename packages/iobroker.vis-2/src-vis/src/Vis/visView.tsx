@@ -16,6 +16,8 @@
 import React from 'react';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 
+import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+
 import { I18n, Icon, Utils } from '@iobroker/gui-components';
 
 import type VisRxWidget from '@/Vis/visRxWidget';
@@ -35,6 +37,7 @@ import type {
     ViewCommand,
     ViewCommandOptions,
     ViewSection,
+    VisRxWidgetStateValues,
 } from '@iobroker/types-vis-2';
 import { hasWidgetAccess, isVarFinite } from '@/Utilities/utils';
 import { registerAdornerLayer } from './visAdornerLayer';
@@ -61,13 +64,25 @@ import {
     getGridMaxWidth,
     getSectionColumnCount,
     getSectionFrameStyle,
-    hasSectionHeader,
     GRID_COLUMNS,
     GRID_COLUMNS_VAR,
+    GRID_ROW_HEIGHT_VAR,
     type GridSection,
     gridDropIsDone,
+    moveSectionBeside,
     newSectionId,
 } from './visGridLayout';
+import {
+    applySectionBindings,
+    getSectionGrid,
+    getSectionHeaderStyle,
+    getSectionOpenStorageKey,
+    getSectionPlacementStyle,
+    getSectionStateIds,
+    hasSectionHeader,
+    isSectionOpen,
+    isSectionVisible,
+} from './visSections';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
 import VisWidgetsCatalog from './visWidgetsCatalog';
@@ -179,6 +194,24 @@ interface VisViewState {
         sections: GridSection[];
         dropped?: boolean;
     } | null;
+    /** The values of the states the sections of the grid layout depend on, by `<id>.val`, see subscribeSectionStates() */
+    sectionStates: Record<string, any>;
+    /** Whether the user opened (true) or closed (false) a section by its header, by section id */
+    sectionOpen: Record<string, boolean>;
+    /**
+     * A section of the grid layout is being dragged to another place, see onSectionMouseDown(). The sections are
+     * shown in this order - the places of the sections in the stored list - while the gesture runs, so the others
+     * make room for the dragged one at once.
+     */
+    sectionDrag: {
+        index: number;
+        order: number[];
+        /**
+         * The ids of the sections in the order they were dropped in. The project is written debounced, so the
+         * order stays until the project carries it - the old one would flash up for a moment otherwise.
+         */
+        droppedIds?: string[];
+    } | null;
 }
 
 class VisView extends React.Component<VisViewProps, VisViewState> {
@@ -271,6 +304,33 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      */
     private gridCellObserver: ResizeObserver | null = null;
 
+    /** The states the sections of the grid layout listen to, see subscribeSectionStates() */
+    private sectionStateIds: string[] = [];
+
+    /**
+     * The press on a section as the gesture has it at this moment, see onSectionMouseDown(): `state.sectionDrag`
+     * follows it for rendering, but the gesture reads this, as a quick one is over before React has rendered.
+     */
+    private sectionGesture: {
+        index: number;
+        startX: number;
+        startY: number;
+        frame: HTMLElement;
+        moved: boolean;
+        order: number[];
+        scroller: HTMLElement | null;
+        lastEvent: MouseEvent | null;
+    } | null = null;
+
+    /** The next step of the pane scrolling by itself while a section is dragged near its edge */
+    private sectionScrollFrame: number | null = null;
+
+    /** Last resort that ends a dropped order of the sections the project never carried, see onSectionMouseUp() */
+    private sectionDropTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Of these, the ones a header shows the time of (`.ts` or `.lc`): a new time without a new value counts too */
+    private sectionTimeIds: string[] = [];
+
     /** The arrangement of the sections the last render showed, and the one the observer was set up for */
     private renderedGridLayout = '';
 
@@ -320,6 +380,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             menuWidth: (window.localStorage.getItem('vis.menuWidth') as null | 'narrow' | 'full' | 'hidden') || 'full',
             relativeDrag: null,
             gridDrag: null,
+            sectionStates: {},
+            sectionOpen: {},
+            sectionDrag: null,
         };
 
         this.refView = React.createRef();
@@ -409,10 +472,327 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         Object.values(this.widgetsRefs).forEach(ref => ref?.onCommand?.('updatePosition'));
     }
 
+    /**
+     * Listen to the states the sections of the grid layout depend on - their conditions and the bindings in their
+     * headers, see getSectionStateIds(). The sections are edited while the view lives, so this runs at every update
+     * and only subscribes what is new and unsubscribes what is gone. The editor listens as well: it dims a section
+     * that would be hidden, and shows the values in the headers.
+     */
+    private subscribeSectionStates(): void {
+        const settings = store.getState().visProject[this.props.view]?.settings;
+        const ids: string[] = [];
+        const timeIds: string[] = [];
+        if (settings?.layout === 'grid' && Array.isArray(settings.sections)) {
+            settings.sections.forEach(section => {
+                getSectionStateIds(section).forEach(id => {
+                    !ids.includes(id) && ids.push(id);
+                    const header = `${section.title || ''} ${section.subtitle || ''}`;
+                    if (header.includes(`${id}.ts`) || header.includes(`${id}.lc`)) {
+                        !timeIds.includes(id) && timeIds.push(id);
+                    }
+                });
+            });
+        }
+        this.sectionTimeIds = timeIds;
+        const added = ids.filter(id => !this.sectionStateIds.includes(id));
+        const removed = this.sectionStateIds.filter(id => !ids.includes(id));
+        this.sectionStateIds = ids;
+        if (removed.length) {
+            this.props.context.socket.unsubscribeState(removed, this.onSectionStateChange);
+        }
+        if (added.length) {
+            // delivers the current values at once
+            void this.props.context.socket.subscribeState(added, this.onSectionStateChange);
+        }
+    }
+
+    private onSectionStateChange = (id: string, state: ioBroker.State | null | undefined): void => {
+        const val = state ? state.val : null;
+        const known = `${id}.val` in this.state.sectionStates;
+        if (known && this.state.sectionStates[`${id}.val`] === val && !this.sectionTimeIds.includes(id)) {
+            // only the time changed, and no header shows it: nothing to render
+            return;
+        }
+        this.setState(prevState => {
+            let sectionOpen = prevState.sectionOpen;
+            if (prevState.sectionStates[`${id}.val`] !== val || !(`${id}.val` in prevState.sectionStates)) {
+                // a section that opens by this state follows it again, whatever the user chose before
+                const sections = store.getState().visProject[this.props.view]?.settings?.sections;
+                (Array.isArray(sections) ? sections : []).forEach(section => {
+                    if (section?.collapsible && section.expandOid?.trim() === id && section.id in sectionOpen) {
+                        sectionOpen = { ...sectionOpen };
+                        delete sectionOpen[section.id];
+                    }
+                });
+            }
+            return {
+                sectionStates: {
+                    ...prevState.sectionStates,
+                    [`${id}.val`]: val,
+                    [`${id}.ts`]: state?.ts,
+                    [`${id}.lc`]: state?.lc,
+                    [`${id}.ack`]: state?.ack,
+                },
+                sectionOpen,
+            };
+        });
+    };
+
+    /** What the user chose for a section by its header, or else what the browser remembers of an earlier visit */
+    private getSectionOpenChoice(section: ViewSection): boolean | undefined {
+        if (section.id in this.state.sectionOpen) {
+            return this.state.sectionOpen[section.id];
+        }
+        // a section that follows a state decides by the state when the view opens
+        if (section.expandOid?.trim()) {
+            return undefined;
+        }
+        try {
+            const stored = window.localStorage.getItem(
+                getSectionOpenStorageKey(this.props.context.projectName, this.props.view, section.id),
+            );
+            return stored === '1' ? true : stored === '0' ? false : undefined;
+        } catch {
+            // no storage in this browser, e.g. in a private window
+            return undefined;
+        }
+    }
+
+    private toggleGridSection(section: ViewSection, open: boolean): void {
+        this.setState(prevState => ({ sectionOpen: { ...prevState.sectionOpen, [section.id]: !open } }));
+        // the choice for a section that follows a state counts only until the state changes, so it is not kept
+        if (!section.expandOid?.trim()) {
+            try {
+                window.localStorage.setItem(
+                    getSectionOpenStorageKey(this.props.context.projectName, this.props.view, section.id),
+                    open ? '0' : '1',
+                );
+            } catch {
+                // no storage in this browser: the choice lasts until the page is loaded again
+            }
+        }
+    }
+
+    /**
+     * A press on a section of the grid layout in the editor, where no widget is: it selects the section, and
+     * dragging it moves the section to another place, see placeDraggedSection(). A press on a widget belongs to
+     * the widget.
+     *
+     * @param e - the press
+     * @param index - where the section is in the stored list
+     * @param sectionId - the id of the section, to select it
+     */
+    private onSectionMouseDown(e: React.MouseEvent<HTMLDivElement>, index: number, sectionId: string): void {
+        const target = e.target as HTMLElement;
+        if (
+            e.button !== 0 ||
+            this.ignoreMouseEvents ||
+            // the view cancels a pending "take the style of" with this press itself
+            this.nextClickIsSteal ||
+            // a widget, or one of the controls below the section
+            target.closest('.vis-grid-section > *, .vis-grid-section-controls')
+        ) {
+            return;
+        }
+        // not the start of a selection frame on the view, and no text selected by the drag
+        e.stopPropagation();
+        e.preventDefault();
+        this.props.context.setSelectedSection?.(sectionId);
+
+        this.sectionGesture = {
+            index,
+            startX: e.clientX,
+            startY: e.clientY,
+            frame: e.currentTarget,
+            moved: false,
+            order: [],
+            scroller: VisView.findScrollParent(this.refView.current),
+            lastEvent: null,
+        };
+        window.addEventListener('mousemove', this.onSectionMouseMove);
+        window.addEventListener('mouseup', this.onSectionMouseUp);
+    }
+
+    private onSectionMouseMove = (e: MouseEvent): void => {
+        const gesture = this.sectionGesture;
+        if (!gesture) {
+            return;
+        }
+        if (!(e.buttons & 1)) {
+            // let go where no mouseup reached the window, e.g. outside the browser
+            this.onSectionMouseUp();
+            return;
+        }
+        gesture.lastEvent = e;
+        if (!gesture.moved) {
+            if (
+                Math.abs(e.clientX - gesture.startX) <= DRAG_THRESHOLD &&
+                Math.abs(e.clientY - gesture.startY) <= DRAG_THRESHOLD
+            ) {
+                // only a click so far: it selected the section, see onSectionMouseDown()
+                return;
+            }
+            gesture.moved = true;
+            const count = store.getState().visProject[this.props.view]?.settings?.sections?.length || 0;
+            gesture.order = Array.from({ length: count }, (_, i) => i);
+            this.createDragGhost(gesture.frame, gesture.frame.getBoundingClientRect(), gesture.startX, gesture.startY);
+            this.setState({ sectionDrag: { index: gesture.index, order: gesture.order } });
+        }
+        this.moveDragGhost(e.clientX, e.clientY);
+        this.placeDraggedSection(e.clientX, e.clientY);
+        this.updateSectionAutoScroll();
+    };
+
+    /**
+     * Put the dragged section beside the section under the cursor: in front of it in its left half, after it in
+     * its right half - or in the upper and the lower half of a section that fills the whole row. The others make
+     * room at once, so the dragged section always lands under the cursor and does not jump back and forth.
+     *
+     * @param clientX - the cursor
+     * @param clientY - the cursor
+     */
+    private placeDraggedSection(clientX: number, clientY: number): void {
+        const gesture = this.sectionGesture;
+        // the first grid of the view is its own; the ones of the views in widgets come later
+        const grid = this.refView.current?.querySelector<HTMLElement>('.vis-grid-view');
+        if (!gesture?.moved || !grid) {
+            return;
+        }
+        const gridWidth = grid.getBoundingClientRect().width;
+        for (const frame of Array.from(grid.children) as HTMLElement[]) {
+            const target = frame.dataset.sectionIndex === undefined ? NaN : Number(frame.dataset.sectionIndex);
+            if (!Number.isInteger(target) || target === gesture.index) {
+                continue;
+            }
+            const rect = frame.getBoundingClientRect();
+            if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+                continue;
+            }
+            const before =
+                rect.width >= gridWidth * 0.9
+                    ? clientY < rect.top + rect.height / 2
+                    : clientX < rect.left + rect.width / 2;
+            const order = moveSectionBeside(gesture.order, gesture.index, target, before);
+            if (order.join() !== gesture.order.join()) {
+                gesture.order = order;
+                this.setState({ sectionDrag: { index: gesture.index, order } });
+            }
+            return;
+        }
+    }
+
+    /** Let the pane scroll by itself while a section is dragged near its edge, like a widget, see updateAutoScroll() */
+    private updateSectionAutoScroll(): void {
+        const gesture = this.sectionGesture;
+        const event = gesture?.lastEvent;
+        const speed =
+            gesture?.scroller && event
+                ? autoScrollSpeed({ x: event.clientX, y: event.clientY }, VisView.getPaneBox(gesture.scroller))
+                : null;
+        if (!speed || (!speed.x && !speed.y)) {
+            this.stopSectionAutoScroll();
+        } else if (this.sectionScrollFrame === null) {
+            this.sectionScrollFrame = window.requestAnimationFrame(this.sectionAutoScrollStep);
+        }
+    }
+
+    private sectionAutoScrollStep = (): void => {
+        this.sectionScrollFrame = null;
+        const scroller = this.sectionGesture?.scroller;
+        const event = this.sectionGesture?.lastEvent;
+        if (!scroller || !event) {
+            return;
+        }
+        const speed = autoScrollSpeed({ x: event.clientX, y: event.clientY }, VisView.getPaneBox(scroller));
+        const { scrollLeft, scrollTop } = scroller;
+        scroller.scrollLeft += speed.x;
+        scroller.scrollTop += speed.y;
+        if (scroller.scrollLeft === scrollLeft && scroller.scrollTop === scrollTop) {
+            // the end of the pane
+            return;
+        }
+        // other sections came under the cursor
+        this.placeDraggedSection(event.clientX, event.clientY);
+        this.updateSectionAutoScroll();
+    };
+
+    private stopSectionAutoScroll(): void {
+        if (this.sectionScrollFrame !== null) {
+            window.cancelAnimationFrame(this.sectionScrollFrame);
+            this.sectionScrollFrame = null;
+        }
+    }
+
+    private onSectionMouseUp = (): void => {
+        const gesture = this.sectionGesture;
+        window.removeEventListener('mousemove', this.onSectionMouseMove);
+        window.removeEventListener('mouseup', this.onSectionMouseUp);
+        this.stopSectionAutoScroll();
+        this.removeDragGhost();
+        this.sectionGesture = null;
+        if (!gesture?.moved) {
+            return;
+        }
+
+        const order = gesture.order;
+        const stored = store.getState().visProject[this.props.view]?.settings?.sections || [];
+        if (order.length !== stored.length || order.every((place, i) => place === i)) {
+            // back at its place, or the sections changed meanwhile
+            this.setState({ sectionDrag: null });
+            return;
+        }
+        this.changeGridSections(sections => order.map(i => sections[i]));
+        this.setState({
+            sectionDrag: { index: gesture.index, order, droppedIds: order.map(i => stored[i]?.id) },
+        });
+        // a last resort, if the project never carries the order
+        this.sectionDropTimer && clearTimeout(this.sectionDropTimer);
+        this.sectionDropTimer = setTimeout(() => {
+            this.sectionDropTimer = null;
+            this.state.sectionDrag?.droppedIds && this.setState({ sectionDrag: null });
+        }, 2000);
+    };
+
+    /** The project carries the order a section was dropped in, see onSectionMouseUp(): the drag is over */
+    private releaseDroppedSection(): void {
+        const droppedIds = this.state.sectionDrag?.droppedIds;
+        if (droppedIds && this.storedSectionIds().join('\n') === droppedIds.join('\n')) {
+            this.setState({ sectionDrag: null });
+        }
+    }
+
+    private storedSectionIds(): string[] {
+        const sections = store.getState().visProject[this.props.view]?.settings?.sections;
+        return (Array.isArray(sections) ? sections : []).map(section => section?.id);
+    }
+
+    /** A text of a section header with its bindings, like `Kitchen {javascript.0.temp}°C` */
+    private formatSectionText(section: ViewSection, text: string): string {
+        if (!text.includes('{')) {
+            return text;
+        }
+        try {
+            return this.props.context.formatUtils.formatBinding({
+                format: text,
+                view: this.props.view,
+                wid: section.id as AnyWidgetId,
+                // a section is no widget, but a binding may ask for one
+                widget: { tpl: '_section', widgetSet: '', data: {}, style: {} },
+                widgetData: {},
+                values: this.state.sectionStates as VisRxWidgetStateValues,
+                moment: this.props.context.moment,
+            });
+        } catch (e) {
+            console.warn(`Cannot format the header of section ${section.id}: ${e as Error}`);
+            return text;
+        }
+    }
+
     async componentDidMount(): Promise<void> {
         this.updateViewWidth();
         this.observeRelativeView();
         this.announceAdornerLayer();
+        this.subscribeSectionStates();
 
         await this.promiseToCollect;
         this.props.context.linkContext.registerViewRef(this.props.view, this.refView, this.onCommand);
@@ -431,6 +811,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.observedRelativeView = null;
         this.gridCellObserver?.disconnect();
         this.gridCellObserver = null;
+        if (this.sectionStateIds.length) {
+            this.props.context.socket.unsubscribeState(this.sectionStateIds, this.onSectionStateChange);
+            this.sectionStateIds = [];
+        }
+        window.removeEventListener('mousemove', this.onSectionMouseMove);
+        window.removeEventListener('mouseup', this.onSectionMouseUp);
+        this.stopSectionAutoScroll();
+        if (this.sectionDropTimer) {
+            clearTimeout(this.sectionDropTimer);
+            this.sectionDropTimer = null;
+        }
         this.stopAutoScroll();
         window.removeEventListener('mousemove', this.onWindowMoveDuringGesture);
         this.announcedAdornerLayer = null;
@@ -620,6 +1011,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
               this.gestureSelection = null;
               this.props.context.setSelectedWidgets?.([]);
+              // a press on the view outside the sections lets go of a selected section as well
+              if (this.props.selectedSection) {
+                  this.props.context.setSelectedSection?.(null);
+              }
 
               this.onMouseViewMove && window.document.addEventListener('mousemove', this.onMouseViewMove);
               this.onMouseViewUp && window.document.addEventListener('mouseup', this.onMouseViewUp);
@@ -1851,6 +2246,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.updateViewWidth();
         this.observeRelativeView();
         this.observeGridCells();
+        this.subscribeSectionStates();
+        this.releaseDroppedSection();
 
         // the selection a press made has arrived through the props, see mouseDownOnView() - it also ends there when
         // the press did not become a gesture at all
@@ -2342,7 +2739,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     /**
      * The controls the editor shows under a section: narrower, wider and remove. The widgets of a removed section
-     * stay relative and go to the section of the widgets no section lists.
+     * stay relative and go to the section of the widgets no section lists. A section is selected by a click on it
+     * and moved by dragging it, see onSectionMouseDown().
      *
      * @param index - where the section is in the view settings
      * @param maxSections - the most section columns the view has
@@ -2362,17 +2760,6 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 // not the start of a selection frame on the view
                 onMouseDown={e => e.stopPropagation()}
             >
-                <button
-                    type="button"
-                    title={I18n.t('Edit section')}
-                    className={
-                        this.props.selectedSection === stored?.id ? 'vis-grid-section-control-active' : undefined
-                    }
-                    // shows the section in the attributes - also the one that has no widget yet to be selected
-                    onClick={() => stored?.id && this.props.context.setSelectedSection?.(stored.id)}
-                >
-                    ✎
-                </button>
                 <button
                     type="button"
                     title={I18n.t('Narrower')}
@@ -2418,11 +2805,50 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         const columnCount = getSectionColumnCount(this.state.width, layout);
         // the editor keeps the empty sections, so that they can be filled
         this.lastGridSections = buildGridSections(settings?.sections, widgets, columnCount, this.props.editMode);
-        // while a widget is dragged, and until the project carries where it was dropped, the drag decides
+        // The section as it is stored, with its look and with its bindings applied - `{javascript.0.temp}°C` in
+        // its title, or a state that decides its border width. Worked out once per section and render; the one of
+        // the widgets no section lists has none.
+        const evaluated = new Map<number, ViewSection | undefined>();
+        const storedOf = (section: GridSection): ViewSection | undefined => {
+            if (section.implicit || section.index === undefined) {
+                return undefined;
+            }
+            if (!evaluated.has(section.index)) {
+                const raw = settings?.sections?.[section.index];
+                evaluated.set(
+                    section.index,
+                    (raw && applySectionBindings(raw, text => this.formatSectionText(raw, text))) || undefined,
+                );
+            }
+            return evaluated.get(section.index);
+        };
+        // who may see a section, at which width and with which states, see isSectionVisible()
+        const visibility = {
+            states: this.state.sectionStates,
+            width: viewWidth,
+            user: this.props.context.user,
+            userGroups: this.props.context.userGroups,
+        };
+        // while a widget is dragged, and until the project carries where it was dropped, the drag decides. The
+        // runtime leaves out the sections that are hidden; the editor shows them dimmed, so they can be edited.
         const gridDrag = this.state.gridDrag;
-        const sections = gridDrag ? gridDrag.sections : this.lastGridSections;
+        const sections = (gridDrag ? gridDrag.sections : this.lastGridSections).filter(
+            section => this.props.editMode || isSectionVisible(storedOf(section), visibility),
+        );
         if (!sections.length && !this.props.editMode) {
             return null;
+        }
+        // while a section is dragged, and until the project carries where it was dropped, the drag decides the order
+        const sectionDrag = this.state.sectionDrag;
+        if (
+            sectionDrag &&
+            !(sectionDrag.droppedIds && this.storedSectionIds().join('\n') === sectionDrag.droppedIds.join('\n'))
+        ) {
+            const place = (section: GridSection): number =>
+                section.implicit || section.index === undefined
+                    ? Number.MAX_SAFE_INTEGER
+                    : sectionDrag.order.indexOf(section.index);
+            sections.sort((a, b) => place(a) - place(b));
         }
         // what observeGridCells() compares, to set itself up anew when the arrangement changed
         this.renderedGridLayout = JSON.stringify([
@@ -2432,26 +2858,35 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ]);
 
         const paperColor = this.props.context.theme?.palette?.background?.paper || '#fff';
+        // where an image of the project is, for a background image given as `_PRJ_NAME/...`
+        const projectPath = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}`;
 
         const renderedSections: React.JSX.Element[] = sections.map(section => {
             this.refGridSections[section.id] ||= React.createRef();
             const refSection = this.refGridSections[section.id];
             const columns = GRID_COLUMNS * section.columnSpan;
-            // the section as it is stored, with its look; the one of the widgets no section lists has none
-            const stored =
-                section.implicit || section.index === undefined ? undefined : settings?.sections?.[section.index];
+            const stored = storedOf(section);
+            // the editor always shows a section open: a closed one could not be edited
+            const open =
+                this.props.editMode || !stored
+                    ? true
+                    : isSectionOpen(stored, this.getSectionOpenChoice(stored), this.state.sectionStates);
+            // the size of the cells: the section may have its own
+            const cells = getSectionGrid(stored, layout);
 
             const gridStyle = {
                 // the widgets limit their columns to this, see getGridCellCss()
                 [GRID_COLUMNS_VAR]: columns,
+                // and read the size of the rows from this while they are resized, see VisBaseWidget.getGridMetrics()
+                [GRID_ROW_HEIGHT_VAR]: cells.rowHeight,
                 display: 'grid',
                 gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                gridAutoRows: `minmax(${layout.rowHeight}px, auto)`,
+                gridAutoRows: `minmax(${cells.rowHeight}px, auto)`,
                 gridAutoFlow: 'row dense',
-                gap: layout.gridGap,
+                gap: cells.gridGap,
                 position: 'relative',
                 // an empty section, as the editor shows it, would have no height at all
-                minHeight: layout.rowHeight,
+                minHeight: cells.rowHeight,
             } as React.CSSProperties;
 
             // The frame carries the look of the section and its header; the grid of its cells lies inside it, so
@@ -2460,43 +2895,62 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 <div
                     key={section.id}
                     data-section={section.id}
+                    // where the section is in the stored list, for the drag, see placeDraggedSection()
+                    data-section-index={stored ? section.index : undefined}
+                    // only an empty section says why it is dimmed: with widgets in it the hint would follow the
+                    // cursor over every one of them
+                    title={
+                        this.props.editMode && stored && !section.widgets.length
+                            ? I18n.t('section_empty_hint')
+                            : undefined
+                    }
+                    onMouseDown={
+                        this.props.editMode && stored && section.index !== undefined
+                            ? e => this.onSectionMouseDown(e, section.index as number, stored.id)
+                            : undefined
+                    }
                     className={Utils.clsx(
                         'vis-grid-section-frame',
                         this.props.editMode && 'vis-grid-section-edit',
                         section.implicit && 'vis-grid-section-implicit',
+                        // the slot the dragged section drops into; the section itself follows the cursor as a copy
+                        sectionDrag &&
+                            !sectionDrag.droppedIds &&
+                            section.index === sectionDrag.index &&
+                            !section.implicit &&
+                            'vis-grid-section-dragged',
                         this.props.editMode &&
                             stored &&
                             this.props.selectedSection === stored.id &&
                             'vis-grid-section-selected',
+                        // the editor dims what the runtime would not show: a hidden section, and an empty one,
+                        // which the runtime leaves out, see buildGridSections()
+                        this.props.editMode &&
+                            stored &&
+                            (!isSectionVisible(stored, visibility) || !section.widgets.length) &&
+                            'vis-grid-section-hidden',
+                        !open && 'vis-grid-section-collapsed',
+                        typeof stored?.className === 'string' && stored.className.trim(),
                     )}
                     style={{
-                        gridColumn: `span ${section.columnSpan}`,
                         position: 'relative',
                         boxSizing: 'border-box',
                         minWidth: 0,
-                        ...getSectionFrameStyle(stored, paperColor),
+                        ...getSectionPlacementStyle(stored, section.columnSpan, open),
+                        ...getSectionFrameStyle(stored, paperColor, projectPath),
                     }}
                 >
                     {this.props.editMode && stored && section.index !== undefined
                         ? this.renderGridSectionControls(section.index, layout.maxSections)
                         : null}
-                    {hasSectionHeader(stored) ? (
-                        <div className="vis-grid-section-header">
-                            {stored?.icon ? (
-                                <Icon
-                                    src={stored.icon}
-                                    className="vis-grid-section-header-icon"
-                                />
-                            ) : null}
-                            {stored?.title ? <span>{stored.title}</span> : null}
-                        </div>
-                    ) : null}
+                    {stored && hasSectionHeader(stored) ? this.renderGridSectionHeader(stored, open) : null}
+                    {/* a closed section leaves out its widgets, so that they update nothing while nobody sees them */}
                     <div
                         ref={refSection}
                         className="vis-grid-section"
-                        style={gridStyle}
+                        style={open ? gridStyle : { ...gridStyle, display: 'none' }}
                     >
-                        {section.widgets.map((id, index) =>
+                        {(open ? section.widgets : []).map((id, index) =>
                             // The slot the dragged widget would drop into; the widget itself follows the cursor as a
                             // copy, see createDragGhost()
                             gridDrag && !gridDrag.dropped && id === gridDrag.wid ? (
@@ -2561,7 +3015,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         return [
             <div
                 key="grid"
-                className="vis-grid-view"
+                className={Utils.clsx(
+                    'vis-grid-view',
+                    // while a section is dragged nothing in the grid is pointed at, see the CSS
+                    sectionDrag && !sectionDrag.droppedIds && 'vis-grid-view-dragging',
+                )}
                 style={{
                     display: 'grid',
                     gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
@@ -2578,6 +3036,83 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 {renderedSections}
             </div>,
         ];
+    }
+
+    /**
+     * The header of a section: its icon, its title and subtitle with their bindings, and the arrow of a section
+     * that opens and closes. In the runtime a click on it opens the view of its link, or else opens or closes the
+     * section; with both, the arrow opens and closes. The editor only shows it.
+     *
+     * @param section - the section as it is stored
+     * @param open - whether the section shows its widgets
+     */
+    private renderGridSectionHeader(section: ViewSection, open: boolean): React.JSX.Element {
+        const runtime = !this.props.editMode;
+        const toggle =
+            runtime && section.collapsible
+                ? (e: React.MouseEvent): void => {
+                      e.stopPropagation();
+                      this.toggleGridSection(section, open);
+                  }
+                : undefined;
+        const link =
+            runtime && section.link
+                ? (e: React.MouseEvent): void => {
+                      e.stopPropagation();
+                      this.props.context.changeView(section.link as string);
+                  }
+                : undefined;
+
+        return (
+            <div
+                className={Utils.clsx(
+                    'vis-grid-section-header',
+                    section.collapsible && 'vis-grid-section-header-collapsible',
+                    toggle && !link && 'vis-grid-section-header-clickable',
+                )}
+                style={getSectionHeaderStyle(section)}
+                onClick={link ? undefined : toggle}
+            >
+                {section.icon || section.title || section.subtitle ? (
+                    <div
+                        className={Utils.clsx(
+                            'vis-grid-section-header-main',
+                            link && 'vis-grid-section-header-clickable',
+                        )}
+                        onClick={link}
+                    >
+                        {section.icon ? (
+                            <Icon
+                                src={section.icon}
+                                className="vis-grid-section-header-icon"
+                                style={section.iconColor ? { color: section.iconColor } : undefined}
+                            />
+                        ) : null}
+                        {section.title || section.subtitle ? (
+                            <div className="vis-grid-section-header-text">
+                                {section.title ? (
+                                    <span className="vis-grid-section-title">
+                                        {this.formatSectionText(section, section.title)}
+                                    </span>
+                                ) : null}
+                                {section.subtitle ? (
+                                    <span className="vis-grid-section-subtitle">
+                                        {this.formatSectionText(section, section.subtitle)}
+                                    </span>
+                                ) : null}
+                            </div>
+                        ) : null}
+                    </div>
+                ) : null}
+                {section.collapsible ? (
+                    <ExpandMoreIcon
+                        className="vis-grid-section-chevron"
+                        style={open ? undefined : { transform: 'rotate(-90deg)' }}
+                        onClick={link ? toggle : undefined}
+                    />
+                ) : null}
+            </div>
+        );
     }
 
     getCountOfRelativeColumns(settings: ViewSettings, relativeWidgetsCount: number): number {
@@ -3302,7 +3837,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 {renderedWidgets}
                 {this.props.editMode ? (
                     <div
-                        className="vis-adorner-layer"
+                        className={Utils.clsx(
+                            'vis-adorner-layer',
+                            // the marks of the widgets are no targets while a section is dragged over them
+                            this.state.sectionDrag && !this.state.sectionDrag.droppedIds && 'vis-adorner-layer-quiet',
+                        )}
                         ref={this.refAdornerLayer}
                         // The layer covers the view and lets every click through; only the marks inside it take
                         // the mouse back (`.vis-editmode-resizer` and `.vis-editmode-widget-name` in vis.css).

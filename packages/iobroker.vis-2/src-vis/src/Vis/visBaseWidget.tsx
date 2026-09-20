@@ -39,6 +39,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { addClass, removeClass, replaceGroupAttr } from './visUtils';
 import { isShownAtWidth } from './visWidthVisibility';
+import { isHiddenByCondition } from './visConditions';
 
 /** How much of a widget the editor shows that is not shown at the width of its view */
 export const WIDTH_HIDDEN_OPACITY = 0.3;
@@ -49,6 +50,7 @@ import {
     getGridLayout,
     getGridSpanFromSize,
     GRID_COLUMNS_VAR,
+    GRID_ROW_HEIGHT_VAR,
     type GridCellSpan,
     type GridMetrics,
 } from './visGridLayout';
@@ -1411,105 +1413,14 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
     }
 
     static isWidgetHidden(widgetData: WidgetData | GroupData, states: VisRxWidgetStateValues, id: string): boolean {
-        const oid = widgetData['visibility-oid'];
-        const condition = widgetData['visibility-cond'];
-
-        if (oid) {
-            if (!Object.keys(states).includes(`${oid}.val`)) {
-                // if we don't have state information yet - hide to prevent shortly showing widget during render
-                return true;
-            }
-
-            let val = states[`${oid}.val`];
-            let value = widgetData['visibility-val'];
-
-            if (val == null) {
-                // the user compares explicitly against null => use the "null" placeholder in the comparison below.
-                // 'exist'/'not exist' must not depend on the comparison value, so they keep the early return.
-                if (value !== 'null' || condition === 'exist' || condition === 'not exist') {
-                    return condition === 'not exist';
-                }
-                val = 'null';
-            }
-
-            if (!condition || value == null) {
-                return condition === 'not exist';
-            }
-
-            if (val === 'null' && condition !== 'exist' && condition !== 'not exist' && value !== 'null') {
-                return false;
-            }
-
-            const t = typeof val;
-            if (t === 'boolean' || val === 'false' || val === 'true') {
-                value = value === 'true' || value === true || value === 1 || value === '1';
-            } else if (t === 'number') {
-                value = parseFloat(value);
-            } else if (t === 'object') {
-                val = JSON.stringify(val);
-            }
-
-            // Take care: return true if the widget is hidden!
-            switch (condition) {
-                case '==':
-                    value = value.toString();
-                    val = val.toString();
-                    if (val === '1') {
-                        val = 'true';
-                    }
-                    if (value === '1') {
-                        value = 'true';
-                    }
-                    if (val === '0') {
-                        val = 'false';
-                    }
-                    if (value === '0') {
-                        value = 'false';
-                    }
-                    return value !== val;
-                case '!=':
-                    value = value.toString();
-                    val = val.toString();
-                    if (val === '1') {
-                        val = 'true';
-                    }
-                    if (value === '1') {
-                        value = 'true';
-                    }
-                    if (val === '0') {
-                        val = 'false';
-                    }
-                    if (value === '0') {
-                        value = 'false';
-                    }
-                    return value === val;
-                case '>=':
-                    return val < value;
-                case '<=':
-                    return val > value;
-                case '>':
-                    return val <= value;
-                case '<':
-                    return val >= value;
-                case 'consist':
-                    value = value.toString();
-                    val = val.toString();
-                    return !val.toString().includes(value);
-                case 'not consist':
-                    value = value.toString();
-                    val = val.toString();
-                    return val.toString().includes(value);
-                case 'exist':
-                    return val === 'null';
-                case 'not exist':
-                    return val !== 'null';
-                default:
-                    console.log(`[${id}] Unknown visibility condition: ${condition}`);
-                    return false;
-            }
-        } else {
-            return condition && condition === 'not exist';
-        }
+        // the same conditions show and hide a section of the grid layout, see visConditions.ts
+        return isHiddenByCondition(
+            states,
+            widgetData['visibility-oid'],
+            widgetData['visibility-cond'],
+            widgetData['visibility-val'],
+            id,
+        );
     }
 
     /**
@@ -2025,8 +1936,16 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         if (!section || !columns) {
             return null;
         }
+        // a section may have cells of its own size, so they are read from it, and from the view only as a fallback
         const layout = getGridLayout(this.props.context.views[this.props.view].settings);
-        return { columns, width: section.clientWidth, gap: layout.gridGap, rowHeight: layout.rowHeight };
+        const gap = parseFloat(section.style.gap);
+        const rowHeight = parseFloat(section.style.getPropertyValue(GRID_ROW_HEIGHT_VAR));
+        return {
+            columns,
+            width: section.clientWidth,
+            gap: Number.isFinite(gap) && gap >= 0 ? gap : layout.gridGap,
+            rowHeight: rowHeight > 0 ? rowHeight : layout.rowHeight,
+        };
     }
 
     static correctStylePxValue(value?: string | number | null): string | number | undefined {

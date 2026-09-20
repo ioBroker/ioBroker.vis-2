@@ -432,12 +432,13 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                                                         : settings.navigationColor,
                                             }}
                                             sx={{
-                                                '&.MuListItemText-primary': Utils.getStyle(
+                                                // The text sits in a child of the root, and the class is
+                                                // `MuiListItemText-primary`. It was named `&.MuListItemText-primary`
+                                                // here, which matches nothing: the name of the view stayed in the
+                                                // narrow menu, cut off beside the icon, instead of fading out.
+                                                '& .MuiListItemText-primary': Utils.getStyle(
                                                     this.props.theme,
                                                     styles.listItemText,
-                                                    this.props.activeView === item.view &&
-                                                        !settings.navigationSelectedColor &&
-                                                        styles.selectedMenu,
                                                     this.props.menuWidth === 'narrow' && styles.listItemTextNarrow,
                                                 ),
                                             }}

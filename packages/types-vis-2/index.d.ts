@@ -1081,6 +1081,11 @@ export interface ViewSection {
     id: string;
     /** The widgets of the section, in the order they are shown */
     widgets: AnyWidgetId[];
+    /**
+     * The attributes that are edited as a binding, like `data.bindings` of a widget. Every attribute of a section
+     * may hold a binding like `{javascript.0.temp}`; this only says which input the editor shows for it.
+     */
+    bindings?: string[];
     /** How many section columns the section occupies (default 1) */
     columnSpan?: number;
     /** The title in the header of the section; without title and icon the section has no header */
@@ -1099,7 +1104,79 @@ export interface ViewSection {
     borderRadius?: number | null;
     /** the space between the border and the widgets, in px; wins over the one of the `panel` */
     padding?: number | null;
+
+    // --- layout
+    /** The section starts a new row, even if there is room next to the section before it */
+    newRow?: boolean;
+    /** in px */
+    minHeight?: number | null;
+    /** The section is as high as the highest section of its row, and not only as high as its widgets */
+    stretch?: boolean;
+    /** The height of a row of cells in px; overrides the one of the view */
+    rowHeight?: number | null;
+    /** The space between the widgets in px; overrides the one of the view */
+    gridGap?: number | null;
+
+    // --- header
+    /** A second, smaller line below the title */
+    subtitle?: string;
+    titleColor?: string | null;
+    /** in px */
+    titleSize?: number | null;
+    titleAlign?: 'left' | 'center' | 'right' | null;
+    /** Colors an icon that is drawn in `currentColor` */
+    iconColor?: string | null;
+    /** A line below the header */
+    divider?: boolean;
+    /** The view the header opens when clicked (runtime only) */
+    link?: string | null;
+
+    // --- look
+    /** Added to the classes of the section, so the section can be styled by the CSS of the project */
+    className?: string;
+    backgroundImage?: string | null;
+    /** Any CSS box-shadow; wins over the one of the `panel` */
+    boxShadow?: string | null;
+    /** The text color of the section, which its widgets inherit */
+    color?: string | null;
+    /** Blurs what lies behind the section, in px - a glass look over a background image */
+    glass?: number | null;
+
+    // --- visibility (runtime; the editor only dims a hidden section)
+    /** The section is shown only if this state fulfills `visibilityCond` with `visibilityVal` */
+    visibilityOid?: string | null;
+    visibilityCond?: VisStateCondition | null;
+    visibilityVal?: string | number | boolean | null;
+    /** The section is shown only to the members of these groups (the part of the id after `system.group.`) */
+    visibilityGroups?: string[] | null;
+    /** The section is shown only if the view is at least this wide, in px */
+    visibilityMinWidth?: number | null;
+    /** The section is shown only if the view is at most this wide, in px */
+    visibilityMaxWidth?: number | null;
+
+    // --- collapsing (runtime; the editor always shows a section open)
+    /** The header opens and closes the section */
+    collapsible?: boolean;
+    /** The section starts closed */
+    collapsed?: boolean;
+    /** The section opens when this state fulfills `expandCond` with `expandVal`, and closes when it does not */
+    expandOid?: string | null;
+    expandCond?: VisStateCondition | null;
+    expandVal?: string | number | boolean | null;
 }
+
+/** How a condition compares the value of a state, like the visibility of a widget */
+export type VisStateCondition =
+    | '=='
+    | '!='
+    | '<='
+    | '>='
+    | '<'
+    | '>'
+    | 'consist'
+    | 'not consist'
+    | 'exist'
+    | 'not exist';
 
 export interface View {
     activeWidgets: string[];

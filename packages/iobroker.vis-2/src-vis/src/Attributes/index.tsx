@@ -7,12 +7,19 @@ import {
     UnfoldMore as UnfoldMoreIcon,
     UnfoldLess as UnfoldLessIcon,
     ListAlt as IconAttributes,
+    Apps as AppsIcon,
+    Title as TitleIcon,
+    Web as WebIcon,
+    Dashboard as DashboardIcon,
+    Widgets as WidgetsIcon,
+    Css as CssIcon,
+    Javascript as JavascriptIcon,
 } from '@mui/icons-material';
 
 import { I18n, Utils, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
-import type { AdditionalIconSet, VisTheme } from '@iobroker/types-vis-2';
+import type { AdditionalIconSet, AnyWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import CSS from './CSS';
 import Scripts from './Scripts';
 import View from './View';
@@ -26,6 +33,20 @@ const styles: Record<string, any> = {
     lightedPanel: (theme: VisTheme) => theme.classes.lightedPanel,
     viewTabs: (theme: VisTheme) => theme.classes.viewTabs,
     viewTab: (theme: VisTheme) => theme.classes.viewTab,
+    // about as high as a tab with its name, so the content below keeps its place
+    viewTabIcon: {
+        px: 1.5,
+        py: 1.25,
+    },
+};
+
+/** Shown instead of the names of the tabs, so that all of them fit into a narrow panel */
+const TAB_ICONS: Record<string, React.JSX.Element> = {
+    View: <WebIcon />,
+    Section: <DashboardIcon />,
+    Widget: <WidgetsIcon />,
+    CSS: <CssIcon />,
+    Scripts: <JavascriptIcon />,
 };
 
 const tabs: Record<string, JSXElementConstructor<any> | ((props: Record<string, any>) => ReactNode)> = {
@@ -48,7 +69,7 @@ interface AttributesProps {
     adapterId: string;
     userGroups: Editor['state']['userGroups'];
     selectedWidgets: string[];
-    /** The section of the grid layout selected with its pencil, see Editor.setSelectedSection() */
+    /** The section of the grid layout selected by a click on it, see Editor.setSelectedSection() */
     selectedSection: string | null;
     widgetsLoaded: boolean;
     selectedView: string;
@@ -68,6 +89,7 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
     const [isAllClosed, setIsAllClosed] = useState(true);
     const [triggerAllOpened, setTriggerAllOpened] = useState(0);
     const [triggerAllClosed, setTriggerAllClosed] = useState(0);
+    const [tabIcons, setTabIcons] = useState(window.localStorage.getItem('Attributes.tabIcons') === 'true');
 
     const prevSelectedWidgets = usePrevious(props.selectedWidgets);
     const prevSelectedSection = usePrevious(props.selectedSection);
@@ -81,7 +103,7 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
         }
     }, [props.selectedWidgets]);
 
-    // a section selected with its pencil is to be edited now
+    // a section selected by a click on it is to be edited now
     useEffect(() => {
         if (props.selectedSection && props.selectedSection !== prevSelectedSection) {
             setSelected('Section');
@@ -93,9 +115,23 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
     }
 
     // only a view in the grid layout has sections
-    const gridLayout = store.getState().visProject[props.selectedView]?.settings?.layout === 'grid';
-    const tabList = gridLayout ? ['View', 'Section', 'Widget', 'CSS', 'Scripts'] : ['View', 'Widget', 'CSS', 'Scripts'];
-    const current = tabList.includes(selected) ? selected : 'View';
+    const viewData = store.getState().visProject[props.selectedView];
+    const gridLayout = viewData?.settings?.layout === 'grid';
+    // and only the relative widgets are in them - an absolute widget or a member of a group has no section
+    const outOfGrid = props.selectedWidgets.some(wid => {
+        const widget = viewData?.widgets?.[wid as AnyWidgetId];
+        const position = widget?.style?.position;
+        return (
+            !!widget &&
+            (!!widget.grouped || (position !== 'relative' && position !== 'static' && position !== 'sticky'))
+        );
+    });
+    const tabList =
+        gridLayout && !outOfGrid
+            ? ['View', 'Section', 'Widget', 'CSS', 'Scripts']
+            : ['View', 'Widget', 'CSS', 'Scripts'];
+    // the chosen tab is kept, so the section comes back with the next relative widget
+    const current = tabList.includes(selected) ? selected : props.selectedWidgets.length ? 'Widget' : 'View';
 
     const TabContent: JSXElementConstructor<any> | ((props_: Record<string, any>) => ReactNode) = tabs[current];
 
@@ -113,8 +149,23 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
             >
                 <IconAttributes style={{ marginTop: 4, marginRight: 4 }} />
                 {I18n.t('Attributes')}
+                <Tooltip
+                    title={I18n.t(tabIcons ? 'Show tab names' : 'Show tab icons')}
+                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                >
+                    <IconButton
+                        size="small"
+                        style={{ marginLeft: 4 }}
+                        onClick={() => {
+                            window.localStorage.setItem('Attributes.tabIcons', tabIcons ? 'false' : 'true');
+                            setTabIcons(!tabIcons);
+                        }}
+                    >
+                        {tabIcons ? <TitleIcon /> : <AppsIcon />}
+                    </IconButton>
+                </Tooltip>
                 <div style={{ flex: 1 }}></div>
-                {current === 'View' || current === 'Widget' ? (
+                {current === 'View' || current === 'Section' || current === 'Widget' ? (
                     <div style={{ textAlign: 'right' }}>
                         {!isAllOpened ? (
                             <Tooltip
@@ -168,6 +219,8 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
                 </Tooltip>
             </Typography>
             <Tabs
+                // built anew, so that it decides at once whether it still needs its scroll buttons
+                key={tabIcons ? 'icons' : 'names'}
                 sx={styles.viewTabs}
                 value={current}
                 variant="scrollable"
@@ -175,11 +228,15 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
             >
                 {tabList.map(tab => (
                     <Tab
-                        label={I18n.t(tab)}
+                        label={tabIcons ? undefined : I18n.t(tab)}
+                        icon={tabIcons ? TAB_ICONS[tab] : undefined}
+                        // the name, when only the icon is shown
+                        title={tabIcons ? I18n.t(tab) : undefined}
+                        aria-label={I18n.t(tab)}
                         value={tab}
                         disabled={tab === 'Widget' && !props.selectedWidgets.length}
                         key={tab}
-                        sx={styles.viewTab}
+                        sx={tabIcons ? [styles.viewTab, styles.viewTabIcon] : styles.viewTab}
                         onClick={() => {
                             setSelected(tab);
                             window.localStorage.setItem('Attributes', tab);

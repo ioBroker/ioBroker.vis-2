@@ -341,6 +341,7 @@ html {
 
 /* Title and icon over the widgets of a section */
 .vis-grid-section-header {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -350,16 +351,100 @@ html {
     font-weight: 500;
 }
 
+.vis-grid-section-collapsed .vis-grid-section-header {
+    margin-bottom: 0;
+}
+
+/* room for the arrow of a section that opens and closes */
+.vis-grid-section-header-collapsible {
+    padding-right: 28px;
+}
+
+.vis-grid-section-header-clickable {
+    cursor: pointer;
+}
+
+.vis-grid-section-header-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.vis-grid-section-header-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.vis-grid-section-subtitle {
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
 .vis-grid-section-header-icon {
     width: 24px;
     height: 24px;
     flex-shrink: 0;
 }
 
-.vis-grid-section-controls button.vis-grid-section-control-active {
-    opacity: 1;
-    border-color: #0d72b8;
-    color: #0d72b8;
+.vis-grid-section-chevron {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+/* the editor shows every section open, the arrow only tells that it can be closed */
+.vis-grid-section-edit .vis-grid-section-chevron {
+    cursor: default;
+    opacity: 0.5;
+}
+
+/* a section the runtime would not show now, by its visibility */
+.vis-grid-section-edit.vis-grid-section-hidden {
+    opacity: 0.4;
+}
+
+/* a section is selected by a click on it and moved by dragging it, where no widget is */
+.vis-grid-section-edit:not(.vis-grid-section-implicit) {
+    cursor: grab;
+}
+
+.vis-grid-section-edit .vis-grid-section > *,
+.vis-grid-section-edit .vis-grid-section-controls {
+    cursor: auto;
+}
+
+/*
+ * While a section is dragged, nothing inside the grid is under the cursor: a widget the copy is dragged over
+ * would light up as if it were being pointed at, and the section under it would show its own hover as well.
+ */
+.vis-grid-view-dragging {
+    cursor: grabbing;
+}
+
+.vis-grid-view.vis-grid-view-dragging * {
+    pointer-events: none;
+}
+
+/*
+ * The name plates and the resize handles lie in a layer of their own above the view, see visAdornerLayer.ts, and
+ * take the mouse back there. Named twice, to win against that rule.
+ */
+.vis-adorner-layer.vis-adorner-layer-quiet .vis-editmode-widget-name,
+.vis-adorner-layer.vis-adorner-layer-quiet .vis-editmode-resizer {
+    pointer-events: none;
+}
+
+/* the slot the dragged section drops into; the section itself follows the cursor as a copy */
+.vis-grid-section-edit.vis-grid-section-dragged {
+    opacity: 0.35;
+    outline: 2px dashed #0d72b8;
+    outline-offset: -2px;
 }
 
 /* Below the section, in the gap to the next row, so that they cover no widget */

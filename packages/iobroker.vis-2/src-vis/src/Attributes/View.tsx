@@ -26,6 +26,7 @@ import { resolution, getFields, type Field } from './View/Items';
 import getEditField from './View/EditField';
 import { renderApplyDialog, getViewsWithDifferentValues, type ApplyField } from './View/ApplyProperties';
 import showAllViewsDialog from './View/AllViewsDialog';
+import FieldHelp, { hasFieldHelp } from './FieldHelp';
 
 /**
  * The mark in front of the name of a group of the view, so that a group is found by its shape and not by
@@ -82,6 +83,11 @@ const styles: Record<string, any> = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+    },
+    fieldHelpIcon: {
+        fontSize: 16,
+        flexShrink: 0,
+        opacity: 0.6,
     },
     // like the palette: the rows sit flush and read as a list. With a margin between them each row looks
     // like a separate little box.
@@ -413,20 +419,7 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                                                 return null;
                                             }
 
-                                            let helpText = null;
-                                            if (field.title) {
-                                                helpText = (
-                                                    <Tooltip
-                                                        title={I18n.t(field.title)}
-                                                        slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
-                                                    >
-                                                        <InfoIcon
-                                                            style={styles.fieldHelpText}
-                                                            fontSize="small"
-                                                        />
-                                                    </Tooltip>
-                                                );
-                                            }
+                                            const helpText = field.title ? I18n.t(field.title) : undefined;
 
                                             // if all attributes of navigation could be applied to all views with enabled navigation
                                             if (field.groupApply) {
@@ -462,14 +455,18 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
 
                                             return (
                                                 <tr key={key2}>
-                                                    <td
-                                                        style={styles.fieldTitle}
-                                                        title={!field.title ? undefined : I18n.t(field.title)}
-                                                    >
-                                                        <div style={styles.fieldTitleContent}>
-                                                            {I18n.t(field.label)}
-                                                            {helpText}
-                                                        </div>
+                                                    <td style={styles.fieldTitle}>
+                                                        <FieldHelp
+                                                            image={field.helpImage}
+                                                            text={helpText}
+                                                        >
+                                                            <div style={styles.fieldTitleContent}>
+                                                                {I18n.t(field.label)}
+                                                                {hasFieldHelp(field.helpImage, helpText) ? (
+                                                                    <InfoIcon style={styles.fieldHelpIcon} />
+                                                                ) : null}
+                                                            </div>
+                                                        </FieldHelp>
                                                     </td>
                                                     <Box
                                                         component="td"

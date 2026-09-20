@@ -153,6 +153,8 @@ export type RxWidgetInfoAttributesFieldAll = {
     hidden?: string | ((data: Record<string, any>, index?: number, style?: React.CSSProperties) => boolean) | boolean;
     /** Tooltip (i18n) */
     tooltip?: string;
+    /** The picture that explains a common field, a key of HELP_IMAGES in Attributes/helpImages.tsx */
+    helpImage?: string;
     /** JS Function for conditional disability */
     disabled?: string | ((data: Record<string, any>, index?: number, style?: React.CSSProperties) => boolean) | boolean;
     /** JS Function for error */
