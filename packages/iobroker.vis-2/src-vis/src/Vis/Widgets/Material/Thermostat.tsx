@@ -667,15 +667,18 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                         <IconClose />
                     </IconButton>
                 </DialogTitle>
-                <Tabs
-                    value={this.state.dialogTab}
-                    onChange={(_e, value: number) => this.setState({ dialogTab: value })}
-                >
-                    <Tab label={Generic.t('thermostat')} />
-                    <Tab label={Generic.t('chart')} />
-                </Tabs>
+                {/* without a history there is nothing in the second tab, so the dialog shows no tabs at all */}
+                {this.state.isChart ? (
+                    <Tabs
+                        value={this.state.dialogTab}
+                        onChange={(_e, value: number) => this.setState({ dialogTab: value })}
+                    >
+                        <Tab label={Generic.t('thermostat')} />
+                        <Tab label={Generic.t('chart')} />
+                    </Tabs>
+                ) : null}
                 <DialogContent>
-                    {this.state.dialogTab === 0 && (
+                    {(!this.state.isChart || this.state.dialogTab === 0) && (
                         <div
                             style={{
                                 height: '100%',
@@ -694,7 +697,7 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                             </div>
                         </div>
                     )}
-                    {this.state.dialogTab === 1 && (
+                    {this.state.isChart && this.state.dialogTab === 1 && (
                         <div style={{ height: '100%' }}>
                             <React.Suspense fallback={<LinearProgress />}>
                                 <ObjectChart
@@ -1280,7 +1283,11 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
             }, 50);
         }
 
-        const chartButton = this.state.isChart ? (
+        // the dialog shows the thermostat at a size a small widget cannot offer, so the button is there even
+        // without a history - only a widget that is a dialog itself has nothing to gain from it
+        const withDialogButton = this.state.isChart || !this.state.rxData.externalDialog;
+
+        const chartButton = withDialogButton ? (
             <IconButton
                 style={{
                     ...(withTitle ? undefined : styles.moreButton),
