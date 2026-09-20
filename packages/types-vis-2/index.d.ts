@@ -1802,7 +1802,13 @@ export interface VisContext {
     registerEditorCallback:
         | null
         | ((
-              name: 'onStealStyle' | 'onPxToPercent' | 'pxToPercent' | 'onPercentToPx' | 'gridDropTarget',
+              name:
+                  | 'onStealStyle'
+                  | 'onPxToPercent'
+                  | 'pxToPercent'
+                  | 'onPercentToPx'
+                  | 'gridDropTarget'
+                  | 'gridDropHighlight',
               view: string,
               cb?: (...args: any) => any,
           ) => void);

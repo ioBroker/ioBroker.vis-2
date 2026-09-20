@@ -440,6 +440,16 @@ html {
     pointer-events: none;
 }
 
+/*
+ * The section a widget dragged out of the palette would land in. The tint is painted as an image, so that it lies
+ * over the background the section has of its own instead of replacing it.
+ */
+.vis-grid-section-edit.vis-grid-section-drop {
+    outline: 2px dashed #0d72b8;
+    outline-offset: -2px;
+    background-image: linear-gradient(rgba(13, 114, 184, 0.18), rgba(13, 114, 184, 0.18));
+}
+
 /* the slot the dragged section drops into; the section itself follows the cursor as a copy */
 .vis-grid-section-edit.vis-grid-section-dragged {
     opacity: 0.35;

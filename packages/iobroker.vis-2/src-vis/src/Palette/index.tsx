@@ -118,6 +118,14 @@ const styles: Record<string, any> = {
         top: 0,
         zIndex: 2,
     },
+    /** An entry the widget set renders itself, above the tiles: a row of its own over the whole width */
+    customPaletteEntry: {
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        padding: '4px 4px 6px',
+        boxSizing: 'border-box',
+    },
     /** Three tiles side by side, the widths shared equally - `minmax(0, 1fr)` so a long name cannot widen one */
     widgetsGrid: {
         display: 'grid',
@@ -961,10 +969,41 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                 </AccordionSummary>
                                 <AccordionDetails sx={styles.accordionDetails}>
                                     {version}
+                                    {/*
+                                     * An entry a widget set renders itself is no widget: it is an action, like the
+                                     * wizard of the material set, which draws a button. In the grid of the tiles
+                                     * such a button was stretched over a whole cell and looked like a widget one
+                                     * could drag, so these entries stand above the tiles, each over the full width.
+                                     */}
+                                    {this.state.accordionOpen[category] && this.props.editMode
+                                        ? this.state.widgetsList?.[category]
+                                              .filter(widgetItem => typeof widgetItem.customPalette === 'function')
+                                              .map(widgetItem => (
+                                                  <div
+                                                      key={widgetItem.name}
+                                                      style={styles.customPaletteEntry}
+                                                  >
+                                                      <Widget
+                                                          view={this.state.view}
+                                                          changeProject={this.props.changeProject}
+                                                          changeView={this.props.changeView}
+                                                          editMode={this.props.editMode}
+                                                          selectedView={this.props.selectedView}
+                                                          socket={this.props.socket}
+                                                          themeType={this.props.themeType}
+                                                          widgetSet={category}
+                                                          widgetSetProps={this.state.widgetSetProps?.[category]}
+                                                          widgetType={widgetItem}
+                                                          widgetTypeName={widgetItem.name}
+                                                      />
+                                                  </div>
+                                              ))
+                                        : null}
                                     <div style={this.state.view === 'grid' ? styles.widgetsGrid : undefined}>
                                         {this.state.accordionOpen[category]
                                             ? this.state.widgetsList?.[category].map(widgetItem =>
-                                                  widgetItem.name === '_tplGroup' ? null : (
+                                                  widgetItem.name === '_tplGroup' ||
+                                                  typeof widgetItem.customPalette === 'function' ? null : (
                                                       <Widget
                                                           view={this.state.view}
                                                           changeProject={this.props.changeProject}

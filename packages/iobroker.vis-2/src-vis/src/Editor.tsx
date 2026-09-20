@@ -298,6 +298,8 @@ interface EditorDndProps {
     addWidget: Editor['addWidget'];
     /** The view a dropped widget lands in - it decides in which frame the drop point is measured */
     selectedView: string;
+    /** Where the pointer is while a widget is dragged, so the view can mark the section it would land in */
+    onDragOverPoint: (point: { x: number; y: number } | null) => void;
     children: React.ReactNode;
 }
 
@@ -329,10 +331,14 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
      * The pointer itself has no such second meaning, so it is read from the events directly.
      */
     const pointer = useRef<{ x: number; y: number } | null>(null);
+    // the watcher is created once, so it reads the current callback out of a ref
+    const onDragOverPoint = useRef(props.onDragOverPoint);
+    onDragOverPoint.current = props.onDragOverPoint;
     const trackPointer = useRef((event: Event): void => {
         const point = pointerPoint(event);
         if (point) {
             pointer.current = point;
+            onDragOverPoint.current(point);
         }
     }).current;
 
@@ -352,6 +358,8 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
 
     const onDragEnd = (event: DragEndEvent): void => {
         watchPointer(false);
+        // the mark of the section under the pointer goes with the drag
+        props.onDragOverPoint(null);
 
         const target = event.over?.data.current as ViewDropData | undefined;
         const item = event.active.data.current as WidgetDragData | undefined;
@@ -391,8 +399,11 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
             sensors={sensors}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
-            // a drag that is called off - the escape key - has to take the watcher with it as well
-            onDragCancel={() => watchPointer(false)}
+            // a drag that is called off - the escape key - has to take the watcher and the mark with it as well
+            onDragCancel={() => {
+                watchPointer(false);
+                props.onDragOverPoint(null);
+            }}
         >
             <DndPreview />
             {props.children}
@@ -1702,7 +1713,13 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     };
 
     registerCallback = (
-        name: 'onStealStyle' | 'pxToPercent' | 'onPxToPercent' | 'onPercentToPx' | 'gridDropTarget',
+        name:
+            | 'onStealStyle'
+            | 'pxToPercent'
+            | 'onPxToPercent'
+            | 'onPercentToPx'
+            | 'gridDropTarget'
+            | 'gridDropHighlight',
         view: string,
         cb?: (...args: any) => any,
     ): void => {
@@ -1718,6 +1735,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 this.visEngineHandlers[view].onPercentToPx = cb as VisEngineHandlers['onPercentToPx'];
             } else if (name === 'gridDropTarget') {
                 this.visEngineHandlers[view].gridDropTarget = cb as VisEngineHandlers['gridDropTarget'];
+            } else if (name === 'gridDropHighlight') {
+                this.visEngineHandlers[view].gridDropHighlight = cb as VisEngineHandlers['gridDropHighlight'];
             } else {
                 throw new Error(`Unknown callback name: ${name as string}`);
             }
@@ -1727,6 +1746,16 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 delete this.visEngineHandlers[view];
             }
         }
+    };
+
+    /**
+     * While a widget from the palette is dragged: the view marks the section it would land in, see
+     * VisView.gridDropHighlight(). Over no section nothing is marked - there it becomes an absolute widget.
+     *
+     * @param point - the cursor in client coordinates, or null when the drag is over
+     */
+    onPaletteDragOver = (point: { x: number; y: number } | null): void => {
+        this.visEngineHandlers[this.state.selectedView]?.gridDropHighlight?.(point);
     };
 
     onPxToPercent = (
@@ -2789,6 +2818,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                 addWidget={this.addWidget}
                                 selectedView={this.state.selectedView}
                                 addMarketplaceWidget={this.addMarketplaceWidget}
+                                onDragOverPoint={this.onPaletteDragOver}
                             >
                                 {this.state.hidePalette && this.state.hideAttributes ? this.renderWorkspace() : null}
                                 <ReactSplit

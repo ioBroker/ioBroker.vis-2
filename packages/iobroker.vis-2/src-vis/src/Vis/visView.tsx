@@ -198,6 +198,8 @@ interface VisViewState {
     sectionStates: Record<string, any>;
     /** Whether the user opened (true) or closed (false) a section by its header, by section id */
     sectionOpen: Record<string, boolean>;
+    /** The section a widget dragged out of the palette would land in, see gridDropHighlight() */
+    dropSection: string | null;
     /**
      * A section of the grid layout is being dragged to another place, see onSectionMouseDown(). The sections are
      * shown in this order - the places of the sections in the stored list - while the gesture runs, so the others
@@ -383,6 +385,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             sectionStates: {},
             sectionOpen: {},
             sectionDrag: null,
+            dropSection: null,
         };
 
         this.refView = React.createRef();
@@ -1608,6 +1611,29 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     /**
+     * Mark the section a widget from the palette would land in while it is dragged over the view. The editor
+     * reports where the pointer is, see EditorDnd. Over no section nothing is marked: there the widget becomes an
+     * absolute one, as ever.
+     *
+     * @param point - the cursor in client coordinates, or null when the drag is over
+     */
+    gridDropHighlight = (point: { x: number; y: number } | null): void => {
+        let dropSection: string | null = null;
+        if (point && this.isGridLayout()) {
+            const { sectionBoxes } = this.measureGridSections(this.lastGridSections);
+            for (const [id, box] of Object.entries(sectionBoxes)) {
+                if (box && point.x >= box.left && point.x <= box.right && point.y >= box.top && point.y <= box.bottom) {
+                    dropSection = id;
+                    break;
+                }
+            }
+        }
+        if (dropSection !== this.state.dropSection) {
+            this.setState({ dropSection });
+        }
+    };
+
+    /**
      * Where a new widget lands that is dropped from the palette onto this view: the view settings with it put into
      * the section under the point - before or after the widget there, or at the end of the section - or null if the
      * view has no grid layout or the point is over no section. The editor then makes it a cell of that section;
@@ -2203,6 +2229,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     this.props.context.registerEditorCallback('pxToPercent', this.props.view, this.pxToPercent);
                     this.props.context.registerEditorCallback('onPercentToPx', this.props.view, this.onPercentToPx);
                     this.props.context.registerEditorCallback('gridDropTarget', this.props.view, this.gridDropTarget);
+                    this.props.context.registerEditorCallback(
+                        'gridDropHighlight',
+                        this.props.view,
+                        this.gridDropHighlight,
+                    );
                 }
             } else {
                 this.registerDone = false;
@@ -2211,6 +2242,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 this.props.context.registerEditorCallback('pxToPercent', this.props.view);
                 this.props.context.registerEditorCallback('onPercentToPx', this.props.view);
                 this.props.context.registerEditorCallback('gridDropTarget', this.props.view);
+                this.props.context.registerEditorCallback('gridDropHighlight', this.props.view);
             }
         }
     }
@@ -2929,6 +2961,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             stored &&
                             (!isSectionVisible(stored, visibility) || !section.widgets.length) &&
                             'vis-grid-section-hidden',
+                        // a widget from the palette would land here, see gridDropHighlight()
+                        this.props.editMode && this.state.dropSection === section.id && 'vis-grid-section-drop',
                         !open && 'vis-grid-section-collapsed',
                         typeof stored?.className === 'string' && stored.className.trim(),
                     )}
@@ -3903,6 +3937,7 @@ export interface VisEngineHandlers {
     onPxToPercent: (wids: AnyWidgetId[], attr: string, cb: (results: (string | null)[]) => void) => (string | null)[];
     onPercentToPx: (wids: AnyWidgetId[], attr: string, cb: (results: (string | null)[]) => void) => (string | null)[];
     gridDropTarget: VisView['gridDropTarget'];
+    gridDropHighlight: VisView['gridDropHighlight'];
 }
 
 export default VisView;
