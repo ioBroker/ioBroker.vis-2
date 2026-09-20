@@ -51,6 +51,26 @@ function shortenForLog(value: string): string {
     return `${value.substring(0, MAX_LOG_LENGTH)}… (${value.length} characters)`;
 }
 
+/**
+ * Which entry of an `array(...)` operation a value picks.
+ *
+ * A boolean names the second entry when it is true and the first when it is false, which is what the operation is
+ * mostly used for: `{id.ack;array(not acknowledged,acknowledged)}` - that is even the example of the README, and it
+ * gave `undefined` before, as `parseInt(true)` is no number. Everything else is read as the index it was.
+ *
+ * @param value the value of the state
+ * @returns the index in the list of the operation
+ */
+export function getArrayIndex(value: any): number {
+    if (value === true || value === 'true') {
+        return 1;
+    }
+    if (value === false || value === 'false') {
+        return 0;
+    }
+    return parseInt(value, 10);
+}
+
 class VisFormatUtils {
     private readonly vis: VisLegacy;
 
@@ -531,7 +551,7 @@ class VisFormatUtils {
                                 value = VisFormatUtils.formatValue(value, parseInt(operationArg as string, 10));
                                 break;
                             case 'array':
-                                value = (operationArg as string[])[parseInt(value, 10)];
+                                value = (operationArg as string[])[getArrayIndex(value)];
                                 break;
                             case 'date':
                                 value = this.formatDate(value, operationArg as string);
