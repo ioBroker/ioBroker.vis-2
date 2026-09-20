@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import commonjs from 'vite-plugin-commonjs';
 import { federation } from '@module-federation/vite';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
+import { existsSync } from 'node:fs';
 import { moduleFederationShared } from '@iobroker/types-vis-2/modulefederation.vis.config';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
@@ -75,7 +76,16 @@ export default defineConfig({
             '^/[^/]+\\.admin/': 'http://localhost:8082',
             '/habpanel': 'http://localhost:8082',
             '/vis-2': 'http://localhost:8082',
-            '/widgets': 'http://localhost:8082/vis-2',
+            '/widgets': {
+                target: 'http://localhost:8082/vis-2',
+                // The app brings the previews of the widget sets it has itself in `public/widgets`. Only what is
+                // not there belongs to an installed widget set and is asked of the web adapter.
+                bypass: req => {
+                    const publicDir = resolve(__dirname, 'public');
+                    const asked = resolve(publicDir, (req.url || '').split('?')[0].replace(/^\/+/, ''));
+                    return asked.startsWith(publicDir + sep) && existsSync(asked) ? req.url : undefined;
+                },
+            },
             '/widgets.html': 'http://localhost:8082/vis-2',
             '/web': 'http://localhost:8082',
             '/state': 'http://localhost:8082',

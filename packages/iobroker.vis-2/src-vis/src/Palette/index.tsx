@@ -399,8 +399,13 @@ class Palette extends Component<PaletteProps, PaletteState> {
             _widgetsList[widgetTypeName][widgetType.name] = widgetType;
         });
 
-        // sort widget sets: __marketplace, basic, rx, jqui, other
+        // sort widget sets: __marketplace, devices, basic, rx, jqui, other
         const sets = Object.keys(_widgetsList);
+        // the widgets of the devices of a house come first: they are what a page is usually built from
+        const posDevices = sets.indexOf('devices');
+        if (posDevices !== -1) {
+            sets.splice(posDevices, 1);
+        }
         const posBasic = sets.indexOf('basic');
         if (posBasic !== -1) {
             sets.splice(posBasic, 1);
@@ -419,6 +424,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
 
         if (posBasic !== -1) {
             resultSet.unshift('basic');
+        }
+        if (posDevices !== -1) {
+            resultSet.unshift('devices');
         }
         const sorted: Record<string, Record<string, WidgetType>> = {};
         resultSet.forEach(key => (sorted[key] = _widgetsList[key]));

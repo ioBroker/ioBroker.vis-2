@@ -121,7 +121,8 @@
             typeof window.socketLoadedHandler === 'function' && window.socketLoadedHandler();
         };
         setTimeout(() => {
-            script.src = window.location.port.startsWith('300') ? `${window.location.protocol}//${window.location.hostname}:8082/lib/js/socket.io.js` : '/../../lib/js/socket.io.js';
+            // every port of the dev server - 3000, and 3100 for a second one - takes socket.io from the web adapter
+            script.src = /^3\d{3}$/.test(window.location.port) ? `${window.location.protocol}//${window.location.hostname}:8082/lib/js/socket.io.js` : '/../../lib/js/socket.io.js';
         }, 1000);
 
         document.head.appendChild(script);

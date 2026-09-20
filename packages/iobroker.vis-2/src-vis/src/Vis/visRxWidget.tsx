@@ -809,7 +809,7 @@ export class VisRxWidget<
     }
 
     // A widget may render several elements, as the base class and the published types allow: the widgets that
-    // came from the material set do it, see Widgets/Material.
+    // came from the material set do it, see Widgets/Devices.
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | (React.JSX.Element | null)[] | null {
         props.id = this.props.id;
 
