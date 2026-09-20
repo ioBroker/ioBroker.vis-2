@@ -541,7 +541,9 @@ export default class VisWidgetsCatalog {
                                 VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
                                 VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
 
-                                collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>) => {
+                                collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>, index: number) => {
+                                    // the built-in widgets come first in the list, see above
+                                    const builtIn = index < WIDGETS.length;
                                     if (!WidgetEl?.getWidgetInfo) {
                                         console.error(
                                             `Invalid widget without getWidgetInfo: ${WidgetEl.constructor.name}`,
@@ -555,7 +557,16 @@ export default class VisWidgetsCatalog {
                                         if (!info.id) {
                                             console.error(`No id in info for "${WidgetEl.constructor.name}"`);
                                         } else if (VisWidgetsCatalog.rxWidgets) {
-                                            VisWidgetsCatalog.rxWidgets[info.id] = WidgetEl;
+                                            if (!builtIn && VisWidgetsCatalog.rxWidgets[info.id]) {
+                                                // An installed widget set still brings a widget that vis-2 ships
+                                                // itself now - the ones that came from the material set. The
+                                                // built-in one wins, so that both do not end up in the palette.
+                                                console.log(
+                                                    `Ignored ${info.visSet}/${info.id}: vis-2 brings this widget itself`,
+                                                );
+                                            } else {
+                                                VisWidgetsCatalog.rxWidgets[info.id] = WidgetEl;
+                                            }
                                         }
                                     }
                                 });

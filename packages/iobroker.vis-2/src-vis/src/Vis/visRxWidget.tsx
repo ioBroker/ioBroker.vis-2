@@ -808,7 +808,9 @@ export class VisRxWidget<
         return muiStyle;
     }
 
-    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | null {
+    // A widget may render several elements, as the base class and the published types allow: the widgets that
+    // came from the material set do it, see Widgets/Material.
+    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | (React.JSX.Element | null)[] | null {
         props.id = this.props.id;
 
         props.className = `vis-widget${this.state.rxData.class ? ` ${this.state.rxData.class}` : ''}`;

@@ -3,7 +3,8 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@iobroker/types-vis-2": "file:../../types-vis-2"
+        "@iobroker/types-vis-2": "file:../../types-vis-2",
+        "react-circular-slider-svg": "^0.4.0"
     },
     "overrides": {
         "react": "19.2.8",

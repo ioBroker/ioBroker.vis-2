@@ -78,6 +78,8 @@ import Swipe from './Swipe/Swipe';
 
 import JqPlotGauge from './JqPlot/JqPlotGauge';
 
+import MATERIAL_WIDGETS from './Material';
+
 const WIDGETS = [
     BasicBar,
     BasicBulb,
@@ -157,6 +159,8 @@ const WIDGETS = [
 
     Swipe,
     JqPlotGauge,
+    // the widgets that came from the widget set 'vis-2-widgets-material', see Material/Generic.tsx
+    ...MATERIAL_WIDGETS,
 ];
 
 export default WIDGETS;
