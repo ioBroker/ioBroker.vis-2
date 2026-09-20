@@ -472,9 +472,19 @@ export default class VisWidgetsCatalog {
         return anyWithoutSet ? false : widgetSets;
     }
 
-    static setUsedWidgetSets(project: Project): Project {
+    /**
+     * Fill in the widget set of every widget that has none, and drop the attributes that replaced it.
+     *
+     * The project may not be touched: it comes from the store, and what the store hands out is frozen. So the
+     * first widget that has to be changed makes a copy, and only that copy is written to. A project in which
+     * nothing was missing gives `null` back, and the caller then has nothing to save.
+     *
+     * @param project the project as it was read
+     * @returns the project with the sets filled in, or null when nothing had to be changed
+     */
+    static setUsedWidgetSets(project: Project): Project | null {
         // provide for all widgets the widget set and set
-        let views: Project = project;
+        let views: Project | null = null;
         const widgetTypes = window.visWidgetTypes; // getWidgetTypes();
         const viewKeys = Object.keys(project);
 
@@ -485,14 +495,22 @@ export default class VisWidgetsCatalog {
             const widgets = project[viewKeys[v]].widgets;
             const keys: (GroupWidgetId | SingleWidgetId)[] = Object.keys(widgets) as (GroupWidgetId | SingleWidgetId)[];
             for (let w = 0; w < keys.length; w++) {
+                /**
+                 * The widget of the copy, which is made now if it does not exist yet.
+                 *
+                 * @returns the widget that may be written to
+                 */
+                const writable = (): Widget => {
+                    views ||= JSON.parse(JSON.stringify(project)) as Project;
+                    return views[viewKeys[v]].widgets[keys[w]];
+                };
+
                 // remove deprecated attributes
                 if (widgets[keys[w]].set) {
-                    views ||= JSON.parse(JSON.stringify(project));
-                    delete views[viewKeys[v]].widgets[keys[w]].set;
+                    delete writable().set;
                 }
                 if (widgets[keys[w]].wSet) {
-                    views ||= JSON.parse(JSON.stringify(project));
-                    delete views[viewKeys[v]].widgets[keys[w]].wSet;
+                    delete writable().wSet;
                 }
                 if (widgets[keys[w]].widgetSet) {
                     continue;
@@ -500,13 +518,11 @@ export default class VisWidgetsCatalog {
                 const tpl = widgets[keys[w]].tpl;
 
                 if (tpl === '_tplGroup') {
-                    views ||= JSON.parse(JSON.stringify(project));
-                    views[viewKeys[v]].widgets[keys[w]].widgetSet = 'basic';
+                    writable().widgetSet = 'basic';
                 } else {
                     const tplWidget = widgetTypes.find(item => item.name === tpl);
                     if (tplWidget) {
-                        views ||= JSON.parse(JSON.stringify(project));
-                        views[viewKeys[v]].widgets[keys[w]].widgetSet = tplWidget.set;
+                        writable().widgetSet = tplWidget.set;
                     }
                 }
             }
