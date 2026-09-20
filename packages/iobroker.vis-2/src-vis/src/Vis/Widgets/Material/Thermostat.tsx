@@ -11,6 +11,8 @@ import {
     IconButton,
     LinearProgress,
     Slider,
+    Tab,
+    Tabs,
     Tooltip,
 } from '@mui/material';
 
@@ -635,10 +637,18 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
         return value === undefined || value === null ? '' : value.toString();
     }
 
-    renderChartDialog(): React.ReactNode {
+    /**
+     * The dialog behind the button of the widget: the thermostat in one tab and the history of its temperatures
+     * in the other. The chart is only built while its tab is chosen, so the page does not carry echarts until
+     * somebody asks for it.
+     */
+    renderDialog(): React.ReactNode {
         if (!this.state.showDialog) {
             return null;
         }
+
+        // the ring should not grow beyond the dialog on a narrow screen
+        const size = Math.max(160, Math.min(400, window.innerWidth - 120, window.innerHeight - 260));
 
         return (
             <Dialog
@@ -657,7 +667,33 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                         <IconClose />
                     </IconButton>
                 </DialogTitle>
+                <Tabs
+                    value={this.state.dialogTab}
+                    onChange={(_e, value: number) => this.setState({ dialogTab: value })}
+                >
+                    <Tab label={Generic.t('thermostat')} />
+                    <Tab label={Generic.t('chart')} />
+                </Tabs>
                 <DialogContent>
+                    {this.state.dialogTab === 0 && (
+                        <div
+                            style={{
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <div style={{ width: size, height: size, position: 'relative' }}>
+                                {this.renderThermostatContent({
+                                    withTitle: false,
+                                    size,
+                                    chartButton: null,
+                                    withDialog: false,
+                                })}
+                            </div>
+                        </div>
+                    )}
                     {this.state.dialogTab === 1 && (
                         <div style={{ height: '100%' }}>
                             <React.Suspense fallback={<LinearProgress />}>
@@ -763,41 +799,18 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
         return result;
     }
 
-    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element[] | React.JSX.Element | null {
-        super.renderWidgetBody(props);
-
-        this.customStyle = {};
-        if (this.state.rxStyle) {
-            if (this.state.rxStyle['font-weight']) {
-                this.customStyle.fontWeight = this.state.rxStyle['font-weight'];
-            }
-            if (this.state.rxStyle['font-size']) {
-                this.customStyle.fontSize = this.state.rxStyle['font-size'];
-            }
-            if (this.state.rxStyle['font-family']) {
-                this.customStyle.fontFamily = this.state.rxStyle['font-family'];
-            }
-            if (this.state.rxStyle['font-style']) {
-                this.customStyle.fontStyle = this.state.rxStyle['font-style'];
-            }
-            if (this.state.rxStyle['word-spacing']) {
-                this.customStyle.wordSpacing = this.state.rxStyle['word-spacing'];
-            }
-            if (this.state.rxStyle['letter-spacing']) {
-                this.customStyle.letterSpacing = this.state.rxStyle['letter-spacing'];
-            }
-        }
-
-        const withCard = !this.state.rxData.noCard && !props.widget.usedInWidget;
-        const withTitle = this.state.rxData.widgetTitle && withCard;
-
-        const actualRxData = JSON.stringify(this.state.rxData);
-        if (this.lastRxData !== actualRxData) {
-            this.updateTimeout ||= setTimeout(async () => {
-                this.updateTimeout = null;
-                await this.thermostatReadObjects();
-            }, 50);
-        }
+    /**
+     * The thermostat itself: the ring - or the slider, where there is no room for the ring - with the two
+     * temperatures and the buttons of the modes. The widget shows it, and the first tab of the dialog shows it
+     * again, at the size the dialog has room for.
+     */
+    renderThermostatContent(options: {
+        withTitle: boolean;
+        size: number;
+        chartButton: React.JSX.Element | null;
+        withDialog: boolean;
+    }): React.JSX.Element {
+        const { withTitle, size, chartButton } = options;
 
         let tempValue = this.state.values[`${this.state.rxData['oid-temp-set']}.val`];
         if (tempValue === undefined) {
@@ -830,27 +843,12 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
             actualTemp = null;
         }
 
-        let handleSize = Math.round(this.state.size / 25);
+        let handleSize = Math.round(size / 25);
         if (handleSize < 8) {
             handleSize = 8;
         }
 
         // console.log(this.state.min, this.state.max, tempValue);
-
-        const chartButton = this.state.isChart ? (
-            <IconButton
-                style={{
-                    ...(withTitle ? undefined : styles.moreButton),
-                    right: this.state.rxData.externalDialog ? undefined : withTitle ? undefined : 4,
-                    left: this.state.rxData.externalDialog ? 16 : undefined,
-                    top: this.state.rxData.externalDialog ? 16 : withTitle ? undefined : 4,
-                    zIndex: 2,
-                }}
-                onClick={() => this.setState({ showDialog: true })}
-            >
-                <MoreVertIcon />
-            </IconButton>
-        ) : null;
 
         actualTemp = actualTemp !== null ? this.formatValue(actualTemp) : null;
 
@@ -1062,11 +1060,11 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                 </style>
                 {/* if no header, draw button here */}
                 {withTitle ? null : chartButton}
-                {this.state.size && this.state.tempObject ? (
+                {size && this.state.tempObject ? (
                     <CircularSliderWithChildren
                         minValue={this.state.min === null || this.state.min === undefined ? 12 : this.state.min}
                         maxValue={this.state.max === null || this.state.max === undefined ? 30 : this.state.max}
-                        size={this.state.size}
+                        size={size}
                         arcColor={arcColor}
                         arcBackgroundColor={this.props.context.themeType === 'dark' ? '#DDD' : '#222'}
                         startAngle={40}
@@ -1100,13 +1098,11 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                                 <div
                                     style={{
                                         ...styles.thermostatDesiredTemp,
-                                        fontSize: Math.round(this.state.size / 6),
+                                        fontSize: Math.round(size / 6),
                                         ...this.customStyle,
                                     }}
                                 >
-                                    <ThermostatIcon
-                                        style={{ width: this.state.size / 8, height: this.state.size / 8 }}
-                                    />
+                                    <ThermostatIcon style={{ width: size / 8, height: size / 8 }} />
                                     <div
                                         style={{
                                             display: 'flex',
@@ -1117,7 +1113,7 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                                         {this.formatValue(tempValue)}
                                         <span
                                             style={{
-                                                fontSize: Math.round(this.state.size / 12),
+                                                fontSize: Math.round(size / 12),
                                                 fontWeight: 'normal',
                                             }}
                                         >
@@ -1137,7 +1133,7 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                                         ...(this.props.context.themeType === 'dark'
                                             ? styles.thermostatNewValueDark
                                             : styles.thermostatNewValueLight),
-                                        fontSize: Math.round((this.state.size * 0.6) / 6),
+                                        fontSize: Math.round((size * 0.6) / 6),
                                         opacity: 0.7,
                                         ...this.customStyle,
                                     }}
@@ -1241,9 +1237,70 @@ export default class Thermostat extends Generic<ThermostatRxData, ThermostatStat
                     </div>
                 ) : null}
                 <div style={{ ...styles.thermostatButtonsDiv, bottom: 8 }}>{modesButton}</div>
-                {this.renderChartDialog()}
+                {options.withDialog ? this.renderDialog() : null}
             </Box>
         );
+
+        return content;
+    }
+
+    renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element[] | React.JSX.Element | null {
+        super.renderWidgetBody(props);
+
+        this.customStyle = {};
+        if (this.state.rxStyle) {
+            if (this.state.rxStyle['font-weight']) {
+                this.customStyle.fontWeight = this.state.rxStyle['font-weight'];
+            }
+            if (this.state.rxStyle['font-size']) {
+                this.customStyle.fontSize = this.state.rxStyle['font-size'];
+            }
+            if (this.state.rxStyle['font-family']) {
+                this.customStyle.fontFamily = this.state.rxStyle['font-family'];
+            }
+            if (this.state.rxStyle['font-style']) {
+                this.customStyle.fontStyle = this.state.rxStyle['font-style'];
+            }
+            if (this.state.rxStyle['word-spacing']) {
+                this.customStyle.wordSpacing = this.state.rxStyle['word-spacing'];
+            }
+            if (this.state.rxStyle['letter-spacing']) {
+                this.customStyle.letterSpacing = this.state.rxStyle['letter-spacing'];
+            }
+        }
+
+        const withCard = !this.state.rxData.noCard && !props.widget.usedInWidget;
+        const withTitle = this.state.rxData.widgetTitle && withCard;
+
+        const actualRxData = JSON.stringify(this.state.rxData);
+        if (this.lastRxData !== actualRxData) {
+            this.updateTimeout ||= setTimeout(async () => {
+                this.updateTimeout = null;
+                await this.thermostatReadObjects();
+            }, 50);
+        }
+
+        const chartButton = this.state.isChart ? (
+            <IconButton
+                style={{
+                    ...(withTitle ? undefined : styles.moreButton),
+                    right: this.state.rxData.externalDialog ? undefined : withTitle ? undefined : 4,
+                    left: this.state.rxData.externalDialog ? 16 : undefined,
+                    top: this.state.rxData.externalDialog ? 16 : withTitle ? undefined : 4,
+                    zIndex: 2,
+                }}
+                onClick={() => this.setState({ showDialog: true })}
+            >
+                <MoreVertIcon />
+            </IconButton>
+        ) : null;
+
+        const content = this.renderThermostatContent({
+            withTitle: !!withTitle,
+            size: this.state.size,
+            chartButton,
+            withDialog: true,
+        });
 
         if (this.state.rxData.externalDialog && !this.props.editMode) {
             return this.state.dialog ? (
