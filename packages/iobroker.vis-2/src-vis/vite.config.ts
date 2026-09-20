@@ -70,6 +70,9 @@ export default defineConfig({
             '/_socket': 'http://localhost:8082',
             '/vis-2.0': 'http://localhost:8082',
             '/adapter': 'http://localhost:8082',
+            // the icon of an adapter, as `<name>.admin/<icon>`: a key that starts with ^ is read as a regexp,
+            // because the name of the adapter stands in the middle of the path
+            '^/[^/]+\\.admin/': 'http://localhost:8082',
             '/habpanel': 'http://localhost:8082',
             '/vis-2': 'http://localhost:8082',
             '/widgets': 'http://localhost:8082/vis-2',

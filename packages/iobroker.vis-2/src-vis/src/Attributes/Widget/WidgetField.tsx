@@ -1669,7 +1669,24 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     '& .MuiSelect-select': { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
                 }}
                 onChange={e => change(e.target.value)}
-                renderValue={selectValue => selectValue}
+                renderValue={selectValue => {
+                    // the chosen instance shows its icon as well, not only the open list
+                    const selected = instances.find(
+                        _instance => (field.isShort ? _instance.idShort : _instance.id) === selectValue,
+                    );
+                    return (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {selected?.icon ? (
+                                <Icon
+                                    src={`../${selected.name}.admin/${selected.icon}`}
+                                    style={{ width: 20, height: 20 }}
+                                    alt={selected.name}
+                                />
+                            ) : null}
+                            {selectValue}
+                        </span>
+                    );
+                }}
                 fullWidth
             >
                 {instances.map(_instance => (
