@@ -46,7 +46,7 @@ import {
 
 import { findWidgetUsages } from '@/Vis/visUtils';
 import { store, recalculateFields, selectWidget } from '@/Store';
-import { deepClone } from '@/Utilities/utils';
+import { deepClone, NOTHING_SELECTED } from '@/Utilities/utils';
 import type {
     AnyWidgetId,
     Project,
@@ -692,7 +692,15 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     }
 
     if (field.type === 'id' || field.type === 'hid') {
-        if (value && value !== objectCache?._id) {
+        // A new widget is created with `nothing_selected` in its object fields, see Editor.addWidget(). It is
+        // not an object: the field says `--` for it, nothing is read for it, and the dialog opens with nothing
+        // selected instead of looking for an object of that name.
+        const nothingSelected = value === NOTHING_SELECTED;
+        if (nothingSelected) {
+            if (objectCache) {
+                setObjectCache(null);
+            }
+        } else if (value && value !== objectCache?._id) {
             props.socket
                 .getObject(value as string)
                 .then(objectData => setObjectCache(objectData || null))
@@ -760,7 +768,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     error={!!error}
                     helperText={typeof error === 'string' ? I18n.t(error) : null}
                     disabled={disabled}
-                    value={value}
+                    value={nothingSelected ? '--' : value}
                     onChange={e => change(e.target.value)}
                 />
                 <div style={{ ...commonStyles.fieldContent, fontStyle: 'italic' }}>
@@ -774,7 +782,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     <SelectID
                         imagePrefix="../"
                         theme={props.theme}
-                        selected={value as string}
+                        selected={nothingSelected ? '' : (value as string)}
                         onOk={selected => change(selected)}
                         onClose={() => setIdDialog(false)}
                         socket={props.socket}
