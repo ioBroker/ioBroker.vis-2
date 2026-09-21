@@ -16,7 +16,6 @@ import {
     IconButton,
     Paper,
     Popper,
-    Tab,
     Tabs,
     Tooltip,
     LinearProgress,
@@ -86,6 +85,7 @@ import Attributes from './Attributes';
 import Palette from './Palette';
 import Toolbar from './Toolbar';
 import CodeDialog from './Components/CodeDialog';
+import DraggableViewTab, { ViewTabsDnd } from './Components/DraggableViewTabs';
 import CreateFirstProjectDialog from './Components/CreateFirstProjectDialog';
 import { DndPreview } from './Utils';
 import type { WidgetDragData } from './Palette/Widget';
@@ -1571,6 +1571,30 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         }
     };
 
+    /**
+     * Put an open view in another place of the tab bar.
+     *
+     * The order of the tabs is the order of `___settings.openedViews`, so moving a tab is moving that entry.
+     *
+     * @param view the view that was dragged
+     * @param before the view it was dropped on; the dragged one takes its place
+     */
+    moveOpenedView = async (view: string, before: string): Promise<void> => {
+        if (view === before) {
+            return;
+        }
+        const project = deepClone(store.getState().visProject);
+        const openedViews = project.___settings.openedViews;
+        const from = openedViews.indexOf(view);
+        const to = openedViews.indexOf(before);
+        if (from === -1 || to === -1) {
+            return;
+        }
+        openedViews.splice(from, 1);
+        openedViews.splice(to, 0, view);
+        await this.changeProject(project, false);
+    };
+
     setSelectedWidgets = async (
         selectedWidgets: AnyWidgetId[],
         selectedView?: string | (() => void),
@@ -2088,85 +2112,89 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         </IconButton>
                     </div>
                 </Tooltip>
-                <Tabs
-                    value={
-                        this.state.selectedView === 'null' ||
-                        this.state.selectedView === 'undefined' ||
-                        !this.state.selectedView
-                            ? views[0] || ''
-                            : this.state.selectedView
-                    }
-                    style={{
-                        width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette ? 40 : 0) + (this.state.hideAttributes ? 40 : 0)}px)`,
-                    }}
-                    sx={styles.viewTabs}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                >
-                    {views.map(view => {
-                        const isGroupEdited = !!this.state.selectedGroup && view === this.state.selectedView;
-                        const viewSettings = isGroupEdited ? {} : store.getState().visProject[view].settings || {};
-                        let icon = viewSettings.navigationIcon || viewSettings.navigationImage;
-                        if (icon?.startsWith('_PRJ_NAME/')) {
-                            icon = `../${this.adapterName}.${this.instance}/${this.state.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
+                <ViewTabsDnd onMove={(view, before) => void this.moveOpenedView(view, before)}>
+                    <Tabs
+                        value={
+                            this.state.selectedView === 'null' ||
+                            this.state.selectedView === 'undefined' ||
+                            !this.state.selectedView
+                                ? views[0] || ''
+                                : this.state.selectedView
                         }
+                        style={{
+                            width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette ? 40 : 0) + (this.state.hideAttributes ? 40 : 0)}px)`,
+                        }}
+                        sx={styles.viewTabs}
+                        variant="scrollable"
+                        scrollButtons="auto"
+                    >
+                        {views.map(view => {
+                            const isGroupEdited = !!this.state.selectedGroup && view === this.state.selectedView;
+                            const viewSettings = isGroupEdited ? {} : store.getState().visProject[view].settings || {};
+                            let icon = viewSettings.navigationIcon || viewSettings.navigationImage;
+                            if (icon?.startsWith('_PRJ_NAME/')) {
+                                icon = `../${this.adapterName}.${this.instance}/${this.state.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
+                            }
 
-                        return (
-                            <Tab
-                                component="span"
-                                disabled={!!this.state.selectedGroup && view !== this.state.selectedView}
-                                label={
-                                    <Box
-                                        component="span"
-                                        style={Utils.getStyle(
-                                            this.state.theme,
-                                            isGroupEdited && styles.groupEditTab,
-                                            styles.tabsName,
-                                        )}
-                                    >
-                                        {icon ? (
-                                            <Icon
-                                                src={icon}
-                                                style={styles.listItemIcon}
-                                            />
-                                        ) : null}
-                                        {isGroupEdited
-                                            ? `${I18n.t('Group %s', this.state.selectedGroup)}`
-                                            : viewSettings.navigationTitle || view}
-                                        <Tooltip
-                                            title={isGroupEdited ? I18n.t('Close group editor') : I18n.t('Hide')}
-                                            slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                            return (
+                                <DraggableViewTab
+                                    view={view}
+                                    component="span"
+                                    disabled={!!this.state.selectedGroup && view !== this.state.selectedView}
+                                    label={
+                                        <Box
+                                            component="span"
+                                            style={Utils.getStyle(
+                                                this.state.theme,
+                                                isGroupEdited && styles.groupEditTab,
+                                                styles.tabsName,
+                                            )}
                                         >
-                                            <span>
-                                                <IconButton
-                                                    size="small"
-                                                    disabled={
-                                                        !!this.state.selectedGroup && view !== this.state.selectedView
-                                                    }
-                                                    onClick={e => {
-                                                        e.stopPropagation();
-                                                        if (isGroupEdited) {
-                                                            this.setState({ selectedGroup: null });
-                                                        } else {
-                                                            void this.toggleView(view, false);
+                                            {icon ? (
+                                                <Icon
+                                                    src={icon}
+                                                    style={styles.listItemIcon}
+                                                />
+                                            ) : null}
+                                            {isGroupEdited
+                                                ? `${I18n.t('Group %s', this.state.selectedGroup)}`
+                                                : viewSettings.navigationTitle || view}
+                                            <Tooltip
+                                                title={isGroupEdited ? I18n.t('Close group editor') : I18n.t('Hide')}
+                                                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                                            >
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        disabled={
+                                                            !!this.state.selectedGroup &&
+                                                            view !== this.state.selectedView
                                                         }
-                                                    }}
-                                                >
-                                                    <CloseIcon fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
-                                    </Box>
-                                }
-                                sx={styles.viewTab}
-                                value={view}
-                                onClick={() => this.changeView(view)}
-                                key={view}
-                                // wrapped
-                            />
-                        );
-                    })}
-                </Tabs>
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            if (isGroupEdited) {
+                                                                this.setState({ selectedGroup: null });
+                                                            } else {
+                                                                void this.toggleView(view, false);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <CloseIcon fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                        </Box>
+                                    }
+                                    sx={styles.viewTab}
+                                    value={view}
+                                    onClick={() => this.changeView(view)}
+                                    key={view}
+                                    // wrapped
+                                />
+                            );
+                        })}
+                    </Tabs>
+                </ViewTabsDnd>
                 <IconButton
                     onClick={() => this.toggleCode()}
                     size="small"
