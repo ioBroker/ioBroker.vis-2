@@ -121,6 +121,18 @@ html {
     top: 0;
     left: 0;
 }
+
+/*
+ * The gestures of the editor run on pointer events, so a finger moves a widget as a mouse does. A touch
+ * device scrolls or zooms the page instead of reporting the moves as long as it is allowed to, so what
+ * starts a gesture must not be something to scroll on.
+ */
+.vis-editmode-overlay,
+.vis-editmode-resizer,
+.vis-editmode-widget-name,
+.vis-grid-section-edit {
+    touch-action: none;
+}
 /* The same blue as the rest of the editor decoration, so hovering and selecting read as one thing */
 .vis-editmode-overlay-not-selected:hover {
     background: #0d72b8a0;

@@ -401,7 +401,13 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         <span
             ref={props.editMode ? setNodeRef : null}
             id={entryId}
-            className={`widget-${props.widgetSet}`}
+            // The entries of "recently used" are copies of entries that stand in their set as well, and their id
+            // carries the section to stay unique. The GUI test walks `.widget-<set>` and reads the type out of
+            // the id, so a copy would give it `recent_tplSomething` - a widget type that does not exist. The
+            // copies are therefore not part of their set here; `data-widget-type` names the type for anything
+            // that wants it without going through the id.
+            className={props.section ? `widget-section-${props.section}` : `widget-${props.widgetSet}`}
+            data-widget-type={props.widgetTypeName}
             style={isGrid ? { display: 'block' } : undefined}
             {...(props.editMode ? listeners : undefined)}
         >

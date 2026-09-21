@@ -585,7 +585,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      * @param index - where the section is in the stored list
      * @param sectionId - the id of the section, to select it
      */
-    private onSectionMouseDown(e: React.MouseEvent<HTMLDivElement>, index: number, sectionId: string): void {
+    private onSectionMouseDown(e: React.PointerEvent<HTMLDivElement>, index: number, sectionId: string): void {
         const target = e.target as HTMLElement;
         if (
             e.button !== 0 ||
@@ -612,8 +612,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             scroller: VisView.findScrollParent(this.refView.current),
             lastEvent: null,
         };
-        window.addEventListener('mousemove', this.onSectionMouseMove);
-        window.addEventListener('mouseup', this.onSectionMouseUp);
+        window.addEventListener('pointermove', this.onSectionMouseMove);
+        window.addEventListener('pointerup', this.onSectionMouseUp);
+        // a touch can be taken away from the page - the gesture has to end then as well
+        window.addEventListener('pointercancel', this.onSectionMouseUp);
     }
 
     private onSectionMouseMove = (e: MouseEvent): void => {
@@ -728,8 +730,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     private onSectionMouseUp = (): void => {
         const gesture = this.sectionGesture;
-        window.removeEventListener('mousemove', this.onSectionMouseMove);
-        window.removeEventListener('mouseup', this.onSectionMouseUp);
+        window.removeEventListener('pointermove', this.onSectionMouseMove);
+        window.removeEventListener('pointerup', this.onSectionMouseUp);
+        window.removeEventListener('pointercancel', this.onSectionMouseUp);
         this.stopSectionAutoScroll();
         this.removeDragGhost();
         this.sectionGesture = null;
@@ -818,15 +821,16 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.props.context.socket.unsubscribeState(this.sectionStateIds, this.onSectionStateChange);
             this.sectionStateIds = [];
         }
-        window.removeEventListener('mousemove', this.onSectionMouseMove);
-        window.removeEventListener('mouseup', this.onSectionMouseUp);
+        window.removeEventListener('pointermove', this.onSectionMouseMove);
+        window.removeEventListener('pointerup', this.onSectionMouseUp);
+        window.removeEventListener('pointercancel', this.onSectionMouseUp);
         this.stopSectionAutoScroll();
         if (this.sectionDropTimer) {
             clearTimeout(this.sectionDropTimer);
             this.sectionDropTimer = null;
         }
         this.stopAutoScroll();
-        window.removeEventListener('mousemove', this.onWindowMoveDuringGesture);
+        window.removeEventListener('pointermove', this.onWindowMoveDuringGesture);
         this.announcedAdornerLayer = null;
         registerAdornerLayer(this.props.view, null);
         this.props.context.linkContext.unregisterViewRef(this.props.view, this.refView);
@@ -979,12 +983,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             }
         });
 
-        window.document.addEventListener('mousedown', this.onMouseWindowDown);
+        window.document.addEventListener('pointerdown', this.onMouseWindowDown);
     };
 
     cancelStealMode(result: string | number | boolean | null): void {
         if (this.nextClickIsSteal) {
-            window.document.removeEventListener('mousedown', this.onMouseWindowDown);
+            window.document.removeEventListener('pointerdown', this.onMouseWindowDown);
             this.nextClickIsSteal.cb(result);
             Object.keys(this.widgetsRefs).forEach(wid => {
                 const onCommand = this.widgetsRefs[wid as AnyWidgetId]?.onCommand;
@@ -1019,8 +1023,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   this.props.context.setSelectedSection?.(null);
               }
 
-              this.onMouseViewMove && window.document.addEventListener('mousemove', this.onMouseViewMove);
-              this.onMouseViewUp && window.document.addEventListener('mouseup', this.onMouseViewUp);
+              this.onMouseViewMove && window.document.addEventListener('pointermove', this.onMouseViewMove);
+              this.onMouseViewUp && window.document.addEventListener('pointerup', this.onMouseViewUp);
+              this.onMouseViewUp && window.document.addEventListener('pointercancel', this.onMouseViewUp);
 
               const rect = this.refView.current?.getBoundingClientRect();
 
@@ -1197,8 +1202,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
               e?.stopPropagation();
-              this.onMouseViewMove && window.document.removeEventListener('mousemove', this.onMouseViewMove);
-              this.onMouseViewUp && window.document.removeEventListener('mouseup', this.onMouseViewUp);
+              this.onMouseViewMove && window.document.removeEventListener('pointermove', this.onMouseViewMove);
+              this.onMouseViewUp && window.document.removeEventListener('pointerup', this.onMouseViewUp);
+              this.onMouseViewUp && window.document.removeEventListener('pointercancel', this.onMouseViewUp);
               if (this.selectDiv) {
                   this.selectDiv.remove();
                   this.selectDiv = null;
@@ -1273,11 +1279,12 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   return;
               }
 
-              this.onMouseWidgetMove && this.refView.current?.addEventListener('mousemove', this.onMouseWidgetMove);
-              this.onMouseWidgetUp && window.document.addEventListener('mouseup', this.onMouseWidgetUp);
+              this.onMouseWidgetMove && this.refView.current?.addEventListener('pointermove', this.onMouseWidgetMove);
+              this.onMouseWidgetUp && window.document.addEventListener('pointerup', this.onMouseWidgetUp);
+              this.onMouseWidgetUp && window.document.addEventListener('pointercancel', this.onMouseWidgetUp);
 
               // outside the view as well, so that the pane scrolls with the cursor over the toolbar above it
-              window.addEventListener('mousemove', this.onWindowMoveDuringGesture);
+              window.addEventListener('pointermove', this.onWindowMoveDuringGesture);
 
               const scroller = VisView.findScrollParent(this.refView.current);
               this.movement = {
@@ -1917,9 +1924,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ? (e?: MouseEvent) => {
               const widgetsRefs = this.widgetsRefs;
               e?.stopPropagation();
-              this.onMouseWidgetMove && this.refView.current?.removeEventListener('mousemove', this.onMouseWidgetMove);
-              this.onMouseWidgetUp && window.document.removeEventListener('mouseup', this.onMouseWidgetUp);
-              window.removeEventListener('mousemove', this.onWindowMoveDuringGesture);
+              this.onMouseWidgetMove &&
+                  this.refView.current?.removeEventListener('pointermove', this.onMouseWidgetMove);
+              this.onMouseWidgetUp && window.document.removeEventListener('pointerup', this.onMouseWidgetUp);
+              this.onMouseWidgetUp && window.document.removeEventListener('pointercancel', this.onMouseWidgetUp);
+              window.removeEventListener('pointermove', this.onWindowMoveDuringGesture);
               this.stopAutoScroll();
               this.lastMoveEvent = null;
 
@@ -2790,7 +2799,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             <div
                 className="vis-grid-section-controls"
                 // not the start of a selection frame on the view
-                onMouseDown={e => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
             >
                 <button
                     type="button"
@@ -2936,7 +2945,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             ? I18n.t('section_empty_hint')
                             : undefined
                     }
-                    onMouseDown={
+                    onPointerDown={
                         this.props.editMode && stored && section.index !== undefined
                             ? e => this.onSectionMouseDown(e, section.index as number, stored.id)
                             : undefined
@@ -3038,7 +3047,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     className="vis-grid-section-add"
                     style={{ minHeight: layout.rowHeight }}
                     title={I18n.t('Add section')}
-                    onMouseDown={e => e.stopPropagation()}
+                    onPointerDown={e => e.stopPropagation()}
                     onClick={() => this.changeGridSections(list => [...list, { id: newSectionId(list), widgets: [] }])}
                 >
                     + {I18n.t('Add section')}
@@ -3829,7 +3838,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 className={`${className} visview_${this.props.view.replace(/\s/g, '_')}`}
                 ref={this.refView}
                 id={`visview_${this.props.view.replace(/\s/g, '_')}`}
-                onMouseDown={
+                onPointerDown={
                     !this.props.context.runtime ? e => this.props.editMode && this.mouseDownLocal?.(e) : undefined
                 }
                 onDragStart={
