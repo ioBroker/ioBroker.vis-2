@@ -388,10 +388,15 @@ class Palette extends Component<PaletteProps, PaletteState> {
             }
 
             const title = widgetType.label ? I18n.t(widgetType.label) : window.vis._(widgetType.title || '') || '';
-            if (
-                widgetType.hidden ||
-                (this.state.filter && !title.toLowerCase().includes(this.state.filter.toLowerCase()))
-            ) {
+            // The search also looks at the widget set a widget belongs to, by its name and by the label the
+            // palette gives it: "metro" is a set, not a widget, and used to find nothing at all.
+            const filter = this.state.filter.toLowerCase();
+            const found =
+                !filter ||
+                title.toLowerCase().includes(filter) ||
+                widgetTypeName.toLowerCase().includes(filter) ||
+                (widgetSetProps[widgetTypeName]?.label || '').toLowerCase().includes(filter);
+            if (widgetType.hidden || !found) {
                 return;
             }
 
