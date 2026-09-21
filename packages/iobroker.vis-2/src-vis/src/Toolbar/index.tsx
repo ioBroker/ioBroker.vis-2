@@ -143,7 +143,6 @@ interface ToolbarState {
 export default class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
     private readonly rightRef: React.RefObject<HTMLButtonElement | null>;
     private readonly lang: ioBroker.Languages;
-    private readonly runtimeURL: string;
 
     constructor(props: ToolbarProps) {
         super(props);
@@ -154,9 +153,20 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
         };
         this.rightRef = React.createRef();
         this.lang = I18n.getLanguage();
-        this.runtimeURL = window.location.pathname.endsWith('/edit.html')
-            ? `./?${props.projectName}#${props.selectedView}`
-            : `?${props.projectName}&runtime=true#${props.selectedView}`;
+    }
+
+    /**
+     * Where the runtime of the project is.
+     *
+     * It is built when it is needed, not once in the constructor: the editor opens the page that is being
+     * worked on, and that changes while the editor is open.
+     *
+     * @returns the address of the runtime, with the page that is open now
+     */
+    getRuntimeURL(): string {
+        return window.location.pathname.endsWith('/edit.html')
+            ? `./?${this.props.projectName}#${this.props.selectedView}`
+            : `?${this.props.projectName}&runtime=true#${this.props.selectedView}`;
     }
 
     componentDidMount(): void {
@@ -206,7 +216,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                     onClick={() => {
                         window.localStorage.setItem('Vis.lastCommand', 'close');
                         this.setState({ lastCommand: 'close', right: false });
-                        window.location.href = this.runtimeURL;
+                        window.location.href = this.getRuntimeURL();
                     }}
                 >
                     <CloseIcon
@@ -218,7 +228,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                     onClick={() => {
                         window.localStorage.setItem('Vis.lastCommand', 'open');
                         this.setState({ lastCommand: 'open', right: false });
-                        window.open(this.runtimeURL, 'vis-2.runtime');
+                        window.open(this.getRuntimeURL(), 'vis-2.runtime');
                     }}
                 >
                     <PlayArrowIcon
@@ -330,7 +340,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                 >
                     <IconButton
                         size="small"
-                        onClick={() => (window.location.href = this.runtimeURL)}
+                        onClick={() => (window.location.href = this.getRuntimeURL())}
                     >
                         <CloseIcon style={{ color: this.props.themeType === 'dark' ? '#6388fd' : '#5fa5fe' }} />
                     </IconButton>
@@ -344,7 +354,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                 >
                     <IconButton
                         size="small"
-                        onClick={() => window.open(this.runtimeURL, 'vis-2.runtime')}
+                        onClick={() => window.open(this.getRuntimeURL(), 'vis-2.runtime')}
                     >
                         <PlayArrowIcon style={{ color: this.props.themeType === 'dark' ? '#50ff50' : '#008800' }} />
                     </IconButton>
