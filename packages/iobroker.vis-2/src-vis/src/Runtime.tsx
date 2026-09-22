@@ -25,7 +25,7 @@ import { BiImport } from 'react-icons/bi';
 import {
     I18n,
     Loader,
-    LegacyConnection,
+    type LegacyConnection,
     GenericApp,
     type GenericAppProps,
     type GenericAppState,
@@ -51,6 +51,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
 import { getMultiViewWidgetId, hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
+import VisConnection from './Utilities/VisConnection';
 
 import enLang from './i18n/en.json';
 import deLang from './i18n/de.json';
@@ -241,7 +242,7 @@ export default class Runtime<P extends RuntimeProps = RuntimeProps, S extends Ru
             'zh-cn': zhLang,
         };
 
-        extendedProps.Connection = LegacyConnection as unknown as LegacyConnection;
+        extendedProps.Connection = VisConnection as unknown as LegacyConnection;
         if (!window.disableDataReporting) {
             extendedProps.sentryDSN = window.sentryDSN;
         }
