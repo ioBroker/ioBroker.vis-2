@@ -12,7 +12,8 @@
         "-f"
       ],
       "allowBranch": [
-        "master"
+        "master",
+        "react18"
       ],
       "ignoreChanges": [
         "*.md"
