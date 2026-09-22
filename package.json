@@ -42,6 +42,6 @@
         "update-packages": "npx -y npm-check-updates --upgrade && cd packages/iobroker.vis-2 && npx -y npm-check-updates --upgrade && cd ./src-vis && npx -y npm-check-updates --upgrade && cd ../../types-vis-2 && npx -y npm-check-updates --upgrade",
         "start": "npm run start -w packages/iobroker.vis-2",
         "release": "release-script",
-        "release-patch": "release-script patch --yes --no-update-lockfile --publishAll --branch-pattern"
+        "release-patch": "release-script patch --branch-pattern react18 --noPush --yes --no-update-lockfile --publishAll"
     }
 }
