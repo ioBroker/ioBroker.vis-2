@@ -52,7 +52,9 @@ export default class VisConnection extends LegacyConnection {
                     clearTimeout(retryTimer);
                     retryTimer = null;
                 }
-                socket.off('disconnect', onDisconnect);
+                // Not at once: the ws client of ioBroker runs the handlers directly from its array,
+                // removing one of them during the run would skip the next one
+                setTimeout(() => socket.off('disconnect', onDisconnect), 0);
                 forget();
             };
 
