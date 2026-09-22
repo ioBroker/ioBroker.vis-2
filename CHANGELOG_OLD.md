@@ -356,6 +356,12 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.14.3 (2026-06-09)
+* (@GermanBluefox) Applied the user-defined style to tplValueInput
+
+## 2.14.0 (2026-05-29)
+* (@GermanBluefox) Refactoring of the build process
+
 ## 2.13.19 (2026-04-27)
 * (@GermanBluefox) Refactoring
 

@@ -312,7 +312,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.15.6 (2026-09-22)
 * (@GermanBluefox) Fixed vis-2 in the cloud staying on the loading screen with `Uncaught (in promise) Error: ioBroker is not connected` if it was opened while the ioBroker was not connected to the cloud, e.g. during its restart. vis-2 waits for the ioBroker now and loads the project as soon as it is back
 
 ### 2.15.5 (2026-08-26)
@@ -379,12 +379,6 @@ npm run start
 * (@GermanBluefox) Fixed the signal condition if the state value is `null`
 * (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
 * (@typhosj) Fixed the visibility condition if the state value is `null`
-
-### 2.14.3 (2026-06-09)
-* (@GermanBluefox) Applied the user-defined style to tplValueInput
-
-### 2.14.0 (2026-05-29)
-* (@GermanBluefox) Refactoring of the build process
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
