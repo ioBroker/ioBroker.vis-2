@@ -446,7 +446,11 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                         styles.toolbar,
                         this.props.toolbarHeight !== 'full' && styles.narrowToolbar,
                     )}
-                    style={{ alignItems: 'initial' }}
+                    // The groups take the width the right part (user, theme, menu) leaves them. When they need
+                    // more, a group wraps into another row - otherwise they ran on under that part and lay over
+                    // the name of the user, first of all in the narrowest form, which moves the user up (#570).
+                    // Known limit: a single group wider than the room still reaches under it.
+                    style={{ alignItems: 'initial', flexWrap: 'wrap', rowGap: 4 }}
                 >
                     <Views
                         toolbarHeight={this.props.toolbarHeight}
