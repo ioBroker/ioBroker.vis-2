@@ -1,4 +1,5 @@
 const helper = require('@iobroker/vis-2-widgets-testing');
+const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert');
 
@@ -229,14 +230,21 @@ describe('vis', () => {
         this.timeout(60_000);
 
         const viewport = gPage.viewport();
-        // the buttons that switch the height of the toolbar sit in its right part and differ only by their icon
-        const clickInRightPart = async testId => {
-            await gPage.evaluate(id => {
+        // The button that switches the height of the toolbar sits in its right part and is found by its tooltip,
+        // which MUI puts on it as `aria-label` - the icons carry no name in a production build. The tooltip is
+        // translated, so every language of the editor is accepted.
+        const i18nDir = path.join(__dirname, '..', 'src-vis', 'src', 'i18n');
+        const labelsOf = key => [
+            key,
+            ...fs.readdirSync(i18nDir).map(file => JSON.parse(fs.readFileSync(path.join(i18nDir, file), 'utf8'))[key]),
+        ];
+        const clickInRightPart = async key => {
+            await gPage.evaluate(labels => {
                 const right = [...document.querySelectorAll('span')].find(
                     el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
                 );
-                right.querySelector(`svg[data-testid="${id}"]`).closest('button').click();
-            }, testId);
+                [...right.querySelectorAll('button')].find(b => labels.includes(b.getAttribute('aria-label'))).click();
+            }, labelsOf(key));
             await new Promise(resolve => setTimeout(resolve, 1_000));
         };
         // every button and icon of the groups that lies on the right part
@@ -260,8 +268,8 @@ describe('vis', () => {
             // 1000 and 1100 px are narrower than what the groups need in one row
             assert.strictEqual(await covered(1000), 0, 'the toolbar runs under its right part at 1000 px');
 
-            await clickInRightPart('KeyboardArrowUpIcon'); // full -> narrow
-            await clickInRightPart('KeyboardDoubleArrowUpIcon'); // narrow -> the narrowest form
+            await clickInRightPart('Hide panel names'); // full -> narrow
+            await clickInRightPart('Narrow panel'); // narrow -> the narrowest form
             for (const width of [1000, 1100]) {
                 assert.strictEqual(
                     await covered(width),
@@ -271,7 +279,7 @@ describe('vis', () => {
             }
             await helper.screenshot(gPage, `86_${(Date.now() - start).toString().padStart(6, '0')}_toolbar_narrow`);
         } finally {
-            await clickInRightPart('KeyboardDoubleArrowDownIcon').catch(() => {}); // back to full
+            await clickInRightPart('Full panel').catch(() => {}); // back to full
             await gPage.setViewport(viewport);
             await new Promise(resolve => setTimeout(resolve, 1_000));
         }
