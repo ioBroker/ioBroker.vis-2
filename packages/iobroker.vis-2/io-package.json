@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "vis-2",
-    "version": "2.15.6",
+    "version": "2.15.7",
     "news": {
+      "2.15.7": {
+        "en": "Fixed vis-2 in the cloud staying on the loading screen with `Uncaught (in promise) Error: ioBroker is not connected` if it was opened while the ioBroker was not connected to the cloud, e.g. during its restart. vis-2 waits for the ioBroker now and loads the project as soon as it is back",
+        "de": "Vis-2 in der Cloud blieb mit `Uncaught (in promise) Error: ioBroker is not connected“ auf dem Ladebildschirm, wenn er geöffnet wurde, ohne mit der Cloud verbunden zu sein, z. B. beim Neustart. vis-2 wartet jetzt auf den ioBroker und lädt das Projekt, sobald es zurück ist",
+        "ru": "Исправлена ошибка vis-2 в облаке, которая оставалась на экране загрузки с ошибкой «Не пойман (обещаю): IOBroker не подключен», если оно было открыто, когда IOBroker не был подключен к облаку, например, во время перезапуска. vis-2 сейчас ожидает IOBroker и загружает проект, как только он вернется",
+        "pt": "Corrigido o erro `Uncaught (in promise): o IOBroker não está conectado` se fosse aberto enquanto o IOBroker não estava conectado à nuvem, por exemplo, durante a reinicialização. O vis-2 espera pelo IOBroker agora e carrega o projeto assim que ele volta",
+        "nl": "Opgelost dat vis-2 in de cloud op het laadscherm bleef staan met een fout van `Uncaught (in promise): ioBroker is niet verbonden` als de IOBroker werd geopend terwijl de IOBroker niet verbonden was met de cloud, bijvoorbeeld tijdens de herstart. vis-2 wacht nu op de IOBroker en laadt het project zodra het terug is",
+        "fr": "Correction de l'erreur « Uncaught (in promise) : IObroker is not connected » s'il était ouvert alors que l'IObroker n'était pas connecté au cloud, par exemple lors de son redémarrage. vis-2 attend l'IObroker maintenant et charge le projet dès qu'il est de retour",
+        "it": "Risolto il problema con vis-2 nel cloud che rimaneva nella schermata di caricamento con `Errore Uncaught (in promise): IOBroker non è connesso` se era aperto mentre IOBroker non era connesso al cloud, ad esempio durante il riavvio. vis-2 aspetta IOBroker ora e carica il progetto non appena torna",
+        "es": "Se corrigió el error vis-2 en la nube que permanecía en la pantalla de carga con el error «No detectado (en promesa): IOBroker no está conectado» si se abrió cuando el ioBroker no estaba conectado a la nube, por ejemplo, durante su reinicio. El vis-2 espera al ioBroker ahora y carga el proyecto en cuanto vuelve",
+        "pl": "Naprawiono, że vis-2 w chmurze pozostawał na ekranie ładowania z „Uncatch (in promise) Error: ioBroker nie jest podłączony”, jeśli był otwarty, gdy ioBroker nie był podłączony do chmury, np. podczas jego restartu. vis-2 czeka na ioBroker teraz i ładuje projekt zaraz po powrocie",
+        "uk": "Виправлено, що vis-2 у хмарі залишається на екрані завантаження з `Неспіймано (обіцяно) Помилка: IObroker не підключено`, якщо він був відкритий, коли IObroker не був підключений до хмари, наприклад, під час його перезапуску. vis-2 чекає на IObroker зараз і завантажує проект, як тільки він повернеться",
+        "zh-cn": "修复了如果在 ioBroker 未连接到云端时（例如在重启期间）打开，则云端的 vis-2 会停留在加载屏幕上并显示 “未捕获（承诺）错误：IOBroker 未连接” 的问题。vis-2 现在等待 ioBroker，回来后立即加载项目"
+      },
       "2.15.5": {
         "en": "Corrected background",
         "de": "Hintergrund korrigiert",
