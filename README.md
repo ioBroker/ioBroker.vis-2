@@ -329,6 +329,7 @@ npm run start
 * (@typhosj) The tab of the editor keeps its own name and icon. The title and the favicon of the project name the runtime, and an editor tab that carried them could not be told apart from the runtime tab of the same project (#537)
 * (@typhosj) A `border-radius` on a jQui widget is drawn again. Only the frame moves to the button inside the widget, so that it is not drawn twice - the radius stays on the widget as well, whose square background filled in the corners the button had rounded away (#663)
 * (@typhosj) The entries under "Recently used" in the palette do not count as widgets of their widget set anymore. The GUI test of vis-2 - and of every widget set that uses `@iobroker/vis-2-widgets-testing` - read them as widget types named `recent_...` and failed to place them
+* (@typhosj) The title of the widget `Border` takes HTML again, as it did in vis-1 - `<b>` makes it bold instead of being shown as text (#563)
 * (@GermanBluefox) The widget `Number` shows `--` instead of `NaN` when its object has no numeric value
 * (@GermanBluefox) The editor scrolls the view by itself while a widget is dragged or resized near its edge, so a widget can reach a place that is out of sight
 * (@GermanBluefox) A new view - and the first view of a new project - uses the grid layout with sections and starts with one empty section. Existing views keep their layout

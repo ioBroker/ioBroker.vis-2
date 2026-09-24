@@ -110,9 +110,9 @@ export default class BasicFrame extends VisRxWidget<RxData> {
                               : '#fff'),
                     padding: '0 5px',
                 }}
-            >
-                {this.state.rxData.title}
-            </div>
+                // the title is HTML, as it was in the vis-1 template (`<%== title %>`) - `<b>` makes it bold (#563)
+                dangerouslySetInnerHTML={{ __html: this.state.rxData.title ?? '' }}
+            />
         );
 
         if (this.state.rxData.header_height) {
