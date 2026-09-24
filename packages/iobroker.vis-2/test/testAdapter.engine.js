@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { assert } = require('node:assert');
+const assert = require('node:assert');
 const setup = require('@iobroker/legacy-testing');
 
 let objects = null;

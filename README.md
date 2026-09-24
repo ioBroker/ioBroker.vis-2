@@ -312,7 +312,7 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### 2.15.6 (2026-09-22)
+### **WORK IN PROGRESS**
 * (@GermanBluefox) Fixed vis-2 in the cloud staying on the loading screen with `Uncaught (in promise) Error: ioBroker is not connected` if it was opened while the ioBroker was not connected to the cloud, e.g. during its restart. vis-2 waits for the ioBroker now and loads the project as soon as it is back
 
 ### 2.15.5 (2026-08-26)

@@ -36,6 +36,30 @@ export default defineConfig({
             // The function to generate import names of top-level awaits promise in each chunk module
             promiseImportName: (i: number): string => `__tla_${i}`,
         }),
+        // @module-federation/vite replaces `build.rollupOptions.output.manualChunks` with its own function,
+        // so this plugin has to wrap that function afterwards instead of setting the option directly.
+        // The CommonJS interop helpers of rollup are needed by the proxies of `react`, `react-dom` and
+        // `react/jsx-runtime`, which module federation wraps in a top-level await. Left to rollup, the helpers
+        // land in one of those waiting chunks: the react proxy then waits for the jsx-runtime proxy, which waits
+        // for `loadShare('react/jsx-runtime')`, whose chunk waits for the react proxy. Nothing resolves, and the
+        // runtime showed an empty page without a single log (2.15.6). Their own chunk never awaits anything.
+        {
+            name: 'vis-2-commonjs-helpers-chunk',
+            apply: 'build',
+            config(config) {
+                const output = config.build?.rollupOptions?.output;
+                if (!output || Array.isArray(output)) {
+                    return;
+                }
+                const federationChunks = output.manualChunks;
+                output.manualChunks = (id, api) =>
+                    id.includes('commonjsHelpers')
+                        ? 'commonjs-helpers'
+                        : typeof federationChunks === 'function'
+                          ? federationChunks(id, api)
+                          : undefined;
+            },
+        },
         react(),
         vitetsConfigPaths(),
         commonjs(),

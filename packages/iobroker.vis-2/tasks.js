@@ -174,6 +174,85 @@ function buildEditor() {
     return buildReact(`${__dirname}/src-vis/`, { vite: true, ramSize: 7000, rootDir: `${__dirname}/../../` });
 }
 
+/**
+ * Looks for chunks of the build that wait for each other.
+ *
+ * Every chunk waits for the `__tla` promise of the chunks it imports, and a chunk that module federation created
+ * for a shared dependency waits for `loadShare()`, which loads the chunk that provides that dependency. If those
+ * waits form a circle, no module of the bundle is ever executed: the page stays empty, without a single log and
+ * without a socket. That happened in 2.15.6, when rollup put its CommonJS interop helpers into a waiting chunk,
+ * so the proxy of `react` waited for the proxy of `react/jsx-runtime` and that one back for `react` (see the
+ * `vis-2-commonjs-helpers-chunk` plugin in src-vis/vite.config.ts).
+ */
+function checkChunks() {
+    const assetsDir = path.join(__dirname, 'src-vis/build/assets');
+    if (!existsSync(assetsDir)) {
+        throw new Error(`Cannot check the chunks: ${assetsDir} does not exist`);
+    }
+    const waits = {};
+    const waiting = [];
+    const providers = {};
+    const files = readdirSync(assetsDir).filter(file => file.endsWith('.js'));
+    const contents = {};
+
+    files.forEach(file => {
+        const code = readFileSync(path.join(assetsDir, file), 'utf8');
+        contents[file] = code;
+        if (code.includes('let __tla')) {
+            waiting.push(file);
+        }
+        // The map of every shared dependency to the chunk that provides it
+        if (file.startsWith('localSharedImportMap')) {
+            for (const match of code.matchAll(/"([^"]+)"\s*:\s*[^}]*?import\(["']([^"']+)["']\)/g)) {
+                providers[match[1]] = match[2].split('/').pop();
+            }
+        }
+    });
+
+    files.forEach(file => {
+        const code = contents[file];
+        const imports = new Set();
+        // A chunk waits for every chunk it imports, as they all export their own `__tla`
+        for (const match of code.matchAll(/(?:from|import)\s*["']\.\/([^"']+\.js)["']/g)) {
+            if (waiting.includes(match[1])) {
+                imports.add(match[1]);
+            }
+        }
+        // ... and a chunk that asks for a shared dependency waits for the chunk that provides it
+        for (const match of code.matchAll(/loadShare\(\s*["']([^"']+)["']/g)) {
+            if (providers[match[1]] && waiting.includes(providers[match[1]])) {
+                imports.add(providers[match[1]]);
+            }
+        }
+        waits[file] = [...imports];
+    });
+
+    const name = file => file.replace('__mfe_internal__iobroker_vis__loadShare__', 'share:');
+    const circle = [];
+    const done = [];
+
+    function findCircle(file, path_) {
+        const position = path_.indexOf(file);
+        if (position !== -1) {
+            circle.push([...path_.slice(position), file]);
+            return true;
+        }
+        if (done.includes(file)) {
+            return false;
+        }
+        done.push(file);
+        return (waits[file] || []).some(next => findCircle(next, [...path_, file]));
+    }
+
+    if (waiting.some(file => findCircle(file, []))) {
+        throw new Error(
+            `These chunks wait for each other, the bundle would never start:\n    ${circle[0].map(name).join('\n -> ')}`,
+        );
+    }
+
+    console.log(`Chunks OK: none of the ${waiting.length} waiting chunks waits for itself`);
+}
+
 function copyAllFiles() {
     // The multi-entry Vite build produces both build/index.html (runtime) and
     // build/edit.html (editor) directly, so we copy everything from build/ into www/
@@ -264,7 +343,19 @@ if (process.argv.includes('--0-clean')) {
 } else if (process.argv.includes('--2-svg-icons')) {
     generateSvgFiles().catch(e => console.error(`Cannot generate SVG icons: ${e}`));
 } else if (process.argv.includes('--3-build')) {
-    buildEditor().catch(e => console.error(`Cannot build: ${e}`));
+    buildEditor()
+        .then(() => checkChunks())
+        .catch(e => {
+            console.error(`Cannot build: ${e}`);
+            process.exit(1);
+        });
+} else if (process.argv.includes('--check-chunks')) {
+    try {
+        checkChunks();
+    } catch (e) {
+        console.error(`${e}`);
+        process.exit(1);
+    }
 } else if (process.argv.includes('--4-copy')) {
     copyAllFiles();
 } else if (process.argv.includes('--5-patch')) {
@@ -283,9 +374,13 @@ if (process.argv.includes('--0-clean')) {
     npmPromise
         .then(() => generateSvgFiles())
         .then(() => buildEditor())
+        .then(() => checkChunks())
         .then(() => copyAllFiles())
         .then(() => patchEditor())
-        .catch(e => console.error(`Cannot build: ${e}`));
+        .catch(e => {
+            console.error(`Cannot build: ${e}`);
+            process.exit(1);
+        });
 } else {
     // Default workflow: one multi-entry Vite build produces runtime + editor in a
     // single pass. The legacy runtime/ source-copy + second npm install + separate
@@ -297,7 +392,11 @@ if (process.argv.includes('--0-clean')) {
     npmPromise
         .then(() => generateSvgFiles())
         .then(() => buildEditor())
+        .then(() => checkChunks())
         .then(() => copyAllFiles())
         .then(() => patchEditor())
-        .catch(e => console.error(`Cannot build: ${e}`));
+        .catch(e => {
+            console.error(`Cannot build: ${e}`);
+            process.exit(1);
+        });
 }
