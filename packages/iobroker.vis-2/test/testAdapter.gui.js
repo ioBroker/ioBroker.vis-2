@@ -222,6 +222,61 @@ describe('vis', () => {
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 
+    // The right part of the toolbar - user, theme, menu - floats at its right edge, and the groups of the toolbar
+    // take the width that is left. When they need more, they have to wrap into another row instead of running on
+    // under that part: in the narrowest form the user moves up into it, and the groups lay over its name (#570).
+    it('Check that the toolbar leaves its right part free', async function () {
+        this.timeout(60_000);
+
+        const viewport = gPage.viewport();
+        // the buttons that switch the height of the toolbar sit in its right part and differ only by their icon
+        const clickInRightPart = async testId => {
+            await gPage.evaluate(id => {
+                const right = [...document.querySelectorAll('span')].find(
+                    el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
+                );
+                right.querySelector(`svg[data-testid="${id}"]`).closest('button').click();
+            }, testId);
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+        };
+        // every button and icon of the groups that lies on the right part
+        const covered = width =>
+            gPage.setViewport({ ...viewport, width }).then(async () => {
+                await new Promise(resolve => setTimeout(resolve, 1_000));
+                return gPage.evaluate(() => {
+                    const right = [...document.querySelectorAll('span')].find(
+                        el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
+                    );
+                    const r = right.getBoundingClientRect();
+                    const lies = b =>
+                        b.width && b.left < r.right && b.right > r.left && b.top < r.bottom && b.bottom > r.top;
+                    return [...right.nextElementSibling.querySelectorAll('button, svg, img')]
+                        .map(el => el.getBoundingClientRect())
+                        .filter(lies).length;
+                });
+            });
+
+        try {
+            // 1000 and 1100 px are narrower than what the groups need in one row
+            assert.strictEqual(await covered(1000), 0, 'the toolbar runs under its right part at 1000 px');
+
+            await clickInRightPart('KeyboardArrowUpIcon'); // full -> narrow
+            await clickInRightPart('KeyboardDoubleArrowUpIcon'); // narrow -> the narrowest form
+            for (const width of [1000, 1100]) {
+                assert.strictEqual(
+                    await covered(width),
+                    0,
+                    `the narrowest toolbar runs under its right part at ${width} px`,
+                );
+            }
+            await helper.screenshot(gPage, `86_${(Date.now() - start).toString().padStart(6, '0')}_toolbar_narrow`);
+        } finally {
+            await clickInRightPart('KeyboardDoubleArrowDownIcon').catch(() => {}); // back to full
+            await gPage.setViewport(viewport);
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+        }
+    });
+
     // Dropping a widget from the palette onto the view is the one gesture that does not go through the mouse
     // handling of visView: it runs on react-dnd with the HTML5 backend, which listens to the native drag
     // events. That is why the earlier attempt in @iobroker/vis-2-widgets-testing - a `mouse.down`, a few
