@@ -222,6 +222,53 @@ describe('vis', () => {
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 
+    // The runtime clips the content of a widget at its box (`.vis-widget { overflow: hidden }`), and the editor has
+    // to show the same: an image larger than its widget was drawn whole in the editor and cut in the runtime
+    // (#582). The editor used to lift the clipping for its name plate, which sat outside the box - that plate is
+    // drawn in the adorner layer now, so the widget needs no `overflow` of its own in the editor.
+    it('Check that the editor clips a widget like the runtime', async function () {
+        this.timeout(60_000);
+
+        const basicWidgets = await helper.palette.getListOfWidgets(gPage, 'basic');
+        const widgetType = basicWidgets.find(name => name !== '_tplGroup') || basicWidgets[0];
+        const box = { position: 'absolute', left: '100px', top: '100px', width: '120px', height: '40px' };
+
+        const overflowOf = async style => {
+            const wid = await gPage.evaluate((type, s) => window.visAddWidget(type, 0, 0, {}, s), widgetType, style);
+            await gPage.waitForSelector(`#rx_${wid}, #${wid}`, { timeout: 5_000 });
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            const overflow = await gPage.evaluate(id => {
+                // the div the runtime clips with: the widget div of a React widget, the template's div of a can.js one
+                const cs = getComputedStyle(document.getElementById(id));
+                const name = document.querySelector(
+                    `.vis-editmode-marks[data-widget-id="${id}"] .vis-editmode-widget-name`,
+                );
+                return { x: cs.overflowX, y: cs.overflowY, nameShown: !!name };
+            }, wid);
+            await helper.view.deleteWidget(gPage, wid, 3_500);
+            return overflow;
+        };
+
+        // selected, with its name plate shown - the case in which the editor used to make it `visible`
+        const plain = await overflowOf(box);
+        assert.ok(plain.nameShown, `widget "${widgetType}" shows no name plate, so this test would not test the case`);
+        assert.deepStrictEqual(
+            { x: plain.x, y: plain.y },
+            { x: 'hidden', y: 'hidden' },
+            `the editor must clip widget "${widgetType}" like the runtime does`,
+        );
+
+        // an overflow the user set on the widget is taken as it is, in the editor as in the runtime
+        const own = await overflowOf({ ...box, 'overflow-x': 'visible', 'overflow-y': 'visible' });
+        assert.deepStrictEqual(
+            { x: own.x, y: own.y },
+            { x: 'visible', y: 'visible' },
+            `the editor must keep the overflow set on widget "${widgetType}"`,
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+    });
+
     // Dropping a widget from the palette onto the view is the one gesture that does not go through the mouse
     // handling of visView: it runs on react-dnd with the HTML5 backend, which listens to the native drag
     // events. That is why the earlier attempt in @iobroker/vis-2-widgets-testing - a `mouse.down`, a few
