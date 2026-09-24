@@ -20,6 +20,7 @@ import { FormControl, FormLabel, Slider, Stack, LinearProgress } from '@mui/mate
 import { Icon, type Connection } from '@iobroker/gui-components';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { getSliderWrite } from './sliderWrite';
 import type {
     RxRenderWidgetProps,
     RxWidgetInfo,
@@ -363,26 +364,6 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
         }
     }
 
-    getControlOid(isMax?: boolean): string {
-        if (isMax) {
-            if (this.state.rxData['click_id-2'] && this.state.rxData['click_id-2'] !== 'nothing_selected') {
-                return this.state.rxData['click_id-2'];
-            }
-            if (this.state.rxData['oid-2'] && this.state.rxData['oid-2'] !== 'nothing_selected') {
-                return this.state.rxData['oid-2'];
-            }
-        } else {
-            if (this.state.rxData.click_id && this.state.rxData.click_id !== 'nothing_selected') {
-                return this.state.rxData.click_id;
-            }
-            if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
-                return this.state.rxData.oid;
-            }
-        }
-
-        return '';
-    }
-
     onChange(value: number | number[], isMax?: boolean, immediate?: boolean): void {
         if (this.props.editMode) {
             return;
@@ -481,35 +462,15 @@ class JQuiSlider<P extends RxData = RxData, S extends JQuiSliderState = JQuiSlid
                 }
 
                 if (newState.value !== undefined) {
-                    const oid: string = this.getControlOid();
-                    if (oid) {
-                        let val = parseFloat(newState.value);
-                        if (this.state.rxData.inverted) {
-                            val =
-                                parseFloat(this.state.rxData.max as unknown as string) -
-                                val +
-                                parseFloat(this.state.rxData.min as unknown as string);
-                        }
-
-                        if (this.state.values[`${this.state.rxData.oid}.val`] !== val) {
-                            this.props.context.setValue(oid, val);
-                        }
+                    const write = getSliderWrite(this.state.rxData, this.state.values, parseFloat(newState.value));
+                    if (write) {
+                        this.props.context.setValue(write.oid, write.val);
                     }
                 }
                 if (newState.valueMax !== undefined) {
-                    const oidMax = this.getControlOid(true);
-                    if (oidMax) {
-                        let val = newState.valueMax ?? 0;
-                        if (this.state.rxData['inverted-2']) {
-                            val =
-                                parseFloat(this.state.rxData.max as unknown as string) -
-                                val +
-                                parseFloat(this.state.rxData.min as unknown as string);
-                        }
-
-                        if (this.state.values[`${this.state.rxData['oid-2']}.val`] !== val) {
-                            this.props.context.setValue(oidMax, val);
-                        }
+                    const write = getSliderWrite(this.state.rxData, this.state.values, newState.valueMax ?? 0, true);
+                    if (write) {
+                        this.props.context.setValue(write.oid, write.val);
                     }
                 }
             },
