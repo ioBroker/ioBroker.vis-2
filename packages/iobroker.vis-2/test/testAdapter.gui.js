@@ -222,6 +222,42 @@ describe('vis', () => {
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 
+    // MUI gives the text of an input the color of the theme, so the color of the widget - set in its style or by a
+    // CSS class - did not reach the text of the jQui inputs (#521).
+    it('Check that the jQui inputs take the color of the widget', async function () {
+        this.timeout(60_000);
+
+        await gPage.addStyleTag({ content: '.test-input-color { color: rgb(0, 150, 0); }' });
+        const colorOf = async (type, data, style, selector) => {
+            const wid = await gPage.evaluate((t, d, s) => window.visAddWidget(t, 0, 0, d, s), type, data, style);
+            await gPage.waitForSelector(`#${wid} ${selector}`, { timeout: 5_000 });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const color = await gPage.evaluate(
+                (id, sel) => getComputedStyle(document.querySelector(`#${id} ${sel}`)).color,
+                wid,
+                selector,
+            );
+            await helper.view.deleteWidget(gPage, wid, 3_500);
+            return color;
+        };
+        const red = { color: 'rgb(200, 0, 0)' };
+
+        assert.strictEqual(await colorOf('tplJquiInput', {}, red, 'input'), 'rgb(200, 0, 0)', 'input, style');
+        assert.strictEqual(
+            await colorOf('tplJquiInput', { class: 'test-input-color' }, {}, 'input'),
+            'rgb(0, 150, 0)',
+            'input, CSS class',
+        );
+        // the date field of MUI X draws its text in sections, not in an <input>
+        assert.strictEqual(
+            await colorOf('tplJquiInputDate', {}, red, '.MuiPickersInputBase-sectionContent'),
+            'rgb(200, 0, 0)',
+            'date input',
+        );
+        // The select of `tplJquiSelectList` is not checked here: the editor disables it, and a disabled input
+        // takes the disabled color of the theme on purpose.
+    });
+
     // Dropping a widget from the palette onto the view is the one gesture that does not go through the mouse
     // handling of visView: it runs on react-dnd with the HTML5 backend, which listens to the native drag
     // events. That is why the earlier attempt in @iobroker/vis-2-widgets-testing - a `mouse.down`, a few

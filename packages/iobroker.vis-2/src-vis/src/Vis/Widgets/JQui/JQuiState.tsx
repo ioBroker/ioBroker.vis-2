@@ -779,13 +779,11 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                         value={this.state.value === undefined ? '' : this.state.value}
                         onChange={e => this.onClick(this.getSelectedIndex(e.target.value))}
                         variant={variant}
-                        sx={
-                            variant === 'filled'
-                                ? {
-                                      '& .MuiSelect-select': { mb: '10px' },
-                                  }
-                                : undefined
-                        }
+                        sx={{
+                            // the text takes the color of the widget, not that of the theme, see JQuiInput (#521)
+                            color: 'inherit',
+                            ...(variant === 'filled' ? { '& .MuiSelect-select': { mb: '10px' } } : undefined),
+                        }}
                     >
                         {buttons}
                     </Select>
