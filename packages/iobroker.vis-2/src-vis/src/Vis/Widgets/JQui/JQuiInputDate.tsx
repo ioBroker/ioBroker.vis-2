@@ -41,6 +41,10 @@ const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
             width: '100%',
             height: '100%',
         },
+        // the text takes the color of the widget, not that of the theme, see JQuiInput (#521)
+        '& .MuiPickersInputBase-root': {
+            color: 'inherit',
+        },
     },
 };
 

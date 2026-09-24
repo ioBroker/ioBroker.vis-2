@@ -317,6 +317,9 @@ class JQuiInput<P extends RxData = RxData, S extends JQuiInputState = JQuiInputS
             content = (
                 <TextField
                     fullWidth
+                    // MUI gives the text of an input the color of the theme, so neither the color of the widget
+                    // style nor that of a CSS class of the widget reached it (#521)
+                    sx={{ '& .MuiInputBase-root': { color: 'inherit' } }}
                     value={
                         this.state.input == null
                             ? ''
