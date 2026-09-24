@@ -1,4 +1,5 @@
 const helper = require('@iobroker/vis-2-widgets-testing');
+const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert');
 
@@ -220,6 +221,68 @@ describe('vis', () => {
         await helper.screenshot(gPage, `80_${(Date.now() - start).toString().padStart(6, '0')}_geometry`);
         await helper.view.deleteWidget(gPage, wid, 3_500);
         await new Promise(resolve => setTimeout(resolve, 2_000));
+    });
+
+    // The right part of the toolbar - user, theme, menu - floats at its right edge, and the groups of the toolbar
+    // take the width that is left. When they need more, they have to wrap into another row instead of running on
+    // under that part: in the narrowest form the user moves up into it, and the groups lay over its name (#570).
+    it('Check that the toolbar leaves its right part free', async function () {
+        this.timeout(60_000);
+
+        const viewport = gPage.viewport();
+        // The button that switches the height of the toolbar sits in its right part and is found by its tooltip,
+        // which MUI puts on it as `aria-label` - the icons carry no name in a production build. The tooltip is
+        // translated, so every language of the editor is accepted.
+        const i18nDir = path.join(__dirname, '..', 'src-vis', 'src', 'i18n');
+        const labelsOf = key => [
+            key,
+            ...fs.readdirSync(i18nDir).map(file => JSON.parse(fs.readFileSync(path.join(i18nDir, file), 'utf8'))[key]),
+        ];
+        const clickInRightPart = async key => {
+            await gPage.evaluate(labels => {
+                const right = [...document.querySelectorAll('span')].find(
+                    el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
+                );
+                [...right.querySelectorAll('button')].find(b => labels.includes(b.getAttribute('aria-label'))).click();
+            }, labelsOf(key));
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+        };
+        // every button and icon of the groups that lies on the right part
+        const covered = width =>
+            gPage.setViewport({ ...viewport, width }).then(async () => {
+                await new Promise(resolve => setTimeout(resolve, 1_000));
+                return gPage.evaluate(() => {
+                    const right = [...document.querySelectorAll('span')].find(
+                        el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
+                    );
+                    const r = right.getBoundingClientRect();
+                    const lies = b =>
+                        b.width && b.left < r.right && b.right > r.left && b.top < r.bottom && b.bottom > r.top;
+                    return [...right.nextElementSibling.querySelectorAll('button, svg, img')]
+                        .map(el => el.getBoundingClientRect())
+                        .filter(lies).length;
+                });
+            });
+
+        try {
+            // 1000 and 1100 px are narrower than what the groups need in one row
+            assert.strictEqual(await covered(1000), 0, 'the toolbar runs under its right part at 1000 px');
+
+            await clickInRightPart('Hide panel names'); // full -> narrow
+            await clickInRightPart('Narrow panel'); // narrow -> the narrowest form
+            for (const width of [1000, 1100]) {
+                assert.strictEqual(
+                    await covered(width),
+                    0,
+                    `the narrowest toolbar runs under its right part at ${width} px`,
+                );
+            }
+            await helper.screenshot(gPage, `86_${(Date.now() - start).toString().padStart(6, '0')}_toolbar_narrow`);
+        } finally {
+            await clickInRightPart('Full panel').catch(() => {}); // back to full
+            await gPage.setViewport(viewport);
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+        }
     });
 
     // Dropping a widget from the palette onto the view is the one gesture that does not go through the mouse

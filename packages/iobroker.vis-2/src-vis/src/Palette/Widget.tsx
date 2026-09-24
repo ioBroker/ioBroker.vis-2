@@ -401,7 +401,10 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         <span
             ref={props.editMode ? setNodeRef : null}
             id={entryId}
-            className={`widget-${props.widgetSet}`}
+            // `widget-<set>` lists the widgets of a set - the GUI test of vis-2 and of every widget set reads the
+            // palette by it (`getListOfWidgets` of @iobroker/vis-2-widgets-testing). An entry under "recently used"
+            // is a second entry of a widget listed there already, and its id is no widget type.
+            className={props.section ? undefined : `widget-${props.widgetSet}`}
             style={isGrid ? { display: 'block' } : undefined}
             {...(props.editMode ? listeners : undefined)}
         >
