@@ -279,3 +279,27 @@ export function autoScrollSpeed(pointer: { x: number; y: number }, pane: Box): {
         y: speed(pointer.y, pane.top, pane.bottom),
     };
 }
+
+/**
+ * The least size of a view in the editor: the screen size set for it.
+ *
+ * The editor scrolls the view in a pane of its own, and the view was only as big as that pane - with a larger
+ * screen size its background stopped where the first screenful ended, and everything scrolled to beyond it was
+ * white (#560). `max()`, because this replaces the `min-width` / `min-height: 100%` of `.vis-view`.
+ *
+ * @param sizeX - width of the screen, as the view settings store it
+ * @param sizeY - height of the screen, as the view settings store it
+ * @returns `minWidth` and `minHeight` for the style of the view, each only if that size is set
+ */
+export function editorViewMinSize(sizeX: unknown, sizeY: unknown): { minWidth?: string; minHeight?: string } {
+    const result: { minWidth?: string; minHeight?: string } = {};
+    const width = parseFloat(sizeX as string);
+    const height = parseFloat(sizeY as string);
+    if (Number.isFinite(width) && width > 0) {
+        result.minWidth = `max(100%, ${width}px)`;
+    }
+    if (Number.isFinite(height) && height > 0) {
+        result.minHeight = `max(100%, ${height}px)`;
+    }
+    return result;
+}
