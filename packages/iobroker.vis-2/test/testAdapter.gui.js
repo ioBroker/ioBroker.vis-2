@@ -222,6 +222,29 @@ describe('vis', () => {
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 
+    // The title of the widget "Border" is HTML, as it was in its vis-1 template: `<b>` makes it bold instead of
+    // being shown as text (#563).
+    it('Check that the title of a border is HTML', async function () {
+        this.timeout(30_000);
+
+        const titleOf = async title => {
+            const wid = await gPage.evaluate(t => window.visAddWidget('tplFrame', 0, 0, { title: t }), title);
+            await gPage.waitForSelector(`#${wid}`, { timeout: 5_000 });
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            const shown = await gPage.evaluate(id => {
+                const bold = document.querySelector(`#${id} b`);
+                return { bold: bold ? bold.textContent : null, text: document.getElementById(id).textContent };
+            }, wid);
+            await helper.view.deleteWidget(gPage, wid, 3_500);
+            return shown;
+        };
+
+        assert.deepStrictEqual(await titleOf('<b>bold</b> and plain'), { bold: 'bold', text: 'bold and plain' });
+        // an empty title shows nothing, and a title without markup shows as it is
+        assert.deepStrictEqual(await titleOf(''), { bold: null, text: '' });
+        assert.deepStrictEqual(await titleOf('Living room'), { bold: null, text: 'Living room' });
+    });
+
     // Dropping a widget from the palette onto the view is the one gesture that does not go through the mouse
     // handling of visView: it runs on react-dnd with the HTML5 backend, which listens to the native drag
     // events. That is why the earlier attempt in @iobroker/vis-2-widgets-testing - a `mouse.down`, a few
