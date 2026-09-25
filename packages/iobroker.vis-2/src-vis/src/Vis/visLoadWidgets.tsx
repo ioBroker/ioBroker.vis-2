@@ -16,7 +16,7 @@ import { I18n, type LegacyConnection } from '@iobroker/adapter-react-v5';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import type VisRxWidget from '@/Vis/visRxWidget';
 import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
-import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
+import { getInstance, init, type ModuleFederation } from '@module-federation/runtime';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
@@ -70,16 +70,25 @@ interface VisLoadComponentContext {
     result: VisRxWidgetWithInfo<any>[];
 }
 
-// Must match the `name` configured in vite.config.ts (federation({ name: 'iobroker_vis' })).
-// @module-federation/vite (>= 1.9) auto-inits the host under exactly that name — no prefix.
-// If we init under any other name, we create a second, empty host instance that overwrites
-// the global FederationInstance, so subsequent registerRemotes/loadRemote calls target the
-// empty host. Remotes then fall back to their own bundled React/MUI and we get two Reacts
-// plus `Cannot read properties of null (reading 'useContext')`.
-init({
-    name: 'iobroker_vis',
-    remotes: [],
-});
+/**
+ * The host of the module federation, to register the widget sets on and to load them from.
+ *
+ * The plugin `@module-federation/vite` starts the host itself, under its internal name (`__mfe_internal__` plus
+ * the name from vite.config.ts), and registers the shared modules of vis-2 - React, MUI, adapter-react-v5 - in the
+ * share scope of THAT host. `init({ name: 'iobroker_vis' })` created a second host next to it, whose share scope stayed empty.
+ * As the widget sets were registered on the second one, they never saw the React of vis-2: every widget set
+ * offered its own copy instead, and the first one to load won for all the others. A widget set built against
+ * another React major then broke with `Cannot read properties of undefined (reading 'ReactCurrentOwner')` or
+ * `... (reading 'ReactCurrentBatchConfig')`.
+ *
+ * The host is taken lazily: it exists as soon as the widget sets are loaded, and asking for it while the modules
+ * of the bundle are still being evaluated could come too early.
+ */
+function getFederationHost(): ModuleFederation {
+    // init() returns the existing host if one is already running under that name, and only creates one if the
+    // plugin did not start a host at all.
+    return getInstance() || init({ name: 'iobroker_vis', remotes: [] });
+}
 
 function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]> {
     // expected in context
@@ -94,9 +103,8 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
         ((index: number, _visWidgetsCollection) => {
             context.countRef.max++;
 
-            const promise: Promise<void> = loadRemote<any>(
-                `${context.visWidgetsCollection.name}/${_visWidgetsCollection.components[index]}`,
-            )
+            const promise: Promise<void> = getFederationHost()
+                .loadRemote<any>(`${context.visWidgetsCollection.name}/${_visWidgetsCollection.components[index]}`)
                 .then(CustomComponent => {
                     if (CustomComponent) {
                         context.countRef.count++;
@@ -214,7 +222,7 @@ function getRemoteWidgets(
                             visWidgetsCollection.url = `./vis-2/widgets/${visWidgetsCollection.url}`;
                         }
 
-                        registerRemotes(
+                        getFederationHost().registerRemotes(
                             [
                                 {
                                     name: visWidgetsCollection.name,
@@ -277,9 +285,8 @@ function getRemoteWidgets(
                                         promises.push(i18nPromiseWait);
                                     } else if (collection.url && collection.i18n === 'component') {
                                         // instance.common.visWidgets.i18n is deprecated
-                                        i18nPromiseWait = loadRemote<any>(
-                                            `${collection.name as WidgetSetName}/translations`,
-                                        )
+                                        i18nPromiseWait = getFederationHost()
+                                            .loadRemote<any>(`${collection.name as WidgetSetName}/translations`)
                                             .then((translations: any) => {
                                                 countRef.count++;
 

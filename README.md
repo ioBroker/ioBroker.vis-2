@@ -312,7 +312,8 @@ npm run start
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### 2.15.7 (2026-09-24)
+### **WORK IN PROGRESS**
+* (@GermanBluefox) Fixed the widget sets not being given the React, MUI and adapter-react-v5 of vis-2. `@module-federation/vite` starts the host under its own internal name and registers the shared modules there, while vis-2 created a second host with an empty share scope and registered the widget sets on that one. Every widget set therefore offered its own copy of React and the first one to load won for all the others, which broke a widget set built against another React major with `Cannot read properties of undefined (reading 'ReactCurrentOwner')`
 * (@GermanBluefox) Fixed vis-2 in the cloud staying on the loading screen with `Uncaught (in promise) Error: ioBroker is not connected` if it was opened while the ioBroker was not connected to the cloud, e.g. during its restart. vis-2 waits for the ioBroker now and loads the project as soon as it is back
 
 ### 2.15.5 (2026-08-26)
