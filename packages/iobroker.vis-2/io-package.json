@@ -242,7 +242,19 @@
     "doNotShowProjectDialog": false,
     "loadingBackgroundColor": "",
     "loadingHideLogo": false,
-    "loadingBackgroundImage": false
+    "loadingBackgroundImage": false,
+    "aiCredentialType": "manual",
+    "aiOpenAiKey": "",
+    "aiAnthropicKey": "",
+    "aiGeminiKey": "",
+    "aiDeepSeekKey": "",
+    "aiCustomUrl": "",
+    "aiCustomKey": "",
+    "aiCredentialOpenAi": "",
+    "aiCredentialAnthropic": "",
+    "aiCredentialGemini": "",
+    "aiCredentialDeepSeek": "",
+    "aiCredentialCustom": ""
   },
   "instanceObjects": [
     {
@@ -323,5 +335,19 @@
       },
       "native": {}
     }
+  ],
+  "encryptedNative": [
+    "aiOpenAiKey",
+    "aiAnthropicKey",
+    "aiGeminiKey",
+    "aiDeepSeekKey",
+    "aiCustomKey"
+  ],
+  "protectedNative": [
+    "aiOpenAiKey",
+    "aiAnthropicKey",
+    "aiGeminiKey",
+    "aiDeepSeekKey",
+    "aiCustomKey"
   ]
 }

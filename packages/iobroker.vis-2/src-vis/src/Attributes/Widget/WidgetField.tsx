@@ -7,6 +7,7 @@ import {
     Checkbox,
     Fade,
     IconButton,
+    Tooltip,
     Input,
     ListItemText,
     ListSubheader,
@@ -27,7 +28,15 @@ import {
     type SelectChangeEvent,
 } from '@mui/material';
 
-import { InsertDriveFile as FileIcon, Clear as ClearIcon, Edit as EditIcon, Check, Close } from '@mui/icons-material';
+import {
+    InsertDriveFile as FileIcon,
+    Clear as ClearIcon,
+    Edit as EditIcon,
+    Star as StarIcon,
+    Image as ImageIcon,
+    Check,
+    Close,
+} from '@mui/icons-material';
 import { FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
 
 import {
@@ -320,6 +329,8 @@ interface WidgetFieldProps {
 
 const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | React.JSX.Element[] => {
     const [idDialog, setIdDialog] = useState(false);
+    /** The picker of the standard small icons, for a field of the type `icon-image` */
+    const [iconDialog, setIconDialog] = useState(false);
 
     const [objectCache, setObjectCache] = useState<ioBroker.Object | null>(null);
     const [askForUsage, setAskForUsage] = useState<{ wid: AnyWidgetId; cb: () => void } | null>(null);
@@ -1725,6 +1736,127 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 onChange={fileBlob => change(fileBlob)}
                 previewStyle={commonStyles.iconPreview}
             />
+        );
+    }
+
+    if (field.type === 'icon-image') {
+        // the value is either a data URL of a small icon or a path into the files of ioBroker; which of the two
+        // it is can be read off the value itself, so one field serves both and the two buttons say which
+        // dialog opens
+        const projectPrefix = `${adapterName}.${instance}/${projectName}/`;
+        let selectedFile = (value as string) || '';
+        if (selectedFile.startsWith('../')) {
+            selectedFile = selectedFile.substring(3);
+        } else if (selectedFile.startsWith('_PRJ_NAME/')) {
+            selectedFile = selectedFile.replace('_PRJ_NAME/', `../${projectPrefix}`);
+        }
+
+        return (
+            <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
+                <TextField
+                    fullWidth
+                    size="small"
+                    placeholder={isDifferent ? t('different') : undefined}
+                    variant="standard"
+                    value={value}
+                    error={!!error}
+                    disabled={disabled}
+                    onChange={e => change(e.target.value)}
+                    slotProps={{
+                        input: {
+                            endAdornment: value ? (
+                                <IconButton
+                                    tabIndex={-1}
+                                    disabled={disabled}
+                                    size="small"
+                                    onClick={() => change('')}
+                                >
+                                    <ClearIcon />
+                                </IconButton>
+                            ) : null,
+                            sx: { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
+                        },
+                    }}
+                />
+                {value ? (
+                    <Icon
+                        src={value as string}
+                        style={{ width: 28, height: 28, marginLeft: 4, flexShrink: 0 }}
+                    />
+                ) : null}
+                <Tooltip
+                    title={t('Select icon')}
+                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                >
+                    <IconButton
+                        size="small"
+                        disabled={disabled}
+                        onClick={() => setIconDialog(true)}
+                    >
+                        <StarIcon />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip
+                    title={t('Select file')}
+                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                >
+                    <IconButton
+                        size="small"
+                        disabled={disabled}
+                        onClick={() => setIdDialog(true)}
+                    >
+                        <ImageIcon />
+                    </IconButton>
+                </Tooltip>
+                {iconDialog ? (
+                    <MaterialIconSelector
+                        themeType={props.themeType}
+                        theme={props.theme}
+                        value={value as string}
+                        additionalSets={props.additionalSets}
+                        onClose={(icon: string | null) => {
+                            setIconDialog(false);
+                            if (icon !== null) {
+                                change(icon);
+                            }
+                        }}
+                    />
+                ) : null}
+                {idDialog ? (
+                    <SelectFileDialog
+                        title={t('Select file')}
+                        onClose={() => setIdDialog(false)}
+                        restrictToFolder={`${adapterName}.${instance}/${projectName}`}
+                        allowNonRestricted
+                        allowUpload
+                        allowDownload
+                        allowCreateFolder
+                        allowDelete
+                        allowView
+                        showToolbar
+                        imagePrefix="../"
+                        selected={selectedFile}
+                        filterByType="images"
+                        theme={props.theme}
+                        onOk={_selected => {
+                            let selected = Array.isArray(_selected) ? _selected[0] : _selected;
+                            if (!selected) {
+                                return;
+                            }
+                            if (selected.startsWith(projectPrefix)) {
+                                selected = `_PRJ_NAME/${selected.substring(projectPrefix.length)}`;
+                            } else if (selected.startsWith('/')) {
+                                selected = `..${selected}`;
+                            } else if (!selected.startsWith('.')) {
+                                selected = `../${selected}`;
+                            }
+                            change(selected);
+                            setIdDialog(false);
+                        }}
+                        socket={props.socket}
+                    />
+                ) : null}
+            </div>
         );
     }
 

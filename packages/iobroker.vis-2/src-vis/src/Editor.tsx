@@ -26,6 +26,7 @@ import {
     DialogContent,
     DialogContentText,
     Box,
+    Fab,
 } from '@mui/material';
 
 import {
@@ -39,6 +40,7 @@ import {
     ListAlt as IconAttributes,
     ClearAll as ClearAllIcon,
     Layers,
+    AutoAwesome as AiIcon,
 } from '@mui/icons-material';
 
 import {
@@ -70,6 +72,14 @@ import type {
     VisTheme,
 } from '@iobroker/types-vis-2';
 import { recalculateFields, store, updateProject } from './Store';
+
+/**
+ * The assistant, loaded the first time it is opened.
+ *
+ * It is a good part of a megabyte with its tools and its chat, and most sessions of the editor never
+ * ask for it - so it is not in the bundle that has to arrive before the editor can be used.
+ */
+const AiChatPanel = React.lazy(() => import('./AiChat/AiChatPanel'));
 import {
     isGroup,
     getNewWidgetId,
@@ -444,6 +454,8 @@ export interface EditorState extends RuntimeState {
         cb: (wid: AnyWidgetId, toWid: AnyWidgetId) => void;
     } | null;
     hidePalette: boolean;
+    /** The assistant is open beside the work area */
+    aiOpen: boolean;
     hideAttributes: boolean;
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
     loadingText: string;
@@ -564,6 +576,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             messageDialog: null,
             widgetHint: window.localStorage.getItem('widgetHint') || 'light',
             hidePalette: window.localStorage.getItem('Vis.hidePalette') === 'true',
+            aiOpen: window.localStorage.getItem('Vis.aiOpen') === 'true',
             hideAttributes: window.localStorage.getItem('Vis.hideAttributes') === 'true',
             loadingProgress: { step: 0, total: 0 },
             loadingText: null,
@@ -2249,6 +2262,75 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         );
     }
 
+    /** The handle that opens the assistant; it sits where the assistant will appear */
+    renderAiButton(): React.JSX.Element | null {
+        if (this.state.aiOpen) {
+            return null;
+        }
+        return (
+            <Tooltip
+                title={I18n.t('vis_ai_title')}
+                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+            >
+                <Fab
+                    size="medium"
+                    color="primary"
+                    style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 900 }}
+                    onClick={() => {
+                        window.localStorage.setItem('Vis.aiOpen', 'true');
+                        this.setState({ aiOpen: true });
+                    }}
+                >
+                    <AiIcon />
+                </Fab>
+            </Tooltip>
+        );
+    }
+
+    /** The assistant beside the work area, which is where it can be watched while it builds */
+    renderAiPanel(): React.JSX.Element | null {
+        if (!this.state.aiOpen) {
+            return null;
+        }
+        return (
+            <div
+                style={{
+                    width: 380,
+                    flexShrink: 0,
+                    height: '100%',
+                    borderLeft: `1px solid ${this.state.theme.palette.divider}`,
+                    background: this.state.theme.palette.background.paper,
+                }}
+            >
+                <React.Suspense fallback={null}>
+                    <AiChatPanel
+                        socket={this.socket}
+                        instance={`${this.adapterName}.${this.instance}`}
+                        selectedView={this.state.selectedView}
+                        theme={this.state.theme}
+                        changeProject={this.changeProject}
+                        openView={view => {
+                            this.changeView(view).catch(e => console.error(`Cannot open the view: ${e as Error}`));
+                        }}
+                        selectWidgets={(view, widgets) => {
+                            if (view !== this.state.selectedView) {
+                                this.changeView(view)
+                                    .then(() => this.setSelectedWidgets(widgets))
+                                    .catch(e => console.error(`Cannot open the view: ${e as Error}`));
+                            } else {
+                                void this.setSelectedWidgets(widgets);
+                            }
+                        }}
+                        onClose={() => {
+                            window.localStorage.setItem('Vis.aiOpen', 'false');
+                            this.setState({ aiOpen: false });
+                        }}
+                    />
+                </React.Suspense>
+            </div>
+        );
+    }
+
     renderPalette(): React.JSX.Element {
         return (
             <div
@@ -2845,86 +2927,97 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         <div
                             // `minHeight: 0` is what lets a flex child shrink to its share instead of
                             // growing with its content
-                            style={{ position: 'relative', flex: 1, minHeight: 0 }}
-                            ref={this.mainRef}
+                            style={{ display: 'flex', flexDirection: 'row', flex: 1, minHeight: 0 }}
                         >
-                            <EditorDnd
-                                addWidget={this.addWidget}
-                                selectedView={this.state.selectedView}
-                                addMarketplaceWidget={this.addMarketplaceWidget}
-                                onDragOverPoint={this.onPaletteDragOver}
+                            <div
+                                style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}
+                                ref={this.mainRef}
                             >
-                                {this.state.hidePalette && this.state.hideAttributes ? this.renderWorkspace() : null}
-                                <ReactSplit
-                                    direction={SplitDirection.Horizontal}
-                                    initialSizes={
-                                        this.state.hidePalette && !this.state.hideAttributes
-                                            ? [
-                                                  this.state.splitSizes[0] + this.state.splitSizes[1],
-                                                  this.state.splitSizes[2],
-                                              ]
-                                            : !this.state.hidePalette && this.state.hideAttributes
-                                              ? [
-                                                    this.state.splitSizes[0],
-                                                    this.state.splitSizes[1] + this.state.splitSizes[2],
-                                                ]
-                                              : this.state.splitSizes
-                                    }
-                                    minWidths={
-                                        this.state.hidePalette && !this.state.hideAttributes
-                                            ? [0, 240]
-                                            : !this.state.hidePalette && this.state.hideAttributes
-                                              ? [240, 0]
-                                              : [240, 0, 240]
-                                    }
-                                    onResizeFinished={(gutterIdx: number, newSizes: number[]) => {
-                                        let splitSizes: [number, number, number] = [0, 0, 0];
-                                        if (this.state.hidePalette && !this.state.hideAttributes) {
-                                            splitSizes[0] = this.state.splitSizes[0];
-                                            splitSizes[1] = newSizes[0] - this.state.splitSizes[0];
-                                            splitSizes[2] = newSizes[1];
-                                        } else if (!this.state.hidePalette && this.state.hideAttributes) {
-                                            splitSizes[0] = newSizes[0];
-                                            splitSizes[1] = newSizes[1] - this.state.splitSizes[2];
-                                            splitSizes[2] = this.state.splitSizes[2];
-                                        } else {
-                                            splitSizes = newSizes as [number, number, number];
+                                <EditorDnd
+                                    addWidget={this.addWidget}
+                                    selectedView={this.state.selectedView}
+                                    addMarketplaceWidget={this.addMarketplaceWidget}
+                                    onDragOverPoint={this.onPaletteDragOver}
+                                >
+                                    {this.state.hidePalette && this.state.hideAttributes
+                                        ? this.renderWorkspace()
+                                        : null}
+                                    <ReactSplit
+                                        direction={SplitDirection.Horizontal}
+                                        initialSizes={
+                                            this.state.hidePalette && !this.state.hideAttributes
+                                                ? [
+                                                      this.state.splitSizes[0] + this.state.splitSizes[1],
+                                                      this.state.splitSizes[2],
+                                                  ]
+                                                : !this.state.hidePalette && this.state.hideAttributes
+                                                  ? [
+                                                        this.state.splitSizes[0],
+                                                        this.state.splitSizes[1] + this.state.splitSizes[2],
+                                                    ]
+                                                  : this.state.splitSizes
                                         }
+                                        minWidths={
+                                            this.state.hidePalette && !this.state.hideAttributes
+                                                ? [0, 240]
+                                                : !this.state.hidePalette && this.state.hideAttributes
+                                                  ? [240, 0]
+                                                  : [240, 0, 240]
+                                        }
+                                        onResizeFinished={(gutterIdx: number, newSizes: number[]) => {
+                                            let splitSizes: [number, number, number] = [0, 0, 0];
+                                            if (this.state.hidePalette && !this.state.hideAttributes) {
+                                                splitSizes[0] = this.state.splitSizes[0];
+                                                splitSizes[1] = newSizes[0] - this.state.splitSizes[0];
+                                                splitSizes[2] = newSizes[1];
+                                            } else if (!this.state.hidePalette && this.state.hideAttributes) {
+                                                splitSizes[0] = newSizes[0];
+                                                splitSizes[1] = newSizes[1] - this.state.splitSizes[2];
+                                                splitSizes[2] = this.state.splitSizes[2];
+                                            } else {
+                                                splitSizes = newSizes as [number, number, number];
+                                            }
 
-                                        const sum = splitSizes.reduce((prev, curr) => prev + curr);
-                                        if (Math.ceil(sum) !== 100) {
-                                            if (Math.ceil(sum) === 101 || Math.ceil(sum) === 99) {
-                                                // Round the first 2 sizes to 0.01 and calculate the last
-                                                splitSizes[0] = Math.round(splitSizes[0] * 100) / 100;
-                                                splitSizes[1] = Math.round(splitSizes[1] * 100) / 100;
-                                                splitSizes[2] = 100 - splitSizes[0] - splitSizes[1];
+                                            const sum = splitSizes.reduce((prev, curr) => prev + curr);
+                                            if (Math.ceil(sum) !== 100) {
+                                                if (Math.ceil(sum) === 101 || Math.ceil(sum) === 99) {
+                                                    // Round the first 2 sizes to 0.01 and calculate the last
+                                                    splitSizes[0] = Math.round(splitSizes[0] * 100) / 100;
+                                                    splitSizes[1] = Math.round(splitSizes[1] * 100) / 100;
+                                                    splitSizes[2] = 100 - splitSizes[0] - splitSizes[1];
+                                                    this.setState({ splitSizes });
+                                                    window.localStorage.setItem(
+                                                        'Vis.splitSizes',
+                                                        JSON.stringify(splitSizes),
+                                                    );
+                                                } else {
+                                                    // https://github.com/devbookhq/splitter/issues/15
+                                                    console.log(
+                                                        'Decline resize, to work around bug in @devbookhq/splitter',
+                                                    );
+                                                    this.setState({ splitSizes: this.state.splitSizes });
+                                                }
+                                            } else {
                                                 this.setState({ splitSizes });
                                                 window.localStorage.setItem(
                                                     'Vis.splitSizes',
                                                     JSON.stringify(splitSizes),
                                                 );
-                                            } else {
-                                                // https://github.com/devbookhq/splitter/issues/15
-                                                console.log(
-                                                    'Decline resize, to work around bug in @devbookhq/splitter',
-                                                );
-                                                this.setState({ splitSizes: this.state.splitSizes });
                                             }
-                                        } else {
-                                            this.setState({ splitSizes });
-                                            window.localStorage.setItem('Vis.splitSizes', JSON.stringify(splitSizes));
+                                        }}
+                                        // theme={this.state.themeType === 'dark' ? GutterTheme.Dark : GutterTheme.Light}
+                                        gutterClassName={
+                                            this.state.themeType === 'dark' ? 'Dark visGutter' : 'Light visGutter'
                                         }
-                                    }}
-                                    // theme={this.state.themeType === 'dark' ? GutterTheme.Dark : GutterTheme.Light}
-                                    gutterClassName={
-                                        this.state.themeType === 'dark' ? 'Dark visGutter' : 'Light visGutter'
-                                    }
-                                >
-                                    {!this.state.hidePalette ? this.renderPalette() : null}
-                                    {this.renderWorkspace()}
-                                    {!this.state.hideAttributes ? this.renderAttributes() : null}
-                                </ReactSplit>
-                            </EditorDnd>
+                                    >
+                                        {!this.state.hidePalette ? this.renderPalette() : null}
+                                        {this.renderWorkspace()}
+                                        {!this.state.hideAttributes ? this.renderAttributes() : null}
+                                    </ReactSplit>
+                                </EditorDnd>
+                                {this.renderAiButton()}
+                            </div>
+                            {this.renderAiPanel()}
                         </div>
                     </Box>
                     {this.renderLoadingText()}

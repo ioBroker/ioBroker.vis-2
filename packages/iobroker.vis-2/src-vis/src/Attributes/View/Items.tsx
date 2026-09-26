@@ -578,7 +578,28 @@ export function getFields(
                     options: [
                         { value: 'vertical', label: 'Vertical' },
                         { value: 'horizontal', label: 'Horizontal' },
+                        { value: 'bottom', label: 'At the bottom edge' },
                     ],
+                },
+                {
+                    // The pages of a folder are gathered under it - unless this says otherwise
+                    type: 'checkbox',
+                    label: 'One flat list',
+                    attr: 'navigationFlat',
+                    title: 'Do not gather the pages of a folder under it',
+                    notStyle: true,
+                    hidden: '!data.navigation || data.navigationOrientation !== "vertical"',
+                    applyToAll: true,
+                },
+                {
+                    // A way back to the page one came from, in the application bar
+                    type: 'checkbox',
+                    label: 'Show a way back',
+                    attr: 'navigationBack',
+                    title: 'The application bar carries a way back to the page one came from',
+                    notStyle: true,
+                    hidden: '!data.navigationBar',
+                    applyToAll: true,
                 },
                 {
                     // By horizontal menu do not show text if icon provided

@@ -459,6 +459,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                         setProjectsDialog={this.props.setProjectsDialog}
                         setSelectedWidgets={this.props.setSelectedWidgets}
                         setViewsManager={this.props.setViewsManager}
+                        socket={this.props.socket}
                         themeName={this.props.themeName}
                         themeType={this.props.themeType}
                         theme={this.props.theme}

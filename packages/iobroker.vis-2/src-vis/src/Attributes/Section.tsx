@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from 'react';
 
-import { Box } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/material';
 import {
     ExpandMore as ExpandMoreIcon,
+    FormatPaint as FormatPaintIcon,
     Info as InfoIcon,
     Link as LinkIcon,
     LinkOff as LinkOffIcon,
+    Title as TitleIcon,
+    UnfoldMore as UnfoldMoreIcon,
+    ViewQuilt as ViewQuiltIcon,
+    Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 
-import { I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
+import { Utils, I18n, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import { deepClone } from '@/Utilities/utils';
@@ -62,23 +67,62 @@ interface SectionAttributesProps {
     setIsAllClosed: (closed: boolean) => void;
 }
 
-const styles: Record<string, React.CSSProperties> = {
+/**
+ * The mark in front of the name of a group, so that a group is found by its shape and not by reading every
+ * label - the same idea as in the attributes of a view and of a widget.
+ */
+const GROUP_ICONS: Record<string, React.JSX.Element> = {
+    header: <TitleIcon fontSize="small" />,
+    appearance: <FormatPaintIcon fontSize="small" />,
+    layout: <ViewQuiltIcon fontSize="small" />,
+    visibility: <VisibilityIcon fontSize="small" />,
+    collapsing: <UnfoldMoreIcon fontSize="small" />,
+};
+
+// the groups look exactly like the ones of a view and of a widget, see Attributes/View.tsx
+const styles: Record<string, any> = {
     groupTitle: {
         padding: '6px 8px 2px',
         fontSize: '80%',
         fontWeight: 'bold',
         opacity: 0.7,
     },
-    groupHeader: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 8px',
-        marginTop: 2,
-        fontSize: '85%',
+    groupSurface: (theme: VisTheme): React.CSSProperties => ({
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+    }),
+    accordionRoot: {
+        // Surfaces instead of lines: the group header carries its own background, so the border MUI
+        // draws above and below every accordion is only noise. A 2px gap lets the darker panel show
+        // through between the groups - that sliver is the separator, not a drawn line.
+        border: 'none',
+        p: 0,
+        // after `m: 0`, otherwise the shorthand wipes it again
+        m: 0,
+        marginBottom: '2px',
+        minHeight: 0,
+        '&:before': {
+            opacity: 0,
+        },
+    },
+    accordionOpenedSummary: {
         fontWeight: 'bold',
-        cursor: 'pointer',
-        userSelect: 'none',
+    },
+    accordionDetails: (theme: VisTheme) => ({
+        ...theme.classes.lightedPanel,
+        borderRadius: '0 0 4px 4px',
+        flexDirection: 'column',
+        p: 0,
+        m: 0,
+    }),
+    groupSummary: {
+        p: '2px',
+        pl: '8px',
+        minHeight: 0,
+    },
+    groupSummaryExpanded: {
+        p: '2px',
+        pl: '8px',
+        minHeight: 0,
     },
     fieldTitle: {
         width: 140,
@@ -600,41 +644,69 @@ function checkFunction(
     return false;
 }
 
-function readOpenedGroups(): GroupKey[] {
+/**
+ * Which group is open, as the accordions of the other tabs count it: 1 open, 2 closing, 0 closed.
+ *
+ * A group that is closing still renders its fields, so the accordion has something to fold away; only
+ * afterwards does it fall to 0 and the fields go.
+ */
+type OpenState = Record<string, 0 | 1 | 2>;
+
+function readOpenedGroups(): OpenState {
+    const result: OpenState = {};
+    GROUPS.forEach(key => (result[key] = 0));
     try {
         const stored = JSON.parse(window.localStorage.getItem(OPENED_STORAGE_KEY) || 'null');
         if (Array.isArray(stored)) {
-            return stored.filter(key => GROUPS.includes(key));
+            stored.forEach(key => GROUPS.includes(key) && (result[key as GroupKey] = 1));
+            return result;
         }
     } catch {
         // nothing stored, or no storage in this browser
     }
-    return ['header', 'appearance'];
+    result.header = 1;
+    result.appearance = 1;
+    return result;
+}
+
+/** Only what is open is worth storing: a group that was closing is simply closed the next time */
+function storeOpenedGroups(open: OpenState): void {
+    try {
+        window.localStorage.setItem(OPENED_STORAGE_KEY, JSON.stringify(GROUPS.filter(key => open[key] === 1)));
+    } catch {
+        // no storage in this browser: the groups are open as before when the editor is loaded again
+    }
 }
 
 const SectionAttributes = (props: SectionAttributesProps): React.JSX.Element | null => {
-    const [opened, setOpened] = useState<GroupKey[]>(readOpenedGroups);
+    const [opened, setOpened] = useState<OpenState>(readOpenedGroups);
 
-    const changeOpened = (keys: GroupKey[]): void => {
-        setOpened(keys);
-        try {
-            window.localStorage.setItem(OPENED_STORAGE_KEY, JSON.stringify(keys));
-        } catch {
-            // no storage in this browser: the groups are open as before when the editor is loaded again
-        }
+    const changeOpened = (open: OpenState): void => {
+        setOpened(open);
+        storeOpenedGroups(open);
     };
 
     // the buttons above the tabs open and close all groups, and are enabled by what is open
     const { setIsAllOpened, setIsAllClosed } = props;
     useEffect(() => {
-        setIsAllOpened(opened.length === GROUPS.length);
-        setIsAllClosed(!opened.length);
+        setIsAllOpened(GROUPS.every(key => opened[key] === 1));
+        setIsAllClosed(GROUPS.every(key => opened[key] !== 1));
     }, [opened, setIsAllOpened, setIsAllClosed]);
     useEffect(() => {
-        props.triggerAllOpened && changeOpened([...GROUPS]);
+        if (props.triggerAllOpened) {
+            const open: OpenState = {};
+            GROUPS.forEach(key => (open[key] = 1));
+            setOpened(open);
+            storeOpenedGroups(open);
+        }
     }, [props.triggerAllOpened]);
     useEffect(() => {
-        props.triggerAllClosed && changeOpened([]);
+        if (props.triggerAllClosed) {
+            const open: OpenState = {};
+            GROUPS.forEach(key => (open[key] = 0));
+            setOpened(open);
+            storeOpenedGroups(open);
+        }
     }, [props.triggerAllClosed]);
 
     const project: Project = store.getState().visProject;
@@ -709,113 +781,140 @@ const SectionAttributes = (props: SectionAttributesProps): React.JSX.Element | n
                 {I18n.t('Section')} {section.id}
             </div>
             {groups.map(group => {
-                const isOpen = opened.includes(group.key);
+                const isOpen = opened[group.key] === 1;
                 return (
-                    <div key={group.key}>
-                        <Box
-                            style={styles.groupHeader}
-                            sx={props.theme.classes.lightedPanel}
-                            onClick={() =>
-                                changeOpened(isOpen ? opened.filter(key => key !== group.key) : [...opened, group.key])
+                    <Accordion
+                        sx={{
+                            '&.MuiAccordion-root': styles.accordionRoot,
+                            '& .Mui-expanded': commonStyles.clearPadding,
+                        }}
+                        square
+                        key={group.key}
+                        elevation={0}
+                        expanded={isOpen}
+                        onChange={(_e, expanded) => {
+                            const open: OpenState = { ...opened, [group.key]: expanded ? 1 : 2 };
+                            changeOpened(open);
+                            if (!expanded) {
+                                // the fields stay while the accordion folds up, and go once it is closed
+                                setTimeout(() => changeOpened({ ...open, [group.key]: 0 }), 200);
                             }
+                        }}
+                    >
+                        <AccordionSummary
+                            sx={{
+                                '&.MuiAccordionSummary-root': Utils.getStyle(
+                                    props.theme,
+                                    commonStyles.clearPadding,
+                                    isOpen ? styles.groupSummaryExpanded : styles.groupSummary,
+                                    styles.groupSurface,
+                                ),
+                                '& .MuiAccordionSummary-content': Utils.getStyle(
+                                    props.theme,
+                                    commonStyles.clearPadding,
+                                    isOpen && styles.accordionOpenedSummary,
+                                ),
+                                '& .Mui-expanded': commonStyles.clearPadding,
+                                '& .MuiAccordionSummary-expandIconWrapper': commonStyles.clearPadding,
+                            }}
+                            expandIcon={<ExpandMoreIcon />}
                         >
-                            <ExpandMoreIcon
-                                fontSize="small"
-                                style={{
-                                    transform: isOpen ? undefined : 'rotate(-90deg)',
-                                    transition: 'transform 0.2s',
-                                }}
-                            />
-                            {I18n.t(group.label)}
-                        </Box>
-                        {isOpen ? (
-                            <table style={{ width: '100%' }}>
-                                <tbody>
-                                    {group.fields.map(field => {
-                                        const bound = bindings.includes(field.attr);
-                                        // the binding is a text, whatever the field is otherwise
-                                        const control = bound ? (
-                                            checkFunction(field.hidden, section) ? null : (
-                                                <BindingField
-                                                    value={(section as Record<string, any>)[field.attr]}
-                                                    disabled={!props.editMode}
-                                                    socket={props.socket}
-                                                    theme={props.theme}
-                                                    onChange={value => changeValues({ [field.attr]: value })}
-                                                />
-                                            )
-                                        ) : (
-                                            getEditField({
-                                                field,
-                                                disabled: false,
-                                                view: props.selectedView,
-                                                editMode: props.editMode,
-                                                changeProject: changeSection,
-                                                userGroups: props.userGroups,
-                                                adapterName: props.adapterName,
-                                                themeType: props.themeType,
-                                                instance: props.instance,
-                                                projectName: props.projectName,
-                                                socket: props.socket,
-                                                checkFunction,
-                                                project: sectionProject,
-                                                theme: props.theme,
-                                                additionalSets: props.additionalSets,
-                                            })
-                                        );
-                                        if (!control) {
-                                            return null;
-                                        }
-                                        const helpText = field.title ? I18n.t(field.title) : undefined;
-                                        return (
-                                            <tr key={field.attr}>
-                                                <td style={styles.fieldTitle}>
-                                                    <FieldHelp
-                                                        image={field.helpImage}
-                                                        text={helpText}
-                                                    >
-                                                        <div style={styles.fieldTitleContent}>
-                                                            {I18n.t(field.label)}
-                                                            <span style={styles.fieldIcons}>
-                                                                {hasFieldHelp(field.helpImage, helpText) ? (
-                                                                    <InfoIcon style={styles.fieldHelpIcon} />
-                                                                ) : null}
-                                                                <span
-                                                                    style={styles.bindIconSpan}
-                                                                    title={I18n.t(
-                                                                        bound
-                                                                            ? 'Deactivate binding and use field as standard input'
-                                                                            : 'Use field as binding',
-                                                                    )}
-                                                                    onClick={e => {
-                                                                        // the label opens no tooltip and selects nothing
-                                                                        e.stopPropagation();
-                                                                        props.editMode && toggleBinding(field.attr);
-                                                                    }}
-                                                                >
-                                                                    {bound ? (
-                                                                        <LinkOffIcon style={styles.bindIcon} />
-                                                                    ) : (
-                                                                        <LinkIcon style={styles.bindIcon} />
-                                                                    )}
+                            {/* the gap keeps the icon off the label; without it they touch at `fontSize="small"` */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {GROUP_ICONS[group.key] || null}
+                                {I18n.t(group.label)}
+                            </div>
+                        </AccordionSummary>
+                        {opened[group.key] !== 0 ? (
+                            <AccordionDetails sx={styles.accordionDetails}>
+                                <table style={{ width: '100%' }}>
+                                    <tbody>
+                                        {group.fields.map(field => {
+                                            const bound = bindings.includes(field.attr);
+                                            // the binding is a text, whatever the field is otherwise
+                                            const control = bound ? (
+                                                checkFunction(field.hidden, section) ? null : (
+                                                    <BindingField
+                                                        value={(section as Record<string, any>)[field.attr]}
+                                                        disabled={!props.editMode}
+                                                        socket={props.socket}
+                                                        theme={props.theme}
+                                                        onChange={value => changeValues({ [field.attr]: value })}
+                                                    />
+                                                )
+                                            ) : (
+                                                getEditField({
+                                                    field,
+                                                    disabled: false,
+                                                    view: props.selectedView,
+                                                    editMode: props.editMode,
+                                                    changeProject: changeSection,
+                                                    userGroups: props.userGroups,
+                                                    adapterName: props.adapterName,
+                                                    themeType: props.themeType,
+                                                    instance: props.instance,
+                                                    projectName: props.projectName,
+                                                    socket: props.socket,
+                                                    checkFunction,
+                                                    project: sectionProject,
+                                                    theme: props.theme,
+                                                    additionalSets: props.additionalSets,
+                                                })
+                                            );
+                                            if (!control) {
+                                                return null;
+                                            }
+                                            const helpText = field.title ? I18n.t(field.title) : undefined;
+                                            return (
+                                                <tr key={field.attr}>
+                                                    <td style={styles.fieldTitle}>
+                                                        <FieldHelp
+                                                            image={field.helpImage}
+                                                            text={helpText}
+                                                        >
+                                                            <div style={styles.fieldTitleContent}>
+                                                                {I18n.t(field.label)}
+                                                                <span style={styles.fieldIcons}>
+                                                                    {hasFieldHelp(field.helpImage, helpText) ? (
+                                                                        <InfoIcon style={styles.fieldHelpIcon} />
+                                                                    ) : null}
+                                                                    <span
+                                                                        style={styles.bindIconSpan}
+                                                                        title={I18n.t(
+                                                                            bound
+                                                                                ? 'Deactivate binding and use field as standard input'
+                                                                                : 'Use field as binding',
+                                                                        )}
+                                                                        onClick={e => {
+                                                                            // the label opens no tooltip and selects nothing
+                                                                            e.stopPropagation();
+                                                                            props.editMode && toggleBinding(field.attr);
+                                                                        }}
+                                                                    >
+                                                                        {bound ? (
+                                                                            <LinkOffIcon style={styles.bindIcon} />
+                                                                        ) : (
+                                                                            <LinkIcon style={styles.bindIcon} />
+                                                                        )}
+                                                                    </span>
                                                                 </span>
-                                                            </span>
-                                                        </div>
-                                                    </FieldHelp>
-                                                </td>
-                                                <Box
-                                                    component="td"
-                                                    sx={{ ...commonStyles.fieldContent, width: '100%' }}
-                                                >
-                                                    {control}
-                                                </Box>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                            </div>
+                                                        </FieldHelp>
+                                                    </td>
+                                                    <Box
+                                                        component="td"
+                                                        sx={{ ...commonStyles.fieldContent, width: '100%' }}
+                                                    >
+                                                        {control}
+                                                    </Box>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </AccordionDetails>
                         ) : null}
-                    </div>
+                    </Accordion>
                 );
             })}
         </div>

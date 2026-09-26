@@ -216,6 +216,8 @@ export interface WidgetType {
     title?: string;
     label?: string;
     preview?: string;
+    /** A picture of the widget for the tooltip of the palette, where `preview` is only an icon */
+    previewLarge?: string;
     help?: string;
     set?: string;
     imageHTML?: string;
@@ -351,6 +353,7 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
             const widgetObj: WidgetType = {
                 name: widgetInfo.id,
                 preview: widgetInfo.visPrev,
+                previewLarge: widgetInfo.visPrevLarge,
                 title: widgetInfo.visName, // old style without translation
                 params: widgetInfo.visAttrs,
                 set: widgetInfo.visSet,

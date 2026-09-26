@@ -1,6 +1,9 @@
 import React from 'react';
 
 import {
+    BottomNavigation,
+    BottomNavigationAction,
+    Collapse,
     Divider,
     IconButton,
     List,
@@ -14,10 +17,19 @@ import {
     Box,
 } from '@mui/material';
 
-import { ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon } from '@mui/icons-material';
+import {
+    ArrowBack as BackIcon,
+    ChevronLeft as ChevronLeftIcon,
+    Dashboard as DashboardIcon,
+    ExpandLess as CollapseIcon,
+    ExpandMore as ExpandIcon,
+    Folder as FolderIcon,
+} from '@mui/icons-material';
 
-import { Utils, Icon } from '@iobroker/gui-components';
+import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
+
+import { resolveNavigationSettings } from './visNavigationSettings';
 
 const MENU_WIDTH_FULL = 200;
 const MENU_WIDTH_NARROW = 56;
@@ -216,10 +228,93 @@ interface MenuItem {
     noText?: boolean;
     order: number;
     view: string;
+    /** The folder the view lies in, where it lies in one */
+    folder?: { id: string; name: string };
 }
 
-class VisNavigation extends React.Component<VisNavigationProps> {
-    renderMenu(settings: ViewSettings, menuFullWidth: number): React.JSX.Element {
+/** Either one page, or a folder with the pages in it */
+type MenuEntry = { kind: 'item'; item: MenuItem } | { kind: 'folder'; id: string; name: string; items: MenuItem[] };
+
+/** Which folders are open, remembered for this browser */
+const OPEN_FOLDERS = 'vis.menuFolders';
+
+/**
+ * Where the user has been, so the app bar can offer a way back.
+ *
+ * It is kept beside the component rather than in it: the component is built again on every change of
+ * the view, and a history that is forgotten on every step is no history. The browser's own history
+ * cannot be asked - a page may have been reached from anywhere - so this is the only way to know
+ * whether there is something to go back to.
+ */
+const visited: string[] = [];
+
+interface VisNavigationState {
+    /** Which folders of the menu are open */
+    openFolders: Record<string, boolean>;
+}
+
+class VisNavigation extends React.Component<VisNavigationProps, VisNavigationState> {
+    constructor(props: VisNavigationProps) {
+        super(props);
+        let openFolders: Record<string, boolean> = {};
+        try {
+            openFolders = JSON.parse(window.localStorage.getItem(OPEN_FOLDERS) || '{}');
+        } catch {
+            // a broken entry is no reason to show no menu
+        }
+        this.state = { openFolders };
+    }
+
+    componentDidMount(): void {
+        this.rememberView();
+    }
+
+    componentDidUpdate(): void {
+        this.rememberView();
+    }
+
+    /** Keep the trail of views, so the app bar knows whether there is a way back */
+    rememberView(): void {
+        const view = this.props.activeView;
+        if (view && visited[visited.length - 1] !== view) {
+            visited.push(view);
+            // a trail longer than this is nobody's way back; it only grows
+            if (visited.length > 20) {
+                visited.shift();
+            }
+        }
+    }
+
+    /** Go back to the view that was open before this one */
+    goBack = (): void => {
+        // the current view is the last entry, so the one before it is where to go
+        visited.pop();
+        const previous = visited.pop();
+        if (previous) {
+            this.props.context.changeView(previous);
+        }
+    };
+
+    /**
+     * The folder a view lies in, out of the folders of the project.
+     *
+     * The project has had folders since the views manager was built, and the navigation has ignored
+     * them: a house with eight rooms and three pages each was twenty-four entries in one flat list.
+     *
+     * @param view - the name of the view
+     */
+    folderOf(view: string): { id: string; name: string } | undefined {
+        const project = this.props.context.views;
+        const parentId = project[view]?.parentId;
+        if (!parentId) {
+            return undefined;
+        }
+        const folder = (project.___settings?.folders || []).find(one => one.id === parentId);
+        return folder ? { id: folder.id, name: folder.name } : undefined;
+    }
+
+    /** The entries of the menu, in the order they are shown */
+    buildItems(settings: ViewSettings): MenuItem[] {
         const items: MenuItem[] = [];
 
         Object.keys(this.props.context.views).forEach(view => {
@@ -229,7 +324,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
             const viewSettings = this.props.context.views[view].settings;
             // a view can show the menu without being an entry of it
             if (viewSettings.navigation && !viewSettings.navigationHideEntry) {
-                const item = {
+                const item: MenuItem = {
                     text:
                         settings.navigationOrientation === 'horizontal' && viewSettings.navigationOnlyIcon
                             ? ''
@@ -239,6 +334,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                     noText: viewSettings.navigationOnlyIcon,
                     order: parseInt((viewSettings.navigationOrder as any as string) || '0'),
                     view,
+                    folder: this.folderOf(view),
                 };
 
                 items.push(item);
@@ -252,6 +348,276 @@ class VisNavigation extends React.Component<VisNavigationProps> {
         items.sort((prevItem, nextItem) =>
             prevItem.order === nextItem.order ? 0 : prevItem.order < nextItem.order ? -1 : 1,
         );
+
+        return items;
+    }
+
+    /**
+     * The entries, with the pages of one folder gathered under it.
+     *
+     * A folder takes the place its first page would have had, so the order that was set by hand still
+     * decides everything - a folder does not jump to the top because it is a folder.
+     *
+     * @param items - the entries, already in order
+     */
+    // eslint-disable-next-line class-methods-use-this
+    groupItems(items: MenuItem[]): MenuEntry[] {
+        const entries: MenuEntry[] = [];
+        const byFolder: Record<string, MenuEntry & { kind: 'folder' }> = {};
+
+        for (const item of items) {
+            if (!item.folder) {
+                entries.push({ kind: 'item', item });
+                continue;
+            }
+            const existing = byFolder[item.folder.id];
+            if (existing) {
+                existing.items.push(item);
+            } else {
+                const folder: MenuEntry & { kind: 'folder' } = {
+                    kind: 'folder',
+                    id: item.folder.id,
+                    name: item.folder.name,
+                    items: [item],
+                };
+                byFolder[item.folder.id] = folder;
+                entries.push(folder);
+            }
+        }
+
+        return entries;
+    }
+
+    /**
+     * Open or close a folder of the menu.
+     *
+     * @param id - the folder
+     */
+    toggleFolder(id: string): void {
+        const openFolders = { ...this.state.openFolders, [id]: !this.state.openFolders[id] };
+        window.localStorage.setItem(OPEN_FOLDERS, JSON.stringify(openFolders));
+        this.setState({ openFolders });
+    }
+
+    /**
+     * One page in the vertical menu.
+     *
+     * @param item - the page
+     * @param settings - the colours of the menu
+     * @param inFolder - it lies in a folder, so it is set in a little
+     */
+    renderMenuItem(item: MenuItem, settings: ViewSettings, inFolder: boolean): React.JSX.Element {
+        const active = this.props.activeView === item.view;
+        const color = active ? settings.navigationSelectedColor : settings.navigationColor;
+
+        const menuItem = (
+            <ListItem
+                key={item.view}
+                disablePadding
+                sx={Utils.getStyle(this.props.theme, styles.menuItem, active && styles.selectedMenu)}
+                style={{
+                    backgroundColor: active ? settings.navigationSelectedBackground : undefined,
+                    // a page of a folder is set in, so the folder it belongs to can be seen at a glance
+                    paddingLeft: inFolder && this.props.menuWidth === 'full' ? 16 : undefined,
+                }}
+                onClick={(): void => {
+                    if (settings.navigationHideOnSelection) {
+                        this.hideNavigationMenu();
+                    }
+                    this.props.context.changeView(item.view);
+                }}
+            >
+                <ListItemButton>
+                    <ListItemIcon>
+                        {item.icon ? (
+                            <Icon
+                                src={item.icon}
+                                style={{ color, backgroundColor: 'rgba(1,1,1,0)' }}
+                                sx={Utils.getStyle(
+                                    this.props.theme,
+                                    styles.listItemIcon,
+                                    active && styles.selectedMenu,
+                                )}
+                            />
+                        ) : (
+                            <>
+                                <DashboardIcon
+                                    style={{ color, backgroundColor: 'rgba(1,1,1,0)' }}
+                                    sx={Utils.getStyle(
+                                        this.props.theme,
+                                        this.props.menuWidth !== 'full' && styles.transparent,
+                                        active && styles.selectedMenu,
+                                    )}
+                                />
+                                {item.text ? (
+                                    <span
+                                        style={{
+                                            ...styles.listItemIconText,
+                                            ...(this.props.menuWidth === 'full' ? styles.transparent : undefined),
+                                            color,
+                                        }}
+                                    >
+                                        {item.text[0].toUpperCase()}
+                                    </span>
+                                ) : null}
+                            </>
+                        )}
+                    </ListItemIcon>
+                    <ListItemText
+                        primary={item.text}
+                        style={{ color }}
+                        sx={{
+                            // The text sits in a child of the root, and the class is
+                            // `MuiListItemText-primary`. It was named `&.MuListItemText-primary`
+                            // here, which matches nothing: the name of the view stayed in the
+                            // narrow menu, cut off beside the icon, instead of fading out.
+                            '& .MuiListItemText-primary': Utils.getStyle(
+                                this.props.theme,
+                                styles.listItemText,
+                                this.props.menuWidth === 'narrow' && styles.listItemTextNarrow,
+                            ),
+                        }}
+                    />
+                </ListItemButton>
+            </ListItem>
+        );
+
+        return (
+            <Tooltip
+                title={this.props.menuWidth !== 'full' ? item.text : ''}
+                key={item.view}
+                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+            >
+                {menuItem}
+            </Tooltip>
+        );
+    }
+
+    /**
+     * The whole vertical menu: the pages, and the folders with the pages in them.
+     *
+     * A narrow menu is a column of icons, and a folder has no icon of its own that would say anything
+     * - so there the pages are shown as they always were, one after the other.
+     *
+     * @param items - the pages
+     * @param settings - the colours of the menu
+     */
+    renderEntries(items: MenuItem[], settings: ViewSettings): React.JSX.Element[] {
+        if (this.props.menuWidth !== 'full' || settings.navigationFlat) {
+            return items.map(item => this.renderMenuItem(item, settings, false));
+        }
+
+        return this.groupItems(items).map(entry => {
+            if (entry.kind === 'item') {
+                return this.renderMenuItem(entry.item, settings, false);
+            }
+
+            // a folder that holds the page one is on is open whatever was remembered: the menu must
+            // not hide where the user is standing
+            const holdsActive = entry.items.some(item => item.view === this.props.activeView);
+            const open = this.state.openFolders[entry.id] ?? holdsActive;
+
+            return (
+                <React.Fragment key={entry.id}>
+                    <ListItem
+                        disablePadding
+                        sx={Utils.getStyle(this.props.theme, styles.menuItem)}
+                        onClick={() => this.toggleFolder(entry.id)}
+                    >
+                        <ListItemButton>
+                            <ListItemIcon>
+                                <FolderIcon
+                                    style={{ color: settings.navigationColor, backgroundColor: 'rgba(1,1,1,0)' }}
+                                />
+                            </ListItemIcon>
+                            <ListItemText
+                                primary={entry.name}
+                                style={{ color: settings.navigationColor }}
+                                sx={{ '& .MuiListItemText-primary': styles.listItemText }}
+                            />
+                            {open ? (
+                                <CollapseIcon style={{ color: settings.navigationColor }} />
+                            ) : (
+                                <ExpandIcon style={{ color: settings.navigationColor }} />
+                            )}
+                        </ListItemButton>
+                    </ListItem>
+                    <Collapse
+                        in={open}
+                        timeout="auto"
+                        unmountOnExit
+                    >
+                        <List disablePadding>{entry.items.map(item => this.renderMenuItem(item, settings, true))}</List>
+                    </Collapse>
+                </React.Fragment>
+            );
+        });
+    }
+
+    /**
+     * The menu at the bottom edge, for a phone.
+     *
+     * A drawer that has to be pulled out is the wrong shape for a device held in one hand: the thumb
+     * reaches the bottom of the screen and nothing else.
+     *
+     * About five entries fit across a phone. More than that do not get smaller - a label squeezed into
+     * forty pixels is a label nobody reads - the bar scrolls instead, and everything keeps its width.
+     *
+     * @param settings - the colours of the menu
+     */
+    renderBottomMenu(settings: ViewSettings): React.JSX.Element {
+        const items = this.buildItems(settings);
+
+        return (
+            <BottomNavigation
+                showLabels
+                value={items.find(item => item.view === this.props.activeView)?.view || false}
+                onChange={(_event, view: string) => this.props.context.changeView(view)}
+                style={{
+                    position: this.props.context.runtime ? 'fixed' : 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    width: '100%',
+                    zIndex: 450,
+                    backgroundColor: settings.navigationBackground || undefined,
+                    opacity: this.props.editMode ? 0.4 : 1,
+                    // what does not fit is scrolled to, rather than squeezed until nothing can be read
+                    overflowX: 'auto',
+                    justifyContent: 'flex-start',
+                }}
+            >
+                {items.map(item => (
+                    <BottomNavigationAction
+                        key={item.view}
+                        value={item.view}
+                        label={item.noText ? '' : item.text}
+                        style={{
+                            color:
+                                this.props.activeView === item.view
+                                    ? settings.navigationSelectedColor
+                                    : settings.navigationColor,
+                            minWidth: 72,
+                            maxWidth: 168,
+                            flexShrink: 0,
+                        }}
+                        icon={
+                            item.icon ? (
+                                <Icon
+                                    src={item.icon}
+                                    style={{ width: 24, height: 24, backgroundColor: 'rgba(1,1,1,0)' }}
+                                />
+                            ) : (
+                                <DashboardIcon />
+                            )
+                        }
+                    />
+                ))}
+            </BottomNavigation>
+        );
+    }
+
+    renderMenu(settings: ViewSettings, menuFullWidth: number): React.JSX.Element {
+        const items = this.buildItems(settings);
 
         if (settings.navigationOrientation === 'horizontal') {
             return (
@@ -346,118 +712,7 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                 <div style={menuToolbarStyle}>{settings.navigationHeaderText || ''}</div>
                 <Divider />
                 <div style={styles.menuList}>
-                    <List>
-                        {items.map((item, index) => {
-                            const menuItem = (
-                                <ListItem
-                                    key={index}
-                                    disablePadding
-                                    sx={Utils.getStyle(
-                                        this.props.theme,
-                                        styles.menuItem,
-                                        this.props.activeView === item.view && styles.selectedMenu,
-                                    )}
-                                    style={{
-                                        backgroundColor:
-                                            this.props.activeView === item.view
-                                                ? settings.navigationSelectedBackground
-                                                : undefined,
-                                    }}
-                                    onClick={(): void => {
-                                        if (settings.navigationHideOnSelection) {
-                                            this.hideNavigationMenu();
-                                        }
-                                        this.props.context.changeView(item.view);
-                                    }}
-                                >
-                                    <ListItemButton>
-                                        <ListItemIcon>
-                                            {item.icon ? (
-                                                <Icon
-                                                    src={item.icon}
-                                                    style={{
-                                                        color:
-                                                            this.props.activeView === item.view
-                                                                ? settings.navigationSelectedColor
-                                                                : settings.navigationColor,
-                                                        backgroundColor: 'rgba(1,1,1,0)',
-                                                    }}
-                                                    sx={Utils.getStyle(
-                                                        this.props.theme,
-                                                        styles.listItemIcon,
-                                                        this.props.activeView === item.view && styles.selectedMenu,
-                                                    )}
-                                                />
-                                            ) : (
-                                                <>
-                                                    <DashboardIcon
-                                                        style={{
-                                                            color:
-                                                                this.props.activeView === item.view
-                                                                    ? settings.navigationSelectedColor
-                                                                    : settings.navigationColor,
-                                                            backgroundColor: 'rgba(1,1,1,0)',
-                                                        }}
-                                                        sx={Utils.getStyle(
-                                                            this.props.theme,
-                                                            this.props.menuWidth !== 'full' && styles.transparent,
-                                                            this.props.activeView === item.view && styles.selectedMenu,
-                                                        )}
-                                                    />
-                                                    {item.text ? (
-                                                        <span
-                                                            style={{
-                                                                ...styles.listItemIconText,
-                                                                ...(this.props.menuWidth === 'full'
-                                                                    ? styles.transparent
-                                                                    : undefined),
-                                                                color:
-                                                                    this.props.activeView === item.view
-                                                                        ? settings.navigationSelectedColor
-                                                                        : settings.navigationColor,
-                                                            }}
-                                                        >
-                                                            {item.text[0].toUpperCase()}
-                                                        </span>
-                                                    ) : null}
-                                                </>
-                                            )}
-                                        </ListItemIcon>
-                                        <ListItemText
-                                            primary={item.text}
-                                            style={{
-                                                color:
-                                                    this.props.activeView === item.view
-                                                        ? settings.navigationSelectedColor
-                                                        : settings.navigationColor,
-                                            }}
-                                            sx={{
-                                                // The text sits in a child of the root, and the class is
-                                                // `MuiListItemText-primary`. It was named `&.MuListItemText-primary`
-                                                // here, which matches nothing: the name of the view stayed in the
-                                                // narrow menu, cut off beside the icon, instead of fading out.
-                                                '& .MuiListItemText-primary': Utils.getStyle(
-                                                    this.props.theme,
-                                                    styles.listItemText,
-                                                    this.props.menuWidth === 'narrow' && styles.listItemTextNarrow,
-                                                ),
-                                            }}
-                                        />
-                                    </ListItemButton>
-                                </ListItem>
-                            );
-
-                            return (
-                                <Tooltip
-                                    title={this.props.menuWidth !== 'full' ? item.text : ''}
-                                    key={index}
-                                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
-                                >
-                                    {menuItem}
-                                </Tooltip>
-                            );
-                        })}
-                    </List>
+                    <List>{this.renderEntries(items, settings)}</List>
                 </div>
             </div>
         );
@@ -493,6 +748,20 @@ class VisNavigation extends React.Component<VisNavigationProps> {
                 )}
                 style={style}
             >
+                {settings.navigationBack && visited.length > 1 ? (
+                    <Tooltip
+                        title={I18n.t('Back')}
+                        slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                    >
+                        <IconButton
+                            size="small"
+                            onClick={this.goBack}
+                            style={{ color: 'inherit', marginRight: 4 }}
+                        >
+                            <BackIcon />
+                        </IconButton>
+                    </Tooltip>
+                ) : null}
                 {icon ? (
                     <Icon
                         src={icon}
@@ -580,8 +849,35 @@ class VisNavigation extends React.Component<VisNavigationProps> {
             return null;
         }
 
-        const settings: ViewSettings = this.props.context.views[this.props.view].settings;
+        const settings: ViewSettings = resolveNavigationSettings(
+            this.props.context.views,
+            this.props.context.views[this.props.view].settings,
+        );
         const menuFullWidth = parseInt(settings.navigationWidth as any as string, 10) || MENU_WIDTH_FULL;
+
+        // The menu at the bottom edge, for a phone: the page fills everything above it
+        if (
+            settings.navigation &&
+            !this.props.visInWidget &&
+            settings.navigationOrientation === 'bottom' &&
+            this.props.view === this.props.activeView
+        ) {
+            return (
+                <div style={styles.rootHorizontal}>
+                    {this.renderToolbar(settings)}
+                    <div
+                        style={{
+                            ...styles.viewContentWithToolbar,
+                            // the bar takes its height from the bottom of the page, not from the top
+                            height: `calc(100% - ${TOOLBAR_SIZE + (settings.navigationBar ? TOOLBAR_SIZE : 0)}px)`,
+                        }}
+                    >
+                        {this.props.children}
+                    </div>
+                    {this.renderBottomMenu(settings)}
+                </div>
+            );
+        }
 
         // Show horizontal navigation menu
         if (

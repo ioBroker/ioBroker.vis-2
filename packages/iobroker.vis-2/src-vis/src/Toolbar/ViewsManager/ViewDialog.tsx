@@ -1,7 +1,13 @@
 import React from 'react';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, FileCopy as FileCopyIcon } from '@mui/icons-material';
+import {
+    Add as AddIcon,
+    AutoAwesome as WizardIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    FileCopy as FileCopyIcon,
+} from '@mui/icons-material';
 
-import { TextField } from '@mui/material';
+import { Button, TextField } from '@mui/material';
 
 import { I18n } from '@iobroker/gui-components';
 
@@ -27,6 +33,8 @@ interface ViewDialogProps {
     dialogParentId?: string;
     noTranslation: boolean;
     setDialogParentId: (parentId?: string) => void;
+    /** Leave the naming of a single view and let the wizard build the pages out of the devices instead */
+    onWizard?: () => void;
 }
 
 const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
@@ -201,6 +209,21 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
             action={dialogActions[props.dialog]}
             actionColor={props.dialog === 'delete' ? 'secondary' : 'primary'}
             actionDisabled={dialogDisabled}
+            dialogActions={
+                props.dialog === 'add' && props.onWizard ? (
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<WizardIcon />}
+                        onClick={() => {
+                            props.closeDialog();
+                            props.onWizard!();
+                        }}
+                    >
+                        {I18n.t('From devices...')}
+                    </Button>
+                ) : null
+            }
         >
             {props.dialog === 'delete' ? null : (
                 <TextField

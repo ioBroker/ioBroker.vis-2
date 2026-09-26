@@ -12,11 +12,13 @@ import {
     TextField,
     FormHelperText,
     IconButton,
+    Typography,
+    Divider,
 } from '@mui/material';
 
 import { ContentCopy, Save as SaveIcon, Refresh } from '@mui/icons-material';
 
-import { I18n, Utils, type Connection, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
+import { ColorPicker, I18n, Utils, type Connection, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -76,6 +78,16 @@ interface SettingsFieldIcon extends SettingsFieldBase {
     type: 'image';
 }
 
+interface SettingsFieldColor extends SettingsFieldBase {
+    type: 'color';
+}
+
+/** Not a setting: the line that says what the settings under it are about */
+interface SettingsFieldHeader extends SettingsFieldBase {
+    type: 'header';
+    name: string;
+}
+
 type SettingsField =
     | SettingsFieldSelect
     | SettingsFieldRaw
@@ -83,6 +95,8 @@ type SettingsField =
     | SettingsFieldSwitchMode
     | SettingsFieldText
     | SettingsFieldIcon
+    | SettingsFieldColor
+    | SettingsFieldHeader
     | SettingsFieldNumber;
 
 interface SettingsProps {
@@ -202,6 +216,38 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                 { value: 'visible', name: 'visible' },
             ],
         },
+        /*
+         * How the menu looks, for every page at once.
+         *
+         * A page may still say something else - what somebody typed into a page is what they meant -
+         * and everything a page leaves empty comes from here. Which page carries an entry, what it is
+         * called and in which order it stands stays with the page: that describes the page, not the menu.
+         */
+        { type: 'header', name: 'Navigation menu', help: 'navigation_project_help' },
+        {
+            type: 'select',
+            name: 'Orientation',
+            field: 'navigationOrientation',
+            fullWidth: true,
+            items: [
+                { value: 'vertical', name: 'Vertical' },
+                { value: 'horizontal', name: 'Horizontal' },
+                { value: 'bottom', name: 'At the bottom edge' },
+            ],
+        },
+        { type: 'checkbox', name: 'One flat list', field: 'navigationFlat' },
+        { type: 'checkbox', name: 'Only icon', field: 'navigationOnlyIcon' },
+        { type: 'number', name: 'Menu width', field: 'navigationWidth' },
+        { type: 'text', name: 'Header text', field: 'navigationHeaderText' },
+        { type: 'color', name: 'Background color', field: 'navigationBackground' },
+        { type: 'color', name: 'Text color', field: 'navigationColor' },
+        { type: 'color', name: 'Background color if selected', field: 'navigationSelectedBackground' },
+        { type: 'color', name: 'Text color if selected', field: 'navigationSelectedColor' },
+        { type: 'checkbox', name: 'Hide menu after selection', field: 'navigationHideOnSelection' },
+        { type: 'checkbox', name: 'Do not hide menu', field: 'navigationNoHide' },
+        { type: 'checkbox', name: 'Show app bar', field: 'navigationBar' },
+        { type: 'color', name: 'App bar color', field: 'navigationBarColor' },
+        { type: 'checkbox', name: 'Show a way back', field: 'navigationBack' },
     ];
 
     const save = (): void => {
@@ -230,6 +276,30 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                 style={styles.field}
                             >
                                 {field.Node}
+                            </div>
+                        );
+                    }
+                    if (field.type === 'header') {
+                        return (
+                            <div
+                                key={`header_${field.name}`}
+                                style={{ ...styles.field, display: 'block', marginTop: 16 }}
+                            >
+                                <Typography
+                                    variant="subtitle2"
+                                    style={{ fontWeight: 700 }}
+                                >
+                                    {I18n.t(field.name)}
+                                </Typography>
+                                {field.help ? (
+                                    <Typography
+                                        variant="caption"
+                                        style={{ opacity: 0.7, display: 'block' }}
+                                    >
+                                        {I18n.t(field.help)}
+                                    </Typography>
+                                ) : null}
+                                <Divider style={{ marginTop: 8 }} />
                             </div>
                         );
                     }
@@ -330,6 +400,14 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                                 </Select>
                                 {field.help ? <FormHelperText>{I18n.t(field.help)}</FormHelperText> : null}
                             </FormControl>
+                        );
+                    } else if (field.type === 'color') {
+                        result = (
+                            <ColorPicker
+                                value={(value as string) || ''}
+                                label={I18n.t(field.name || '')}
+                                onChange={color => change(color)}
+                            />
                         );
                     } else if (field.type === 'image') {
                         let _value = '';

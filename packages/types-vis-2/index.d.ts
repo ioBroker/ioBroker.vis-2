@@ -144,6 +144,8 @@ export type RxWidgetAttributeType =
     | 'views'
     | 'style'
     | 'icon64'
+    /** One field for both: a standard small icon out of the sets, or a picture out of the ioBroker files */
+    | 'icon-image'
     | 'slider'
     | 'widget'
     | 'url';
@@ -643,6 +645,8 @@ export type RxWidgetInfoAttributesFieldSimple = {
         | 'views'
         | 'style'
         | 'icon64'
+        /** One field for both: a standard small icon out of the sets, or a picture out of the ioBroker files */
+        | 'icon-image'
         | 'url';
     /** Field default value */
     readonly default?: string;
@@ -740,7 +744,40 @@ export interface UserPermissions {
     [user: string]: Permissions;
 }
 
-export interface ProjectSettings {
+/**
+ * How the navigation menu looks, for the whole project.
+ *
+ * These are the same settings a view carries, one level up. A view that sets one of them wins - what
+ * somebody typed into a page is what they meant - and everything a view leaves empty comes from here.
+ * Before this existed, the look of the menu was read from the settings of whichever view was open, so
+ * it had to be repeated in every single one of them; that is what the "apply to all views" button was
+ * invented for.
+ *
+ * Which page carries an entry, what it is called and in which order it stands stays with the page. It
+ * describes that page, not the menu.
+ */
+export type ProjectNavigationSettings = Pick<
+    ViewSettings,
+    | 'navigationOrientation'
+    | 'navigationFlat'
+    | 'navigationOnlyIcon'
+    | 'navigationWidth'
+    | 'navigationBackground'
+    | 'navigationColor'
+    | 'navigationSelectedBackground'
+    | 'navigationSelectedColor'
+    | 'navigationHeaderText'
+    | 'navigationHeaderTextColor'
+    | 'navigationChevronColor'
+    | 'navigationButtonBackground'
+    | 'navigationHideOnSelection'
+    | 'navigationNoHide'
+    | 'navigationBar'
+    | 'navigationBarColor'
+    | 'navigationBack'
+>;
+
+export interface ProjectSettings extends ProjectNavigationSettings {
     /** Determines if the loading screen is dark or light */
     darkReloadScreen: boolean;
     /** Organization of views */
@@ -1024,7 +1061,22 @@ export interface ViewSettings {
     navigationOrder?: number;
     navigationIcon?: string;
     navigationImage?: string;
-    navigationOrientation?: 'horizontal' | 'vertical';
+    /**
+     * Where the menu sits: at the side, above the page, or at the bottom edge.
+     *
+     * `bottom` is the one for a phone: a drawer that has to be pulled out is the wrong shape for a
+     * device held in one hand, where the thumb reaches the bottom of the screen and nothing else.
+     */
+    navigationOrientation?: 'horizontal' | 'vertical' | 'bottom';
+    /**
+     * The menu lists every page in one row, even where the project keeps them in folders.
+     *
+     * Without this the pages of a folder are gathered under it, which is what a project with eight
+     * rooms and three pages each needs to stay readable.
+     */
+    navigationFlat?: boolean;
+    /** The application bar carries a way back to the page one came from */
+    navigationBack?: boolean;
     navigationOnlyIcon?: boolean;
     navigationBackground?: string;
     navigationSelectedBackground?: string;
@@ -1071,7 +1123,7 @@ export interface ViewSettings {
     /** grid layout: the space between the widgets inside a section, in px (default 8) */
     gridGap?: number;
 
-    /** For material wizard */
+    /** The id of the room or the function the wizard built this view for, so it finds it again */
     wizardId?: string;
 }
 
@@ -1141,6 +1193,9 @@ export interface ViewSection {
     color?: string | null;
     /** Blurs what lies behind the section, in px - a glass look over a background image */
     glass?: number | null;
+
+    /** The id of the room or the function the wizard built this section for, so it finds it again */
+    wizardId?: string;
 
     // --- visibility (runtime; the editor only dims a hidden section)
     /** The section is shown only if this state fulfills `visibilityCond` with `visibilityVal` */
@@ -1950,6 +2005,15 @@ export interface RxWidgetInfo {
     /** Preview link (image URL, like 'widgets/basic/img/Prev_RedNumber.png') */
     readonly visPrev: string;
     /**
+     * A picture of the widget as it looks on a page, for the tooltip of the palette.
+     *
+     * `visPrev` has to work as an icon of 30 pixels in a row of the palette, which leaves room for a symbol
+     * and not for a widget. Where this one is given, the tooltip shows it instead, at about 200 by 120 - big
+     * enough to recognise what the widget will look like before dragging it out. Same form as `visPrev`: an
+     * image URL, an `<img>` tag, or a piece of HTML or SVG that draws it.
+     */
+    readonly visPrevLarge?: string;
+    /**
      * What the widget does, shown in the tooltip of the palette under the preview. Normally a translation key,
      * like `visWidgetLabel`. The counterpart of `data-vis-help` of a vis-1 widget.
      */
@@ -1967,6 +2031,12 @@ export interface RxWidgetInfo {
      * `visDefaultStyle`.
      */
     readonly visDefaultGrid?: RxWidgetInfoGrid;
+    /**
+     * The kinds of device this widget shows, as `@iobroker/type-detector` names them (`blind`, `thermostat`, …).
+     * The wizard that builds pages out of the devices of an installation puts a device of such a kind on this
+     * widget; a widget set that says nothing here is not offered by it.
+     */
+    readonly visDeviceTypes?: readonly string[];
     /** Position in the widget set */
     readonly visOrder?: number;
     /** required, that width is always equal to height (quadratic widget) */

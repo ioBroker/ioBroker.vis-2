@@ -22,8 +22,12 @@ import {
 
 import { TbVacuumCleaner } from 'react-icons/tb';
 
-import ChannelDetector, { Types, type DetectOptions } from '@iobroker/type-detector';
+import ChannelDetectorModule, { Types, type DetectOptions } from '@iobroker/type-detector';
 import type { Connection } from '@iobroker/gui-components';
+
+// the package is CommonJS and its default export arrives wrapped in `{ default: … }` here, see Wizard/deviceDetection.ts
+const ChannelDetector =
+    (ChannelDetectorModule as unknown as { default?: typeof ChannelDetectorModule }).default || ChannelDetectorModule;
 
 import { getNewWidgetIdNumber, getNewWidgetId } from '@/Utilities/utils';
 

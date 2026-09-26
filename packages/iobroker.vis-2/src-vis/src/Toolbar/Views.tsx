@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 
 import { Tooltip } from '@mui/material';
 
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Menu as MenuIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeName, type ThemeType } from '@iobroker/gui-components';
+import { I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
@@ -12,6 +12,9 @@ import ViewsManager from './ViewsManager';
 
 import ToolbarItems, { type ToolbarItem } from './ToolbarItems';
 import ViewDialog from './ViewsManager/ViewDialog';
+
+// the wizard brings the type detector with it, and it is opened rarely, so it is loaded when it is asked for
+const WizardDialog = React.lazy(() => import('@/Wizard/WizardDialog'));
 
 const styles: Record<string, React.CSSProperties> = {
     label: {
@@ -43,10 +46,12 @@ interface ViewsProps {
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
     themeName: ThemeName;
     toggleView: Editor['toggleView'];
+    socket: Connection;
 }
 
 const Views = (props: ViewsProps): React.JSX.Element => {
     const [dialog, setDialog] = useState<'add' | 'rename' | 'delete' | 'copy' | null>(null);
+    const [wizard, setWizard] = useState(false);
     const [dialogCallback, setDialogCallback] = useState<{ cb: (dialogName: string) => void } | null>(null);
     const [dialogName, setDialogName] = useState('');
     const [dialogView, setDialogView] = useState<string | undefined>(undefined);
@@ -169,7 +174,18 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                     changeProject={props.changeProject}
                     changeView={props.changeView}
                     selectedView={props.selectedView}
+                    onWizard={() => setWizard(true)}
                 />
+            ) : null}
+            {wizard ? (
+                <Suspense fallback={null}>
+                    <WizardDialog
+                        socket={props.socket}
+                        changeProject={props.changeProject}
+                        changeView={props.changeView}
+                        onClose={() => setWizard(false)}
+                    />
+                </Suspense>
             ) : null}
         </>
     );

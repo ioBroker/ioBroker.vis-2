@@ -57,6 +57,12 @@ const styles: Record<string, any> = {
         width: 'auto',
         borderRadius: 4,
     },
+    /* A drawn preview in the tooltip needs a box of its own: an SVG of `100%` has nothing to be a percent of */
+    widgetHtmlTooltip: {
+        width: 200,
+        height: 120,
+        display: 'block',
+    },
     widgetTooltipTitle: {
         fontWeight: 'bold',
         marginBottom: 4,
@@ -212,14 +218,18 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
      *
      * @param imageStyle - how big it is drawn; the row and the tooltip ask for different sizes
      * @param ref - only the preview in the row is measured, the one in the tooltip is not
+     * @param large - the tooltip, which shows the bigger picture of the widget where there is one
      */
     const renderPreview = (
         imageStyle: React.CSSProperties,
         ref?: React.RefObject<HTMLSpanElement | null>,
+        large?: boolean,
     ): React.JSX.Element => {
-        if (props.widgetType.preview?.startsWith('<img')) {
-            const m =
-                props.widgetType.preview.match(/src="([^"]+)"/) || props.widgetType.preview.match(/src='([^']+)'/);
+        // the row shows an icon, the tooltip a picture of the widget - a set that brings only one uses it twice
+        const drawn = (large && props.widgetType.previewLarge) || props.widgetType.preview;
+
+        if (drawn?.startsWith('<img')) {
+            const m = drawn.match(/src="([^"]+)"/) || drawn.match(/src='([^']+)'/);
             if (m) {
                 return (
                     <img
@@ -232,13 +242,12 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
                 );
             }
         } else if (
-            props.widgetType.preview &&
-            (IMAGE_TYPES.find(ext => (props.widgetType.preview || '').toLowerCase().endsWith(ext)) ||
-                props.widgetSet === '__marketplace')
+            drawn &&
+            (IMAGE_TYPES.find(ext => drawn.toLowerCase().endsWith(ext)) || props.widgetSet === '__marketplace')
         ) {
             return (
                 <img
-                    src={props.widgetType.preview}
+                    src={drawn}
                     style={imageStyle}
                     alt={props.widgetType.name}
                     draggable={false}
@@ -256,9 +265,9 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
         // no image: the preview is a piece of HTML that draws the widget itself
         return (
             <span
-                style={styles.widgetImage}
+                style={large && props.widgetType.previewLarge ? styles.widgetHtmlTooltip : styles.widgetImage}
                 ref={ref}
-                dangerouslySetInnerHTML={{ __html: props.widgetType.preview || '' }}
+                dangerouslySetInnerHTML={{ __html: drawn || '' }}
             />
         );
     };
@@ -287,7 +296,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
                 <Box component="div">
                     {/* the name only in the icon view, where the tile may have had to cut it off */}
                     {isGrid ? <div style={styles.widgetTooltipTitle}>{label}</div> : null}
-                    <div>{renderPreview(styles.widgetImageTooltip)}</div>
+                    <div>{renderPreview(styles.widgetImageTooltip, undefined, true)}</div>
                     {props.widgetType.help ? (
                         <div style={styles.widgetTooltipHelp}>{I18n.t(props.widgetType.help)}</div>
                     ) : null}

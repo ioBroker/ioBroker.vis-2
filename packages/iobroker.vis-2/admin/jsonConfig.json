@@ -88,9 +88,199 @@
                     "sm": 12,
                     "md": 8,
                     "lg": 4,
-                    "accept": { "image/png": [] },
+                    "accept": {
+                        "image/png": []
+                    },
                     "label": "Upload image",
                     "crop": true
+                }
+            }
+        },
+        "ai": {
+            "label": "AI assistant",
+            "type": "panel",
+            "items": {
+                "_aiHint": {
+                    "type": "staticText",
+                    "text": "ai_hint",
+                    "xs": 12
+                },
+                "aiCredentialType": {
+                    "newLine": true,
+                    "type": "select",
+                    "label": "Where the keys are kept",
+                    "default": "manual",
+                    "options": [
+                        {
+                            "label": "In this configuration",
+                            "value": "manual"
+                        },
+                        {
+                            "label": "In the central credential store",
+                            "value": "manager"
+                        }
+                    ],
+                    "xs": 12,
+                    "sm": 6
+                },
+                "aiOpenAiKey": {
+                    "newLine": true,
+                    "type": "password",
+                    "label": "OpenAI API key",
+                    "hidden": "data.aiCredentialType === 'manager'",
+                    "xs": 12,
+                    "sm": 9,
+                    "help": "platform.openai.com",
+                    "helpLink": "https://platform.openai.com/api-keys"
+                },
+                "aiCredentialOpenAi": {
+                    "newLine": true,
+                    "type": "credential",
+                    "credentialType": "ai",
+                    "label": "OpenAI credential",
+                    "hidden": "data.aiCredentialType !== 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "_test_openai": {
+                    "type": "sendTo",
+                    "label": "Test",
+                    "command": "aiModels",
+                    "jsonData": "{\"provider\": \"openai\", \"credentialType\": \"${data.aiCredentialType}\", \"credentialId\": \"${data.aiCredentialOpenAi}\", \"apiKey\": \"${data.aiOpenAiKey}\"}",
+                    "variant": "outlined",
+                    "xs": 12,
+                    "sm": 3,
+                    "showProcess": true
+                },
+                "aiAnthropicKey": {
+                    "newLine": true,
+                    "type": "password",
+                    "label": "Anthropic API key",
+                    "hidden": "data.aiCredentialType === 'manager'",
+                    "xs": 12,
+                    "sm": 9,
+                    "help": "console.anthropic.com",
+                    "helpLink": "https://console.anthropic.com/settings/keys"
+                },
+                "aiCredentialAnthropic": {
+                    "newLine": true,
+                    "type": "credential",
+                    "credentialType": "ai",
+                    "label": "Anthropic credential",
+                    "hidden": "data.aiCredentialType !== 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "_test_anthropic": {
+                    "type": "sendTo",
+                    "label": "Test",
+                    "command": "aiModels",
+                    "jsonData": "{\"provider\": \"anthropic\", \"credentialType\": \"${data.aiCredentialType}\", \"credentialId\": \"${data.aiCredentialAnthropic}\", \"apiKey\": \"${data.aiAnthropicKey}\"}",
+                    "variant": "outlined",
+                    "xs": 12,
+                    "sm": 3,
+                    "showProcess": true
+                },
+                "aiGeminiKey": {
+                    "newLine": true,
+                    "type": "password",
+                    "label": "Gemini API key",
+                    "hidden": "data.aiCredentialType === 'manager'",
+                    "xs": 12,
+                    "sm": 9,
+                    "help": "aistudio.google.com",
+                    "helpLink": "https://aistudio.google.com/app/apikey"
+                },
+                "aiCredentialGemini": {
+                    "newLine": true,
+                    "type": "credential",
+                    "credentialType": "ai",
+                    "label": "Gemini credential",
+                    "hidden": "data.aiCredentialType !== 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "_test_gemini": {
+                    "type": "sendTo",
+                    "label": "Test",
+                    "command": "aiModels",
+                    "jsonData": "{\"provider\": \"gemini\", \"credentialType\": \"${data.aiCredentialType}\", \"credentialId\": \"${data.aiCredentialGemini}\", \"apiKey\": \"${data.aiGeminiKey}\"}",
+                    "variant": "outlined",
+                    "xs": 12,
+                    "sm": 3,
+                    "showProcess": true
+                },
+                "aiDeepSeekKey": {
+                    "newLine": true,
+                    "type": "password",
+                    "label": "DeepSeek API key",
+                    "hidden": "data.aiCredentialType === 'manager'",
+                    "xs": 12,
+                    "sm": 9,
+                    "help": "platform.deepseek.com",
+                    "helpLink": "https://platform.deepseek.com/api_keys"
+                },
+                "aiCredentialDeepSeek": {
+                    "newLine": true,
+                    "type": "credential",
+                    "credentialType": "ai",
+                    "label": "DeepSeek credential",
+                    "hidden": "data.aiCredentialType !== 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "_test_deepseek": {
+                    "type": "sendTo",
+                    "label": "Test",
+                    "command": "aiModels",
+                    "jsonData": "{\"provider\": \"deepseek\", \"credentialType\": \"${data.aiCredentialType}\", \"credentialId\": \"${data.aiCredentialDeepSeek}\", \"apiKey\": \"${data.aiDeepSeekKey}\"}",
+                    "variant": "outlined",
+                    "xs": 12,
+                    "sm": 3,
+                    "showProcess": true
+                },
+                "_aiCustomHeader": {
+                    "newLine": true,
+                    "type": "header",
+                    "text": "Own endpoint",
+                    "size": 5,
+                    "xs": 12
+                },
+                "aiCustomUrl": {
+                    "newLine": true,
+                    "type": "text",
+                    "label": "Address of an OpenAI-compatible endpoint",
+                    "help": "ai_custom_help",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "aiCustomKey": {
+                    "newLine": true,
+                    "type": "password",
+                    "label": "Key of that endpoint, if it wants one",
+                    "hidden": "data.aiCredentialType === 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "aiCredentialCustom": {
+                    "newLine": true,
+                    "type": "credential",
+                    "credentialType": "ai",
+                    "label": "Credential of that endpoint",
+                    "hidden": "data.aiCredentialType !== 'manager'",
+                    "xs": 12,
+                    "sm": 9
+                },
+                "_test_custom": {
+                    "type": "sendTo",
+                    "label": "Test",
+                    "command": "aiModels",
+                    "jsonData": "{\"provider\": \"custom\", \"credentialType\": \"${data.aiCredentialType}\", \"credentialId\": \"${data.aiCredentialCustom}\", \"apiKey\": \"${data.aiCustomKey}\", \"baseUrl\": \"${data.aiCustomUrl}\"}",
+                    "variant": "outlined",
+                    "disabled": "!data.aiCustomUrl",
+                    "xs": 12,
+                    "sm": 3,
+                    "showProcess": true
                 }
             }
         }

@@ -85,6 +85,7 @@ import {
 } from './visSections';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
+import { resolveNavigationSettings } from './visNavigationSettings';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
 
@@ -3908,9 +3909,19 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             </div>
         );
 
-        // render the menu if enabled and not in widget;
-        // only if the view is now active (not alwaysRender)
-        if (settings && (settings.navigation || settings.navigationBar) && this.props.view === this.props.activeView) {
+        /*
+         * render the menu if enabled and not in widget; only if the view is now active (not alwaysRender)
+         *
+         * The application bar may be switched on for the whole project, so the question is asked of the
+         * settings the menu is actually drawn with - otherwise a project-wide bar would never appear on a
+         * view that says nothing about one.
+         */
+        const navigationSettings = settings ? resolveNavigationSettings(this.props.context.views, settings) : settings;
+        if (
+            navigationSettings &&
+            (navigationSettings.navigation || navigationSettings.navigationBar) &&
+            this.props.view === this.props.activeView
+        ) {
             renderedView = this.renderNavigation(renderedView);
         }
 

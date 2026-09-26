@@ -643,3 +643,135 @@ html {
 .vis-table-modern button:active {
     filter: brightness(0.92);
 }
+
+/* The dot in the middle of a blind that is moving, see Widgets/Standard/Base/controls/BlindWindow.tsx */
+@keyframes vis-standard-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+/* The drum of a machine that is running without saying how far it has got, see devices/applianceDevice.tsx */
+@keyframes vis-standard-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/*
+ * The markers of the widget set `absolute`, see Widgets/Standard/Base/MarkerFrame.tsx.
+ *
+ * What a marker shows follows the shape of the box it was dragged to, and that is asked of the browser rather
+ * than worked out in JavaScript: a container query answers at every frame of a resize, and a container of the
+ * type `size` is measured without its contents, so nothing can chase its own size here.
+ */
+.vis-marker {
+    container-type: size;
+    container-name: vis-marker;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* the glow of a marker lies outside it, so this box must not clip - the marker itself does */
+    overflow: visible;
+}
+
+.vis-marker-body {
+    /* the size comes from the component as variables, so the rules below can override it */
+    height: var(--vis-marker-size);
+    width: var(--vis-marker-width);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    border-radius: 999px;
+    /* whatever a device hands in, it stays inside its marker */
+    overflow: hidden;
+}
+
+.vis-marker-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vis-marker-value {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Wide: the icon and the number side by side in the middle of the capsule */
+@container vis-marker (aspect-ratio > 1.3) {
+    .vis-marker-body {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* Square: there is no room for both, so the number wins and the icon goes */
+@container vis-marker (0.8 <= aspect-ratio <= 1.3) {
+    .vis-marker-has-value .vis-marker-icon {
+        display: none;
+    }
+    .vis-marker-has-value .vis-marker-body {
+        justify-content: center;
+        padding: 0;
+    }
+}
+
+/* Tall: a standing capsule with the icon above the number */
+@container vis-marker (aspect-ratio < 0.8) {
+    .vis-marker-body {
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+        padding: 0;
+    }
+
+    .vis-marker-has-value .vis-marker-body {
+        height: 100cqh;
+        width: 100cqw;
+    }
+}
+
+/*
+ * A marker of the widget set `absolute` glows in the colour of its state, and that glow lies outside its box.
+ * `.vis-widget` clips by default - which is right for a widget that draws to its edges and wrong for this one.
+ */
+.vis-widget.vis-marker-widget {
+    overflow: visible;
+}
+
+/*
+ * A card of the widget sets `relative` and `absolute` that was told it is a container.
+ *
+ * Only the widgets that ask for it get this: a box of the type `size` is measured without looking at what is
+ * in it, which is right for a card that fills its cell and would collapse one that grows with its content.
+ */
+.vis-card-container {
+    container-type: size;
+    container-name: vis-card;
+}
+
+/* The row of modes of a thermostat goes where the card is too short for the dial and the buttons both */
+@container vis-card (max-height: 170px) {
+    .vis-thermostat-modes {
+        display: none;
+    }
+}

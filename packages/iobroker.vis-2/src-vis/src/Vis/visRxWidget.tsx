@@ -812,8 +812,8 @@ export class VisRxWidget<
         return muiStyle;
     }
 
-    // A widget may render several elements, as the base class and the published types allow: the widgets that
-    // came from the material set do it, see Widgets/Devices.
+    // A widget may render several elements, as the base class and the published types allow - a card and the
+    // dialog it opens, for one.
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element | (React.JSX.Element | null)[] | null {
         props.id = this.props.id;
 

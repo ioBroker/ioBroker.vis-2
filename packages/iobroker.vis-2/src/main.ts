@@ -7,12 +7,43 @@
  *      CC-NC-BY 4.0 License
  *
  */
-import { Adapter, type AdapterOptions } from '@iobroker/adapter-core';
+import { Adapter, Credentials, type AdapterOptions } from '@iobroker/adapter-core';
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
 import { syncWidgetSets } from './lib/install';
+import { chatCompletion, listModels } from './lib/ai/chat';
+import {
+    getProviderCredentialId,
+    listAvailableProviders,
+    resolveProviderCredentials,
+    resolveRequestTimeout,
+    type AiConfigSlice,
+    type AiProvider,
+} from './lib/ai/credentials';
+import type { OpenAIMessage } from './lib/ai/anthropic';
+
+/**
+ * What a field of the configuration page sent, or nothing where it holds nothing.
+ *
+ * The test buttons of the page carry the form into the message with `${data.field}` patterns, and a
+ * field that was never filled in arrives as an empty word - or, depending on the admin, as the pattern
+ * itself. Neither is an answer, and both must not be taken for a key.
+ *
+ * @param value - what arrived in the message
+ */
+function fromForm(value: unknown): string | undefined {
+    if (typeof value !== 'string' && typeof value !== 'number') {
+        return undefined;
+    }
+    const text = `${value}`.trim();
+    if (!text || text === 'undefined' || text === 'null' || text.includes('${')) {
+        return undefined;
+    }
+
+    return text;
+}
 
 function loadIoPack(): ioBroker.AdapterObject {
     const path = `${__dirname}/../io-package.json`;
@@ -36,7 +67,7 @@ const POSSIBLE_WIDGET_SETS_LOCATIONS = [
     normalize(`${__dirname}/../../../../node_modules/`),
 ];
 
-export interface VisAdapterConfig extends ioBroker.AdapterConfig {
+export interface VisAdapterConfig extends ioBroker.AdapterConfig, AiConfigSlice {
     defaultFileMode: number;
     license: string;
     useLicenseManager: boolean;
@@ -133,6 +164,131 @@ class VisAdapter extends Adapter {
             } else {
                 this.sendTo(msg.from, msg.command, { error: 'already running' }, msg.callback);
             }
+        } else if (msg?.command === 'getAvailableAiProviders' && msg.callback) {
+            // the editor asks what it may offer; it never learns a key
+            this.sendTo(msg.from, msg.command, { providers: listAvailableProviders(this.visConfig) }, msg.callback);
+        } else if (msg?.command === 'aiModels' && msg.callback) {
+            const provider = (msg.message?.provider || 'openai') as AiProvider;
+            const { apiKey, baseUrl, error } = await this.resolveAiCredentials(provider, msg.message);
+            // the test button of the configuration page asks the provider for its models, and a request
+            // without a key comes back as `401` from the other end - which says nothing about what is
+            // actually missing here
+            if (error || (!apiKey && !baseUrl)) {
+                this.sendTo(msg.from, msg.command, { error: error || `No API key for "${provider}"` }, msg.callback);
+                return;
+            }
+            const result = await listModels(provider, apiKey, baseUrl);
+            // the same command serves the test button of the configuration page, which shows `result`
+            this.sendTo(
+                msg.from,
+                msg.command,
+                result.error
+                    ? { error: result.error }
+                    : { models: result.models, result: `${result.models?.length || 0} models` },
+                msg.callback,
+            );
+        } else if (msg?.command === 'aiChat' && msg.callback) {
+            const provider = (msg.message?.provider || 'openai') as AiProvider;
+            const model: string = (msg.message?.model || '').trim();
+            const messages: OpenAIMessage[] = msg.message?.messages;
+            const { apiKey, baseUrl, error } = await this.resolveAiCredentials(provider, msg.message);
+
+            // an endpoint of one's own may need no key - a model on the same host usually does not -
+            // but every provider that is somebody else's service does
+            if (error || (!apiKey && !baseUrl)) {
+                this.sendTo(msg.from, msg.command, { error: error || `No API key for "${provider}"` }, msg.callback);
+                return;
+            }
+            if (!model || !Array.isArray(messages) || !messages.length) {
+                this.sendTo(msg.from, msg.command, { error: 'Model and messages are required' }, msg.callback);
+                return;
+            }
+
+            const answer = await chatCompletion({
+                provider,
+                model,
+                messages,
+                tools: msg.message?.tools,
+                apiKey,
+                baseUrl,
+                timeout: resolveRequestTimeout(msg.message?.timeout),
+            });
+            this.sendTo(msg.from, msg.command, answer, msg.callback);
+        }
+    }
+
+    /**
+     * The key of an AI provider, out of wherever it is kept.
+     *
+     * Either it stands in this instance's own configuration, encrypted, or the configuration only names
+     * an entry of the central credential store that several adapters share. The second way is the one
+     * to prefer: somebody who has already given their key to `javascript` should not have to give it
+     * again, and a key that lives in one place is a key that can be changed in one place.
+     *
+     * The test button of the configuration page sends what stands in the form rather than what was
+     * saved, because the first thing anybody does is type a key and press it - and what has not been
+     * saved is not in `visConfig` yet.
+     *
+     * @param provider - which provider is about to be asked
+     * @param message - what came with the request
+     * @param message.baseUrl - the address of an endpoint of one’s own
+     * @param message.apiKey - the key that stands in the form
+     * @param message.credentialId - the entry of the central store that the form names
+     * @param message.credentialType - where the form says the keys are kept
+     */
+    private async resolveAiCredentials(
+        provider: AiProvider,
+        message?: {
+            baseUrl?: string;
+            apiKey?: string;
+            credentialId?: string;
+            credentialType?: 'manual' | 'manager';
+        },
+    ): Promise<{ apiKey: string; baseUrl: string; error?: string }> {
+        const { apiKey, baseUrl } = resolveProviderCredentials(this.visConfig, provider, fromForm(message?.baseUrl));
+        const mode = fromForm(message?.credentialType) || this.visConfig.aiCredentialType || 'manual';
+
+        if (mode !== 'manager') {
+            // a key that was typed but not saved yet is still the key that is meant
+            return { apiKey: fromForm(message?.apiKey) || apiKey, baseUrl };
+        }
+
+        const id = fromForm(message?.credentialId) || getProviderCredentialId(this.visConfig, provider);
+        if (!id) {
+            return { apiKey: '', baseUrl, error: `No credential was chosen for "${provider}"` };
+        }
+        const credential = await this.readCredential(id);
+
+        return { apiKey: credential.key, baseUrl, error: credential.error };
+    }
+
+    /**
+     * One entry of the central credential store.
+     *
+     * The store came with js-controller 7.2; on anything older there is nothing to read and the
+     * adapter says so rather than failing silently with an empty key.
+     *
+     * @param id - the id of the entry, like `system.credentials.anthropic`
+     */
+    private async readCredential(id: string): Promise<{ key: string; error?: string }> {
+        const fail = (error: string): { key: string; error: string } => {
+            this.log.warn(`Cannot read the credential "${id}": ${error}`);
+            return { key: '', error };
+        };
+
+        try {
+            // an older `@iobroker/adapter-core` knows no credential store at all
+            if (typeof Credentials?.getCredentials !== 'function') {
+                return fail('the credential store needs js-controller 7.2 and @iobroker/adapter-core 3.4');
+            }
+            const entry = await Credentials.getCredentials<Credentials.KeyCredentials>(this, id);
+            const key = (entry?.values?.key || '').trim();
+
+            // a credential of a login and a password is not an API key, and neither is one that was
+            // never filled in - saying so beats a request that comes back as a `401`
+            return key ? { key } : fail('it holds no key');
+        } catch (e) {
+            return fail(e instanceof Error ? e.message : String(e));
         }
     }
 
