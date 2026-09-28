@@ -465,7 +465,11 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
     }
 
     // "My" is used to avoid conflicts with parent class
-    onMyMouseDown(): void {
+    onMyPointerDown(e: React.PointerEvent<HTMLElement>): void {
+        // The push mode runs on pointer events: a finger fires the mouse events only when it is lifted, so the
+        // state was never on while it held the button (#475). The capture brings the release to this button
+        // even where it happens outside of it, or the state would stay on.
+        e.currentTarget.setPointerCapture(e.pointerId);
         const oid = this.getControlOid();
         if (oid) {
             this.props.context.setValue(oid, !this.state.rxData.invert);
@@ -475,7 +479,7 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
     }
 
     // "My" is used to avoid conflicts with parent class
-    onMyMouseUp(): void {
+    onMyPointerUp(): void {
         const oid = this.getControlOid();
         if (oid) {
             this.props.context.setValue(oid, !!this.state.rxData.invert);
@@ -642,14 +646,19 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             <Button
                 variant={this.state.rxData.variant === undefined ? 'contained' : (this.state.rxData.variant as any)}
                 color={isOn ? 'primary' : 'grey'}
-                onMouseDown={
+                onPointerDown={
                     this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
-                        ? () => this.onMyMouseDown()
+                        ? e => this.onMyPointerDown(e)
                         : undefined
                 }
-                onMouseUp={
+                onPointerUp={
                     this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
-                        ? () => this.onMyMouseUp()
+                        ? () => this.onMyPointerUp()
+                        : undefined
+                }
+                onPointerCancel={
+                    this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
+                        ? () => this.onMyPointerUp()
                         : undefined
                 }
                 onClick={
@@ -675,14 +684,19 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
             <Fab
                 style={style}
                 color={isOn ? 'primary' : ('grey' as any)}
-                onMouseDown={
+                onPointerDown={
                     this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
-                        ? () => this.onMyMouseDown()
+                        ? e => this.onMyPointerDown(e)
                         : undefined
                 }
-                onMouseUp={
+                onPointerUp={
                     this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
-                        ? () => this.onMyMouseUp()
+                        ? () => this.onMyPointerUp()
+                        : undefined
+                }
+                onPointerCancel={
+                    this.state.rxData.pushMode && !this.state.rxData.readOnly && !this.props.editMode
+                        ? () => this.onMyPointerUp()
                         : undefined
                 }
                 onClick={
