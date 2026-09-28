@@ -129,6 +129,12 @@ class Swipe extends VisRxWidget<RxData> {
         });
     }
 
+    componentWillUnmount(): void {
+        super.componentWillUnmount();
+        // the gestures are heard on the document, which outlives the view of this widget
+        this.swipeable?.destroy();
+    }
+
     // eslint-disable-next-line class-methods-use-this
     getWidgetInfo(): RxWidgetInfo {
         return Swipe.getWidgetInfo();
