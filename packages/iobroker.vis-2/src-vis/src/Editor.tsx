@@ -109,7 +109,7 @@ import VisWidgetsCatalog, {
 import VisContextMenu from './Vis/visContextMenu';
 import Runtime, { type RuntimeProps, type RuntimeState } from './Runtime';
 import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
-import { findWidgetUsages } from './Vis/visUtils';
+import { findWidgetUsages, syncMultipleWidgets } from './Vis/visUtils';
 import { getAdornerLayer } from './Vis/visAdornerLayer';
 import { getDefaultGridSpan, getGridLayout } from './Vis/visGridLayout';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
@@ -1494,7 +1494,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         // set timestamp
         project.___settings.ts = `${Date.now()}.${Math.random().toString(36).substring(7)}`;
 
-        Runtime.syncMultipleWidgets(project);
+        syncMultipleWidgets(project);
 
         if (!ignoreHistory) {
             // do not save history too often

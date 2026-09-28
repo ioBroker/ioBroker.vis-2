@@ -28,7 +28,7 @@ import type {
     RxWidgetInfoAttributesFieldID,
     RxWidgetInfoAttributesField,
 } from '@iobroker/types-vis-2';
-import { deepClone } from '@/Utilities/utils';
+import { deepClone, getMultiViewWidgetId } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
 
 declare global {
@@ -914,6 +914,63 @@ export function findWidgetUsages(
     const result: { view: string; wid: AnyWidgetId; attr: string }[] = [];
     Object.keys(views).forEach(_view => _view !== '___settings' && findWidgetUsages(views, _view, widgetId, _result));
     return result;
+}
+
+/**
+ * Copies every widget with "multi-views" into the other views it is shown in, and marks the widgets that other
+ * widgets show (`usedInWidget`)
+ *
+ * @param project the project to change in place
+ */
+export function syncMultipleWidgets(project: Project): void {
+    project ||= store.getState().visProject;
+
+    Object.keys(project).forEach(view => {
+        if (view === '___settings') {
+            return;
+        }
+
+        const oView = project[view];
+        const widgetIDs: AnyWidgetId[] = Object.keys(oView.widgets) as AnyWidgetId[];
+        widgetIDs.forEach(widgetId => {
+            const oWidget = oView.widgets[widgetId];
+            // if widget must be shown in more than one view
+            if (oWidget.data?.['multi-views']) {
+                const views: string[] = oWidget.data['multi-views'].split(',');
+                views.forEach(viewId => {
+                    if (viewId !== view && project[viewId]) {
+                        const multiViewId = getMultiViewWidgetId(view, widgetId);
+                        // copy all widgets, that must be shown in this view too
+                        project[viewId].widgets[multiViewId] = JSON.parse(JSON.stringify(oWidget));
+                        delete project[viewId].widgets[multiViewId].data['multi-views'];
+                        if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
+                            // copy all group widgets too
+                            const newWidget = project[viewId].widgets[multiViewId];
+                            newWidget.data.members?.forEach((memberId, i) => {
+                                const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
+                                project[viewId].widgets[newId] = JSON.parse(JSON.stringify(oView.widgets[memberId]));
+                                delete project[viewId].widgets[newId].data['multi-views']; // do not allow multi-multi-views
+                                // the member belongs to the copy of the group, the original is not in this view
+                                project[viewId].widgets[newId].groupid = multiViewId as GroupWidgetId;
+                                newWidget.data.members![i] = newId;
+                                // do not copy members of multi-group
+                                if (project[viewId].widgets[newId].data.members) {
+                                    project[viewId].widgets[newId].data.members = [];
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            // try to find this widget in other widgets under "widget" or "widgetX" name
+            if (findWidgetUsages(project, view, widgetId).length) {
+                oWidget.usedInWidget = true;
+            } else if (oWidget.usedInWidget) {
+                delete oWidget.usedInWidget;
+            }
+        });
+    });
 }
 
 export function applyTitleAndIcon(

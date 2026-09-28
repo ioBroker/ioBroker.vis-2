@@ -43,7 +43,7 @@ import type {
     WidgetStyle,
 } from '@iobroker/types-vis-2';
 import VisEngine from './Vis/visEngine';
-import { applyTitleAndIcon, extractBinding, findWidgetUsages, readFile } from './Vis/visUtils';
+import { applyTitleAndIcon, extractBinding, readFile, syncMultipleWidgets } from './Vis/visUtils';
 import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
@@ -51,7 +51,7 @@ import { getNewViewSettings } from './Vis/visGridLayout';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
-import { getMultiViewWidgetId, hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
+import { hasProjectAccess, hasViewAccess, safeParseLS } from './Utilities/utils';
 
 import enLang from './i18nRuntime/en.json';
 import deLang from './i18nRuntime/de.json';
@@ -562,56 +562,6 @@ export default class Runtime<
         });
     }
 
-    static syncMultipleWidgets(project: Project): void {
-        project ||= store.getState().visProject;
-        Object.keys(project).forEach(view => {
-            if (view === '___settings') {
-                return;
-            }
-
-            const oView = project[view];
-            const widgetIDs: AnyWidgetId[] = Object.keys(oView.widgets) as AnyWidgetId[];
-            widgetIDs.forEach(widgetId => {
-                const oWidget = oView.widgets[widgetId];
-                // if widget must be shown in more than one view
-                if (oWidget.data?.['multi-views']) {
-                    const views: string[] = oWidget.data['multi-views'].split(',');
-                    views.forEach(viewId => {
-                        if (viewId !== view && project[viewId]) {
-                            const multiViewId = getMultiViewWidgetId(view, widgetId);
-                            // copy all widgets, that must be shown in this view too
-                            project[viewId].widgets[multiViewId] = JSON.parse(JSON.stringify(oWidget));
-                            delete project[viewId].widgets[multiViewId].data['multi-views'];
-                            if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
-                                // copy all group widgets too
-                                const newWidget = project[viewId].widgets[multiViewId];
-                                newWidget.data.members?.forEach((memberId, i) => {
-                                    const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
-                                    project[viewId].widgets[newId] = JSON.parse(
-                                        JSON.stringify(oView.widgets[memberId]),
-                                    );
-                                    delete project[viewId].widgets[newId].data['multi-views']; // do not allow multi-multi-views
-                                    newWidget.data.members![i] = newId;
-                                    // do not copy members of multi-group
-                                    if (project[viewId].widgets[newId].data.members) {
-                                        project[viewId].widgets[newId].data.members = [];
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-
-                // try to find this widget in other widgets under "widget" or "widgetX" name
-                if (findWidgetUsages(project, view, widgetId).length) {
-                    oWidget.usedInWidget = true;
-                } else if (oWidget.usedInWidget) {
-                    delete oWidget.usedInWidget;
-                }
-            });
-        });
-    }
-
     static findViewWithNearestResolution(project: Project, resultRequired?: boolean): string | null | undefined {
         const w = window.innerWidth;
         const h = window.innerHeight;
@@ -799,7 +749,7 @@ export default class Runtime<
         }
 
         // copy multi-views to corresponding views
-        Runtime.syncMultipleWidgets(project);
+        syncMultipleWidgets(project);
 
         if (this.state.runtime) {
             if (project.___settings.reloadOnEdit !== false) {
