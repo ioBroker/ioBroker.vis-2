@@ -251,4 +251,44 @@ describe('syncMultipleWidgets', () => {
         expect(Object.keys(project.source.widgets)).toEqual(['g000001', 'w000001', 'w000002', 'w000003']);
         expect(project.missing).toBeUndefined();
     });
+
+    it('takes the copy out of a view that was taken out of "multi-views"', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        // the editor syncs the project it changed, and that still holds the copies of the sync before (#417)
+        project.source.widgets.w000003.data['multi-views'] = null;
+        project.source.widgets.g000001.data['multi-views'] = null;
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.target.widgets)).toEqual([]);
+    });
+
+    it('takes out the copies of a widget that was deleted', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        delete project.source.widgets.w000003;
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.target.widgets).sort()).toEqual([
+            'vsource_g000001',
+            'vsource_w000001',
+            'vsource_w000002',
+        ]);
+    });
+
+    it('keeps the widgets of the view itself', () => {
+        const project = multiViewProject();
+        (project.target.widgets as Record<string, unknown>).w000010 = {
+            tpl: 'tplHtml',
+            data: { html: 'own' },
+            style: {},
+        };
+        syncMultipleWidgets(project);
+        syncMultipleWidgets(project);
+
+        expect(project.target.widgets.w000010.data.html).toBe('own');
+        expect(Object.keys(project.target.widgets)).toHaveLength(5);
+    });
 });

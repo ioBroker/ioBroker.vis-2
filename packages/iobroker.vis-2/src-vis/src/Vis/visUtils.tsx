@@ -925,6 +925,19 @@ export function findWidgetUsages(
 export function syncMultipleWidgets(project: Project): void {
     project ||= store.getState().visProject;
 
+    // The editor syncs the project it has just changed, which still holds the copies of the last sync. Drop them
+    // all, or a copy stays in a view that was taken out of "multi-views" or whose widget was deleted (#417).
+    // Only a copy has "_" in its ID, see `getMultiViewWidgetId` and `unsyncMultipleWidgets`.
+    Object.keys(project).forEach(view => {
+        if (view !== '___settings') {
+            for (const widgetId of Object.keys(project[view].widgets) as AnyWidgetId[]) {
+                if (widgetId.includes('_')) {
+                    delete project[view].widgets[widgetId];
+                }
+            }
+        }
+    });
+
     Object.keys(project).forEach(view => {
         if (view === '___settings') {
             return;
