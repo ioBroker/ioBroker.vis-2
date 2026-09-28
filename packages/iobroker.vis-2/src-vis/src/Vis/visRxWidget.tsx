@@ -99,6 +99,14 @@ export const POSSIBLE_MUI_STYLES = [
  */
 const FRAME_MUI_STYLES = ['border', 'border-color', 'border-style', 'border-width', 'box-shadow'];
 
+/** Where a flex box puts its content for the text-align of the widget, see `getMuiStyle` */
+const TEXT_ALIGN_TO_JUSTIFY: Record<string, string> = {
+    left: 'flex-start',
+    start: 'flex-start',
+    right: 'flex-end',
+    end: 'flex-end',
+};
+
 export class VisRxWidget<
     TRxData extends Record<string, any>,
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
@@ -807,6 +815,14 @@ export class VisRxWidget<
         }
         if (muiStyle.fontSize) {
             muiStyle.fontSize = VisBaseWidget.correctStylePxValue(muiStyle.fontSize);
+        }
+
+        // A MUI button lays out its label as a flex box, which does not care for text-align (#426), so the label
+        // is moved to the side the text is aligned to. Center is left as it is: a button has its label there
+        // anyway, and a switch or a checkbox that spans the widget would leave its place at the start.
+        const justify = TEXT_ALIGN_TO_JUSTIFY[muiStyle.textAlign as string];
+        if (justify && !muiStyle.justifyContent) {
+            muiStyle.justifyContent = justify;
         }
 
         return muiStyle;
