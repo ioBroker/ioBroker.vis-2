@@ -40,9 +40,20 @@ const styles: Record<string, any> = {
     disabled: (theme: VisTheme) => ({
         color: theme.palette.action.disabled,
     }),
+    /*
+     * The buttons of a group.
+     *
+     * They wrap, because the narrowest form of the toolbar flattens every button of a group into this one
+     * row (see `render`), which makes a group wider than the room the header has for it - and a flex item
+     * that cannot shrink below its content overflows its container to the right, where the user part sits
+     * (#570). With the wrap, the widest button is all a group needs, so it folds instead of running over.
+     */
     toolbarItems: {
         display: 'flex',
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        rowGap: 4,
         flex: 1,
     },
     toolbarCol: {

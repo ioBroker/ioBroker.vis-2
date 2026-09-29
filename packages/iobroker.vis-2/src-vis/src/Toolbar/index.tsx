@@ -42,8 +42,16 @@ const styles: Record<string, any> = {
         margin: '0px 4px',
         width: 120,
     },
+    /*
+     * The user, the theme and the menu, at the right end of the header.
+     *
+     * This was a float, and a float is invisible to a flex container: the groups of the toolbar beside it
+     * are laid out as if it were not there, so they ran under it (#570). The header is a flex row now and
+     * this is an item of it - `order` puts it at the end, where the DOM has it first.
+     */
     right: {
-        float: 'right',
+        order: 1,
+        flexShrink: 0,
         display: 'inline-flex',
         flexDirection: 'column',
         position: 'relative',
@@ -377,7 +385,11 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
         }
 
         return (
-            <span style={styles.right}>
+            // the GUI test of the toolbar looks for this class, see test/testAdapter.gui.js
+            <span
+                className="vis-toolbar-right"
+                style={styles.right}
+            >
                 {this.state.upload ? (
                     <LinearProgress
                         variant="determinate"
@@ -422,6 +434,8 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
             <Box
                 component="div"
                 sx={styles.header}
+                // the row of the header: the toolbar takes what the right part leaves it, see `styles.right`
+                style={{ display: 'flex', alignItems: 'flex-start' }}
             >
                 <style>
                     {`
@@ -446,7 +460,20 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                         styles.toolbar,
                         this.props.toolbarHeight !== 'full' && styles.narrowToolbar,
                     )}
-                    style={{ alignItems: 'initial' }}
+                    // The groups take the width the right part (user, theme, menu) leaves them. When they need
+                    // more, a group wraps into another row - otherwise they ran on under that part and lay over
+                    // the name of the user, first of all in the narrowest form, which moves the user up (#570).
+                    // Known limit: a single group wider than the room still reaches under it.
+                    // The groups take the width the right part leaves them, and a group that does not fit
+                    // wraps into another row instead of running under that part (#570). The narrowest form
+                    // of the toolbar is the one where that used to happen, being the widest.
+                    style={{
+                        alignItems: 'initial',
+                        flex: '1 1 auto',
+                        minWidth: 0,
+                        flexWrap: 'wrap',
+                        rowGap: 4,
+                    }}
                 >
                     <Views
                         toolbarHeight={this.props.toolbarHeight}
