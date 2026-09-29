@@ -11,6 +11,8 @@ import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../
 interface WindowRxData extends StandardRxData {
     /** `window` or `door`, which decides the symbol */
     kind?: 'window' | 'door';
+    /** The side the handle is on; the leaf is hinged on the other one */
+    handle?: 'left' | 'right';
     /** The state says the opposite of what it means */
     inverted?: boolean | 'true';
     /** The value that means tilted, where the state knows three positions */
@@ -18,11 +20,29 @@ interface WindowRxData extends StandardRxData {
 }
 
 /**
+ * The values a state can carry, in the order the object lists them.
+ *
+ * `common.states` comes in two shapes: a list of words, whose values are the places in it, and a map of the
+ * value to the word. Only the second one was read here, so a window that listed its three positions as a list
+ * was drawn open as soon as it was tilted.
+ *
+ * @param states - what the object says about the values of the state
+ */
+function stateValues(states: ioBroker.StateCommon['states']): string[] {
+    if (!states) {
+        return [];
+    }
+
+    return Array.isArray(states) ? states.map((_word, index) => `${index}`) : Object.keys(states);
+}
+
+/**
  * What the window is doing, out of the one state it has.
  *
  * ioBroker knows two kinds of window: one that is open or closed, and one that can also be tilted - the
  * detector calls the second `windowTilt` and it usually carries 0, 1 and 2. Which of the two this is does not
- * have to be set: a state with three values in `common.states` is the second kind, and that is that.
+ * have to be set: a state with three values in `common.states` is the second kind, and the middle of them is
+ * the tilted one. `tiltValue` is there for the window that says it in another way.
  *
  * @param context - the widget, its states and its settings
  */
@@ -33,19 +53,17 @@ function windowState(context: DeviceContext<WindowRxData>): WindowState | null {
     }
     const inverted = context.data.inverted === true || context.data.inverted === 'true';
 
-    // a value the user named as the tilted one, or the middle of three
-    const states = context.commonOf('oid')?.states;
-    const tilt =
-        context.data.tiltValue ??
-        (states && !Array.isArray(states) && Object.keys(states).length === 3 ? Object.keys(states)[1] : undefined);
+    // the value the user named as the tilted one, or the middle of three
+    const values = stateValues(context.commonOf('oid')?.states);
+    const tilt = context.data.tiltValue || (values.length === 3 ? values[1] : undefined);
     const text = asText(raw);
     if (tilt !== undefined && text === `${tilt}`) {
         return 'tilted';
     }
 
     const truthy = raw === true || raw === 1 || raw === 'true' || raw === '1' || raw === 'open';
-    // with three values the last one is open, and 0 and false are closed
-    const open = states && !Array.isArray(states) ? text === Object.keys(states).slice(-1)[0] : truthy;
+    // where the object says what the values are, the last of them is open and everything else is closed
+    const open = values.length ? text === values[values.length - 1] : truthy;
 
     return (inverted ? !open : open) ? 'open' : 'closed';
 }
@@ -86,6 +104,17 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
                 { value: 'door', label: 'sensor_door' },
             ],
         },
+        {
+            name: 'handle',
+            type: 'select',
+            label: 'window_handle',
+            default: 'right',
+            tooltip: 'window_handle_tooltip',
+            options: [
+                { value: 'right', label: 'window_handle_right' },
+                { value: 'left', label: 'window_handle_left' },
+            ],
+        },
         { name: 'tiltValue', label: 'tilt_value', tooltip: 'tilt_value_tooltip' },
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
     ],
@@ -112,6 +141,8 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
             body: (
                 <WindowGlass
                     state={state || 'closed'}
+                    kind={context.data.kind === 'door' ? 'door' : 'window'}
+                    handle={context.data.handle === 'left' ? 'left' : 'right'}
                     accent={accent}
                     outline={theme.palette.text.disabled}
                     background={theme.palette.background.default}

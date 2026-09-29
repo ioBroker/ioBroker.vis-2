@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { alpha } from '@mui/material/styles';
 import {
     BottomNavigation,
     BottomNavigationAction,
@@ -164,17 +165,48 @@ const styles: Record<string, any> = {
     menuItem: {
         minHeight: TOOLBAR_SIZE,
     },
+    /*
+     * An entry is a pill, as the drawer of the admin draws it: it keeps a little away from the edges of
+     * the menu, so the filled one reads as a button rather than as a stripe across the whole panel.
+     */
+    menuButton: {
+        mx: '4px',
+        borderRadius: '8px',
+        minHeight: 40,
+    },
+    /*
+     * The narrow menu is a column of icons and nothing else. The padding is what puts an icon in the
+     * middle of it: the menu is 56 wide, the pill keeps 4 to either side, and an icon of 24 therefore
+     * starts 12 into the pill.
+     */
+    menuButtonNarrow: {
+        px: '12px',
+    },
+    menuIcon: {
+        minWidth: 36,
+    },
+    menuIconNarrow: {
+        minWidth: 24,
+    },
     listItemIcon: {
         width: 24,
         height: 24,
     },
-    listItemIconText: {
-        paddingLeft: 8,
-        opacity: 1,
-        transition: 'opacity 0.3s ease-in-out',
-        position: 'absolute',
-        top: 12,
-        left: 16,
+    /*
+     * The first letter of a page that brings no icon, for the narrow menu.
+     *
+     * It used to be written over the icon, absolutely positioned against whatever happened to be the
+     * nearest positioned ancestor. It stands in the place of the icon now, which is a place that is
+     * already in the middle of the menu.
+     */
+    listItemIconLetter: {
+        width: 24,
+        height: 24,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 18,
+        fontWeight: 500,
     },
     listItemText: {
         whiteSpace: 'nowrap',
@@ -184,9 +216,25 @@ const styles: Record<string, any> = {
     listItemTextNarrow: {
         opacity: 0,
     },
-    selectedMenu: (theme: VisTheme): React.CSSProperties => ({
-        backgroundColor: theme.palette.secondary.main,
-        color: theme.palette.secondary.contrastText,
+    /*
+     * The page one is on, filled the way the admin fills it: a gradient of the primary colour, and the
+     * label and the icon in whichever of black and white can be read on it.
+     *
+     * The gradient is worked out from the palette rather than taken from the modern themes, so a project
+     * on any other theme gets the same menu - and a colour the project set by hand still wins over it,
+     * see `navigationSelectedBackground`.
+     */
+    selectedMenu: (theme: VisTheme): any => ({
+        background: `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+        color: Utils.isUseBright(theme.palette.primary.main) ? '#FFFFFF' : '#000000',
+        boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.35 : 0.25)}`,
+        '& .MuiListItemIcon-root': {
+            color: Utils.isUseBright(theme.palette.primary.main) ? '#FFFFFF' : '#000000',
+        },
+        '&:hover': {
+            background: `linear-gradient(90deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
+            color: Utils.isUseBright(theme.palette.primary.main) ? '#FFFFFF' : '#000000',
+        },
     }),
     menuToolbar: {
         height: TOOLBAR_SIZE,
@@ -202,9 +250,6 @@ const styles: Record<string, any> = {
         opacity: 1,
     },
     menuToolbarNarrow: {
-        opacity: 0,
-    },
-    transparent: {
         opacity: 0,
     },
 };
@@ -408,17 +453,19 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
      */
     renderMenuItem(item: MenuItem, settings: ViewSettings, inFolder: boolean): React.JSX.Element {
         const active = this.props.activeView === item.view;
+        const full = this.props.menuWidth === 'full';
         const color = active ? settings.navigationSelectedColor : settings.navigationColor;
+        // a project that set a colour of its own keeps it: it wins over the fill of the theme
+        const ownBackground = active ? settings.navigationSelectedBackground : undefined;
 
         const menuItem = (
             <ListItem
                 key={item.view}
                 disablePadding
-                sx={Utils.getStyle(this.props.theme, styles.menuItem, active && styles.selectedMenu)}
+                sx={styles.menuItem}
                 style={{
-                    backgroundColor: active ? settings.navigationSelectedBackground : undefined,
                     // a page of a folder is set in, so the folder it belongs to can be seen at a glance
-                    paddingLeft: inFolder && this.props.menuWidth === 'full' ? 16 : undefined,
+                    paddingLeft: inFolder && full ? 16 : undefined,
                 }}
                 onClick={(): void => {
                     if (settings.navigationHideOnSelection) {
@@ -427,40 +474,32 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                     this.props.context.changeView(item.view);
                 }}
             >
-                <ListItemButton>
-                    <ListItemIcon>
+                <ListItemButton
+                    // the fill belongs to the button and not to the row around it: a pill that stops
+                    // short of the edges of the menu is what makes it a button rather than a stripe
+                    selected={active}
+                    sx={Utils.getStyle(
+                        this.props.theme,
+                        styles.menuButton,
+                        !full && styles.menuButtonNarrow,
+                        active && !ownBackground && styles.selectedMenu,
+                    )}
+                    style={ownBackground ? { background: ownBackground, color } : undefined}
+                >
+                    <ListItemIcon sx={full ? styles.menuIcon : styles.menuIconNarrow}>
                         {item.icon ? (
                             <Icon
                                 src={item.icon}
                                 style={{ color, backgroundColor: 'rgba(1,1,1,0)' }}
-                                sx={Utils.getStyle(
-                                    this.props.theme,
-                                    styles.listItemIcon,
-                                    active && styles.selectedMenu,
-                                )}
+                                sx={styles.listItemIcon}
                             />
+                        ) : full ? (
+                            <DashboardIcon style={{ color, backgroundColor: 'rgba(1,1,1,0)' }} />
                         ) : (
-                            <>
-                                <DashboardIcon
-                                    style={{ color, backgroundColor: 'rgba(1,1,1,0)' }}
-                                    sx={Utils.getStyle(
-                                        this.props.theme,
-                                        this.props.menuWidth !== 'full' && styles.transparent,
-                                        active && styles.selectedMenu,
-                                    )}
-                                />
-                                {item.text ? (
-                                    <span
-                                        style={{
-                                            ...styles.listItemIconText,
-                                            ...(this.props.menuWidth === 'full' ? styles.transparent : undefined),
-                                            color,
-                                        }}
-                                    >
-                                        {item.text[0].toUpperCase()}
-                                    </span>
-                                ) : null}
-                            </>
+                            // no icon and no room for a name: the first letter of it is what is left
+                            <span style={{ ...styles.listItemIconLetter, color }}>
+                                {(item.text || item.view)[0].toUpperCase()}
+                            </span>
                         )}
                     </ListItemIcon>
                     <ListItemText
@@ -521,11 +560,11 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                 <React.Fragment key={entry.id}>
                     <ListItem
                         disablePadding
-                        sx={Utils.getStyle(this.props.theme, styles.menuItem)}
+                        sx={styles.menuItem}
                         onClick={() => this.toggleFolder(entry.id)}
                     >
-                        <ListItemButton>
-                            <ListItemIcon>
+                        <ListItemButton sx={styles.menuButton}>
+                            <ListItemIcon sx={styles.menuIcon}>
                                 <FolderIcon
                                     style={{ color: settings.navigationColor, backgroundColor: 'rgba(1,1,1,0)' }}
                                 />

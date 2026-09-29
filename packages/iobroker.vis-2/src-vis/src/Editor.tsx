@@ -1580,7 +1580,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             this.setViewsManager(false);
             await this.changeView(view);
         } else if (!project.___settings.openedViews.includes(this.state.selectedView)) {
-            await this.changeView(project.___settings.openedViews[0]);
+            // the tab that was showing is gone, so the next one takes over - and where the last one was
+            // closed there is none, which is a workspace without a view rather than a view called
+            // `undefined`
+            await this.changeView(project.___settings.openedViews[0] || '');
         }
     };
 
@@ -2460,7 +2463,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     themeType={this.state.themeType}
                     selectedWidgets={this.state.editMode ? this.state.selectedWidgets : []}
                     selectedSection={
-                        this.state.editMode && this.state.selectedSection?.view === this.state.selectedView
+                        this.state.editMode &&
+                        this.state.selectedSection &&
+                        this.state.selectedSection.view === this.state.selectedView
                             ? this.state.selectedSection.id
                             : null
                     }

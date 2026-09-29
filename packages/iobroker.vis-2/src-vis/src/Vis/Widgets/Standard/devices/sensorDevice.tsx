@@ -13,6 +13,8 @@ import {
 
 import { Types } from '@iobroker/type-detector';
 
+import { Icon } from '@iobroker/gui-components';
+
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
 
 /** What kind of thing the sensor watches, which decides its symbol and its two words */
@@ -26,6 +28,14 @@ interface SensorRxData extends StandardRxData {
     textOn?: string;
     /** What it is called while it is false */
     textOff?: string;
+    /** The picture it is drawn with while it is true; without it the symbol of its kind */
+    iconOn?: string;
+    /** The picture while it is false */
+    iconOff?: string;
+    /** The colour it is drawn in while it is true */
+    colorOn?: string;
+    /** The colour while it is false */
+    colorOff?: string;
     /** This is something to be alarmed about, not something to know */
     alarm?: boolean | 'true';
 }
@@ -113,6 +123,10 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
         { name: 'textOn', label: 'text_on' },
         { name: 'textOff', label: 'text_off' },
+        { name: 'iconOn', type: 'icon-image', label: 'icon_on', tooltip: 'sensor_own_look_tooltip' },
+        { name: 'iconOff', type: 'icon-image', label: 'icon_off' },
+        { name: 'colorOn', type: 'color', label: 'color_on' },
+        { name: 'colorOff', type: 'color', label: 'color_off' },
     ],
     tile: { columns: 6, rows: 2, minColumns: 3 },
     markerShape: 'icon',
@@ -129,13 +143,29 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
         const alarming = (data.alarm === true || data.alarm === 'true') && active;
 
         const word = active ? data.textOn || t(WORDS[kind].on) : data.textOff || t(WORDS[kind].off);
-        const accent = !known ? accents.off : alarming ? accents.red : active ? accents.yellow : accents.off;
+
+        // what the widget was told to use for this state, and otherwise the colours of the set
+        const ownColour = active ? data.colorOn : data.colorOff;
+        const accent =
+            ownColour || (!known ? accents.off : alarming ? accents.red : active ? accents.yellow : accents.off);
+        const ownIcon = active ? data.iconOn : data.iconOff;
 
         return {
             accent,
             // an alarm fills its card and its marker; an open window colours the ring and leaves it at that
             active: alarming,
-            icon: alarming ? <AlarmIcon style={{ width: '100%', height: '100%' }} /> : ICONS[kind],
+            icon: ownIcon ? (
+                <Icon
+                    src={ownIcon}
+                    style={{ width: '100%', height: '100%' }}
+                />
+            ) : alarming ? (
+                <AlarmIcon style={{ width: '100%', height: '100%' }} />
+            ) : (
+                ICONS[kind]
+            ),
+            // a picture that was chosen for this state is not replaced by the general icon of the widget
+            ownIcon: !!ownIcon,
             value: known ? word : '--',
             valueColor: accent,
             stateText: known ? word : '--',

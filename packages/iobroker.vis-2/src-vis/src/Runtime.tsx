@@ -967,7 +967,9 @@ export default class Runtime<
         }
         newState.selectedWidgets = selectedWidgets;
 
+        // no view is open at all, which is what closing the last tab leaves: nothing to add to the tabs
         if (
+            selectedView &&
             !this.state.runtime &&
             !store.getState().visProject.___settings.openedViews.includes(selectedView) &&
             this.changeProject
@@ -1376,7 +1378,11 @@ export default class Runtime<
                 selectedGroup={this.state.selectedGroup}
                 setSelectedGroup={this.setSelectedGroup}
                 selectedSection={
-                    this.state.selectedSection?.view === this.state.selectedView ? this.state.selectedSection.id : null
+                    // `selectedSection &&` rather than `?.`: with the last view closed there is no view
+                    // either, and `undefined === undefined` used to be taken for a section of this view
+                    this.state.selectedSection && this.state.selectedSection.view === this.state.selectedView
+                        ? this.state.selectedSection.id
+                        : null
                 }
                 setSelectedSection={this.setSelectedSection}
                 onWidgetsChanged={this.onWidgetsChanged}

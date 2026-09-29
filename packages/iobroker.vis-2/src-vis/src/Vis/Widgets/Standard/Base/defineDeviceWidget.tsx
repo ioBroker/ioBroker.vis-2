@@ -181,7 +181,7 @@ export interface DeviceResult {
     /** What the value is drawn in; without it it takes the text colour of the theme */
     valueColor?: string;
     /** A quiet word left of the value, like `closed` on a blind */
-    label?: string;
+    label?: React.ReactNode;
     /** What stands beside the value: a toggle, a button */
     control?: React.ReactNode;
     /** Something that fills the middle, like the window of a blind */
@@ -190,6 +190,15 @@ export interface DeviceResult {
     aside?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
+    /** The value stands under the name rather than under the body, see `StandardFrame` */
+    valueOnTop?: boolean;
+    /**
+     * The icon belongs to the state, so the icon field of the widget does not replace it.
+     *
+     * A widget that lets one picture be chosen for `on` and another for `off` has already answered the
+     * question the general icon field asks, and the more exact answer is the one to keep.
+     */
+    ownIcon?: boolean;
     /** Drawn behind everything, like the history of a value */
     background?: React.ReactNode;
     /** What the device is doing in two or three words, for the caption of a marker and for one row */
@@ -385,7 +394,12 @@ function styleBox(
  */
 export function defineDeviceWidget<RxData extends StandardRxData>(
     definition: DeviceDefinition<RxData>,
-): Record<'Relative' | 'Absolute', typeof VisRxWidget<RxData>> {
+): {
+    Relative: typeof VisRxWidget<RxData>;
+    Absolute: typeof VisRxWidget<RxData>;
+    /** What the two of them were made from, so a test or a preview can draw the device without a widget */
+    definition: DeviceDefinition<RxData>;
+} {
     const make = (which: StandardSet): typeof VisRxWidget<RxData> => {
         const set = SETS[which];
 
@@ -657,6 +671,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 body={card.body}
                                 aside={card.aside}
                                 footer={card.footer}
+                                valueOnTop={card.valueOnTop}
                                 background={card.background}
                                 container={card.container}
                                 noCard
@@ -768,15 +783,17 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
 
                 const result = definition.render(context);
 
-                // an icon taken from the object, or set by hand, wins over the one of the device type
-                const icon = this.state.rxData.icon ? (
-                    <Icon
-                        src={this.state.rxData.icon}
-                        style={{ width: '100%', height: '100%' }}
-                    />
-                ) : (
-                    result.icon
-                );
+                // an icon taken from the object, or set by hand, wins over the one of the device type -
+                // unless the device brought one for this state, which is the more exact answer
+                const icon =
+                    this.state.rxData.icon && !result.ownIcon ? (
+                        <Icon
+                            src={this.state.rxData.icon}
+                            style={{ width: '100%', height: '100%' }}
+                        />
+                    ) : (
+                        result.icon
+                    );
 
                 // the states of the chart, and the instance that logs the first of them - a click may only
                 // promise a chart where there is one to show
@@ -891,6 +908,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             body={result.body}
                             aside={result.aside}
                             footer={result.footer}
+                            valueOnTop={result.valueOnTop}
                             background={result.background}
                             container={result.container}
                             noCard={this.state.rxData.noCard === true || this.state.rxData.noCard === 'true'}
@@ -907,5 +925,5 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
         };
     };
 
-    return { Relative: make('relative'), Absolute: make('absolute') };
+    return { Relative: make('relative'), Absolute: make('absolute'), definition };
 }

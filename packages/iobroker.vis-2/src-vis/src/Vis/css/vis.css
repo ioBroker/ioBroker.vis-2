@@ -655,6 +655,22 @@ html {
     }
 }
 
+/* A PIN that was not the PIN, see Widgets/Standard/Base/controls/ConfirmDialog.tsx */
+@keyframes vis-standard-shake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    20%,
+    60% {
+        transform: translateX(-7px);
+    }
+    40%,
+    80% {
+        transform: translateX(7px);
+    }
+}
+
 /* The drum of a machine that is running without saying how far it has got, see devices/applianceDevice.tsx */
 @keyframes vis-standard-spin {
     from {
@@ -767,6 +783,24 @@ html {
 .vis-card-container {
     container-type: size;
     container-name: vis-card;
+}
+
+/*
+ * The blocks of the alarm system, in the order they are given up when the card is short.
+ *
+ * The modes are what the card is for and stay; the zones are the furthest from switching the system, so they
+ * go first, and the button that arms with a delay after them.
+ */
+@container vis-card (max-height: 230px) {
+    .vis-security-zones {
+        display: none !important;
+    }
+}
+
+@container vis-card (max-height: 180px) {
+    .vis-security-delay {
+        display: none !important;
+    }
 }
 
 /* The row of modes of a thermostat goes where the card is too short for the dial and the buttons both */

@@ -35,7 +35,7 @@ export interface StandardFrameProps {
     /** An arrow beside the value, saying which way it has gone */
     trend?: React.ReactNode;
     /** A quiet word left of the value, like `closed` on a blind */
-    label?: string;
+    label?: React.ReactNode;
     /** What stands beside the value: a toggle, a button */
     control?: React.ReactNode;
     /** Something that fills the middle, like the window of a blind */
@@ -44,6 +44,14 @@ export interface StandardFrameProps {
     aside?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
+    /**
+     * The value stands under the name rather than under the body.
+     *
+     * For a card whose body is the point of it - the days of a weather forecast - rather than a drawing of
+     * the value: the reading is read first and belongs at the top, and the body then gets the whole rest of
+     * the card instead of a strip of it.
+     */
+    valueOnTop?: boolean;
     /** Drawn behind everything and clipped to the card, like the history of a value */
     background?: React.ReactNode;
     /** No card around it: only what the widget shows, for a widget on a floor plan */
@@ -243,9 +251,9 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
          * slider but no drawing it comes right under the name, and with neither it drops to the bottom edge.
          */
         const hasValue = props.value !== undefined && props.value !== null;
-        const valueUnderName = hasValue && !props.body && !!props.footer;
-        const valueUnderBody = hasValue && !!props.body;
-        const valueAtBottom = hasValue && !props.body && !props.footer;
+        const valueUnderName = hasValue && (props.valueOnTop || (!props.body && !!props.footer));
+        const valueUnderBody = hasValue && !!props.body && !props.valueOnTop;
+        const valueAtBottom = hasValue && !props.body && !props.footer && !props.valueOnTop;
 
         const valueRow = (
             <div

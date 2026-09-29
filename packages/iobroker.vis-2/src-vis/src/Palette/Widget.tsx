@@ -39,10 +39,20 @@ const styles: Record<string, any> = {
         height: 30,
         transformOrigin: '0 0',
     },
+    /*
+     * A picture of a widget, in a box of its own.
+     *
+     * The box is given rather than left to the picture, because a picture does not always bring a size: an
+     * SVG that carries no `width` and `height` on its root - or sets them to a percentage in a stylesheet of
+     * its own, which is what the `flow` set does - has no size to be asked for, and a browser gives such an
+     * image no width at all inside a flex box. It was drawn as `0 x 0` and the palette showed a name with
+     * nothing above it. `scale-down` is what keeps the box from changing anything else: a picture that is
+     * smaller than the box stays exactly as large as it is, and only a larger one is fitted into it.
+     */
     widgetImageWithSrc: {
-        maxWidth: 60,
-        maxHeight: 32,
-        width: 'auto',
+        width: 60,
+        height: 32,
+        objectFit: 'scale-down',
         borderRadius: 4,
     },
     /*
@@ -53,8 +63,10 @@ const styles: Record<string, any> = {
      */
     widgetImageTooltip: {
         maxWidth: 180,
-        maxHeight: 110,
+        // a definite height, for the same reason as above; the width still follows the picture
+        height: 110,
         width: 'auto',
+        objectFit: 'scale-down',
         borderRadius: 4,
     },
     /* A drawn preview in the tooltip needs a box of its own: an SVG of `100%` has nothing to be a percent of */
@@ -112,6 +124,9 @@ const styles: Record<string, any> = {
         cursor: 'grab',
     },
     widgetTileImage: {
+        // the width is given, not left to the content: a picture whose own width is a percentage of its box
+        // would otherwise be a percentage of itself, and a browser answers that with nothing at all
+        width: '100%',
         height: 34,
         display: 'flex',
         alignItems: 'center',
@@ -120,8 +135,10 @@ const styles: Record<string, any> = {
     },
     widgetTileImageWithSrc: {
         maxWidth: '100%',
-        maxHeight: 34,
+        // the row of a tile is 34 high, and a picture that brings no size of its own gets one here
+        height: 34,
         width: 'auto',
+        objectFit: 'scale-down',
         borderRadius: 4,
     },
     widgetTileTitle: {
