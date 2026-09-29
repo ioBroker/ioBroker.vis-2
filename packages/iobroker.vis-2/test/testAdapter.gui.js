@@ -342,6 +342,8 @@ describe('vis', () => {
         // an empty title shows nothing, and a title without markup shows as it is
         assert.deepStrictEqual(await titleOf(''), { bold: null, text: '' });
         assert.deepStrictEqual(await titleOf('Living room'), { bold: null, text: 'Living room' });
+    });
+
     // MUI gives the text of an input the color of the theme, so the color of the widget - set in its style or by a
     // CSS class - did not reach the text of the jQui inputs (#521).
     it('Check that the jQui inputs take the color of the widget', async function () {
@@ -376,6 +378,8 @@ describe('vis', () => {
         );
         // The select of `tplJquiSelectList` is not checked here: the editor disables it, and a disabled input
         // takes the disabled color of the theme on purpose.
+    });
+
     // The runtime clips the content of a widget at its box (`.vis-widget { overflow: hidden }`), and the editor has
     // to show the same: an image larger than its widget was drawn whole in the editor and cut in the runtime
     // (#582). The editor used to lift the clipping for its name plate, which sat outside the box - that plate is
