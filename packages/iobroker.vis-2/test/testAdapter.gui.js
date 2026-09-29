@@ -78,6 +78,54 @@ describe('vis', () => {
         await runtimePage.close();
     });
 
+    // The label of a jQui button follows the text-align of the widget. A MUI button lays out its label as a flex
+    // box, which does not care for text-align, so the label stayed in the middle (#426).
+    it('Check text-align of a jQui button', async function () {
+        this.timeout(60_000);
+
+        const gaps = {};
+        for (const align of ['left', 'right']) {
+            const wid = await gPage.evaluate(
+                (data, style) => window.visAddWidget('tplJquiBool', 0, 0, data, style),
+                { type: 'button', text_false: 'Label', text_true: 'Label' },
+                {
+                    position: 'absolute',
+                    left: '20px',
+                    top: '20px',
+                    width: '240px',
+                    height: '40px',
+                    'text-align': align,
+                },
+            );
+            const button = await gPage.waitForSelector(`#${wid} button`, { timeout: 5_000 });
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            // the space between the text of the label and the edges of the button
+            gaps[align] = await button.evaluate(el => {
+                const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                let text = walker.nextNode();
+                while (text && !text.textContent.trim()) {
+                    text = walker.nextNode();
+                }
+                const range = document.createRange();
+                range.selectNodeContents(text);
+                const label = range.getBoundingClientRect();
+                const box = el.getBoundingClientRect();
+                return { left: Math.round(label.left - box.left), right: Math.round(box.right - label.right) };
+            });
+            await helper.view.deleteWidget(gPage, wid, 3_500);
+        }
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+
+        assert.ok(
+            gaps.left.left < gaps.left.right,
+            `text-align: left must put the label at the left (${gaps.left.left}px left, ${gaps.left.right}px right)`,
+        );
+        assert.ok(
+            gaps.right.right < gaps.right.left,
+            `text-align: right must put the label at the right (${gaps.right.left}px left, ${gaps.right.right}px right)`,
+        );
+    });
+
     // The geometry of a widget is written by VisBaseWidget.onMove(), which computes the same rectangle twice -
     // once for the service div and once for the can.js div. This test pins down what each gesture is supposed
     // to do to that rectangle so the function can be reworked without silently moving pixels.
