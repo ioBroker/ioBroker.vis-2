@@ -461,6 +461,10 @@ class JQuiWriteState<
 
     componentWillUnmount(): void {
         super.componentWillUnmount();
+        this.stopRepeat();
+    }
+
+    stopRepeat(): void {
         this.iterateInterval && clearInterval(this.iterateInterval);
         this.iterateInterval = null;
         this.iterateTimeout && clearTimeout(this.iterateTimeout);
@@ -489,7 +493,10 @@ class JQuiWriteState<
                 color={buttonColor}
                 startIcon={text ? this.renderIcon(isActive) : null}
                 onClick={() => this.onClick()}
-                onMouseDown={() => {
+                // The repetition runs on pointer events: a finger fires the mouse events only when it is lifted,
+                // so holding the button did not repeat on a touch screen (#475). A pointer that leaves the button
+                // stops it too, or the repetition would never stop when the button is released outside of it.
+                onPointerDown={() => {
                     if (this.props.editMode) {
                         return;
                     }
@@ -507,15 +514,9 @@ class JQuiWriteState<
                         }, delay);
                     }
                 }}
-                onMouseUp={() => {
-                    if (this.props.editMode) {
-                        return;
-                    }
-                    this.iterateInterval && clearInterval(this.iterateInterval);
-                    this.iterateInterval = null;
-                    this.iterateTimeout && clearTimeout(this.iterateTimeout);
-                    this.iterateTimeout = null;
-                }}
+                onPointerUp={() => this.stopRepeat()}
+                onPointerCancel={() => this.stopRepeat()}
+                onPointerLeave={() => this.stopRepeat()}
                 variant={(this.state.rxData.variant as 'text' | 'outlined' | 'contained') || 'contained'}
             >
                 {text || this.renderIcon(isActive)}

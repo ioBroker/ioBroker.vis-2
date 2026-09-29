@@ -126,6 +126,57 @@ describe('vis', () => {
         );
     });
 
+    // The push mode of the binary state keeps the state on for as long as the button is held. It ran on mouse
+    // events, which a finger fires only when it is lifted, so on a touch screen the button was never on while it
+    // was held (#475). A mouse released outside of the button left it on for good.
+    it('Check push mode of a button', async function () {
+        this.timeout(60_000);
+
+        const wid = await gPage.evaluate(
+            (data, style) => window.visAddWidget('tplJquiBool', 0, 0, data, style),
+            { type: 'button', pushMode: true, text_false: 'OFF', text_true: 'ON' },
+            { position: 'absolute', left: '20px', top: '20px', width: '150px', height: '60px' },
+        );
+        // wait for saving
+        await new Promise(resolve => setTimeout(resolve, 5_000));
+
+        const runtimePage = await gBrowser.newPage();
+        // a touch screen has to be there when the page loads
+        await runtimePage.setViewport({ width: 1280, height: 800, hasTouch: true, isMobile: true });
+        await runtimePage.goto(`http://127.0.0.1:18082/vis-2/index.html`, { waitUntil: 'domcontentloaded' });
+        const button = await runtimePage.waitForSelector(`#${wid} button`, { timeout: 20_000 });
+        const box = await button.boundingBox();
+        const x = box.x + box.width / 2;
+        const y = box.y + box.height / 2;
+        const text = () => button.evaluate(el => el.innerText.trim());
+
+        await runtimePage.touchscreen.touchStart(x, y);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const heldByFinger = await text();
+        await runtimePage.touchscreen.touchEnd();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const liftedFinger = await text();
+
+        await runtimePage.mouse.move(x, y);
+        await runtimePage.mouse.down();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const heldByMouse = await text();
+        await runtimePage.mouse.move(x + 400, y + 300, { steps: 5 });
+        await runtimePage.mouse.up();
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const releasedOutside = await text();
+
+        await runtimePage.close();
+        // leave the view as it was found, before an assertion can stop the test
+        await helper.view.deleteWidget(gPage, wid, 3_500);
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+
+        assert.strictEqual(heldByFinger, 'ON', 'the button must be on while a finger holds it');
+        assert.strictEqual(liftedFinger, 'OFF', 'the button must be off when the finger is lifted');
+        assert.strictEqual(heldByMouse, 'ON', 'the button must be on while the mouse holds it');
+        assert.strictEqual(releasedOutside, 'OFF', 'the button must be off when the mouse is released outside of it');
+    });
+
     // The geometry of a widget is written by VisBaseWidget.onMove(), which computes the same rectangle twice -
     // once for the service div and once for the can.js div. This test pins down what each gesture is supposed
     // to do to that rectangle so the function can be reworked without silently moving pixels.
