@@ -445,9 +445,7 @@ describe('vis', () => {
         ];
         const clickInRightPart = async key => {
             await gPage.evaluate(labels => {
-                const right = [...document.querySelectorAll('span')].find(
-                    el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
-                );
+                const right = document.querySelector('.vis-toolbar-right');
                 [...right.querySelectorAll('button')].find(b => labels.includes(b.getAttribute('aria-label'))).click();
             }, labelsOf(key));
             await new Promise(resolve => setTimeout(resolve, 1_000));
@@ -457,9 +455,7 @@ describe('vis', () => {
             gPage.setViewport({ ...viewport, width }).then(async () => {
                 await new Promise(resolve => setTimeout(resolve, 1_000));
                 return gPage.evaluate(() => {
-                    const right = [...document.querySelectorAll('span')].find(
-                        el => getComputedStyle(el).float === 'right' && el.getBoundingClientRect().top < 60,
-                    );
+                    const right = document.querySelector('.vis-toolbar-right');
                     const r = right.getBoundingClientRect();
                     const lies = b =>
                         b.width && b.left < r.right && b.right > r.left && b.top < r.bottom && b.bottom > r.top;
