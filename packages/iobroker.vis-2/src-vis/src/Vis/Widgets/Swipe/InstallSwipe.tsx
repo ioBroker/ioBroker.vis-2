@@ -85,8 +85,8 @@ export default class InstallSwipe {
 
     destroy(): void {
         if (this.el?._swipe) {
-            this.el.removeEventListener('mousedown', this.moveStart, false);
-            this.el.removeEventListener('touchstart', this.moveStart, false);
+            this.el.ownerDocument.removeEventListener('mousedown', this.moveStart, false);
+            this.el.ownerDocument.removeEventListener('touchstart', this.moveStart, false);
             delete this.el._swipe;
             this.removeIndicator();
         }
@@ -135,12 +135,19 @@ export default class InstallSwipe {
     }
 
     private move = (e: MouseEvent | TouchEvent): void => {
-        e.preventDefault();
+        const { horizontal, delta, dx, dy, handler, indication } = this.direction(e);
+        // a direction without a view has no indication
+        const leadsToView = !!(handler && indication);
+
+        // A finger that goes a way with no view behind it scrolls the page, as it does without the widget: held
+        // back, a page with a swipe to the side could not be scrolled up or down (#499). A mouse is held back
+        // either way, or dragging it would select text.
+        if (leadsToView || !(e as TouchEvent).changedTouches) {
+            e.preventDefault();
+        }
 
         if (this.locked) {
-            const { horizontal, delta, dx, dy, handler, indication } = this.direction(e);
-
-            if (delta && handler && indication) {
+            if (delta && leadsToView) {
                 this.el.style.transform = horizontal ? `translateX(${dx}px)` : `translateY(${dy}px)`;
             }
             if (Math.abs(delta) > this.swipeThreshold) {
@@ -159,12 +166,14 @@ export default class InstallSwipe {
         }
         if (this.locked) {
             if (this.el) {
+                const doc = this.el.ownerDocument;
                 this.el.style.transform = '';
-                this.el.removeEventListener('mousemove', this.move, false);
-                this.el.removeEventListener('touchmove', this.move, false);
+                doc.removeEventListener('mousemove', this.move, false);
+                doc.removeEventListener('touchmove', this.move, false);
 
-                this.el.removeEventListener('mouseup', this.moveEnd, false);
-                this.el.removeEventListener('touchend', this.moveEnd, false);
+                doc.removeEventListener('mouseup', this.moveEnd, false);
+                doc.removeEventListener('touchend', this.moveEnd, false);
+                doc.removeEventListener('touchcancel', this.moveCancel, false);
             }
 
             this.x0 = null;
@@ -186,26 +195,49 @@ export default class InstallSwipe {
         }
     };
 
+    // The browser takes a touch over when it scrolls or navigates with it, and may end it with a cancel instead
+    // of an end. Without this the gesture would stay locked, and no swipe after it would be heard.
+    private moveCancel = (): void => this.removeIndicator();
+
+    /**
+     * Whether a gesture that starts here is one for the view.
+     *
+     * The view element is only as high as the window, while its widgets reach further down. Once the page is
+     * scrolled, the finger rests on the page itself below it - so a gesture on the bare page counts as well. One
+     * on anything else, a menu or a dialog, does not.
+     *
+     * @param target - where the gesture starts
+     */
+    private startsOnView(target: EventTarget | null): boolean {
+        const doc = this.el.ownerDocument;
+        return target === doc.documentElement || target === doc.body || this.el.contains(target as Node | null);
+    }
+
     private moveStart = (e: MouseEvent | TouchEvent): void => {
-        if (!this.locked) {
+        if (!this.locked && this.startsOnView(e.target)) {
             this.locked = true;
             // remember start point
             const point = InstallSwipe.unify(e);
             this.x0 = point.clientX;
             this.y0 = point.clientY;
 
-            this.el.addEventListener('mousemove', this.move, false);
-            this.el.addEventListener('touchmove', this.move, false);
+            // A touch stays with the element it started on - the page, when it started below the view - so the
+            // rest of the gesture is heard on the document. A touch listener there is passive unless it says
+            // otherwise, and could not hold the finger back.
+            const doc = this.el.ownerDocument;
+            doc.addEventListener('mousemove', this.move, false);
+            doc.addEventListener('touchmove', this.move, { passive: false });
 
-            this.el.addEventListener('mouseup', this.moveEnd, false);
-            this.el.addEventListener('touchend', this.moveEnd, false);
+            doc.addEventListener('mouseup', this.moveEnd, false);
+            doc.addEventListener('touchend', this.moveEnd, false);
+            doc.addEventListener('touchcancel', this.moveCancel, false);
         }
     };
 
     private init(): void {
         if (!this.el._swipe) {
-            this.el.addEventListener('mousedown', this.moveStart, false);
-            this.el.addEventListener('touchstart', this.moveStart, false);
+            this.el.ownerDocument.addEventListener('mousedown', this.moveStart, false);
+            this.el.ownerDocument.addEventListener('touchstart', this.moveStart, false);
             this.el._swipe = true;
         }
     }
