@@ -20,7 +20,7 @@ import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui
 
 import { I18n, Utils } from '@iobroker/gui-components';
 
-import { calculateOverflow, deepClone, isVarFinite } from '@/Utilities/utils';
+import { deepClone, isVarFinite } from '@/Utilities/utils';
 
 import { cancelMarksUpdate, getAdornerLayer, scheduleMarksUpdate, type MarksRect } from './visAdornerLayer';
 import type {
@@ -2263,8 +2263,6 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     )}
                 </div>
             );
-
-            calculateOverflow(style);
         }
 
         // if multi-view widget and it is not "canJS", dim it in edit mode
@@ -2350,7 +2348,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         // The name plate and the resize handles are drawn outside the widget, so they are not its children: they
         // go into the adorner layer of the view, onto a div that mirrors the padding box of this widget. The
         // overlay stays here - it covers the widget exactly and decides which widget a click selects, which has
-        // to keep following the order of the widgets themselves.
+        // to keep following the order of the widgets themselves. As nothing of the editor leaves the box any more,
+        // the widget keeps the `overflow` of the runtime and clips its content in the editor too (#582).
         const resizeHandlers = this.getResizeHandlers(selected, widget, borderWidth);
         const layer = this.state.editMode ? getAdornerLayer(this.props.view) : null;
         const marks =
