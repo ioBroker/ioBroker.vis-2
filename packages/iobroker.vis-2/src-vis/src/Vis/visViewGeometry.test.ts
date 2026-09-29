@@ -9,6 +9,7 @@ import {
     computeRelativeOrder,
     computeRulers,
     droppedOrderIsDone,
+    editorViewMinSize,
     selectionRect,
     snapToGrid,
     snapToWidgets,
@@ -250,5 +251,31 @@ describe('autoScrollSpeed', () => {
 
     it('does not scroll a pane without size', () => {
         expect(autoScrollSpeed({ x: 0, y: 0 }, box(0, 0, 0, 0))).toEqual({ x: 0, y: 0 });
+    });
+});
+
+// #560: the view in the editor is at least as big as its screen, so its background covers what is scrolled to
+describe('editorViewMinSize', () => {
+    it('takes the screen size, but never less than the pane', () => {
+        expect(editorViewMinSize(2400, 1600)).toEqual({
+            minWidth: 'max(100%, 2400px)',
+            minHeight: 'max(100%, 1600px)',
+        });
+    });
+
+    it('reads the size as the attributes store it', () => {
+        expect(editorViewMinSize('1440', '900')).toEqual({
+            minWidth: 'max(100%, 1440px)',
+            minHeight: 'max(100%, 900px)',
+        });
+        expect(editorViewMinSize('1440.5', undefined)).toEqual({ minWidth: 'max(100%, 1440.5px)' });
+    });
+
+    it('sets nothing for a size that is not set or not a size', () => {
+        expect(editorViewMinSize(undefined, undefined)).toEqual({});
+        expect(editorViewMinSize('', null)).toEqual({});
+        expect(editorViewMinSize(0, 0)).toEqual({});
+        expect(editorViewMinSize(-100, 'abc')).toEqual({});
+        expect(editorViewMinSize(Infinity, NaN)).toEqual({});
     });
 });
