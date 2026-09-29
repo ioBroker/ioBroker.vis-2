@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { Project, Widget } from '@iobroker/types-vis-2';
+
 import {
     addClass,
     extractBinding,
@@ -8,6 +10,7 @@ import {
     isLocalStateId,
     parseDimension,
     removeClass,
+    syncMultipleWidgets,
 } from './visUtils';
 
 describe('addClass', () => {
@@ -181,5 +184,111 @@ describe('extractBinding', () => {
     it('stops at fifty bindings in one text', () => {
         const many = Array.from({ length: 60 }, (_, index) => `{a.b.c${index}}`).join(' ');
         expect(extractBinding(many)).toHaveLength(50);
+    });
+});
+
+describe('syncMultipleWidgets', () => {
+    /** A group and a single widget in the view "source", both shown in the view "target" too */
+    const multiViewProject = (): Project =>
+        ({
+            ___settings: {},
+            source: {
+                widgets: {
+                    g000001: {
+                        tpl: '_tplGroup',
+                        data: { members: ['w000001', 'w000002'], 'multi-views': 'target' },
+                        style: {},
+                    },
+                    w000001: {
+                        tpl: 'tplValueString',
+                        data: { oid: 'a.b.c' },
+                        style: {},
+                        grouped: true,
+                        groupid: 'g000001',
+                    },
+                    w000002: {
+                        tpl: 'tplValueString',
+                        data: { oid: 'd.e.f' },
+                        style: {},
+                        grouped: true,
+                        groupid: 'g000001',
+                    },
+                    w000003: { tpl: 'tplHtml', data: { html: 'x', 'multi-views': 'target' }, style: {} },
+                },
+            },
+            target: { widgets: {} },
+        }) as unknown as Project;
+
+    it('points the members of a copied group at the copy of the group', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        // the ID of a copy starts with "v", which the type of a widget ID does not allow for
+        const widgets = project.target.widgets as Record<string, Widget>;
+        expect(widgets.vsource_g000001.data.members).toEqual(['vsource_w000001', 'vsource_w000002']);
+        // a member that points at the group of another view cannot be drawn in this one (#431)
+        expect(widgets.vsource_w000001.groupid).toBe('vsource_g000001');
+        expect(widgets.vsource_w000002.groupid).toBe('vsource_g000001');
+    });
+
+    it('leaves the group in its own view as it was', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        const widgets = project.source.widgets;
+        expect(widgets.g000001.data.members).toEqual(['w000001', 'w000002']);
+        expect(widgets.w000001.groupid).toBe('g000001');
+        expect(Object.keys(widgets)).toEqual(['g000001', 'w000001', 'w000002', 'w000003']);
+    });
+
+    it('copies nothing into a view that does not exist or into the view of the widget itself', () => {
+        const project = multiViewProject();
+        project.source.widgets.w000003.data['multi-views'] = 'source,missing,';
+        project.source.widgets.g000001.data['multi-views'] = '';
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.target.widgets)).toEqual([]);
+        expect(Object.keys(project.source.widgets)).toEqual(['g000001', 'w000001', 'w000002', 'w000003']);
+        expect(project.missing).toBeUndefined();
+    });
+
+    it('takes the copy out of a view that was taken out of "multi-views"', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        // the editor syncs the project it changed, and that still holds the copies of the sync before (#417)
+        project.source.widgets.w000003.data['multi-views'] = null;
+        project.source.widgets.g000001.data['multi-views'] = null;
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.target.widgets)).toEqual([]);
+    });
+
+    it('takes out the copies of a widget that was deleted', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        delete project.source.widgets.w000003;
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.target.widgets).sort()).toEqual([
+            'vsource_g000001',
+            'vsource_w000001',
+            'vsource_w000002',
+        ]);
+    });
+
+    it('keeps the widgets of the view itself', () => {
+        const project = multiViewProject();
+        (project.target.widgets as Record<string, unknown>).w000010 = {
+            tpl: 'tplHtml',
+            data: { html: 'own' },
+            style: {},
+        };
+        syncMultipleWidgets(project);
+        syncMultipleWidgets(project);
+
+        expect(project.target.widgets.w000010.data.html).toBe('own');
+        expect(Object.keys(project.target.widgets)).toHaveLength(5);
     });
 });
