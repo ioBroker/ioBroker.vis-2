@@ -96,6 +96,7 @@ const dimmerDevice = defineDeviceWidget<DimmerRxData>({
         value: '45 %',
         toggle: true,
         slider: true,
+        markerFill: { share: 45 },
     },
     deviceTypes: [Types.dimmer],
     fields: [
@@ -215,6 +216,8 @@ const dimmerDevice = defineDeviceWidget<DimmerRxData>({
             valueColor: accent,
             stateText: known ? `${Math.round(percent)} %` : '--',
             marker: { text: known ? `${Math.round(percent)}` : '--', unit: '%' },
+            // how bright it stands, so a marker says it without being read; light is no liquid, so no wave
+            fill: known ? { share: percent } : undefined,
             control: (
                 <SlideToggle
                     on={on}

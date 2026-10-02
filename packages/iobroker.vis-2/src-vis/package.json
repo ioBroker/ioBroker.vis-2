@@ -48,11 +48,11 @@
         "vitest": "^5.0.1"
     },
     "scripts": {
-        "start": "vite --port 3000",
+        "start": "vite",
         "types": "tsc -p tsconfig.types.json",
         "lint": "eslint -c eslint.config.mjs",
         "build": "tsc && vite build",
-        "preview": "vite preview --port 3000",
+        "preview": "vite preview",
         "check-ts": "tsc --noEmit -p tsconfig.json",
         "test": "vitest run --config vitest.config.ts",
         "test:watch": "vitest --config vitest.config.ts"

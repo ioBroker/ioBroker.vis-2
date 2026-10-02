@@ -2,6 +2,9 @@ import React from 'react';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 
+import LiquidFill from './controls/LiquidFill';
+import type { Liquid } from './controls/liquid';
+
 /**
  * How much a marker of the set `absolute` says about itself.
  *
@@ -25,13 +28,31 @@ export interface MarkerFrameProps {
     /** The icon, drawn in `currentColor` */
     icon?: React.ReactNode;
     /** A short number beside the icon, like `21.5` with `°C`; without it the marker is only the icon */
-    marker?: { text: string; unit?: string };
+    marker?: { text: React.ReactNode; unit?: string };
+    /**
+     * A drawing that is the marker itself rather than a symbol inside it.
+     *
+     * For the one device whose picture is the whole point of it: a clock with hands is a clock face, not a
+     * circle with a small clock in it. It takes the place of the icon and of the number alike.
+     */
+    face?: React.ReactNode;
     /** An arrow behind the number, saying which way it has gone */
     trend?: React.ReactNode;
     /** The colour the state gives this device */
     accent: string;
     /** Whether the device is doing something: then the marker fills with its colour and glows brightly */
     active?: boolean;
+    /**
+     * How full the device stands, drawn as a level in the marker.
+     *
+     * For the devices that are read as a height rather than as a number: a cistern a third full, a lamp at
+     * a fifth of its brightness, a blind two thirds down. The number says `37`, and the marker standing a
+     * third full says the same thing without being read.
+     *
+     * A marker that shows a level is never filled whole by {@link MarkerFrameProps.active}: the two fills
+     * would be the same paint, and the level - the thing worth seeing - would be the one that disappears.
+     */
+    fill?: Liquid;
     theme: VisTheme;
     onClick?: () => void;
 }
@@ -86,7 +107,9 @@ const CAPTION_SIZE = {
 export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element {
     const { theme, accent } = props;
     const active = !!props.active;
-    const withValue = !!props.marker;
+    // the whole marker in its colour, which a marker that draws a level does not do
+    const solid = active && !props.fill;
+    const withValue = !!props.marker && !props.face;
     const withName = props.layout !== 'icon' && !!props.title;
     const withState = props.layout === 'state' && !!props.stateText;
     const withCaption = withName || withState;
@@ -113,9 +136,9 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 gap: withValue ? times(0.08) : 0,
                 // the padding only keeps the contents off the ring; what is in it stands in the middle
                 padding: withValue ? `0 ${times(0.14)}` : 0,
-                background: active ? accent : scrim,
+                background: solid ? accent : scrim,
                 border: `${times(0.055)} solid ${accent}`,
-                color: active ? '#fff' : accent,
+                color: solid ? '#fff' : accent,
                 boxShadow: active
                     ? `0 0 14px ${accent}, 0 2px 6px rgba(0, 0, 0, 0.4)`
                     : `0 0 10px ${accent}55, 0 2px 6px rgba(0, 0, 0, 0.4)`,
@@ -123,7 +146,29 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 cursor: props.onClick ? 'pointer' : undefined,
             }}
         >
-            {props.icon ? (
+            {props.fill ? (
+                <LiquidFill
+                    {...props.fill}
+                    color={accent}
+                    opacity={0.45}
+                />
+            ) : null}
+            {props.face ? (
+                <div
+                    style={{
+                        position: 'relative',
+                        zIndex: 1,
+                        width: '86%',
+                        height: '86%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    {props.face}
+                </div>
+            ) : null}
+            {props.icon && !props.face ? (
                 <div
                     className="vis-marker-icon"
                     style={{
@@ -131,17 +176,30 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                         height: times(iconShare),
                         // an MUI icon takes its size from the font, so it is told one that is not `1em`
                         fontSize: times(iconShare),
+                        // over the level, which is drawn into the same box
+                        position: 'relative',
+                        zIndex: 1,
                     }}
                 >
                     {props.icon}
                 </div>
             ) : null}
-            {props.marker ? (
+            {props.marker && !props.face ? (
                 <div
                     className="vis-marker-value"
-                    style={{ color: active ? '#fff' : ink }}
+                    style={{ color: solid ? '#fff' : ink, position: 'relative', zIndex: 1 }}
                 >
-                    <span style={{ fontSize: times(0.36) }}>{props.marker.text}</span>
+                    {/*
+                     * A box of its own, not a line of text.
+                     *
+                     * The row around it lines its parts up on their baseline, which is what `21.5` and `°C`
+                     * want. A device that hands in a component rather than a word - the clock does, because
+                     * it has to keep running - brings its own size, and a smaller size sitting on the
+                     * baseline of this one hangs below the middle of the marker. As a box it is centred.
+                     */}
+                    <span style={{ fontSize: times(0.36), display: 'flex', alignItems: 'center' }}>
+                        {props.marker.text}
+                    </span>
                     {props.marker.unit ? (
                         <span style={{ fontSize: times(0.22), opacity: 0.8 }}>{props.marker.unit}</span>
                     ) : null}

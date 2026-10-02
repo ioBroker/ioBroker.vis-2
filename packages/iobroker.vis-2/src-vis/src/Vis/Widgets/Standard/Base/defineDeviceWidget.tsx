@@ -21,6 +21,7 @@ import VisRxWidget from '@/Vis/visRxWidget';
 import MarkerFrame, { type MarkerLayout } from './MarkerFrame';
 import StandardFrame, { type StandardWidgetLayout } from './StandardFrame';
 import { adoptObject } from './adoptObject';
+import type { Liquid } from './controls/liquid';
 import { absolutePicture, relativePicture, type DevicePicture } from './pictures';
 import { historyInstanceIn } from './controls/history';
 import { STANDARD_I18N_PREFIX } from './prefix';
@@ -206,7 +207,20 @@ export interface DeviceResult {
     /** What this device draws reacts to how much room the card has; see `StandardFrameProps.container` */
     container?: boolean;
     /** A short number a marker shows in its circle instead of the icon, like `21.5` with `°C` under it */
-    marker?: { text: string; unit?: string };
+    marker?: { text: React.ReactNode; unit?: string };
+    /**
+     * A drawing that is the marker of the set `absolute` itself, instead of an icon in it.
+     *
+     * See {@link MarkerFrameProps.face}; the clock with hands is the one device that asks for it.
+     */
+    face?: React.ReactNode;
+    /**
+     * How full this device stands, for the marker of the set `absolute` to stand that full.
+     *
+     * A level is read as a height and not as a number; see {@link MarkerFrameProps.fill}. The card of the
+     * set `relative` has a drawing in its body for this and does not use it.
+     */
+    fill?: Liquid;
     /** An arrow beside the value: which way it has gone. The frames decide how large it is drawn */
     trend?: React.ReactNode;
     /** The whole card reacts to a click */
@@ -876,6 +890,8 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 stateText={result.stateText}
                                 icon={icon}
                                 marker={result.marker}
+                                face={result.face}
+                                fill={result.fill}
                                 trend={result.trend}
                                 accent={result.accent}
                                 active={result.active}

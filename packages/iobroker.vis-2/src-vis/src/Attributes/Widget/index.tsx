@@ -69,6 +69,7 @@ import WidgetCSS from './WidgetCSS';
 import WidgetJS from './WidgetJS';
 import WidgetBindingField from './WidgetBindingField';
 import FieldHelp, { hasFieldHelp } from '../FieldHelp';
+import { isDevServer } from '@/Utilities/devServer';
 
 /**
  * The mark in front of the name of a group, so that a group is found by its shape and not by reading every
@@ -1319,7 +1320,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                     ) : null}
                     {!widgets[this.props.selectedWidgets[0]].marketplace && (
                         <>
-                            {window.location.port === '3000' ? (
+                            {isDevServer() ? (
                                 <div style={styles.devButtons}>
                                     <Button
                                         size="small"

@@ -30,6 +30,9 @@ interface VacuumRxData extends StandardRxData {
     oidCharging?: string;
 }
 
+/** A MUI icon fills the box it is given instead of sizing itself by the font */
+const ICON = { width: '100%', height: '100%' } as const;
+
 /** The words a state carries for its values, where it carries any */
 function wordOf(context: DeviceContext<VacuumRxData>, attr: string, value: unknown): string {
     const states = context.commonOf(attr)?.states;
@@ -124,6 +127,15 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                 }
             });
 
+        /**
+         * One of the orders the robot takes.
+         *
+         * @param icon - the symbol in front of the word; it is drawn to the box it is given, which a MUI icon
+         * does not do by itself - it takes its size from the font and would stand over its neighbours
+         * @param label - the word on it
+         * @param onClick - what it does
+         * @param color - the colour it is drawn in
+         */
         const button = (
             icon: React.ReactNode,
             label: string,
@@ -153,7 +165,16 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                     cursor: context.editMode ? undefined : 'pointer',
                 }}
             >
-                <span style={{ display: 'flex', width: 16, height: 16 }}>{icon}</span>
+                <span
+                    style={{
+                        display: 'flex',
+                        width: 16,
+                        height: 16,
+                        flexShrink: 0,
+                    }}
+                >
+                    {icon}
+                </span>
                 {label}
             </button>
         );
@@ -178,41 +199,48 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                             color: low ? accents.red : theme.palette.text.secondary,
                         }}
                     >
-                        <span style={{ display: 'flex', width: 16, height: 16 }}>
-                            {charging ? <ChargingIcon /> : <BatteryIcon />}
+                        <span style={{ display: 'flex', width: 16, height: 16, flexShrink: 0 }}>
+                            {charging ? <ChargingIcon style={ICON} /> : <BatteryIcon style={ICON} />}
                         </span>
                         {`${Math.round(battery)} %`}
                     </span>
                 ),
-            body:
-                context.layout === 'default' ? (
-                    <div style={{ display: 'flex', gap: 6, width: '100%', alignItems: 'center' }}>
-                        {button(
-                            running ? <PauseIcon /> : <StartIcon />,
-                            t(running ? 'vacuum_pause' : 'vacuum_start'),
-                            toggle,
-                            running ? accents.yellow : accents.green,
-                        )}
-                        {data.oidHome
-                            ? button(
-                                  <HomeIcon />,
-                                  t('vacuum_home'),
-                                  () => context.act('off', () => context.setValue(data.oidHome as string, true)),
-                                  accents.blue,
-                              )
-                            : null}
-                    </div>
-                ) : null,
+            /*
+             * The orders stand at the bottom edge, with the modes under them. The middle of a card is where a
+             * device draws itself - the window of a blind, the curve of a reading - and a robot draws nothing:
+             * putting its buttons there hung them under the name with the status far below, while every card
+             * beside it reads name, value, control from top to bottom.
+             */
             footer:
-                modes.length && context.layout === 'default' ? (
-                    <ModeButtons
-                        modes={modes}
-                        current={mode as string | number | boolean | undefined}
-                        accent={accent}
-                        theme={theme}
-                        disabled={context.editMode}
-                        onChange={value => data.oidMode && context.setValue(data.oidMode, value)}
-                    />
+                context.layout === 'default' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+                        <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+                            {button(
+                                running ? <PauseIcon style={ICON} /> : <StartIcon style={ICON} />,
+                                t(running ? 'vacuum_pause' : 'vacuum_start'),
+                                toggle,
+                                running ? accents.yellow : accents.green,
+                            )}
+                            {data.oidHome
+                                ? button(
+                                      <HomeIcon style={ICON} />,
+                                      t('vacuum_home'),
+                                      () => context.act('off', () => context.setValue(data.oidHome as string, true)),
+                                      accents.blue,
+                                  )
+                                : null}
+                        </div>
+                        {modes.length ? (
+                            <ModeButtons
+                                modes={modes}
+                                current={mode as string | number | boolean | undefined}
+                                accent={accent}
+                                theme={theme}
+                                disabled={context.editMode}
+                                onChange={value => data.oidMode && context.setValue(data.oidMode, value)}
+                            />
+                        ) : null}
+                    </div>
                 ) : null,
         };
     },

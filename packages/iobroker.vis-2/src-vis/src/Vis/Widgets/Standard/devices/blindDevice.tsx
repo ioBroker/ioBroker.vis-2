@@ -85,6 +85,8 @@ const blindDevice = defineDeviceWidget<BlindRxData>({
         value: '75 %',
         window: true,
         slider: true,
+        // the value is how much light comes in, so the cover is the rest of it
+        markerFill: { share: 25, from: 'top' },
     },
     deviceTypes: [Types.blind, Types.blindButtons, Types.gate],
     fields: [
@@ -226,6 +228,9 @@ const blindDevice = defineDeviceWidget<BlindRxData>({
             ),
             stateText: known ? `${Math.round(open)} % ${t('open')}` : '--',
             marker: { text: known ? `${Math.round(open)}` : '--', unit: '%' },
+            // the number says how much light comes in, the marker shows how far the window is covered - and
+            // a blind covers from above, which is the thing a person in the room actually sees
+            fill: known ? { share: closed, from: 'top' } : undefined,
             footer:
                 byLevel && data.oid ? (
                     <FatSlider

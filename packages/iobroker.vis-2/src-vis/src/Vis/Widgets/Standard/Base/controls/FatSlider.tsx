@@ -10,6 +10,14 @@ export interface FatSliderProps {
     disabled?: boolean;
     /** The colour of the part that is filled and of the knob */
     color: string;
+    /**
+     * A thinner rail and a smaller knob, for a slider that is one row among others.
+     *
+     * The full size is made for a card that is about this one value, where the slider is the thing one
+     * reaches for. In a list it is one of six rows, and a rail as thick as the words beside it are tall reads
+     * as a bar chart rather than as a control.
+     */
+    slim?: boolean;
     /** Called while the knob is dragged, so the widget can follow along */
     onChange?: (value: number) => void;
     /** Called once, when the knob is let go */
@@ -26,6 +34,9 @@ export interface FatSliderProps {
  * @param props - where it stands, what it may be, and what to do when it is moved
  */
 export default function FatSlider(props: FatSliderProps): React.JSX.Element {
+    const rail = props.slim ? 6 : 10;
+    const thumb = props.slim ? 14 : 20;
+
     return (
         <Slider
             value={props.value}
@@ -37,23 +48,23 @@ export default function FatSlider(props: FatSliderProps): React.JSX.Element {
             onChangeCommitted={(_e, value) => props.onChangeCommitted(value)}
             sx={{
                 width: '100%',
-                height: 10,
-                padding: '13px 0',
+                height: rail,
+                padding: `${Math.round(thumb * 0.65)}px 0`,
                 color: props.color,
                 '& .MuiSlider-rail': {
-                    height: 10,
-                    borderRadius: 5,
+                    height: rail,
+                    borderRadius: rail / 2,
                     opacity: 0.35,
                     backgroundColor: 'text.disabled',
                 },
                 '& .MuiSlider-track': {
-                    height: 10,
+                    height: rail,
                     border: 'none',
-                    borderRadius: 5,
+                    borderRadius: rail / 2,
                 },
                 '& .MuiSlider-thumb': {
-                    width: 20,
-                    height: 20,
+                    width: thumb,
+                    height: thumb,
                     boxShadow: '0 1px 4px rgba(0, 0, 0, 0.4)',
                     '&::before': { boxShadow: 'none' },
                     // the halo of MUI sits under the finger on a touch screen and hides the knob

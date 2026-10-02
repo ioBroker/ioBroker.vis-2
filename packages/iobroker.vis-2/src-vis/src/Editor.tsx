@@ -128,6 +128,7 @@ import esLang from './i18n/es.json';
 import plLang from './i18n/pl.json';
 import ukLang from './i18n/uk.json';
 import zhLang from './i18n/zh-cn.json';
+import { isDevServer } from '@/Utilities/devServer';
 
 const styles: Record<string, any> = {
     block: {
@@ -536,10 +537,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (window.location.search.includes('runtime') || !window.location.pathname.endsWith('edit.html')) {
             runtime = true;
         }
-        if (
-            window.location.search.includes('edit') ||
-            (window.location.port.startsWith('300') && !window.location.search.includes('runtime'))
-        ) {
+        if (window.location.search.includes('edit') || (isDevServer() && !window.location.search.includes('runtime'))) {
             runtime = false;
         }
 

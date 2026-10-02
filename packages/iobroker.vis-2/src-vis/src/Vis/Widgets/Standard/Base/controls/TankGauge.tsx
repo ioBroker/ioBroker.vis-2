@@ -1,5 +1,7 @@
 import React from 'react';
 
+import LiquidFill from './LiquidFill';
+
 export interface TankGaugeProps {
     /** How full it is, or null while nobody has said */
     value: number | null;
@@ -169,16 +171,10 @@ export default function TankGauge(props: TankGaugeProps): React.JSX.Element {
                         }}
                     >
                         <div style={{ position: 'absolute', inset: 0, background: props.track, opacity: 0.35 }} />
-                        <div
-                            style={{
-                                position: 'absolute',
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                height: `${share * 100}%`,
-                                background: props.accent,
-                                transition: 'height 0.3s',
-                            }}
+                        <LiquidFill
+                            share={share * 100}
+                            wave
+                            color={props.accent}
                         />
                     </div>
                     {position === 'inside' ? (

@@ -121,8 +121,21 @@
             typeof window.socketLoadedHandler === 'function' && window.socketLoadedHandler();
         };
         setTimeout(() => {
-            // every port of the dev server - 3000, and 3100 for a second one - takes socket.io from the web adapter
-            script.src = /^3\d{3}$/.test(window.location.port) ? `${window.location.protocol}//${window.location.hostname}:8082/lib/js/socket.io.js` : '/../../lib/js/socket.io.js';
+            // the dev server writes the address of its ioBroker into the page (see vite.config.ts); a preview
+            // has no server to do that and falls back to the web adapter, as src/Utilities/devServer.ts does
+            const configured = window.visDevBackend ||
+                (/^(3\d{3}|4173|5173)$/.test(window.location.port) ? `${window.location.protocol}//${window.location.hostname}:8082` : '');
+            let backend = '';
+            if (configured) {
+                const url = new URL(configured);
+                // a loopback address says where ioBroker is as seen from the dev server, and the page is not
+                // always looked at there - a tablet has to ask that machine and not itself
+                if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+                    url.hostname = window.location.hostname;
+                }
+                backend = url.origin;
+            }
+            script.src = backend ? `${backend}/lib/js/socket.io.js` : '/../../lib/js/socket.io.js';
         }, 1000);
 
         document.head.appendChild(script);

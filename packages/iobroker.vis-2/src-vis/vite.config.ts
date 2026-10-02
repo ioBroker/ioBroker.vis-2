@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import commonjs from 'vite-plugin-commonjs';
 import { federation } from '@module-federation/vite';
@@ -6,6 +6,35 @@ import { resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { moduleFederationShared } from '@iobroker/types-vis-2/modulefederation.vis.config';
 import topLevelAwait from 'vite-plugin-top-level-await';
+
+// The dev server serves only the app; the data, the widget sets and the socket come from a running ioBroker.
+// Which one, and on which port this server listens, is said when it is started:
+//   npm run start                                  - web on 8082, this server on 3000
+//   IOB_URL=http://localhost:8081 npm run start    - the admin instead, e.g. where web wants a login
+//   VIS_PORT=3005 npm run start                    - another port, if 3000 is taken
+const BACKEND = (process.env.IOB_URL || 'http://localhost:8082').replace(/\/+$/, '');
+const PORT = Number(process.env.VIS_PORT) || 3000;
+
+/**
+ * Tells the page which ioBroker this server proxies to.
+ *
+ * The page needs the address before the bundle runs - the socket.io client is a plain script tag loaded from
+ * ioBroker - and it may not be baked into the build, which is served by the web adapter and talks to its own
+ * origin. So it is written into the HTML, and only while the dev server serves it.
+ */
+function devBackendPlugin(): Plugin {
+    return {
+        name: 'vis-dev-backend',
+        apply: 'serve',
+        transformIndexHtml: () => [
+            {
+                tag: 'script',
+                injectTo: 'head-prepend',
+                children: `window.visDevBackend = ${JSON.stringify(BACKEND)};`,
+            },
+        ],
+    };
+}
 
 export default defineConfig({
     plugins: [
@@ -64,20 +93,21 @@ export default defineConfig({
         }),
         react(),
         commonjs(),
+        devBackendPlugin(),
     ],
     server: {
-        port: 3000,
+        port: PORT,
         proxy: {
-            '/_socket': 'http://localhost:8082',
-            '/vis-2.0': 'http://localhost:8082',
-            '/adapter': 'http://localhost:8082',
+            '/_socket': BACKEND,
+            '/vis-2.0': BACKEND,
+            '/adapter': BACKEND,
             // the icon of an adapter, as `<name>.admin/<icon>`: a key that starts with ^ is read as a regexp,
             // because the name of the adapter stands in the middle of the path
-            '^/[^/]+\\.admin/': 'http://localhost:8082',
-            '/habpanel': 'http://localhost:8082',
-            '/vis-2': 'http://localhost:8082',
+            '^/[^/]+\\.admin/': BACKEND,
+            '/habpanel': BACKEND,
+            '/vis-2': BACKEND,
             '/widgets': {
-                target: 'http://localhost:8082/vis-2',
+                target: `${BACKEND}/vis-2`,
                 // The app brings the previews of the widget sets it has itself in `public/widgets`. Only what is
                 // not there belongs to an installed widget set and is asked of the web adapter.
                 bypass: req => {
@@ -86,10 +116,13 @@ export default defineConfig({
                     return asked.startsWith(publicDir + sep) && existsSync(asked) ? req.url : undefined;
                 },
             },
-            '/widgets.html': 'http://localhost:8082/vis-2',
-            '/web': 'http://localhost:8082',
-            '/state': 'http://localhost:8082',
+            '/widgets.html': `${BACKEND}/vis-2`,
+            '/web': BACKEND,
+            '/state': BACKEND,
         },
+    },
+    preview: {
+        port: PORT,
     },
     base: './',
     resolve: {

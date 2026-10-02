@@ -11,6 +11,8 @@
  * stays true to the widget because it is made of the same parts.
  */
 
+import { type Liquid, liquidPath } from './controls/liquid';
+
 /** What a device shows, as far as a picture of it is concerned */
 export interface DevicePicture {
     /** The colour the device is drawn in - the accent of a card, the ring of a marker */
@@ -41,6 +43,10 @@ export interface DevicePicture {
     camera?: boolean;
     /** The history of the value behind it */
     chart?: boolean;
+    /** Several states as rows, each with the control that belongs to it */
+    list?: boolean;
+    /** How full the marker of the set `absolute` stands, where this device shows a level */
+    markerFill?: Liquid;
 }
 
 /*
@@ -171,6 +177,29 @@ export function relativePicture(picture: DevicePicture): string {
         parts.push(wheel(100, 58, 26));
     }
 
+    if (picture.list) {
+        // three rows, one of each kind: a switch, a reading, a slider
+        const row = (y: number, width: number): string =>
+            `<rect x="12" y="${y}" width="${width}" height="7" rx="3.5" fill="${QUIET}" opacity="0.6"/>`;
+        parts.push(
+            `<path d="M12 56 H188" stroke="${LINE}"/><path d="M12 82 H188" stroke="${LINE}"/>${row(
+                39.5,
+                56,
+            )}<rect x="152" y="33.5" width="36" height="19" rx="9.5" fill="${picture.accent}"/>` +
+                `<circle cx="178" cy="43" r="7.5" fill="#fff"/>${row(65.5, 66)}${valueAt(
+                    '21,4 °C',
+                    188,
+                    76,
+                    18,
+                ).replace('<text ', '<text text-anchor="end" ')}${row(
+                    91.5,
+                    40,
+                )}<rect x="96" y="92" width="92" height="6" rx="3" fill="${LINE}"/>` +
+                `<rect x="96" y="92" width="52" height="6" rx="3" fill="${picture.accent}"/>` +
+                `<circle cx="148" cy="95" r="8" fill="${picture.accent}"/>`,
+        );
+    }
+
     if (picture.camera) {
         // what a camera shows is the widget, so the picture of it is a picture
         parts.push(
@@ -282,6 +311,21 @@ export function absolutePicture(picture: DevicePicture): string {
             `<rect x="${cx - 52}" y="${cy - 21}" width="104" height="42" rx="21" fill="${PAPER}" ` +
                 `stroke="${picture.accent}" stroke-width="2.5"/>`,
         );
+        /*
+         * A tank, a lamp and a blind are read as a height, so their marker stands that full - see
+         * MarkerFrame.tsx. The level is drawn in its own `svg` of 100 by 100 stretched over the capsule, so
+         * the one path of `liquidPath` serves the widget and its picture alike.
+         */
+        if (picture.markerFill) {
+            parts.push(
+                `<defs><clipPath id="vis-marker-fill"><rect x="${cx - 52}" y="${cy - 21}" width="104" ` +
+                    `height="42" rx="21"/></clipPath></defs>` +
+                    `<g clip-path="url(#vis-marker-fill)"><svg x="${cx - 52}" y="${cy - 21}" width="104" ` +
+                    `height="42" viewBox="0 0 100 100" preserveAspectRatio="none">` +
+                    `<path d="${liquidPath(picture.markerFill)}" fill="${picture.accent}" opacity="0.45"/>` +
+                    `</svg></g>`,
+            );
+        }
         parts.push(glyphAt(picture.glyph, cx - 36, cy - 11, 22, picture.accent));
         parts.push(
             valueAt(picture.value as string, cx - 6, cy + 8, 22).replace('<text ', '<text text-anchor="start" '),

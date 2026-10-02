@@ -31,12 +31,25 @@ A plain `npm i` is not enough — `src-vis` would be left without dependencies.
 ### Development
 
 ```bash
-npm run start               # Vite dev server on :3000 (proxies to a running ioBroker web on :8082)
+npm run start                                     # dev server on :3000, ioBroker web on :8082
+VIS_PORT=3005 npm run start                       # another port
+IOB_URL=http://192.168.178.45:8082 npm run start  # another ioBroker
 ```
 
-An ioBroker instance with `web` on port **8082** must already be running (see `src-vis/vite.config.ts`
-`server.proxy`). In the dev server, `http://localhost:3000/` serves the **runtime** and
-`http://localhost:3000/edit.html` serves the **editor**. HMR works.
+An ioBroker instance with `web` must already be running: the dev server serves only the app, everything
+else - the socket, the widget sets, `/vis-2.0`, the adapter icons - is proxied to it. Which one, and on
+which port the dev server itself listens, come from `IOB_URL` / `VIS_PORT` (defaults
+`http://localhost:8082` and 3000, see `src-vis/vite.config.ts`). `IOB_URL` has to name a **web**
+instance: the admin answers the socket but serves none of the vis-2 web root, so the widget sets stay
+empty.
+
+In the dev server, `http://localhost:3000/` serves the **runtime** and `http://localhost:3000/edit.html`
+serves the **editor**. HMR works.
+
+The app has to know it is on the dev server, because then the page and the data come from different
+servers. That is **one** question, answered in `src-vis/src/Utilities/devServer.ts` instead of by port
+comparisons spread over the source: `vite.config.ts` writes the address of the backend into the HTML as
+`window.visDevBackend`, and `isDevServer()` / `devSocketAddress()` read it from there.
 
 ### Build
 

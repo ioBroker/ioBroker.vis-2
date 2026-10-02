@@ -40,6 +40,7 @@ const tankDevice = defineDeviceWidget<TankRxData>({
             'stroke-linejoin="round"/>',
         value: '72 %',
         tank: true,
+        markerFill: { share: 72, wave: true },
     },
     prev:
         '<svg viewBox="0 0 32 32" width="28" height="28" fill="none">' +
@@ -111,8 +112,11 @@ const tankDevice = defineDeviceWidget<TankRxData>({
             value: context.layout === 'default' ? undefined : `${shown}${unit ? ` ${unit}` : ''}`,
             valueColor: accent,
             stateText: `${shown}${unit ? ` ${unit}` : ''}`,
-            // a marker has no room for a scale, so it shows how full the tank is in percent
+            // a marker has no room for a scale, so it shows how full the tank is in percent - and stands
+            // that full itself, because that is how a tank is read
             marker: { text: percent === null ? '--' : `${percent}`, unit: '%' },
+            // a tank holds a liquid, and a liquid has a surface
+            fill: percent === null ? undefined : { share: percent, wave: true },
             chart: { attrs: ['oid'] },
         };
     },

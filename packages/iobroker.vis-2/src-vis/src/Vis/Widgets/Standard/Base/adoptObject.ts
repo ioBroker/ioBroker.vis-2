@@ -38,6 +38,48 @@ function iconOf(obj: ioBroker.Object | null | undefined, id: string): string | u
 }
 
 /**
+ * The name and the symbol an object carries, for a widget that holds a state per row.
+ *
+ * {@link adoptObject} answers the same question for the one state a widget is about, and writes the answer
+ * into the fields that widget has. A list has a row per state and needs the answer under the names of that
+ * row, so it asks here and puts it where it belongs itself.
+ *
+ * As there, the channel or the device above the state is asked where the state itself says nothing: a state
+ * is called `LEVEL` and its channel `Kitchen ceiling`, and the second one is the name to put on a row.
+ *
+ * @param socket - the connection to read the objects with
+ * @param id - the state to describe
+ * @param language - the language the name is read in
+ */
+export async function describeObject(
+    socket: Connection,
+    id: string,
+    language: ioBroker.Languages,
+): Promise<{ name: string; icon?: string }> {
+    if (!id || id === NOTHING_SELECTED) {
+        return { name: '' };
+    }
+
+    const state = (await socket.getObject(id)) as ioBroker.StateObject | null | undefined;
+    let name = getText(state?.common?.name, language);
+    let icon = iconOf(state, id);
+
+    if (!name || !icon) {
+        const parts = id.split('.');
+        for (let up = 0; up < 2 && parts.length > 2; up++) {
+            parts.pop();
+            const parent = await socket.getObject(parts.join('.'));
+            if (parent?.type === 'channel' || parent?.type === 'device' || parent?.type === 'folder') {
+                name ||= getText(parent.common?.name, language);
+                icon ||= iconOf(parent, id);
+            }
+        }
+    }
+
+    return { name, icon };
+}
+
+/**
  * Fill in what the object already knows, when a state is picked for a widget.
  *
  * A state carries its name, its unit and its limits, and the channel or the device above it usually carries

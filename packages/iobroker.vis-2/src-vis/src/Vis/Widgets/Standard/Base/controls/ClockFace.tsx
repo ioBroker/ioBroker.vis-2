@@ -44,6 +44,17 @@ export default function ClockFace(props: ClockFaceProps): React.JSX.Element {
             ...(props.withSeconds ? { second: '2-digit' } : {}),
         });
 
+        /*
+         * The digits are written as large as they fit, not as large as they would like to be.
+         *
+         * How long the time is depends on the language and on the settings: `18:22` is five characters,
+         * `6:27:44 PM` is ten. A size chosen for the short one runs out of the box with the long one, and an
+         * SVG does not wrap - it simply draws past its edge, which the card then cuts off.
+         */
+        const widest = BOX * 0.92;
+        const perCharacter = 0.56;
+        const size = Math.min(props.withSeconds ? 30 : 38, widest / (time.length * perCharacter));
+
         return (
             <svg
                 viewBox={`0 0 ${BOX} ${props.dateText ? 66 : 50}`}
@@ -55,7 +66,7 @@ export default function ClockFace(props: ClockFaceProps): React.JSX.Element {
                     y={36}
                     textAnchor="middle"
                     fontFamily="system-ui, sans-serif"
-                    fontSize={props.withSeconds ? 30 : 38}
+                    fontSize={size}
                     fontWeight="700"
                     fill={props.ink}
                 >

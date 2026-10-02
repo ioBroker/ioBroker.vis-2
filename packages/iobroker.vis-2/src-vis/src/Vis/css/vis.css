@@ -671,6 +671,33 @@ html {
     }
 }
 
+/*
+ * A list that is longer than its card, see Widgets/Standard/devices/listDevice.tsx.
+ *
+ * The scrollbar of the system is sixteen pixels of grey chrome across a card that is three hundred wide, and
+ * it stands on the readings. This one is three pixels of the divider colour and only there while there is
+ * something to scroll. `scrollbar-width` says the same thing to the browsers that have it; the webkit rules
+ * are what the old tablets this runs on understand.
+ */
+.vis-standard-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+}
+
+.vis-standard-scroll::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+.vis-standard-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.vis-standard-scroll::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.4);
+    border-radius: 2px;
+}
+
 /* The drum of a machine that is running without saying how far it has got, see devices/applianceDevice.tsx */
 @keyframes vis-standard-spin {
     from {
@@ -713,6 +740,8 @@ html {
     border-radius: 999px;
     /* whatever a device hands in, it stays inside its marker */
     overflow: hidden;
+    /* a device that is full to a level draws that level into this box, see MarkerFrame.tsx */
+    position: relative;
 }
 
 .vis-marker-icon {

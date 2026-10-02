@@ -64,6 +64,7 @@ import esLang from './i18nRuntime/es.json';
 import plLang from './i18nRuntime/pl.json';
 import ukLang from './i18nRuntime/uk.json';
 import zhLang from './i18nRuntime/zh-cn.json';
+import { devSocketAddress } from '@/Utilities/devServer';
 
 const styles: { editModeComponentStyle: React.CSSProperties } = {
     editModeComponentStyle: {
@@ -281,11 +282,11 @@ export default class Runtime<
             extendedProps.sentryDSN = window.sentryDSN;
         }
 
-        if (window.location.port === '3000') {
-            extendedProps.socket = {
-                port: '8082',
-                // host: '192.168.178.45',
-            };
+        // on the dev server the page comes from vite and everything else from a running ioBroker, so the
+        // socket has to be told where that is; see Utilities/devServer.ts
+        const devSocket = devSocketAddress();
+        if (devSocket) {
+            extendedProps.socket = devSocket;
         }
         if (window.socketUrl?.startsWith(':')) {
             window.socketUrl = `${window.location.protocol}//${window.location.hostname}${window.socketUrl}`;

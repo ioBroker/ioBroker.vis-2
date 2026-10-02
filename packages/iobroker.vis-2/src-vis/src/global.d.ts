@@ -10,6 +10,8 @@ declare global {
         visAdapterInstance?: number;
         visRxWidget: typeof VisRxWidget;
         visConfigLoaded?: Promise<void>;
+        /** Where ioBroker is, written into the page by the dev server; see Utilities/devServer.ts */
+        visDevBackend?: string;
         sentryDSN?: string;
         disableDataReporting?: boolean;
         jQuery: JQuery;

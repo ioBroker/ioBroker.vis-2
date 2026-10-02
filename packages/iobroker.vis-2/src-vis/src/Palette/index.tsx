@@ -38,6 +38,7 @@ import MarketplacePalette from '../Marketplace/MarketplacePalette';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 import { getRecentWidgets, onRecentWidgetsChanged } from './recentWidgets';
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
+import { isDevServer } from '@/Utilities/devServer';
 
 // declare global {
 //     interface Window {
@@ -372,11 +373,9 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 widgetSetProps[widgetTypeName].icon = widgetType.setIcon;
             } else if (widgetType.adapter && !widgetSetProps[widgetTypeName]?.icon) {
                 widgetSetProps[widgetTypeName] ||= {};
-                if (window.location.port === '3000') {
-                    widgetSetProps[widgetTypeName].icon = `./adapter/${widgetType.adapter}/${widgetType.adapter}.png`;
-                } else {
-                    widgetSetProps[widgetTypeName].icon = `../adapter/${widgetType.adapter}/${widgetType.adapter}.png`;
-                }
+                // the dev server proxies `/adapter`, so the icon is one level up from the page there
+                const base = isDevServer() ? '.' : '..';
+                widgetSetProps[widgetTypeName].icon = `${base}/adapter/${widgetType.adapter}/${widgetType.adapter}.png`;
             }
             if (widgetType.rx) {
                 widgetSetProps[widgetTypeName] ||= {};
