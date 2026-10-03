@@ -116,7 +116,6 @@ export function syncWidgetSets(
     filesChanged: boolean;
 } {
     let filesChanged = false;
-    let found: { path: string; name: string; pack: ioBroker.AdapterObject } | undefined;
     let name: string;
     const v2: Record<string, boolean> = {};
 
@@ -143,11 +142,9 @@ export function syncWidgetSets(
             name = installed[d].replace('.html', '');
             const isGeneric = generic.includes(name);
 
-            if (!found) {
-                found = enabledList.find(
-                    w => w.name.toLowerCase() === `iobroker.vis-${name}` || w.name.toLowerCase() === `iobroker.${name}`,
-                );
-            }
+            const found = enabledList.find(
+                w => w.name.toLowerCase() === `iobroker.vis-${name}` || w.name.toLowerCase() === `iobroker.${name}`,
+            );
 
             if (!found && !isGeneric) {
                 filesChanged = true;
