@@ -14,10 +14,6 @@ const wwwDir = existsSync(`${__dirname}/../../www/`) ? `${__dirname}/../../www/`
 
 const generic = ['basic', 'jqplot', 'jqui', 'swipe', 'tabs'];
 
-const widgetSetsDependencies: Record<string, string | string[]> = {
-    jqui: ['basic'],
-};
-
 function copyFileSync(source: string, target: string, forceBuild?: boolean): boolean {
     let targetFile = target;
     let changed = false;
@@ -112,7 +108,7 @@ export function syncWidgetSets(
     enabledList: { path: string; name: string; pack: ioBroker.AdapterObject }[],
     forceBuild?: boolean,
 ): {
-    widgetSets: { name: string; depends?: string | string[]; always?: boolean; v2: boolean }[];
+    widgetSets: { name: string; v2: boolean }[];
     filesChanged: boolean;
 } {
     let filesChanged = false;
@@ -133,7 +129,7 @@ export function syncWidgetSets(
             !!enabledList[d].pack.common.visWidgets;
     }
 
-    const widgetSets: { name: string; depends?: string | string[]; always?: boolean; v2: boolean }[] = [];
+    const widgetSets: { name: string; v2: boolean }[] = [];
 
     // Read the list of installed widgets
     const installed = readdirSync(`${wwwDir}widgets/`);
@@ -153,22 +149,9 @@ export function syncWidgetSets(
                 if (existsSync(`${wwwDir}widgets/${name}`)) {
                     deleteFolderRecursive(normalize(`${wwwDir}widgets/${name}`));
                 }
-            } else if (isGeneric) {
-                if (
-                    (Array.isArray(widgetSetsDependencies[name]) && widgetSetsDependencies[name].length) ||
-                    widgetSetsDependencies[name] ||
-                    typeof widgetSetsDependencies[name] === 'string'
-                ) {
-                    widgetSets.push({ name, depends: widgetSetsDependencies[name], v2: false });
-                } else {
-                    widgetSets.push({ name, v2: false });
-                }
-            } else if (found?.pack?.native?.always) {
-                widgetSets.push({ name, always: true, v2: v2[name] });
-            } else if (found?.pack?.native?.dependencies?.length) {
-                widgetSets.push({ name, depends: found.pack.native.dependencies, v2: v2[name] });
             } else {
-                widgetSets.push({ name, v2: v2[name] });
+                // the sets vis-2 ships itself come from no adapter, so none of them is a vis-2 set
+                widgetSets.push({ name, v2: isGeneric ? false : v2[name] });
             }
         }
     }

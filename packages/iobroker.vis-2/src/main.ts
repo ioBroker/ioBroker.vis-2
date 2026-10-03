@@ -450,10 +450,7 @@ class VisAdapter extends Adapter {
         }
     }
 
-    async generateWidgetsHtml(
-        widgetSets: { name: string; depends?: string | string[]; always?: boolean; v2: boolean }[],
-        forceBuild: boolean,
-    ): Promise<boolean> {
+    async generateWidgetsHtml(widgetSets: { name: string; v2: boolean }[], forceBuild: boolean): Promise<boolean> {
         let text = '';
         for (let w = 0; w < widgetSets.length; w++) {
             const widgetSet = widgetSets[w];

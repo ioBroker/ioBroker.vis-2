@@ -19,11 +19,11 @@ function addWidgetSet(dir, name) {
     fs.writeFileSync(path.join(dir, name, 'widget.js'), '');
 }
 
-function addAdapter(root, name, setName, native) {
+function addAdapter(root, name, setName, common) {
     const adapterDir = path.join(root, 'adapters', name);
     fs.mkdirSync(path.join(adapterDir, 'widgets'), { recursive: true });
     addWidgetSet(path.join(adapterDir, 'widgets'), setName);
-    return { path: adapterDir, name, pack: { common: {}, native: native || {} } };
+    return { path: adapterDir, name, pack: { common: common || {}, native: {} } };
 }
 
 function sync(root, enabledList) {
@@ -72,18 +72,21 @@ describe('syncWidgetSets', () => {
         );
     });
 
-    it('takes the dependencies of each widget set from its own adapter', () => {
+    it('takes the vis-2 flag of each widget set from its own adapter', () => {
         const bring = addAdapter(root, 'iobroker.vis-bring', 'bring');
-        const swiper = addAdapter(root, 'iobroker.swiper', 'swiper', { dependencies: ['basic'] });
+        const material = addAdapter(root, 'iobroker.vis-2-widgets-material', 'vis-2-widgets-material', {
+            visWidgets: { vis2material: {} },
+        });
 
-        const { widgetSets } = sync(root, [bring, swiper]);
+        const { widgetSets } = sync(root, [bring, material]);
 
+        // a set marked v2 is loaded as a module and must not be inlined into widgets.html
         assert.deepStrictEqual(
-            widgetSets.map(set => [set.name, set.depends]),
+            widgetSets.map(set => [set.name, !!set.v2]),
             [
-                ['basic', undefined],
-                ['bring', undefined],
-                ['swiper', ['basic']],
+                ['basic', false],
+                ['bring', false],
+                ['vis-2-widgets-material', true],
             ],
         );
     });
