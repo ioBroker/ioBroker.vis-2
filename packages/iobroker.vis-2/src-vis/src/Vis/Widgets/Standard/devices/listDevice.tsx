@@ -6,7 +6,7 @@ import { Icon, I18n } from '@iobroker/gui-components';
 
 import FatSlider from '../Base/controls/FatSlider';
 import SlideToggle from '../Base/controls/SlideToggle';
-import { asNumber, asText } from '../Base/controls/stateValue';
+import { asNumber, asText, statesOf, typedValue } from '../Base/controls/stateValue';
 import { describeObject } from '../Base/adoptObject';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { limitsOf } from '../Base/limits';
@@ -92,48 +92,6 @@ function kindOf(common: ioBroker.StateCommon | null | undefined): Exclude<RowKin
     }
 
     return 'value';
-}
-
-/**
- * What a state says it may be: the value and the word for it.
- *
- * @param common - what the object says about the state
- */
-function statesOf(common: ioBroker.StateCommon | null | undefined): { value: string; label: string }[] {
-    const states = common?.states;
-    if (!states) {
-        return [];
-    }
-    if (Array.isArray(states)) {
-        return states.map((label, index) => ({ value: `${index}`, label: `${label}` }));
-    }
-    if (typeof states === 'string') {
-        // the old way of writing them down: `0:off;1:on`
-        return `${states}`
-            .split(';')
-            .map(pair => pair.split(':'))
-            .filter(pair => pair.length === 2)
-            .map(([value, label]) => ({ value: value.trim(), label: label.trim() }));
-    }
-
-    return Object.entries(states).map(([value, label]) => ({ value, label: `${label}` }));
-}
-
-/**
- * The value a state is written with, out of what a dropdown hands back as text.
- *
- * @param value - the chosen value, as the option carried it
- * @param common - what the object says about the state
- */
-function typed(value: string, common: ioBroker.StateCommon | null | undefined): string | number | boolean {
-    if (common?.type === 'number') {
-        return Number(value);
-    }
-    if (common?.type === 'boolean') {
-        return value === 'true' || value === '1';
-    }
-
-    return value;
 }
 
 /** Whether a value is one of the many ways of saying yes */
@@ -440,6 +398,14 @@ const listDevice = defineDeviceWidget<ListRxData>({
                         style={{
                             flex: 1,
                             minWidth: 0,
+                            /*
+                             * A dropdown is as wide as its longest option, and `Automatik` beside `Betriebsart`
+                             * on a card three cells wide left the name as `Betrie…` and the dropdown whole. The
+                             * name is the half that says which row this is, so it keeps about half the line and
+                             * the dropdown gives way - both then end in an ellipsis rather than one of them.
+                             * Only against a dropdown: a reading cut short is a wrong number, not a short word.
+                             */
+                            ...(row.kind === 'select' ? { minWidth: 'min(5.5em, 45%)' } : undefined),
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -504,14 +470,17 @@ const listDevice = defineDeviceWidget<ListRxData>({
                         disabled={context.editMode || !id}
                         onChange={e => {
                             const chosen = e.target.value;
-                            context.act('on', () => context.setValue(id, typed(chosen, row.common)));
+                            context.act('on', () => context.setValue(id, typedValue(chosen, row.common)));
                         }}
                         style={{
-                            flexShrink: 0,
                             // no width of its own: a percentage here is measured against a box that is itself
                             // only as wide as this one, and the browser then settles on a few letters of it.
-                            // The name beside it carries `flex: 1; min-width: 0` and gives way instead.
+                            // It shrinks against the name beside it instead, down to nothing if it has to.
                             maxWidth: '100%',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                             padding: '3px 4px',
                             borderRadius: 8,
                             border: `1px solid ${theme.palette.divider}`,
@@ -606,7 +575,17 @@ const listDevice = defineDeviceWidget<ListRxData>({
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24 }}>
                         {label}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <span
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                // a toggle or a button narrower than itself is no longer something a thumb can
+                                // hit, so only the row that ends in a dropdown gives way
+                                flexShrink: row.kind === 'select' ? 1 : 0,
+                                minWidth: 0,
+                            }}
+                        >
                             {slider ? reading_ : control}
                         </span>
                     </div>

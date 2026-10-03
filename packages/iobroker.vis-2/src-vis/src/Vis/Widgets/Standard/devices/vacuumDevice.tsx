@@ -88,6 +88,16 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
         '<circle cx="16" cy="16" r="4" fill="currentColor"/>' +
         '<path d="M16 4v4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
     deviceTypes: [Types.vacuumCleaner],
+    wizard: {
+        states: {
+            oid: 'POWER',
+            oidStatus: 'STATE',
+            oidBattery: 'BATTERY',
+            oidPause: 'PAUSE',
+            oidHome: 'HOME',
+            oidMode: ['WORK_MODE', 'MODE'],
+        },
+    },
     fields: [
         { name: 'oid', type: 'id', label: 'oid_vacuum_power' },
         { name: 'oidStatus', type: 'id', label: 'oid_vacuum_status' },

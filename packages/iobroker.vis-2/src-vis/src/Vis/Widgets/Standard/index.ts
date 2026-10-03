@@ -6,6 +6,7 @@ import chartDevice from './devices/chartDevice';
 import clockDevice from './devices/clockDevice';
 import dimmerDevice from './devices/dimmerDevice';
 import iframeDevice from './devices/iframeDevice';
+import inputDevice from './devices/inputDevice';
 import knobDevice from './devices/knobDevice';
 import linkDevice from './devices/linkDevice';
 import listDevice from './devices/listDevice';
@@ -15,6 +16,7 @@ import rgbDevice from './devices/rgbDevice';
 import securityDevice from './devices/securityDevice';
 import sensorDevice from './devices/sensorDevice';
 import switchDevice from './devices/switchDevice';
+import tableDevice from './devices/tableDevice';
 import tankDevice from './devices/tankDevice';
 import textDevice from './devices/textDevice';
 import themeDevice from './devices/themeDevice';
@@ -44,6 +46,7 @@ const DEVICES = [
     thermostatDevice,
     knobDevice,
     valueDevice,
+    inputDevice,
     tankDevice,
     sensorDevice,
     windowDevice,
@@ -57,6 +60,7 @@ const DEVICES = [
     applianceDevice,
     buttonDevice,
     listDevice,
+    tableDevice,
     chartDevice,
     clockDevice,
     linkDevice,
@@ -64,6 +68,15 @@ const DEVICES = [
     iframeDevice,
     themeDevice,
 ];
+
+/**
+ * The devices themselves, for whoever needs more than the two classes.
+ *
+ * The wizard does: it asks which widget shows a kind of device and how to fill it out of what the detector
+ * found - see `DeviceWizardMap` and `Wizard/deviceWidgets.ts`. The order is the order of the palette, and it
+ * decides who wins where two widgets show the same kind of device.
+ */
+export const STANDARD_DEVICES = DEVICES;
 
 const STANDARD_WIDGETS = [...DEVICES.map(d => d.Relative), ...DEVICES.map(d => d.Absolute)];
 

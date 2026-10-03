@@ -89,6 +89,7 @@ const blindDevice = defineDeviceWidget<BlindRxData>({
         markerFill: { share: 25, from: 'top' },
     },
     deviceTypes: [Types.blind, Types.blindButtons, Types.gate],
+    wizard: { states: { oid: 'SET', oidActual: 'ACTUAL', oidUp: 'OPEN', oidDown: 'CLOSE', oidStop: 'STOP' } },
     fields: [
         {
             name: 'mode',

@@ -112,6 +112,8 @@ export interface WizardDialogProps {
     changeProject: (project: Project) => Promise<void>;
     changeView: (view: string) => Promise<void>;
     onClose: () => void;
+    /** The page the devices are added to; without it the wizard creates pages of its own */
+    view?: string;
 }
 
 // the names of the kinds of devices come with the components, in every language the editor speaks
@@ -131,8 +133,9 @@ function adapterOf(id: string): string {
  * The wizard that builds pages out of the devices of the installation.
  *
  * It finds the devices with the type detector, sorts them into the rooms or the functions they are in, and
- * writes one page with a section per group - or one page per group. Everything it creates is one change of the
- * project, so one press of undo takes it all back.
+ * writes one page with a section per group - or one page per group. Called for a page that is there already
+ * (`props.view`) it adds its sections to that one instead, and leaves everything on it alone. Everything it
+ * does is one change of the project, so one press of undo takes it all back.
  *
  * @param props - the connection, the theme and how the editor is told about the new pages
  */
@@ -147,6 +150,8 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
     const [grouping, setGrouping] = useState<WizardGrouping>('room');
 
     const [unchecked, setUnchecked] = useState<Record<string, boolean>>({});
+    /** What the page already shows is unticked once, when the devices arrive; ticking it again is allowed */
+    const presetDone = useRef(false);
     const [names, setNames] = useState<Record<string, string>>({});
 
     const [pages, setPages] = useState<WizardPages>('single');
@@ -157,6 +162,24 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
     );
 
     const [creating, setCreating] = useState(false);
+
+    /**
+     * The devices the page already shows, by the id the wizard put on its widgets.
+     *
+     * Read once, when the dialog opens: it is what the page looked like before, and the point of it is that a
+     * second run adds the new lamp and not a second copy of every lamp.
+     */
+    const present: Set<string> = useMemo(() => {
+        const found = new Set<string>();
+        const view = props.view ? store.getState().visProject[props.view] : undefined;
+        Object.values(view?.widgets || {}).forEach(widget => {
+            const id = widget.data?.wizardId;
+            if (typeof id === 'string') {
+                found.add(id);
+            }
+        });
+        return found;
+    }, [props.view]);
 
     // closing the dialog while the detection is still running stops it
     const cancelled = useRef(false);
@@ -179,6 +202,20 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
             cancelled.current = true;
         };
     }, [props.socket]);
+
+    useEffect(() => {
+        if (presetDone.current || !detection || !present.size) {
+            return;
+        }
+        presetDone.current = true;
+        const next: Record<string, boolean> = {};
+        detection.devices.forEach(device => {
+            if (present.has(device.id)) {
+                next[device.id] = true;
+            }
+        });
+        setUnchecked(next);
+    }, [detection, present]);
 
     /** The groups the devices are sorted into: the rooms, or the functions */
     const groups: WizardEnum[] = useMemo(
@@ -257,6 +294,9 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
             return null;
         }
         const project = store.getState().visProject;
+        const into = props.view
+            ? { name: props.view, sections: project[props.view]?.settings?.sections?.length || 0 }
+            : undefined;
         return planWizardPages(selected, {
             grouping,
             pages,
@@ -268,6 +308,7 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
             getSpan,
             standardIcons,
             sectionVariant,
+            into,
         });
     }, [
         detection,
@@ -280,6 +321,7 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
         getSpan,
         standardIcons,
         sectionVariant,
+        props.view,
     ]);
 
     const toggleGroup = (devices: WizardDevice[], checked: boolean): void => {
@@ -388,7 +430,23 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
                 style={styles.hint}
             >
                 {I18n.t('Every device that is ticked becomes a widget. Its name becomes the title of the widget.')}
+                {props.view && present.size
+                    ? ` ${I18n.t('What the page already shows is unticked, so a second run adds what is new.')}`
+                    : ''}
             </Typography>
+            {/* one tick for the whole list - with a hundred devices in twelve rooms, group by group is a chore */}
+            <div style={styles.groupSummary}>
+                <Checkbox
+                    checked={!!visible.length && selected.length === visible.length}
+                    indeterminate={!!selected.length && selected.length < visible.length}
+                    disabled={!visible.length}
+                    onChange={e => toggleGroup(visible, e.target.checked)}
+                />
+                <Typography>{I18n.t('Select all')}</Typography>
+                <Typography style={styles.hint}>
+                    {selected.length} / {visible.length}
+                </Typography>
+            </div>
             {byGroup.map(entry => {
                 const checkedCount = entry.devices.filter(device => !unchecked[device.id]).length;
                 return (
@@ -462,6 +520,14 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
                                     >
                                         {typeName(device.type)}
                                     </Typography>
+                                    {present.has(device.id) ? (
+                                        <Typography
+                                            variant="body2"
+                                            style={styles.hint}
+                                        >
+                                            {I18n.t('already on the page')}
+                                        </Typography>
+                                    ) : null}
                                 </div>
                             ))}
                         </AccordionDetails>
@@ -473,7 +539,12 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
 
     const renderStructure = (): React.JSX.Element => (
         <>
-            <div>
+            {props.view ? (
+                <Typography variant="body2">
+                    {I18n.t('The devices are added to the page "%s" as further sections.', props.view)}
+                </Typography>
+            ) : null}
+            <div style={{ display: props.view ? 'none' : undefined }}>
                 <Typography
                     variant="body2"
                     style={styles.hint}
@@ -496,7 +567,7 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
                     />
                 </RadioGroup>
             </div>
-            {pages === 'single' ? (
+            {pages === 'single' && !props.view ? (
                 <TextField
                     variant="standard"
                     label={I18n.t('Name of the page')}
@@ -629,7 +700,7 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
         >
             <DialogTitle>
                 <WizardIcon style={{ verticalAlign: 'middle', marginRight: 8 }} />
-                {I18n.t('Create pages from devices')}
+                {props.view ? I18n.t('Add devices to the page') : I18n.t('Create pages from devices')}
             </DialogTitle>
             <DialogContent style={styles.content}>
                 <Stepper activeStep={step}>
@@ -659,7 +730,7 @@ export default function WizardDialog(props: WizardDialogProps): React.JSX.Elemen
                         onClick={() => void create()}
                         startIcon={<CheckIcon />}
                     >
-                        {I18n.t('Create')}
+                        {props.view ? I18n.t('Add') : I18n.t('Create')}
                     </Button>
                 ) : (
                     <Button

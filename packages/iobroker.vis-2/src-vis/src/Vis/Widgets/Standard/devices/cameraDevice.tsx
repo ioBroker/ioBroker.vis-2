@@ -44,6 +44,7 @@ const cameraDevice = defineDeviceWidget<CameraRxData>({
         '<rect x="3" y="9" width="17" height="15" rx="2" stroke="currentColor" stroke-width="2"/>' +
         '<path d="M20 14l9-5v14l-9-5z" fill="currentColor" opacity="0.6"/></svg>',
     deviceTypes: [Types.camera, Types.image],
+    wizard: { states: { oid: 'URL' } },
     fields: [
         { name: 'src', label: 'camera_src' },
         { name: 'oid', type: 'id', label: 'camera_oid', tooltip: 'camera_oid_tooltip' },

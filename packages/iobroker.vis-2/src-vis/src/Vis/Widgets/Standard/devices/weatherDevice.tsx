@@ -145,6 +145,18 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
         '<path d="M12 26h12a5 5 0 0 0 0-10 7 7 0 0 0-13-2 5 5 0 0 0 1 12z" fill="currentColor" ' +
         'opacity="0.45"/></svg>',
     deviceTypes: [Types.weatherCurrent, Types.weatherForecast],
+    wizard: {
+        // the forecast is a state per day, which the widget asks of an instance rather than of single ids
+        types: [Types.weatherCurrent],
+        states: {
+            oid: 'ACTUAL',
+            oidIcon: 'ICON',
+            oidText: 'WEATHER',
+            oidFeelsLike: 'REAL_FEEL_TEMPERATURE',
+            oidHumidity: 'HUMIDITY',
+            oidPrecipitation: 'PRECIPITATION_CHANCE',
+        },
+    },
     fields: [
         {
             name: 'source',

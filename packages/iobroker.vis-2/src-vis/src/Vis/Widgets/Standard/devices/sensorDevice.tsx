@@ -101,6 +101,19 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
         Types.contact,
         Types.buttonSensor,
     ],
+    wizard: {
+        // a window and a door are shown by the window widget, which draws them; the rest is a sensor
+        types: [Types.motion, Types.fireAlarm, Types.floodAlarm, Types.coAlarm, Types.contact, Types.buttonSensor],
+        states: { oid: ['ACTUAL', 'PRESS'] },
+        data: {
+            [Types.motion]: { kind: 'motion' },
+            [Types.fireAlarm]: { kind: 'smoke', alarm: true },
+            [Types.coAlarm]: { kind: 'smoke', alarm: true },
+            [Types.floodAlarm]: { kind: 'water', alarm: true },
+            [Types.contact]: { kind: 'contact' },
+            [Types.buttonSensor]: { kind: 'generic' },
+        },
+    },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         {

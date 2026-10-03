@@ -108,7 +108,8 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
         'opacity="0.45"/>' +
         '<path d="M7 24a11 11 0 0 1 4-15" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' +
         '<circle cx="11" cy="9" r="3.5" fill="currentColor"/></svg>',
-    deviceTypes: [Types.thermostat],
+    deviceTypes: [Types.thermostat, Types.airCondition],
+    wizard: { states: { oid: ['SET', 'SET_HEATING'], oidActual: 'ACTUAL', oidMode: 'MODE', oidPower: 'POWER' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid_target' },
         { name: 'oidActual', type: 'id', label: 'oid_actual_temperature' },

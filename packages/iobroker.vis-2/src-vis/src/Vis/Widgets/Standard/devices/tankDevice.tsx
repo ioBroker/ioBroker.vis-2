@@ -47,6 +47,7 @@ const tankDevice = defineDeviceWidget<TankRxData>({
         '<rect x="11" y="4" width="10" height="24" rx="5" stroke="currentColor" stroke-width="2"/>' +
         '<path d="M12 17h8v6a4 4 0 0 1-8 0z" fill="currentColor"/></svg>',
     deviceTypes: [Types.fillLevel],
+    wizard: { states: { oid: 'ACTUAL' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'unit', label: 'unit' },

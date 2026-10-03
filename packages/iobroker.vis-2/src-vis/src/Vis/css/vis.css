@@ -672,6 +672,21 @@ html {
 }
 
 /*
+ * The number field of Widgets/Standard/devices/inputDevice.tsx, on a card that is too narrow for it.
+ *
+ * Minus, field, unit and plus want about a hundred and fifty pixels. A card four cells wide has ninety, and
+ * the plus then stood outside the card, over its neighbour. There the two buttons go and the field is typed
+ * into instead - which is why they are hidden rather than stacked under it: a field with two buttons beneath
+ * reads as three controls, and typing the number works either way. The card says how much room there is, so
+ * nothing has to measure itself.
+ */
+@container vis-card (max-width: 150px) {
+    .vis-input-row .vis-input-step {
+        display: none;
+    }
+}
+
+/*
  * A list that is longer than its card, see Widgets/Standard/devices/listDevice.tsx.
  *
  * The scrollbar of the system is sixteen pixels of grey chrome across a card that is three hundred wide, and

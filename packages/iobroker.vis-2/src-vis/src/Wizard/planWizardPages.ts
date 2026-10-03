@@ -36,6 +36,18 @@ export interface WizardPlanOptions extends DeviceWidgetOptions {
     getSpan: (tpl: string) => GridCellSpan;
     /** The look of the sections: a card, or nothing around the widgets */
     sectionVariant?: 'panel' | 'plain';
+    /**
+     * The page the devices are added to, instead of pages of their own.
+     *
+     * The wizard is not only for an empty project: a room gets a new lamp, and the page for that room exists
+     * already. Then every group becomes a section appended to that page - the page keeps its name, its
+     * navigation and everything that is on it; {@link WizardPlanOptions.pages} says nothing any more.
+     */
+    into?: {
+        name: string;
+        /** How many sections the page has, so the new ones get ids of their own */
+        sections: number;
+    };
 }
 
 export interface WizardPlanPage {
@@ -43,6 +55,8 @@ export interface WizardPlanPage {
     name: string;
     settings: ViewSettings;
     widgets: Record<SingleWidgetId, SingleWidget>;
+    /** This page is there already: what is planned here is added to it, not written over it */
+    existing?: boolean;
 }
 
 export interface WizardPlanSkip {
@@ -158,13 +172,27 @@ export function planWizardPages(devices: WizardDevice[], options: WizardPlanOpti
         return page;
     };
 
-    const single = options.pages === 'single' ? newPage(options.pageName) : null;
+    /** Everything lands on the page the wizard was called for, or on the one page it creates */
+    const single = options.into
+        ? ((): WizardPlanPage => {
+              const page: WizardPlanPage = {
+                  name: options.into.name,
+                  settings: { style: {}, layout: 'grid', sections: [], order: [] },
+                  widgets: {},
+                  existing: true,
+              };
+              pages.push(page);
+              return page;
+          })()
+        : options.pages === 'single'
+          ? newPage(options.pageName)
+          : null;
 
     for (const planned of groupDevices(devices, options)) {
         const page = single || newPage(planned.group.name || options.withoutGroupName, planned.group.id);
 
         const section: ViewSection = {
-            id: `s${(page.settings.sections?.length || 0) + 1}`,
+            id: `s${(options.into?.sections || 0) + (page.settings.sections?.length || 0) + 1}`,
             widgets: [],
             title: planned.group.name || options.withoutGroupName,
             variant: options.sectionVariant || 'panel',
@@ -210,7 +238,7 @@ export function planWizardPages(devices: WizardDevice[], options: WizardPlanOpti
         sectionCount++;
 
         // a page of its own for a room is reached through the navigation, so it brings its entry along
-        if (!single) {
+        if (!single && !options.into) {
             page.settings.navigation = true;
             page.settings.navigationTitle = planned.group.name || options.withoutGroupName;
             if (groupIcon) {
@@ -242,6 +270,25 @@ export function planWizardPages(devices: WizardDevice[], options: WizardPlanOpti
  */
 export function applyWizardPlan(project: Project, plan: WizardPlan): Project {
     for (const page of plan.pages) {
+        const there = page.existing ? project[page.name] : undefined;
+        if (there) {
+            /*
+             * A page that is there already keeps everything it has.
+             *
+             * Only what was planned is added: the sections at the end, their widgets, and the order of the
+             * page. Its name, its navigation, its background and whatever stands on it are none of the
+             * wizard's business the second time round.
+             */
+            there.settings ||= { style: {} };
+            there.settings.sections = [...(there.settings.sections || []), ...(page.settings.sections || [])];
+            there.settings.order = [
+                ...((there.settings.order as AnyWidgetId[]) || []),
+                ...((page.settings.order as AnyWidgetId[]) || []),
+            ];
+            Object.assign(there.widgets, page.widgets);
+            continue;
+        }
+
         project[page.name] = {
             name: page.name,
             parentId: undefined,

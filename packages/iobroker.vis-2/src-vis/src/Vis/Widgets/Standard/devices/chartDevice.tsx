@@ -50,6 +50,7 @@ const chartDevice = defineDeviceWidget<ChartRxData>({
         'stroke-linecap="round" stroke-linejoin="round"/>' +
         '<path d="M4 28h24" stroke="currentColor" stroke-width="2" opacity="0.5"/></svg>',
     deviceTypes: [Types.chart],
+    wizard: { states: { oid: 'CHART' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'oid2', type: 'id', label: 'oid_second' },
