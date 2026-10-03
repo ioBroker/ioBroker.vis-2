@@ -194,6 +194,15 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
     markerShape: 'value',
     render: context => {
         const { data, tokens, theme, isFloatComma, accents } = context;
+        /*
+         * The unit the widget was told, and otherwise the one the object carries.
+         *
+         * Picking the state in the editor copies the unit into the field, so a card built by hand has one
+         * either way. A card built by the wizard, or written into the project some other way, has not - and
+         * `21,4` without a `°C` is half a reading. The tank and the input widget already ask the object.
+         */
+        const unit = data.unit || context.commonOf('oid')?.unit || '';
+        const unit2 = data.unit2 || context.commonOf('oid2')?.unit || '';
         const raw = context.valueOf('oid');
         const value = asNumber(raw);
         const digits = asNumber(data.digits);
@@ -247,7 +256,7 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
                         color={accent}
                     />
                 ) : null,
-            value: withUnit(format(raw, digits, isFloatComma), data.unit, tokens.valueSize),
+            value: withUnit(format(raw, digits, isFloatComma), unit, tokens.valueSize),
             // how large the arrow is drawn is the frame's business: a card gives it the size of its value, a
             // marker a share of its own
             trend:
@@ -266,9 +275,9 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
                         flatColor={alarming ? '#fff' : accents.off}
                     />
                 ) : null,
-            stateText: `${format(raw, digits, isFloatComma)}${data.unit ? ` ${data.unit}` : ''}`,
+            stateText: `${format(raw, digits, isFloatComma)}${unit ? ` ${unit}` : ''}`,
             // a marker shows the number itself, which is the whole point of a measured value
-            marker: { text: format(raw, digits, isFloatComma), unit: data.unit },
+            marker: { text: format(raw, digits, isFloatComma), unit },
             valueColor: outOfRange ? accents.yellow : undefined,
             chart: isOn(data.chartClick, true)
                 ? {
@@ -279,7 +288,7 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
                   }
                 : undefined,
             control: data.oid2
-                ? withUnit(format(context.valueOf('oid2'), digits, isFloatComma), data.unit2, tokens.smallSize)
+                ? withUnit(format(context.valueOf('oid2'), digits, isFloatComma), unit2, tokens.smallSize)
                 : null,
         };
     },

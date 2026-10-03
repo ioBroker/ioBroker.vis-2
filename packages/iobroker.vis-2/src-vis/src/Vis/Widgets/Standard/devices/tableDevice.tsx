@@ -13,6 +13,9 @@ import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../
 import { STANDARD_I18N_PREFIX } from '../Base/prefix';
 
 /** The most columns one card is worth describing by hand */
+/** What a column is left with when the card is too narrow for all of them, before it scrolls */
+const MIN_COLUMN_WIDTH = 72;
+
 const MAX_COLUMNS = 8;
 
 interface TableRxData extends StandardRxData {
@@ -245,12 +248,29 @@ const tableDevice = defineDeviceWidget<TableRxData>({
          * and squeezes every named column down to a letter.
          */
         const cell: React.CSSProperties = {
+            // a column told to be ninety pixels wide is ninety wide, padding and all - otherwise the widths
+            // and the floor below disagree by exactly the padding, and the free column pays for it
+            boxSizing: 'border-box',
             padding: '4px 8px',
             fontSize: tokens.smallSize,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
         };
+
+        /*
+         * How narrow the table may become before the card scrolls sideways.
+         *
+         * `table-layout: fixed` hands every column its width and lets the ones without a width share what is
+         * left - and on a phone there is nothing left: a card of three hundred pixels with two columns of
+         * ninety swallowed the third one whole, headline and all, without so much as a scrollbar. So every
+         * column keeps a floor of its own, the table is at least as wide as those floors together, and the
+         * card around it scrolls when they no longer fit. A column told to be forty pixels wide stays forty.
+         */
+        const minWidth = columns.reduce((sum, column) => {
+            const px = /^\d+(\.\d+)?px$/.test(column.width || '') ? parseFloat(column.width as string) : null;
+            return sum + (px ?? MIN_COLUMN_WIDTH);
+        }, 0);
 
         return {
             accent: accents.blue,
@@ -265,7 +285,14 @@ const tableDevice = defineDeviceWidget<TableRxData>({
                         style={{ width: '100%', height: '100%', overflow: 'auto' }}
                     >
                         {rows.length && columns.length ? (
-                            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                            <table
+                                style={{
+                                    width: '100%',
+                                    minWidth,
+                                    borderCollapse: 'collapse',
+                                    tableLayout: 'fixed',
+                                }}
+                            >
                                 {withHead ? (
                                     <thead>
                                         <tr>

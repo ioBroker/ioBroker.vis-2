@@ -398,6 +398,14 @@ const listDevice = defineDeviceWidget<ListRxData>({
                         style={{
                             flex: 1,
                             minWidth: 0,
+                            /*
+                             * A dropdown is as wide as its longest option, and `Automatik` beside `Betriebsart`
+                             * on a card three cells wide left the name as `Betrie…` and the dropdown whole. The
+                             * name is the half that says which row this is, so it keeps about half the line and
+                             * the dropdown gives way - both then end in an ellipsis rather than one of them.
+                             * Only against a dropdown: a reading cut short is a wrong number, not a short word.
+                             */
+                            ...(row.kind === 'select' ? { minWidth: 'min(5.5em, 45%)' } : undefined),
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
@@ -465,11 +473,14 @@ const listDevice = defineDeviceWidget<ListRxData>({
                             context.act('on', () => context.setValue(id, typedValue(chosen, row.common)));
                         }}
                         style={{
-                            flexShrink: 0,
                             // no width of its own: a percentage here is measured against a box that is itself
                             // only as wide as this one, and the browser then settles on a few letters of it.
-                            // The name beside it carries `flex: 1; min-width: 0` and gives way instead.
+                            // It shrinks against the name beside it instead, down to nothing if it has to.
                             maxWidth: '100%',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                             padding: '3px 4px',
                             borderRadius: 8,
                             border: `1px solid ${theme.palette.divider}`,
@@ -564,7 +575,17 @@ const listDevice = defineDeviceWidget<ListRxData>({
                 >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24 }}>
                         {label}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        <span
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                // a toggle or a button narrower than itself is no longer something a thumb can
+                                // hit, so only the row that ends in a dropdown gives way
+                                flexShrink: row.kind === 'select' ? 1 : 0,
+                                minWidth: 0,
+                            }}
+                        >
                             {slider ? reading_ : control}
                         </span>
                     </div>

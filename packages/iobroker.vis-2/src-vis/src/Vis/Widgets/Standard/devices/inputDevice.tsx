@@ -181,10 +181,12 @@ const inputDevice = defineDeviceWidget<InputRxData>({
          */
         if (!writable) {
             const number = asNumber(raw);
+            // the system writes a number with a comma, and a card that is only read is still a card
+            const written = number === null ? text || '--' : `${number}`.replace('.', context.isFloatComma ? ',' : '.');
             return {
                 accent: accents.off,
                 icon: <InputIcon style={{ width: '100%', height: '100%' }} />,
-                value: word || (number === null ? text || '--' : `${number}${unit ? ` ${unit}` : ''}`),
+                value: number === null ? word || written : `${written}${unit ? ` ${unit}` : ''}`,
                 valueColor: theme.palette.text.secondary,
                 stateText: word || text || '--',
             };
@@ -192,6 +194,8 @@ const inputDevice = defineDeviceWidget<InputRxData>({
 
         const result = {
             accent,
+            // the number field asks how much room its card has before it draws its two buttons
+            container: kind === 'number',
             active: kind === 'checkbox' && on,
             icon: <InputIcon style={{ width: '100%', height: '100%' }} />,
             stateText: word || text || '--',

@@ -35,6 +35,13 @@ Additionally, you need a license to use the adapter. The following license editi
 
 [Online Demos](https://iobroker.click/)
 
+### Widgets
+
+- [Standard widgets](packages/iobroker.vis-2/docs/widgets-standard.md) - the devices of a house, as cards for
+  a page with sections (`relative`) and as markers for a floor plan (`absolute`), with a picture of every one
+  of them
+- [jQui widgets](packages/iobroker.vis-2/docs/widgets-jQui.md) - the widgets that came over from vis-1
+
 ## Bindings of objects
 Normally, most of the widgets have ObjectID attribute, and this attribute can be bound with some value of object ID.
 But there is another option for how to bind *any* attribute of widget to some ObjectID. 
@@ -337,6 +344,12 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) The two standard widget sets are written up: [docs/widgets-standard.md](packages/iobroker.vis-2/docs/widgets-standard.md) has a picture of every one of the twenty-seven devices, what it reads and writes, every attribute it carries, and what it looks like as a marker on a plan
+* (@GermanBluefox) A chart in a section keeps the height of its card. It drew itself as high as the box it had just measured, which made that box higher, which made the next drawing higher: a card six thousand pixels tall with an axis label every tenth of a degree
+* (@GermanBluefox) A table whose columns are given widths keeps all of them on a narrow card. Every column has a floor of its own now and the card scrolls sideways when they no longer fit, instead of the column without a width being squeezed to nothing - heading, data and all - on a phone
+* (@GermanBluefox) A measured value takes its unit out of the object where its own field is empty, the way the fill level and the input field already did, so a card the assistant built says `21,4 °C` and not `21,4`
+* (@GermanBluefox) The name of a list row and the dropdown beside it share the line. The dropdown was as wide as its longest word, which left `Betrie...` of `Betriebsart`; now both end in an ellipsis instead of one of them
+* (@GermanBluefox) The minus and plus of a number field are left out where the card is too narrow for them - the plus stood outside the card, over its neighbour - and a number that can only be read is written with the decimal separator of the language
 * (@GermanBluefox) vis-2 brings two widget sets of its own for the devices of a house: **Relative**, where a widget is a tile that fills its cell of a section, and **Absolute**, where it is as large as it was dragged. Both show the same devices in the same style - the card, a quiet name over a big value, the control at the bottom edge, and every colour out of the theme, so the two new themes carry them as well - and a device is described once and comes out in both sets. The two sets are not the same widget in two sizes: a page with an absolute layout has a picture of the flat under it, so a device there is **a marker no bigger than a coin** - a ring in the colour of its state around a dark disc with its icon, glowing in that colour so it is found on a busy picture. What it shows follows the shape it is dragged to: wider than tall it is a capsule with the number beside the icon, square it shows the number alone because both would have to be too small, taller than wide it stands the icon over the number. Picking the state for one takes over what the object already knows - its name, its unit, its limits and the icon of its channel - so none of that has to be typed again, and a marker says as much or as little as it is told to: only its icon, the icon with the name under it, or both with the state as well.
 * (@GermanBluefox) A widget attribute can be an icon **or** a picture, in one field: two buttons beside it open the picker of the standard small icons and the file browser of ioBroker, and whichever was chosen last is what the widget shows. The widgets of the sets `Relative` and `Absolute` name their icon that way In a section a widget is a card instead, in one of three arrangements: the name above the value, a single row, or a tile in the colour of its state. The first three devices are there: switch, measured value and blind. Neither set measures the box it ended up in, so neither can chase its own size the way the widgets of the material set did
 * (@GermanBluefox) A page can be built out of the devices of the installation: `Add view` offers `From devices...`, which finds what the type detector knows, sorts it into the rooms - or the functions - it belongs to, and writes one page with a section per room, or a page per room with its entry in the navigation. Every device becomes a widget of `Basic` or `jQui`, so no other adapter is needed: what can be switched becomes a switch, what can be set a slider, what can be read a value. The names can be changed and single devices left out before anything is written, and all of it is one step of the undo

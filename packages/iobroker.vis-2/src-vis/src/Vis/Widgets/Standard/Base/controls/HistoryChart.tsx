@@ -847,24 +847,34 @@ export default function HistoryChart(props: HistoryChartProps): React.JSX.Elemen
                     </ButtonGroup>
                 </div>
             )}
+            {/*
+             * The chart is measured, so it may never be what is measured.
+             *
+             * A card in a section may be as high as its content - the grid rows are `minmax(height, auto)` -
+             * and a drawing as high as the box it was told about then makes that box higher, which makes the
+             * next drawing higher: a chart six thousand pixels tall with an axis label every tenth of a
+             * degree. Out of flow it cannot push anything, and the box is whatever its place gives it.
+             */}
             <div
                 ref={divRef}
-                style={{ width: '100%', flexGrow: 1, minHeight: 120, overflow: 'hidden' }}
+                style={{ width: '100%', flexGrow: 1, minHeight: 120, overflow: 'hidden', position: 'relative' }}
             >
                 {size.width > 80 && size.height > 80 ? (
-                    <InteractiveChart
-                        series={series}
-                        width={size.width}
-                        height={size.height}
-                        title={props.chartTitle}
-                        fallback={range}
-                        isFloatComma={props.isFloatComma}
-                        themeType={themeType}
-                        onViewSettle={(start, end) => {
-                            setRange({ start, end });
-                            void load(start, end);
-                        }}
-                    />
+                    <div style={{ position: 'absolute', inset: 0 }}>
+                        <InteractiveChart
+                            series={series}
+                            width={size.width}
+                            height={size.height}
+                            title={props.chartTitle}
+                            fallback={range}
+                            isFloatComma={props.isFloatComma}
+                            themeType={themeType}
+                            onViewSettle={(start, end) => {
+                                setRange({ start, end });
+                                void load(start, end);
+                            }}
+                        />
+                    </div>
                 ) : null}
             </div>
         </Box>
