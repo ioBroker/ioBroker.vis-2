@@ -2,11 +2,18 @@ import React, { Suspense, useState } from 'react';
 
 import { Tooltip } from '@mui/material';
 
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Menu as MenuIcon } from '@mui/icons-material';
+import {
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    Menu as MenuIcon,
+    AutoFixHigh as WizardIcon,
+} from '@mui/icons-material';
 
 import { I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
+import { store } from '@/Store';
 import type { GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import ViewsManager from './ViewsManager';
 
@@ -51,7 +58,8 @@ interface ViewsProps {
 
 const Views = (props: ViewsProps): React.JSX.Element => {
     const [dialog, setDialog] = useState<'add' | 'rename' | 'delete' | 'copy' | null>(null);
-    const [wizard, setWizard] = useState(false);
+    /** `true` while the wizard builds pages of its own, a view name while it adds to that one */
+    const [wizard, setWizard] = useState<boolean | string>(false);
     const [dialogCallback, setDialogCallback] = useState<{ cb: (dialogName: string) => void } | null>(null);
     const [dialogName, setDialogName] = useState('');
     const [dialogView, setDialogView] = useState<string | undefined>(undefined);
@@ -127,6 +135,18 @@ const Views = (props: ViewsProps): React.JSX.Element => {
             ],
             {
                 type: 'icon-button',
+                Icon: WizardIcon,
+                // the box of a toolbar button is 60px wide, so the label is one word, like its neighbours
+                name: 'Devices',
+                onAction: () => setWizard(props.selectedView),
+                // the wizard builds sections, and sections are what the grid layout has
+                disabled:
+                    !!props.selectedGroup ||
+                    !props.editMode ||
+                    store.getState().visProject[props.selectedView]?.settings?.layout !== 'grid',
+            },
+            {
+                type: 'icon-button',
                 Icon: MenuIcon,
                 name: 'Manage views',
                 onAction: () => props.setViewsManager(true),
@@ -183,6 +203,7 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                         socket={props.socket}
                         changeProject={props.changeProject}
                         changeView={props.changeView}
+                        view={typeof wizard === 'string' ? wizard : undefined}
                         onClose={() => setWizard(false)}
                     />
                 </Suspense>

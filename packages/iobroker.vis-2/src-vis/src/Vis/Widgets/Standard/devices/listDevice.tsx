@@ -6,7 +6,7 @@ import { Icon, I18n } from '@iobroker/gui-components';
 
 import FatSlider from '../Base/controls/FatSlider';
 import SlideToggle from '../Base/controls/SlideToggle';
-import { asNumber, asText } from '../Base/controls/stateValue';
+import { asNumber, asText, statesOf, typedValue } from '../Base/controls/stateValue';
 import { describeObject } from '../Base/adoptObject';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { limitsOf } from '../Base/limits';
@@ -92,48 +92,6 @@ function kindOf(common: ioBroker.StateCommon | null | undefined): Exclude<RowKin
     }
 
     return 'value';
-}
-
-/**
- * What a state says it may be: the value and the word for it.
- *
- * @param common - what the object says about the state
- */
-function statesOf(common: ioBroker.StateCommon | null | undefined): { value: string; label: string }[] {
-    const states = common?.states;
-    if (!states) {
-        return [];
-    }
-    if (Array.isArray(states)) {
-        return states.map((label, index) => ({ value: `${index}`, label: `${label}` }));
-    }
-    if (typeof states === 'string') {
-        // the old way of writing them down: `0:off;1:on`
-        return `${states}`
-            .split(';')
-            .map(pair => pair.split(':'))
-            .filter(pair => pair.length === 2)
-            .map(([value, label]) => ({ value: value.trim(), label: label.trim() }));
-    }
-
-    return Object.entries(states).map(([value, label]) => ({ value, label: `${label}` }));
-}
-
-/**
- * The value a state is written with, out of what a dropdown hands back as text.
- *
- * @param value - the chosen value, as the option carried it
- * @param common - what the object says about the state
- */
-function typed(value: string, common: ioBroker.StateCommon | null | undefined): string | number | boolean {
-    if (common?.type === 'number') {
-        return Number(value);
-    }
-    if (common?.type === 'boolean') {
-        return value === 'true' || value === '1';
-    }
-
-    return value;
 }
 
 /** Whether a value is one of the many ways of saying yes */
@@ -504,7 +462,7 @@ const listDevice = defineDeviceWidget<ListRxData>({
                         disabled={context.editMode || !id}
                         onChange={e => {
                             const chosen = e.target.value;
-                            context.act('on', () => context.setValue(id, typed(chosen, row.common)));
+                            context.act('on', () => context.setValue(id, typedValue(chosen, row.common)));
                         }}
                         style={{
                             flexShrink: 0,

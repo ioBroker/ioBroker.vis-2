@@ -43,6 +43,7 @@ const lockDevice = defineDeviceWidget<LockRxData>({
         '<path d="M11 14V9a5 5 0 0 1 10 0v5" stroke="currentColor" stroke-width="2.5"/>' +
         '<circle cx="16" cy="20" r="2" fill="currentColor"/></svg>',
     deviceTypes: [Types.lock],
+    wizard: { states: { oid: 'SET', oidActual: 'ACTUAL', oidOpen: 'OPEN' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid_lock' },
         { name: 'oidActual', type: 'id', label: 'oid_actual' },

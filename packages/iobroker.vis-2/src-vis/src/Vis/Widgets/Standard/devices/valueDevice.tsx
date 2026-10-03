@@ -119,7 +119,10 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
         Types.airQuality,
         Types.flow,
         Types.electricity,
+        Types.info,
     ],
+    // every one of these is a number to read; which name it carries is the only difference
+    wizard: { states: { oid: ['ACTUAL', 'PRESSURE', 'FLOW', 'AQI', 'ELECTRIC_POWER'] } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'unit', label: 'unit' },

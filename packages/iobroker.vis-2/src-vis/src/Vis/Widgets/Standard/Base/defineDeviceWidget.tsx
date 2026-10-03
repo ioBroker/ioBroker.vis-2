@@ -157,6 +157,17 @@ export interface DeviceContext<RxData extends StandardRxData> {
     /** Open another page of the project */
     navigate: (view: string) => void;
     /**
+     * Another page of the project, drawn inside this widget.
+     *
+     * For a card that shows a page rather than going to it: a button that opens the whole heating page in a
+     * dialog, a tile that carries a small page of its own. The page is rendered in its runtime, never in the
+     * editor's edit mode, and a page that contains itself would never stop - which the caller has to rule out
+     * by not offering its own page as the one to show.
+     *
+     * @param view - the name of the page
+     */
+    getView: (view: string) => React.ReactNode;
+    /**
      * Put the runtime into another theme, which is remembered for the next visit.
      *
      * The name is one of `light`, `dark`, `modernLight`, `modernDark`; without one the runtime takes the next
@@ -257,6 +268,32 @@ export interface DeviceChart {
     spline?: boolean;
 }
 
+/**
+ * How the wizard fills this widget out of a device the detector found.
+ *
+ * The detector hands over a device as a type and a handful of named states - `SET`, `ACTUAL`, `OPEN` - and
+ * the wizard has to turn that into a widget. Which state belongs in which field is something the device knows
+ * and the wizard does not, so it is written here, beside the fields themselves. A device without this is
+ * never what the wizard reaches for; the clock, the heading and the list are not devices.
+ */
+export interface DeviceWizardMap {
+    /**
+     * The types the wizard picks this widget for, where that is not all of {@link DeviceDefinition.deviceTypes}.
+     *
+     * A window is shown by the sensor as well as by the window widget - both are right, and only one of them
+     * can be what the wizard drops on the page.
+     */
+    types?: readonly Types[];
+    /**
+     * Which state of the device fills which field: the first name the device actually has wins.
+     *
+     * `{ oid: ['SET', 'ACTUAL'] }` means "what can be set, and failing that what can be read".
+     */
+    states: Readonly<Record<string, string | readonly string[]>>;
+    /** What else the wizard writes into the widget, per kind of device: `kind: 'door'` on a door */
+    data?: Readonly<Partial<Record<Types, WidgetData>>>;
+}
+
 export interface DeviceDefinition<RxData extends StandardRxData> {
     /** What stands behind `tplRel` and `tplAbs`, like `Blind` */
     name: string;
@@ -280,6 +317,8 @@ export interface DeviceDefinition<RxData extends StandardRxData> {
     picture: Omit<DevicePicture, 'accent'>;
     /** Which kinds of device the wizard puts on this widget */
     deviceTypes: Types[];
+    /** How the wizard fills this widget out of a detected device; without it, it never picks this one */
+    wizard?: DeviceWizardMap;
     /** The fields besides the ones every widget of these sets has */
     fields: readonly RxWidgetInfoAttributesField[];
     /**
@@ -791,6 +830,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                     },
                     layout: this.state.rxData.layout || (which === 'absolute' ? 'icon' : 'default'),
                     navigate: view => this.props.context.changeView(view),
+                    getView: view => this.getWidgetView(view),
                     setTheme: themeName => this.props.context.toggleTheme(themeName),
                     t: (word, ...args) => I18n.t(STANDARD_I18N_PREFIX + word, ...args),
                 };

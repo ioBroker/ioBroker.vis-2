@@ -18,6 +18,8 @@ export default defineConfig({
     test: {
         // no DOM: every function under test here is pure, and a test that needs one says so itself
         environment: 'node',
+        // ... but a module may touch `window` while it is loaded; see the file
+        setupFiles: ['./vitest.setup.ts'],
         include: ['src/**/*.test.ts'],
         restoreMocks: true,
     },

@@ -76,7 +76,7 @@ describe('planWizardPages', () => {
         expect(page.widgets.w000001.style.position).toBe('relative');
         expect(page.widgets.w000001.style.gridColumns).toBe(6);
         expect(page.widgets.w000001.style.gridRows).toBe(2);
-        expect(page.widgets.w000001.widgetSet).toBe('basic');
+        expect(page.widgets.w000001.widgetSet).toBe('relative');
         expect(page.settings.order).toEqual(['w000001', 'w000002', 'w000003', 'w000004']);
         // the sections name the widgets they hold, in the order they are shown
         expect(page.settings.sections![0].widgets).toEqual(['w000001', 'w000002']);
@@ -123,12 +123,13 @@ describe('planWizardPages', () => {
     });
 
     it('names what it passed over, and why', () => {
-        const player = device('sonos.0.player', Types.media, 'enum.rooms.living');
-        const plan = planWizardPages([DEVICES[0], player], options());
+        // a position on a map is the kind of device neither of the two sets draws
+        const where = device('gps.0.car', Types.location, 'enum.rooms.living');
+        const plan = planWizardPages([DEVICES[0], where], options());
 
         expect(plan.widgetCount).toBe(1);
         expect(plan.skipped).toHaveLength(1);
-        expect(plan.skipped[0].device.id).toBe('sonos.0.player');
+        expect(plan.skipped[0].device.id).toBe('gps.0.car');
         expect(plan.skipped[0].reason).toBe('no-widget');
     });
 
@@ -137,6 +138,28 @@ describe('planWizardPages', () => {
 
         expect(plan.pages).toHaveLength(0);
         expect(plan.widgetCount).toBe(0);
+    });
+});
+
+describe('planWizardPages into a page that is there already', () => {
+    it('puts everything on that page and numbers its sections after the ones it has', () => {
+        const plan = planWizardPages(DEVICES, options({ into: { name: 'Living room', sections: 2 } }));
+
+        expect(plan.pages).toHaveLength(1);
+        expect(plan.pages[0].name).toBe('Living room');
+        expect(plan.pages[0].existing).toBe(true);
+        expect(plan.pages[0].settings.sections!.map(section => section.id)).toEqual(['s3', 's4', 's5']);
+    });
+
+    it('leaves the navigation of that page alone', () => {
+        const plan = planWizardPages(
+            DEVICES,
+            options({ pages: 'perGroup', into: { name: 'Living room', sections: 0 } }),
+        );
+
+        expect(plan.pages).toHaveLength(1);
+        expect(plan.pages[0].settings.navigation).toBeUndefined();
+        expect(plan.pages[0].settings.navigationTitle).toBeUndefined();
     });
 });
 
@@ -151,7 +174,42 @@ describe('applyWizardPlan', () => {
         applyWizardPlan(project, plan);
 
         expect(Object.keys(project)).toEqual(['___settings', 'Start', 'Living room', 'Kitchen', 'Without room']);
-        expect(project['Living room'].widgets.w000001.tpl).toBe('tplBulbOnOffCtrl');
+        expect(project['Living room'].widgets.w000001.tpl).toBe('tplRelSwitch');
         expect(project.___settings.openedViews).toEqual(['Start', 'Living room', 'Kitchen', 'Without room']);
+    });
+
+    it('adds to a page that is there already instead of writing over it', () => {
+        const project = {
+            ___settings: { openedViews: ['Start'] },
+            Start: {
+                name: 'Start',
+                settings: {
+                    layout: 'grid',
+                    navigation: true,
+                    navigationTitle: 'Home',
+                    sections: [{ id: 's1', widgets: ['w000100'], title: 'Already there' }],
+                    order: ['w000100'],
+                },
+                widgets: { w000100: { tpl: 'tplRelText', data: {}, style: {} } },
+                activeWidgets: [],
+                filterList: [],
+                rerender: false,
+            },
+        } as unknown as Project;
+
+        const plan = planWizardPages(
+            [DEVICES[0]],
+            options({ existingNames: ['Start'], into: { name: 'Start', sections: 1 }, firstWidgetNumber: 200 }),
+        );
+        applyWizardPlan(project, plan);
+
+        // no second page, and the one that was there keeps its name, its navigation and what stood on it
+        expect(Object.keys(project)).toEqual(['___settings', 'Start']);
+        expect(project.Start.settings.navigationTitle).toBe('Home');
+        expect(project.Start.settings.sections!.map(s => s.id)).toEqual(['s1', 's2']);
+        expect(project.Start.settings.sections![0].title).toBe('Already there');
+        expect(Object.keys(project.Start.widgets)).toEqual(['w000100', 'w000200']);
+        expect(project.Start.settings.order).toEqual(['w000100', 'w000200']);
+        expect(project.___settings.openedViews).toEqual(['Start']);
     });
 });

@@ -99,6 +99,7 @@ const dimmerDevice = defineDeviceWidget<DimmerRxData>({
         markerFill: { share: 45 },
     },
     deviceTypes: [Types.dimmer],
+    wizard: { states: { oid: 'SET', oidActual: 'ACTUAL', oidSwitch: 'ON_SET' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'oidActual', type: 'id', label: 'oid_actual' },

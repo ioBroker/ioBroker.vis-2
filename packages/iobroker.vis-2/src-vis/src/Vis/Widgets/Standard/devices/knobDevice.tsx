@@ -59,7 +59,8 @@ const knobDevice = defineDeviceWidget<KnobRxData>({
         '<svg viewBox="0 0 32 32" width="28" height="28" fill="none">' +
         '<circle cx="16" cy="16" r="11" stroke="currentColor" stroke-width="2.5"/>' +
         '<path d="M16 16L22 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
-    deviceTypes: [Types.slider, Types.volume, Types.volumeGroup],
+    deviceTypes: [Types.slider, Types.volume, Types.volumeGroup, Types.percentage],
+    wizard: { states: { oid: 'SET', oidActual: 'ACTUAL' } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'oidActual', type: 'id', label: 'oid_actual' },

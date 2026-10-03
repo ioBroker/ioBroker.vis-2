@@ -47,6 +47,8 @@ const switchDevice = defineDeviceWidget<SwitchRxData>({
         toggle: true,
     },
     deviceTypes: [Types.socket, Types.light, Types.fan, Types.pump, Types.airPurifier, Types.unknown],
+    // a pump says `POWER`, a fan and a purifier `SPEED`, and the catch-all `STATE`
+    wizard: { states: { oid: ['SET', 'POWER', 'SPEED', 'STATE', 'ACTUAL'] } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         { name: 'oid2', type: 'id', label: 'oid_actual' },

@@ -92,6 +92,7 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
         '<path d="M16 5v22" stroke="currentColor" stroke-width="2"/>' +
         '<path d="M16 7l10 -2v22l-10 -2z" fill="currentColor" opacity="0.4"/></svg>',
     deviceTypes: [Types.window, Types.windowTilt, Types.door],
+    wizard: { states: { oid: 'ACTUAL' }, data: { [Types.door]: { kind: 'door' } } },
     fields: [
         { name: 'oid', type: 'id', label: 'oid' },
         {

@@ -111,6 +111,28 @@ const rgbDevice = defineDeviceWidget<RgbRxData>({
         slider: true,
     },
     deviceTypes: [Types.rgb, Types.rgbSingle, Types.rgbwSingle, Types.hue, Types.ct, Types.cie],
+    wizard: {
+        states: {
+            oid: ['RGB', 'RGBW', 'CIE', 'HUE'],
+            oidRed: 'RED',
+            oidGreen: 'GREEN',
+            oidBlue: 'BLUE',
+            oidWhite: 'WHITE',
+            oidSaturation: 'SATURATION',
+            oidBrightness: ['BRIGHTNESS', 'DIMMER'],
+            oidSwitch: 'ON',
+            oidCt: 'TEMPERATURE',
+        },
+        // how the colour is carried is what the detector already decided by finding this type
+        data: {
+            [Types.rgb]: { mode: 'rgb' },
+            [Types.rgbSingle]: { mode: 'hex' },
+            [Types.rgbwSingle]: { mode: 'hexw' },
+            [Types.cie]: { mode: 'hex' },
+            [Types.hue]: { mode: 'hue' },
+            [Types.ct]: { mode: 'ct' },
+        },
+    },
     fields: [
         {
             name: 'mode',

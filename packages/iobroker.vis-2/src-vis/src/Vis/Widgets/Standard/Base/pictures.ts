@@ -47,6 +47,10 @@ export interface DevicePicture {
     list?: boolean;
     /** How full the marker of the set `absolute` stands, where this device shows a level */
     markerFill?: Liquid;
+    /** A field to type into, across the bottom */
+    field?: boolean;
+    /** Rows and columns filling the card */
+    table?: boolean;
 }
 
 /*
@@ -177,6 +181,32 @@ export function relativePicture(picture: DevicePicture): string {
         parts.push(wheel(100, 58, 26));
     }
 
+    if (picture.table) {
+        const column = [12, 72, 124, 164];
+        parts.push(
+            `<path d="M12 46 H188" stroke="${picture.accent}" stroke-width="1.5"/>${[1, 2, 3]
+                .map(index => `<path d="M12 ${46 + index * 20} H188" stroke="${LINE}"/>`)
+                .join('')}${[0, 1, 2, 3]
+                .map(
+                    index =>
+                        `<rect x="${column[index]}" y="35" width="${index === 3 ? 24 : 40}" height="6" rx="3" ` +
+                        `fill="${picture.accent}" opacity="0.7"/>`,
+                )
+                .join('')}${[0, 1, 2]
+                .map(row =>
+                    [0, 1, 2, 3]
+                        .map(
+                            index =>
+                                `<rect x="${column[index]}" y="${54 + row * 20}" ` +
+                                `width="${index === 3 ? 20 : [48, 36, 30, 20][index]}" height="6" rx="3" ` +
+                                `fill="${QUIET}" opacity="0.5"/>`,
+                        )
+                        .join(''),
+                )
+                .join('')}`,
+        );
+    }
+
     if (picture.list) {
         // three rows, one of each kind: a switch, a reading, a slider
         const row = (y: number, width: number): string =>
@@ -240,7 +270,8 @@ export function relativePicture(picture: DevicePicture): string {
 
     if (picture.label) {
         parts.push(
-            `<text x="12" y="${picture.slider ? 92 : 100}" font-family="system-ui, sans-serif" font-size="11" ` +
+            `<text x="12" y="${picture.slider || picture.field ? 92 : 100}" font-family="system-ui, sans-serif" ` +
+                `font-size="11" ` +
                 `fill="${QUIET}">${picture.label}</text>`,
         );
     }
@@ -251,7 +282,7 @@ export function relativePicture(picture: DevicePicture): string {
             parts.push(valueAt(picture.value, 116, 40, 18));
         } else {
             // with a slider under it the number sits a line higher, as it does on the card itself
-            const y = picture.slider ? 95 : 103;
+            const y = picture.slider || picture.field ? 95 : 103;
             const x = picture.label || picture.window || picture.wheel ? 188 : 12;
             const anchor = x === 188 ? ' text-anchor="end"' : '';
             parts.push(valueAt(picture.value, x, y, 24).replace('<text ', `<text${anchor} `));
@@ -263,6 +294,13 @@ export function relativePicture(picture: DevicePicture): string {
                 `<circle cx="${176}" cy="${picture.slider ? 87.5 : 95.5}" r="7.5" fill="#fff"/>`,
         );
     }
+    if (picture.field) {
+        parts.push(
+            `<rect x="12" y="96" width="176" height="18" rx="6" fill="none" stroke="${LINE}"/>` +
+                `<path d="M22 100 v10" stroke="${picture.accent}" stroke-width="2"/>`,
+        );
+    }
+
     if (picture.slider) {
         parts.push(
             `<rect x="12" y="105" width="176" height="6" rx="3" fill="${LINE}"/>` +

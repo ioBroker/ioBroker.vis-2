@@ -86,6 +86,22 @@ const mediaDevice = defineDeviceWidget<MediaRxData>({
         '<path d="M14 23V7l12-2.5V19" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>' +
         '<circle cx="22" cy="19" r="4" stroke="currentColor" stroke-width="2.5"/></svg>',
     deviceTypes: [Types.media],
+    wizard: {
+        states: {
+            oid: 'STATE',
+            oidTitle: 'TITLE',
+            oidArtist: 'ARTIST',
+            oidCover: 'COVER',
+            oidPlay: 'PLAY',
+            oidPause: 'PAUSE',
+            oidPrev: 'PREV',
+            oidNext: 'NEXT',
+            oidVolume: 'VOLUME',
+            oidMute: 'MUTE',
+            oidElapsed: 'ELAPSED',
+            oidDuration: 'DURATION',
+        },
+    },
     fields: [
         { name: 'oid', type: 'id', label: 'oid_media_state' },
         { name: 'oidTitle', type: 'id', label: 'oid_title' },

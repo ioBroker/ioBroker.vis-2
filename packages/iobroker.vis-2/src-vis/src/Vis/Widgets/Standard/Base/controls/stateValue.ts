@@ -41,3 +41,51 @@ export function asText(value: unknown): string {
     }
     return '';
 }
+
+/**
+ * What a state says it may be: every value it names, and the word for it.
+ *
+ * `common.states` comes in three shapes - a map, a list, and the old string `0:off;1:on` - and a widget that
+ * knows only the first one shows a number where the adapter gave a word. All three are read here, so a
+ * dropdown and a reading of the same state always say the same thing.
+ *
+ * @param common - what the object says about the state
+ */
+export function statesOf(common: ioBroker.StateCommon | null | undefined): { value: string; label: string }[] {
+    const states = common?.states;
+    if (!states) {
+        return [];
+    }
+    if (Array.isArray(states)) {
+        return states.map((label, index) => ({ value: `${index}`, label: `${label}` }));
+    }
+    if (typeof states === 'string') {
+        return `${states}`
+            .split(';')
+            .map(pair => pair.split(':'))
+            .filter(pair => pair.length === 2)
+            .map(([value, label]) => ({ value: value.trim(), label: label.trim() }));
+    }
+
+    return Object.entries(states).map(([value, label]) => ({ value, label: `${label}` }));
+}
+
+/**
+ * The value a state is written with, out of the text a dropdown or an input field hands back.
+ *
+ * A field gives back a string, and a state that says it is a number wants a number - `'1'` written into a
+ * boolean state is a string that happens to look like one, and adapters tell the difference.
+ *
+ * @param value - what was chosen or typed
+ * @param common - what the object says about the state
+ */
+export function typedValue(value: string, common: ioBroker.StateCommon | null | undefined): string | number | boolean {
+    if (common?.type === 'number') {
+        return asNumber(value) ?? 0;
+    }
+    if (common?.type === 'boolean') {
+        return value === 'true' || value === '1' || value === 'on';
+    }
+
+    return value;
+}
