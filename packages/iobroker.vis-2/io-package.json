@@ -244,6 +244,7 @@
     "loadingHideLogo": false,
     "loadingBackgroundImage": false,
     "aiCredentialType": "manual",
+    "aiMaxTokens": 8192,
     "aiOpenAiKey": "",
     "aiAnthropicKey": "",
     "aiGeminiKey": "",

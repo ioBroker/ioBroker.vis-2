@@ -7,6 +7,7 @@ import { I18n, type Connection } from '@iobroker/gui-components';
 
 import type { AnyWidgetId, Project, VisTheme } from '@iobroker/types-vis-2';
 
+import MarkdownText from './MarkdownText';
 import { useAiChat } from './useAiChat';
 import type { AiChatMessage } from './aiTypes';
 
@@ -72,7 +73,8 @@ export default function AiChatPanel(props: AiChatPanelProps): React.JSX.Element 
                     borderRadius: 2,
                     fontSize: 14,
                     lineHeight: 1.45,
-                    whiteSpace: 'pre-wrap',
+                    // what the user typed is shown as they typed it; the answer is Markdown and is rendered
+                    whiteSpace: mine ? 'pre-wrap' : undefined,
                     wordBreak: 'break-word',
                     bgcolor: mine ? 'primary.main' : message.role === 'error' ? 'error.dark' : 'action.hover',
                     color: mine ? 'primary.contrastText' : 'text.primary',
@@ -83,8 +85,10 @@ export default function AiChatPanel(props: AiChatPanelProps): React.JSX.Element 
                         size={16}
                         color="inherit"
                     />
-                ) : (
+                ) : mine || message.role === 'error' ? (
                     message.content
+                ) : (
+                    <MarkdownText text={message.content} />
                 )}
                 {message.actions?.length ? (
                     <Box

@@ -29,9 +29,6 @@ const MODEL_ENDPOINTS: Record<Exclude<AiProvider, 'custom' | 'openai'>, string> 
     deepseek: 'https://api.deepseek.com/models',
 };
 
-/** The most a model may write in one answer; a page full of widgets is a few thousand tokens of tools */
-const MAX_TOKENS = 8192;
-
 export interface ChatRequest {
     provider: AiProvider;
     model: string;
@@ -40,6 +37,8 @@ export interface ChatRequest {
     apiKey: string;
     baseUrl: string;
     timeout: number;
+    /** The most the model may write in this answer, see `resolveMaxTokens` */
+    maxTokens: number;
 }
 
 export interface ChatAnswer {
@@ -88,7 +87,7 @@ export async function chatCompletion(request: ChatRequest): Promise<ChatAnswer> 
         const tools = request.tools?.length ? translateToolsToAnthropic(request.tools) : [];
         body = {
             model: request.model,
-            max_tokens: MAX_TOKENS,
+            max_tokens: request.maxTokens,
             stream: false,
             ...(system ? { system } : {}),
             messages,

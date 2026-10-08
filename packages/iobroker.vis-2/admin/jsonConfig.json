@@ -105,6 +105,17 @@
                     "text": "ai_hint",
                     "xs": 12
                 },
+                "aiMaxTokens": {
+                    "newLine": true,
+                    "type": "number",
+                    "label": "Maximum answer length",
+                    "help": "ai_max_tokens_help",
+                    "min": 1024,
+                    "max": 200000,
+                    "default": 8192,
+                    "xs": 12,
+                    "sm": 5
+                },
                 "aiCredentialType": {
                     "newLine": true,
                     "type": "select",

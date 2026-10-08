@@ -17,6 +17,7 @@
     "Key of that endpoint, if it wants one": "Key of that endpoint, if it wants one",
     "License": "License",
     "Loading background": "Loading background",
+    "Maximum answer length": "Maximum answer length",
     "OpenAI API key": "OpenAI API key",
     "OpenAI credential": "OpenAI credential",
     "Own endpoint": "Own endpoint",
@@ -28,5 +29,6 @@
     "Where the keys are kept": "Where the keys are kept",
     "ai_custom_help": "For example a model on your own host: http://localhost:11434/v1",
     "ai_hint": "The assistant in the vis editor builds pages for you. It needs a key of one of these providers; the key stays in the adapter and never reaches the browser. Anybody who may open the vis editor can use it — and with it your account at the provider.",
+    "ai_max_tokens_help": "Only Anthropic needs this; the other providers decide for themselves. When the limit is reached the answer breaks off in the middle - and a tool call that is cut in half builds nothing. Older models reject values above 8192.",
     "instruction": "To use <b>vis</b>, you must get the license key for it.<br><b>vis</b> is free for private use, but for commercial use it has a price.<br>You can get the license on <a href='https://iobroker.net' target='_blank'>iobroker.net</a> after short registration."
 }

@@ -133,6 +133,111 @@ export function rememberModel(model: string): void {
     }
 }
 
+/*
+ * Why the answer does not simply come back through the socket callback:
+ *
+ * A callback of `@iobroker/ws` is given up on after thirty seconds, and the web adapter lets go of a
+ * `sendTo` even earlier - while a model that is handed a page of widgets and a dozen tools regularly
+ * needs longer. The answer then arrived at a callback that nobody was holding any more: an empty
+ * bubble, no error, and nothing in any log, because the adapter had done its job.
+ *
+ * So the editor subscribes to an instance message and the adapter pushes the finished answer there.
+ * The callback carries nothing but the acknowledgement, well inside the thirty seconds. An adapter
+ * that does not know this answers the old way, which is handled unchanged - an updated editor and an
+ * adapter that is still the old one is the normal state of affairs for a while.
+ */
+
+/** The instance message a finished answer arrives under. Shared verbatim with `src/main.ts`. */
+const AI_PUSH_MESSAGE_TYPE = 'aiChatAnswer';
+
+/** How long an answer may take; the adapter has a ceiling of its own, see `resolveRequestTimeout` */
+const ASK_TIMEOUT = 600_000;
+
+interface PushChannel {
+    /** The token this editor announced itself with */
+    sessionToken: string;
+    /** The questions that are out, by their id */
+    pending: Map<string, (answer: AiAnswer) => void>;
+}
+
+let pushChannel: PushChannel | null = null;
+/** So that two questions asked at once do not subscribe twice */
+let pushChannelPromise: Promise<PushChannel | null> | null = null;
+let requestCounter = 0;
+
+/** Forget the channel, so the next question subscribes again: after a reconnect, or a push that failed */
+export function resetAiPushChannel(): void {
+    pushChannel = null;
+    pushChannelPromise = null;
+}
+
+/**
+ * Subscribe this editor for pushed answers, once.
+ *
+ * `null` comes back where the adapter does not take such a subscription - an older one, for instance.
+ * The caller then asks the plain way and lives with the thirty seconds.
+ *
+ * @param socket - the connection to the ioBroker server
+ * @param instance - the vis-2 instance
+ */
+async function ensurePushChannel(socket: Connection, instance: string): Promise<PushChannel | null> {
+    if (pushChannel) {
+        return pushChannel;
+    }
+    pushChannelPromise ||= (async (): Promise<PushChannel | null> => {
+        const channel: PushChannel = {
+            sessionToken: `vis-ai-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 10)}`,
+            pending: new Map(),
+        };
+        try {
+            /*
+             * Raced against a timeout, like every other question to the adapter here: a subscription
+             * goes to the instance as a `sendTo` of its own, and an adapter that knows nothing of it
+             * never calls back. Waiting for that would hang the question that follows, so a silence
+             * counts as a no and the answer comes back the plain way.
+             */
+            const result = await Promise.race([
+                socket.subscribeOnInstance(
+                    instance,
+                    AI_PUSH_MESSAGE_TYPE,
+                    { sessionToken: channel.sessionToken },
+                    (data: unknown) => {
+                        const answer = data as (AiAnswer & { requestId?: string }) | undefined;
+                        const id = answer?.requestId;
+                        const waiting = id ? channel.pending.get(id) : undefined;
+                        if (id && waiting) {
+                            channel.pending.delete(id);
+                            waiting(answer);
+                        }
+                    },
+                ),
+                new Promise<null>(resolve => setTimeout(() => resolve(null), ANSWER_TIMEOUT)),
+            ]);
+            if (!result?.accepted) {
+                return null;
+            }
+            /*
+             * A reconnect gives the socket a new id, which leaves the adapter pushing at a client that
+             * is not there any more. Without this the next question would sit out its whole budget
+             * before anybody noticed; dropping the channel makes it subscribe again instead.
+             */
+            socket.registerConnectionHandler(function onConnectionChange(connected: boolean): void {
+                if (!connected) {
+                    socket.unregisterConnectionHandler(onConnectionChange);
+                    resetAiPushChannel();
+                }
+            });
+            pushChannel = channel;
+            return channel;
+        } catch {
+            return null;
+        } finally {
+            pushChannelPromise = null;
+        }
+    })();
+    return pushChannelPromise;
+}
+
 /**
  * Ask the model.
  *
@@ -154,16 +259,39 @@ export async function ask(
         tools?: AiToolDefinition[];
     },
 ): Promise<AiAnswer> {
+    const channel = await ensurePushChannel(socket, instance);
+    const requestId = channel ? `req-${++requestCounter}-${Date.now().toString(36)}` : '';
+
+    let answer: (AiAnswer & { accepted?: boolean }) | undefined;
     try {
-        const answer: AiAnswer = await socket.sendTo(instance, 'aiChat', {
+        answer = await socket.sendTo(instance, 'aiChat', {
             provider: request.provider,
             model: request.model,
             messages: request.messages,
             ...(request.tools?.length ? { tools: request.tools } : {}),
-            timeout: 600000,
+            timeout: ASK_TIMEOUT,
+            ...(channel ? { uiSession: channel.sessionToken, requestId } : {}),
         });
-        return answer || { error: 'The adapter answered with nothing' };
     } catch (e) {
         return { error: e instanceof Error ? e.message : String(e) };
     }
+
+    // an adapter that does not push has answered in full already
+    if (!channel || !answer?.accepted) {
+        return answer || { error: 'The adapter answered with nothing' };
+    }
+
+    return new Promise<AiAnswer>(resolve => {
+        const timer = setTimeout(() => {
+            channel.pending.delete(requestId);
+            // it took the question and never pushed - most likely the adapter was restarted in between
+            resetAiPushChannel();
+            resolve({ error: `No answer within ${Math.round(ASK_TIMEOUT / 1000)}s` });
+        }, ASK_TIMEOUT);
+
+        channel.pending.set(requestId, pushed => {
+            clearTimeout(timer);
+            resolve(pushed);
+        });
+    });
 }

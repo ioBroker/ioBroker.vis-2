@@ -17,6 +17,7 @@
     "Key of that endpoint, if it wants one": "该接口的密钥（若需要）",
     "License": "执照",
     "Loading background": "加载背景",
+    "Maximum answer length": "回答的最大长度",
     "OpenAI API key": "OpenAI API 密钥",
     "OpenAI credential": "OpenAI 凭据",
     "Own endpoint": "自有接口",
@@ -28,5 +29,6 @@
     "Where the keys are kept": "密钥存放位置",
     "ai_custom_help": "例如运行在本机的模型：http://localhost:11434/v1",
     "ai_hint": "vis 编辑器中的助手会替你搭建页面。它需要下列某个服务商的密钥；密钥留在适配器里，绝不会进入浏览器。任何能打开 vis 编辑器的人都能使用它——也就用上了你在服务商那里的账户。",
+    "ai_max_tokens_help": "只有 Anthropic 需要此设置，其他服务商自行决定。达到上限时回答会中途截断，被截断的工具调用什么也建不出来。较旧的模型会拒绝大于 8192 的值。",
     "instruction": "如果要使用<b>vis</b>, 您必须获取它的注册码.<br><b>vis</b>对个人免费使用, 但是对商业项目有偿使用.<br>您可以在<a href='https://iobroker.net' target='_blank'>iobroker.net</a>网页上购买注册码。"
 }

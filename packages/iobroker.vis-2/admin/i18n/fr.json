@@ -17,6 +17,7 @@
     "Key of that endpoint, if it wants one": "Clé de ce point de terminaison, s’il en veut une",
     "License": "Licence",
     "Loading background": "Chargement de l'arrière-plan",
+    "Maximum answer length": "Longueur maximale de la réponse",
     "OpenAI API key": "Clé API OpenAI",
     "OpenAI credential": "Identifiant OpenAI",
     "Own endpoint": "Point de terminaison propre",
@@ -28,5 +29,6 @@
     "Where the keys are kept": "Où sont gardées les clés",
     "ai_custom_help": "Par exemple un modèle sur votre propre machine : http://localhost:11434/v1",
     "ai_hint": "L'assistant de l'éditeur vis construit des pages pour vous. Il lui faut une clé d'un de ces fournisseurs ; la clé reste dans l'adaptateur et n'arrive jamais dans le navigateur. Quiconque peut ouvrir l'éditeur vis peut l'utiliser — et avec lui votre compte chez le fournisseur.",
+    "ai_max_tokens_help": "Seul Anthropic en a besoin ; les autres fournisseurs décident eux-mêmes. Lorsque la limite est atteinte, la réponse s'interrompt au milieu - et un appel d'outil coupé en deux ne construit rien. Les anciens modèles refusent les valeurs supérieures à 8192.",
     "instruction": "Pour utiliser <b> vis </b>, vous devez obtenir la clé de licence. <br> <b>vis</b> est libre pour un usage privé, mais pour un usage commercial, il a un prix. <br> Vous peut obtenir la licence sur <a href='https://iobroker.net' target='_blank'>iobroker.net</a> après une brève inscription."
 }

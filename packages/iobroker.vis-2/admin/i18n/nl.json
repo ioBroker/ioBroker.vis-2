@@ -17,6 +17,7 @@
     "Key of that endpoint, if it wants one": "Sleutel van dat endpoint, als het er een wil",
     "License": "Licentie",
     "Loading background": "Achtergrond laden",
+    "Maximum answer length": "Maximale antwoordlengte",
     "OpenAI API key": "OpenAI-API-sleutel",
     "OpenAI credential": "OpenAI-referentie",
     "Own endpoint": "Eigen endpoint",
@@ -28,5 +29,6 @@
     "Where the keys are kept": "Waar de sleutels staan",
     "ai_custom_help": "Bijvoorbeeld een model op je eigen host: http://localhost:11434/v1",
     "ai_hint": "De assistent in de vis-editor bouwt pagina’s voor je. Hij heeft een sleutel van een van deze aanbieders nodig; die blijft in de adapter en komt nooit in de browser. Wie de vis-editor mag openen, kan hem gebruiken — en daarmee jouw account bij de aanbieder.",
+    "ai_max_tokens_help": "Alleen Anthropic heeft dit nodig; de andere aanbieders beslissen zelf. Als de limiet wordt bereikt, breekt het antwoord middenin af - en een halve tool-aanroep bouwt niets. Oudere modellen weigeren waarden boven 8192.",
     "instruction": "Als u <b> vis </b> wilt gebruiken, moet u hiervoor de licentiesleutel hebben. <br> <b> vis </b> is gratis voor privégebruik, maar voor commercieel gebruik heeft het een prijs. <br> You kan de licentie krijgen op <a href='https://iobroker.net' target='_blank'>iobroker.net</a> na een korte registratie."
 }
