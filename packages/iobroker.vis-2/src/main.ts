@@ -7,45 +7,14 @@
  *      CC-NC-BY 4.0 License
  *
  */
-import { Adapter, Credentials, type AdapterOptions } from '@iobroker/adapter-core';
+import { Adapter, type AdapterOptions } from '@iobroker/adapter-core';
+import { AiBackend, readAiSettings } from '@iobroker/ai-core';
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
 import { syncWidgetSets } from './lib/install';
-import { chatCompletion, listModels, type ChatAnswer } from './lib/ai/chat';
-import {
-    getProviderCredentialId,
-    listAvailableProviders,
-    resolveProviderCredentials,
-    resolveTestEndpoint,
-    resolveMaxTokens,
-    resolveRequestTimeout,
-    type AiConfigSlice,
-    type AiProvider,
-} from './lib/ai/credentials';
-import type { OpenAIMessage } from './lib/ai/anthropic';
-
-/**
- * What a field of the configuration page sent, or nothing where it holds nothing.
- *
- * The test buttons of the page carry the form into the message with `${data.field}` patterns, and a
- * field that was never filled in arrives as an empty word - or, depending on the admin, as the pattern
- * itself. Neither is an answer, and both must not be taken for a key.
- *
- * @param value - what arrived in the message
- */
-function fromForm(value: unknown): string | undefined {
-    if (typeof value !== 'string' && typeof value !== 'number') {
-        return undefined;
-    }
-    const text = `${value}`.trim();
-    if (!text || text === 'undefined' || text === 'null' || text.includes('${')) {
-        return undefined;
-    }
-
-    return text;
-}
+import { VIS_AI_FIELDS, type AiConfigSlice } from './lib/ai';
 
 function loadIoPack(): ioBroker.AdapterObject {
     const path = `${__dirname}/../io-package.json`;
@@ -82,13 +51,6 @@ export interface VisAdapterConfig extends ioBroker.AdapterConfig, AiConfigSlice 
 
 const wwwDir = existsSync(`${__dirname}/../www`) ? `${__dirname}/../www` : `${__dirname}/www`;
 
-/**
- * The instance message the editor subscribes to, and under which a finished answer is pushed to it.
- *
- * Shared verbatim with `src-vis/src/AiChat/aiService.ts`.
- */
-const AI_PUSH_MESSAGE_TYPE = 'aiChatAnswer';
-
 class VisAdapter extends Adapter {
     declare public visConfig: VisAdapterConfig;
     private widgetInstances: Record<string, string> = {};
@@ -98,8 +60,13 @@ class VisAdapter extends Adapter {
     private synchronizing = false;
     private synchronizingQueued: { forceBuild: boolean } | null = null;
     private vendorPrefix = '';
-    /** The editors waiting for pushed answers: the token they chose, and the socket it reached us on */
-    private aiUiClients = new Map<string, string>();
+    /** The AI assistant of the editor: providers, keys and the pushed answers, see `@iobroker/ai-core` */
+    private ai = new AiBackend(this, {
+        // the cast can go with ai-core 0.0.2, which takes any config object
+        getSettings: () => readAiSettings(this.config as unknown as Record<string, unknown>, VIS_AI_FIELDS),
+        // the command names the editor used before ai-core
+        aliases: { getAvailableAiProviders: 'ai:providers', aiModels: 'ai:models', aiChat: 'ai:chat' },
+    });
 
     constructor(options: Partial<AdapterOptions> = {}) {
         options = {
@@ -107,6 +74,7 @@ class VisAdapter extends Adapter {
             name: 'vis-2',
             message: obj => this.processMessage(obj),
             unload: callback => {
+                void this.ai.stop();
                 if (this.synchronizing) {
                     void new Promise<void>((resolve): void => {
                         this.stoppingPromise = resolve;
@@ -116,8 +84,12 @@ class VisAdapter extends Adapter {
                 }
             },
             ready: () => void this.main(),
-            uiClientSubscribe: info => this.onUiClientSubscribe(info),
-            uiClientUnsubscribe: info => this.onUiClientUnsubscribe(info),
+            uiClientSubscribe: info =>
+                this.ai.onUiClientSubscribe(info) ?? {
+                    accepted: false,
+                    error: `Unknown subscription type "${(info.message?.message as { type?: string } | undefined)?.type || ''}"`,
+                },
+            uiClientUnsubscribe: info => this.ai.onUiClientUnsubscribe(info),
         };
 
         super({
@@ -159,90 +131,10 @@ class VisAdapter extends Adapter {
         }
     }
 
-    /**
-     * An editor says it wants its answers pushed.
-     *
-     * It names a token of its own making; what is kept here is which socket that token came in on, so
-     * that an answer can be sent back to that one editor and not to every tab that happens to be open.
-     *
-     * @param info - the client and the message it subscribed with
-     * @param info.clientId - the socket the subscription came in on
-     * @param info.message - what the editor sent with it
-     */
-    private onUiClientSubscribe(info: { clientId: string; message: ioBroker.Message }): {
-        accepted: boolean;
-        error?: string;
-    } {
-        const message = info.message?.message as { type?: string; data?: { sessionToken?: string } } | undefined;
-        if (message?.type !== AI_PUSH_MESSAGE_TYPE) {
-            return { accepted: false, error: `Unknown subscription type "${message?.type || ''}"` };
-        }
-        const token = (message.data?.sessionToken || '').trim();
-        if (!token) {
-            return { accepted: false, error: 'No session token provided' };
-        }
-        this.aiUiClients.set(token, info.clientId);
-        this.log.debug(`An editor waits for pushed AI answers (${this.aiUiClients.size} open)`);
-        return { accepted: true };
-    }
-
-    /**
-     * An editor went away - every token that pointed at it is worthless now.
-     *
-     * @param info - the client that is going away
-     * @param info.clientId - the socket that is gone
-     */
-    private onUiClientUnsubscribe(info: { clientId: string }): void {
-        for (const [token, clientId] of this.aiUiClients) {
-            if (clientId === info.clientId) {
-                this.aiUiClients.delete(token);
-            }
-        }
-        this.log.debug(`An editor stopped waiting for pushed AI answers (${this.aiUiClients.size} open)`);
-    }
-
-    /**
-     * How the answer of one `aiChat` request gets back to whoever asked.
-     *
-     * A socket callback does not live long enough for this question. `@iobroker/ws` gives up on one
-     * after thirty seconds and the web adapter even earlier, while a model that is handed a page of
-     * widgets and a dozen tools regularly takes longer - and the answer then arrived at a callback
-     * that no longer existed: an empty bubble, no error, and nothing in any log, because the adapter
-     * had done its job.
-     *
-     * So an editor that subscribed for pushed answers gets the callback answered at once, with
-     * nothing but `accepted`, and the answer itself as an instance message whenever it is ready.
-     * Anything else - an older editor, a script asking the same question - is answered the plain way
-     * and has to stay inside the thirty seconds.
-     *
-     * @param msg - the request as it came in
-     */
-    private buildAiResponder(msg: ioBroker.Message): (payload: ChatAnswer) => void {
-        const token = (msg.message?.uiSession || '').toString().trim();
-        const requestId = (msg.message?.requestId || '').toString().trim();
-        const clientId = token ? this.aiUiClients.get(token) : undefined;
-
-        if (!clientId || !requestId) {
-            return payload => this.sendTo(msg.from, msg.command, payload, msg.callback);
-        }
-
-        // let go of the callback while it is still worth something; the request may now take its time
-        this.sendTo(msg.from, msg.command, { accepted: true, requestId }, msg.callback);
-        let sent = false;
-        return payload => {
-            if (sent) {
-                return;
-            }
-            sent = true;
-            this.sendToUI({ clientId, data: { type: AI_PUSH_MESSAGE_TYPE, requestId, ...payload } }).catch(e => {
-                // the tab was closed, or the socket died while the model was thinking
-                this.aiUiClients.delete(token);
-                this.log.warn(`Cannot deliver the AI answer to the editor: ${e instanceof Error ? e.message : e}`);
-            });
-        };
-    }
-
     async processMessage(msg: ioBroker.Message): Promise<void> {
+        if (this.ai.handleMessage(msg)) {
+            return;
+        }
         if (msg?.command === 'checkLicense' && msg.message && msg.callback) {
             const obj = await this.getForeignObjectAsync(`system.adapter.${msg.message}.0`);
             if (!obj?.native || (!obj.native.license && !obj.native.useLicenseManager)) {
@@ -260,176 +152,6 @@ class VisAdapter extends Adapter {
             } else {
                 this.sendTo(msg.from, msg.command, { error: 'already running' }, msg.callback);
             }
-        } else if (msg?.command === 'getAvailableAiProviders' && msg.callback) {
-            // the editor asks what it may offer; it never learns a key
-            this.sendTo(msg.from, msg.command, { providers: listAvailableProviders(this.visConfig) }, msg.callback);
-        } else if (msg?.command === 'aiModels' && msg.callback) {
-            const provider = (msg.message?.provider || 'openai') as AiProvider;
-            const { apiKey, baseUrl, error } = await this.resolveAiTestCredentials(provider, msg.message);
-            // the test button of the configuration page asks the provider for its models, and a request
-            // without a key comes back as `401` from the other end - which says nothing about what is
-            // actually missing here
-            if (error || (!apiKey && !baseUrl)) {
-                this.sendTo(msg.from, msg.command, { error: error || `No API key for "${provider}"` }, msg.callback);
-                return;
-            }
-            const result = await listModels(provider, apiKey, baseUrl);
-            // the same command serves the test button of the configuration page, which shows `result`
-            this.sendTo(
-                msg.from,
-                msg.command,
-                result.error
-                    ? { error: result.error }
-                    : { models: result.models, result: `${result.models?.length || 0} models` },
-                msg.callback,
-            );
-        } else if (msg?.command === 'aiChat' && msg.callback) {
-            // built before the first answer: it decides whether this one goes back through the callback
-            const respond = this.buildAiResponder(msg);
-            const provider = (msg.message?.provider || 'openai') as AiProvider;
-            const model: string = (msg.message?.model || '').trim();
-            const messages: OpenAIMessage[] = msg.message?.messages;
-            // nothing of the endpoint or the credential comes out of the message - see the method
-            const { apiKey, baseUrl, error } = await this.resolveAiCredentials(provider);
-
-            // an endpoint of one's own may need no key - a model on the same host usually does not -
-            // but every provider that is somebody else's service does
-            if (error || (!apiKey && !baseUrl)) {
-                respond({ error: error || `No API key for "${provider}"` });
-                return;
-            }
-            if (!model || !Array.isArray(messages) || !messages.length) {
-                respond({ error: 'Model and messages are required' });
-                return;
-            }
-
-            const answer = await chatCompletion({
-                provider,
-                model,
-                messages,
-                tools: msg.message?.tools,
-                apiKey,
-                baseUrl,
-                timeout: resolveRequestTimeout(msg.message?.timeout),
-                maxTokens: resolveMaxTokens(this.visConfig.aiMaxTokens),
-            });
-            respond(answer);
-        }
-    }
-
-    /**
-     * The key of an AI provider, out of wherever it is kept.
-     *
-     * Either it stands in this instance's own configuration, encrypted, or the configuration only names
-     * an entry of the central credential store that several adapters share. The second way is the one
-     * to prefer: somebody who has already given their key to `javascript` should not have to give it
-     * again, and a key that lives in one place is a key that can be changed in one place.
-     *
-     * Nothing of this comes out of the request. A caller who could name the address could have the key
-     * of this instance carried to one of their own, and a caller who could name the credential could
-     * pick any entry of the store to carry. The test button of the configuration page is the one place
-     * that may try unsaved values - see `resolveAiTestCredentials`.
-     *
-     * @param provider - which provider is about to be asked
-     */
-    private async resolveAiCredentials(provider: AiProvider): Promise<{
-        apiKey: string;
-        baseUrl: string;
-        error?: string;
-    }> {
-        const { apiKey, baseUrl } = resolveProviderCredentials(this.visConfig, provider);
-        const mode = this.visConfig.aiCredentialType || 'manual';
-
-        if (mode !== 'manager') {
-            return { apiKey, baseUrl };
-        }
-
-        const id = getProviderCredentialId(this.visConfig, provider);
-        if (!id) {
-            return { apiKey: '', baseUrl, error: `No credential was chosen for "${provider}"` };
-        }
-        const credential = await this.readCredential(id);
-
-        return { apiKey: credential.key, baseUrl, error: credential.error };
-    }
-
-    /**
-     * Endpoint and key for a test button of the configuration page.
-     *
-     * The buttons try what is in the form - a key that was typed but not saved, a credential that was
-     * chosen but not saved, an endpoint that was entered but not saved. What the form may decide is
-     * limited by `resolveTestEndpoint`: a secret of this system is never carried to an address that
-     * came with the message.
-     *
-     * @param provider - the provider the page is testing
-     * @param message - the message of the test button
-     * @param message.baseUrl - the address of an endpoint of one's own, as it stands in the form
-     * @param message.apiKey - the key that stands in the form
-     * @param message.credentialId - the entry of the central store that the form names
-     * @param message.credentialType - where the form says the keys are kept
-     */
-    private async resolveAiTestCredentials(
-        provider: AiProvider,
-        message?: {
-            baseUrl?: string;
-            apiKey?: string;
-            credentialId?: string;
-            credentialType?: 'manual' | 'manager';
-        },
-    ): Promise<{ apiKey: string; baseUrl: string; error?: string }> {
-        const form = { apiKey: fromForm(message?.apiKey), baseUrl: fromForm(message?.baseUrl) };
-        const baseUrl = resolveTestEndpoint(this.visConfig, provider, form);
-        const mode = fromForm(message?.credentialType) || this.visConfig.aiCredentialType || 'manual';
-
-        if (mode !== 'manager') {
-            // a key that was typed but not saved yet is still the key that is meant
-            return { apiKey: form.apiKey || resolveProviderCredentials(this.visConfig, provider).apiKey, baseUrl };
-        }
-
-        const id = fromForm(message?.credentialId) || getProviderCredentialId(this.visConfig, provider);
-        if (!id) {
-            return { apiKey: '', baseUrl, error: `No credential was chosen for "${provider}"` };
-        }
-        const credential = await this.readCredential(id);
-
-        return { apiKey: credential.key, baseUrl, error: credential.error };
-    }
-
-    /**
-     * One entry of the central credential store.
-     *
-     * The store came with js-controller 7.2; on anything older there is nothing to read and the
-     * adapter says so rather than failing silently with an empty key.
-     *
-     * @param id - the id of the entry, like `system.credentials.anthropic`
-     */
-    private async readCredential(id: string): Promise<{ key: string; error?: string }> {
-        const fail = (error: string): { key: string; error: string } => {
-            this.log.warn(`Cannot read the credential "${id}": ${error}`);
-            return { key: '', error };
-        };
-
-        try {
-            // an older `@iobroker/adapter-core` knows no credential store at all
-            if (typeof Credentials?.getCredentials !== 'function') {
-                return fail('the credential store needs js-controller 7.2 and @iobroker/adapter-core 3.4');
-            }
-            const entry = await Credentials.getCredentials<Credentials.KeyCredentials>(this, id);
-            /*
-             * Only an entry that was stored as an AI credential. The store holds the secrets of the
-             * whole system - a database password, the login of a camera - and nothing but this check
-             * keeps a request for "the key of this provider" from reaching one of them.
-             */
-            if (entry?.type !== 'ai') {
-                return fail('it is not an AI credential');
-            }
-            const key = (entry?.values?.key || '').trim();
-
-            // a credential of a login and a password is not an API key, and neither is one that was
-            // never filled in - saying so beats a request that comes back as a `401`
-            return key ? { key } : fail('it holds no key');
-        } catch (e) {
-            return fail(e instanceof Error ? e.message : String(e));
         }
     }
 
@@ -1495,6 +1217,8 @@ if (typeof exports !== 'undefined') {
 
     async main(): Promise<void> {
         this.visConfig = this.config as VisAdapterConfig;
+        // the credentials of the assistant follow the credential manager from here on
+        await this.ai.start();
 
         const visObj = await this.getForeignObjectAsync('vis-2');
         await this.setForeignStateAsync('system.adapter.vis-2.upload', 0, true);

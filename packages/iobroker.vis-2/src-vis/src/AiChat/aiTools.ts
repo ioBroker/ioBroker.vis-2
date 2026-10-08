@@ -6,7 +6,7 @@ import { store } from '@/Store';
 import { deepClone, getNewWidgetIdNumber } from '@/Utilities/utils';
 import { getWidgetTypes } from '@/Vis/visWidgetsCatalog';
 
-import type { AiToolDefinition } from './aiTypes';
+import type { AiTool, AiToolResult, OpenAITool } from '@iobroker/ai-gui';
 
 /**
  * What the assistant can do in the editor.
@@ -37,15 +37,8 @@ export interface AiToolContext {
     selectedView: string;
 }
 
-/** What a tool call gives back: text for the model, and a line for the user */
-export interface AiToolResult {
-    /** What the model is told; JSON in all but the simplest cases */
-    content: string;
-    /** What the panel shows the user, like `Seite Küche angelegt` */
-    action?: string;
-}
-
-export const AI_TOOLS: AiToolDefinition[] = [
+/** The tools of the editor; reading datapoints (`search_objects`, `get_state`) comes from ai-gui */
+export const AI_TOOLS: OpenAITool[] = [
     {
         type: 'function',
         function: {
@@ -96,35 +89,6 @@ export const AI_TOOLS: AiToolDefinition[] = [
                 type: 'object',
                 properties: { tpl: { type: 'string', description: 'The type, like `tplRelSwitch`' } },
                 required: ['tpl'],
-            },
-        },
-    },
-    {
-        type: 'function',
-        function: {
-            name: 'search_objects',
-            description:
-                'States of the installation by name, id or role. Use this to find the datapoint a widget should show.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    query: { type: 'string', description: 'Part of an id, of a name, or of a role' },
-                    role: { type: 'string', description: 'Only states of this role, like `switch` or `level.dimmer`' },
-                    limit: { type: 'number', description: 'At most this many, 30 by default' },
-                },
-                required: ['query'],
-            },
-        },
-    },
-    {
-        type: 'function',
-        function: {
-            name: 'get_state',
-            description: 'What a state holds at the moment.',
-            parameters: {
-                type: 'object',
-                properties: { id: { type: 'string', description: 'The id of the state' } },
-                required: ['id'],
             },
         },
     },
@@ -224,14 +188,6 @@ export const AI_TOOLS: AiToolDefinition[] = [
     },
 ];
 
-/** The text of a name that may be given in several languages */
-function getText(text: ioBroker.StringOrTranslated | undefined): string {
-    if (!text) {
-        return '';
-    }
-    return typeof text === 'object' ? text[I18n.getLanguage()] || text.en || '' : text;
-}
-
 /** The widgets of a view, short enough for a model to read */
 function describeWidgets(project: Project, view: string): unknown[] {
     const widgets = project[view]?.widgets || {};
@@ -272,7 +228,7 @@ function uniqueViewName(project: Project, wanted: string): string {
  * @param args - what it was called with
  * @param context - what the tool may use and change
  */
-export async function runTool(name: string, args: Record<string, any>, context: AiToolContext): Promise<AiToolResult> {
+export function runTool(name: string, args: Record<string, any>, context: AiToolContext): AiToolResult {
     const { project } = context;
 
     switch (name) {
@@ -346,55 +302,6 @@ export async function runTool(name: string, args: Record<string, any>, context: 
                 })),
             );
             return { content: JSON.stringify({ tpl: type.name, set: type.set, fields }) };
-        }
-
-        case 'search_objects': {
-            const query = (args.query || '').toString().toLowerCase();
-            const role = (args.role || '').toString().toLowerCase();
-            const limit = Math.min(Number(args.limit) || 30, 100);
-
-            const objects = await context.socket.getObjectViewSystem('state', '', '香');
-            const found: unknown[] = [];
-            for (const id of Object.keys(objects)) {
-                const obj = objects[id];
-                const common = obj?.common;
-                if (!common) {
-                    continue;
-                }
-                const objectName = getText(common.name).toLowerCase();
-                const objectRole = (common.role || '').toLowerCase();
-                if (role && objectRole !== role) {
-                    continue;
-                }
-                if (
-                    query &&
-                    !id.toLowerCase().includes(query) &&
-                    !objectName.includes(query) &&
-                    !objectRole.includes(query)
-                ) {
-                    continue;
-                }
-                found.push({
-                    id,
-                    name: getText(common.name),
-                    type: common.type,
-                    role: common.role,
-                    unit: common.unit,
-                    min: common.min,
-                    max: common.max,
-                    write: common.write,
-                    states: common.states,
-                });
-                if (found.length >= limit) {
-                    break;
-                }
-            }
-            return { content: JSON.stringify({ found: found.length, states: found }) };
-        }
-
-        case 'get_state': {
-            const state = await context.socket.getState(args.id as string);
-            return { content: JSON.stringify({ id: args.id, value: state?.val ?? null, ack: state?.ack }) };
         }
 
         case 'create_view': {
@@ -551,4 +458,16 @@ export async function runTool(name: string, args: Record<string, any>, context: 
  */
 export function projectCopy(): Project {
     return deepClone(store.getState().visProject);
+}
+
+/**
+ * The tools of the editor in the form the chat of ai-gui takes them
+ *
+ * @param context - what the tools work on in this turn
+ */
+export function visTools(context: AiToolContext): AiTool[] {
+    return AI_TOOLS.map(definition => ({
+        definition,
+        run: (args: Record<string, unknown>) => Promise.resolve(runTool(definition.function.name, args, context)),
+    }));
 }
