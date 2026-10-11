@@ -62,8 +62,7 @@ class VisAdapter extends Adapter {
     private vendorPrefix = '';
     /** The AI assistant of the editor: providers, keys and the pushed answers, see `@iobroker/ai-core` */
     private ai = new AiBackend(this, {
-        // the cast can go with ai-core 0.0.2, which takes any config object
-        getSettings: () => readAiSettings(this.config as unknown as Record<string, unknown>, VIS_AI_FIELDS),
+        getSettings: () => readAiSettings(this.config, VIS_AI_FIELDS),
         // the command names the editor used before ai-core
         aliases: { getAvailableAiProviders: 'ai:providers', aiModels: 'ai:models', aiChat: 'ai:chat' },
     });

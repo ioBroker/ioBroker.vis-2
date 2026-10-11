@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "dependencies": {
-        "@iobroker/ai-gui": "^0.0.2",
+        "@iobroker/ai-gui": "^0.0.4",
         "@iobroker/types-vis-2": "file:../../types-vis-2",
         "react-circular-slider-svg": "^0.4.0"
     },
