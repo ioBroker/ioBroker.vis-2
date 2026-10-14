@@ -5,7 +5,6 @@ import { Utils } from '@iobroker/gui-components';
 
 import './index.css';
 import App from './Editor';
-import * as serviceWorker from './serviceWorker';
 import packageJson from './version.json';
 
 window.adapterName = 'vis-2';
@@ -79,8 +78,3 @@ void window.visConfigLoaded
         // still try to render so the user sees something
         build();
     });
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: http://bit.ly/CRA-PWA
-serviceWorker.unregister();
