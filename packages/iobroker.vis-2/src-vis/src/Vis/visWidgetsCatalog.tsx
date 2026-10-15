@@ -19,7 +19,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import type VisRxWidget from '@/Vis/visRxWidget';
 
-import { getRemoteWidgets, type VisRxWidgetWithInfo } from './visLoadWidgets';
+import { getRemoteWidgets, type VisRxWidgetWithInfo, type VisServiceWithInfo } from './visLoadWidgets';
 import type { IncompatibleWidgetSet } from './visWidgetSetCompatibility';
 import WIDGETS from './Widgets';
 
@@ -447,6 +447,12 @@ export default class VisWidgetsCatalog {
     /** Widget sets that were skipped because they were built for an older react and would crash while loading */
     static incompatibleSets: IncompatibleWidgetSet[] = [];
 
+    /**
+     * Background services of the loaded widget sets, see `VisServiceProps`. A new array whenever sets were added -
+     * {@link onCatalogExtended} tells when.
+     */
+    static services: VisServiceWithInfo[] = [];
+
     static getUsedWidgetSets(project: Project): string[] | false {
         let anyWithoutSet = false;
         const widgetSets: string[] = [];
@@ -723,6 +729,7 @@ export default class VisWidgetsCatalog {
         VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
         VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
         VisWidgetsCatalog.addRxWidgets(result?.widgetSets || []);
+        VisWidgetsCatalog.services = result?.services || [];
 
         // the other sets of the project travel while the first view is built
         const laterLoaded = later.length ? getRemoteWidgets(socket, later, true) : null;
@@ -763,6 +770,9 @@ export default class VisWidgetsCatalog {
                 ...(laterResult?.incompatibleSets || []),
             ];
             VisWidgetsCatalog.addRxWidgets(laterResult?.widgetSets || []);
+            if (laterResult?.services.length) {
+                VisWidgetsCatalog.services = [...VisWidgetsCatalog.services, ...laterResult.services];
+            }
             buildWidgetTypes();
             VisWidgetsCatalog.onCatalogExtended?.();
         });

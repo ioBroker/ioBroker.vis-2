@@ -160,6 +160,40 @@ export interface VisMarketplaceProps {
     onAdded?: () => void;
 }
 
+/** A widget of the set of a background service, somewhere in the project */
+export interface VisServiceWidget {
+    view: string;
+    id: AnyWidgetId;
+    /** Widget type, e.g. `tplAsteriskPhone` */
+    tpl: string;
+    /** As stored in the project: the bindings are not resolved */
+    data: WidgetData;
+}
+
+/**
+ * Props of a background service of a widget set, named in `common.visWidgets.<set>.services` of io-package.json and
+ * exposed by the module federation of the set like the widgets (default export).
+ *
+ * The runtime renders every service once, next to the views and whichever view is shown - for what must not stop with
+ * its view, e.g. a phone that has to stay registered to ring. The editor renders no services.
+ */
+export interface VisServiceProps {
+    /**
+     * The widgets of the set (their `widgetSet` is the adapter) in all views of the project that the user may see: with
+     * read permission for the project, the view and the widget, and not excluded by `visibility-groups`. Changes with
+     * the project.
+     */
+    widgets: VisServiceWidget[];
+    /** Adapter that brings the set */
+    adapter: string;
+    socket: Connection;
+    /** The logged-in user, without `system.user.` */
+    user: string;
+    lang: ioBroker.Languages;
+    /** Show a view, e.g. the one with the widget a call is for */
+    changeView: (view: string) => void;
+}
+
 export type PromiseName = `_promise_${WidgetSetName}`;
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 

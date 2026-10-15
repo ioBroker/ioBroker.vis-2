@@ -121,7 +121,10 @@ copied the source tree into `runtime/` and substituted imports; `tasks.js clean(
   - `visRxWidget.tsx` — React base class for **vis-2 widgets**; also the module-federation export.
 - `visWidgetsCatalog.tsx` — merges `getWidgetInfo()` from built-in and remote widgets into the model the
   palette and the attributes panel render from.
-- `visLoadWidgets.tsx` — loads remote widget sets at runtime via `@module-federation/runtime`.
+- `visLoadWidgets.tsx` — loads remote widget sets at runtime via `@module-federation/runtime`, with their
+  background services (`common.visWidgets.<set>.services`).
+- `visServices.tsx` — renders those services once next to the views, in the runtime only;
+  `visServiceWidgets.ts` picks the widgets a service gets, with the permissions of the runtime.
 - `visUtils.tsx` / `visFormatUtils.tsx` — binding parsing and the `{id;operation;…}` format operations
   documented in `README.md`.
 - `Vis/Widgets/{Basic,JQui,Tabs,Swipe}/` — built-in widgets. A new built-in widget must be added to the

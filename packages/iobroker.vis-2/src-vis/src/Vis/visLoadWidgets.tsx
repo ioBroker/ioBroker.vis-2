@@ -12,10 +12,11 @@
  * Licensees may copy, distribute, display, and perform the work and make derivative works based on it only for noncommercial purposes.
  * (Free for non-commercial use).
  */
+import type { ComponentType } from 'react';
 import { I18n, type Connection } from '@iobroker/gui-components';
 import type { VisRxWidgetState } from '@/Vis/visRxWidget';
 import type VisRxWidget from '@/Vis/visRxWidget';
-import type { AdditionalIconSet, Branded } from '@iobroker/types-vis-2';
+import type { AdditionalIconSet, Branded, VisServiceProps } from '@iobroker/types-vis-2';
 import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
 import {
     checkWidgetSetCompatibility,
@@ -48,6 +49,20 @@ export interface VisRxWidgetWithInfo<
     // Widget set icon
     setIcon: string;
 }
+
+/** A background service of a widget set, see `VisServiceProps` */
+export interface VisServiceWithInfo {
+    /** Adapter that brings the set; the widgets of the set carry it as `widgetSet` */
+    adapter: string;
+    /** Name of the widget set, the federation remote */
+    set: string;
+    /** Name of the exposed module, as listed in `services` */
+    name: string;
+    Component: ComponentType<VisServiceProps>;
+}
+
+/** `services` is not in the typings of `common.visWidgets` yet (ioBroker/ioBroker.js-controller#3555) */
+type VisWidgetCollection = ioBroker.VisWidget & { services?: string[] };
 
 interface WidgetSetStruct {
     __initialized: boolean;
@@ -82,12 +97,14 @@ function registerWidgetsLoadIndicator(cb: (process: number, max: number) => void
 }
 
 interface VisLoadComponentContext {
-    visWidgetsCollection: ioBroker.VisWidget;
+    visWidgetsCollection: VisWidgetCollection;
     countRef: { count: number; max: number };
     dynamicWidgetInstance: ioBroker.InstanceObject;
     i18nPrefix: string;
     // List of custom React components
     result: VisRxWidgetWithInfo<any>[];
+    /** The background services of the sets */
+    services: VisServiceWithInfo[];
 }
 
 // Must match the `name` configured in vite.config.ts (federation({ name: 'iobroker_vis' })).
@@ -148,6 +165,37 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
         })(i, context.visWidgetsCollection);
     }
 
+    // The services come out of the same remote as the widgets, but they are no widgets: they go into a list of
+    // their own and never into the catalog
+    const adapter = context.dynamicWidgetInstance._id.substring('system.adapter.'.length).replace(/\.\d*$/, '');
+    for (const name of context.visWidgetsCollection.services || []) {
+        context.countRef.max++;
+        promises.push(
+            loadRemote<{ default?: ComponentType<VisServiceProps> }>(`${context.visWidgetsCollection.name}/${name}`)
+                .then(module => {
+                    context.countRef.count++;
+                    if (module?.default) {
+                        context.services.push({
+                            adapter,
+                            set: context.visWidgetsCollection.name,
+                            name,
+                            Component: module.default,
+                        });
+                    } else {
+                        console.error(
+                            `Cannot load service ${name} of ${context.dynamicWidgetInstance._id}. No default found`,
+                        );
+                    }
+                    window.__widgetsLoadIndicator?.(context.countRef.count, context.countRef.max);
+                })
+                .catch((e: any) =>
+                    console.error(
+                        `Cannot load service ${name} of ${context.dynamicWidgetInstance._id}: ${e?.stack || e?.toString?.() || e}`,
+                    ),
+                ),
+        );
+    }
+
     return Promise.all(promises);
 }
 
@@ -199,6 +247,8 @@ function getRemoteWidgets(
     | undefined
     | {
           widgetSets: VisRxWidgetWithInfo<any>[];
+          /** Background services of the widget sets, see `VisServiceProps` */
+          services: VisServiceWithInfo[];
           additionalSets: AdditionalIconSet;
           /** Widget sets that were skipped because they were built for an older react */
           incompatibleSets: IncompatibleWidgetSet[];
@@ -207,6 +257,7 @@ function getRemoteWidgets(
     return readWidgetInstances(socket, !!fromConfig)
         .then(instances => {
             const result: VisRxWidgetWithInfo<any>[] = [];
+            const services: VisServiceWithInfo[] = [];
             const additionalSets: AdditionalIconSet = {};
             const incompatibleSets: IncompatibleWidgetSet[] = [];
             const countRef = { count: 0, max: 0 };
@@ -241,7 +292,7 @@ function getRemoteWidgets(
                             `common.visWidgets.i18n is deprecated. Use common.visWidgets.${_widgetSetName}.i18n instead.`,
                         );
                     } else {
-                        const visWidgetsCollection: ioBroker.VisWidget =
+                        const visWidgetsCollection: VisWidgetCollection =
                             dynamicWidgetInstance.common.visWidgets[widgetSetName];
 
                         if (
@@ -307,6 +358,7 @@ function getRemoteWidgets(
                                                     dynamicWidgetInstance: instance,
                                                     i18nPrefix,
                                                     result,
+                                                    services,
                                                 });
                                             }
                                             const skipped: IncompatibleWidgetSet = {
@@ -457,6 +509,7 @@ function getRemoteWidgets(
 
             return Promise.all(promises).then(() => ({
                 widgetSets: result,
+                services,
                 additionalSets,
                 incompatibleSets,
             }));

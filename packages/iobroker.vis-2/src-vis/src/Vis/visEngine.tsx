@@ -70,6 +70,7 @@ import VisView from './visView';
 import VisFormatUtils from './visFormatUtils';
 import { getUrlParameter, extractBinding, readFile, isLocalStateId } from './visUtils';
 import VisWidgetsCatalog from './visWidgetsCatalog';
+import VisServices from './visServices';
 import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded } from './visLoadLegacy';
 import { createStateValues, upgradeStateValues } from './visCanStates';
 
@@ -2515,6 +2516,9 @@ ${this.scripts}
         }
     }
 
+    /** `changeView` for the background services: the same function in every render */
+    private changeServiceView = (view: string): void => this.changeView(view);
+
     changeView = (view: string, subView?: string): void => {
         if (this.props.editMode) {
             window.alert(I18n.t('Ignored in edit mode'));
@@ -2638,6 +2642,24 @@ ${this.scripts}
 
             return null;
         });
+
+        // The background services of the widget sets live as long as the runtime, whichever view is shown.
+        // Not in the editor: there nothing must connect or ring.
+        if (this.props.runtime && VisWidgetsCatalog.services.length) {
+            views.push(
+                <VisServices
+                    key="__services"
+                    services={VisWidgetsCatalog.services}
+                    project={visProject}
+                    socket={this.props.socket}
+                    permissionsName={store.getState().activeUser}
+                    user={this.userName}
+                    userGroups={this.props.userGroups}
+                    lang={this.props.lang}
+                    changeView={this.changeServiceView}
+                />,
+            );
+        }
 
         if (this.refSound) {
             views.push(

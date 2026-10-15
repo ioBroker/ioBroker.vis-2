@@ -295,6 +295,35 @@ Here's a simple example with a circle in an SVG:
 In this case, if the SVG takes the color of the parent element.
 E.g., if it was used in a menu and the menu is red, the circle would be red.
 
+## Background services of widget sets
+The runtime renders only the open view and the views with "Render always", so a widget lives only while its view is
+shown. A widget set may bring **background services** for what must not stop with its view - e.g. a phone that has to
+stay registered to ring, and that shows the dialog of an incoming call over whichever view is open.
+
+A service is a React component, exposed by the module federation of the set like a widget (default export), and named
+in `io-package.json`:
+
+```json
+"visWidgets": {
+    "vis2IntercomWidgets": {
+        "url": "intercom/customWidgets.js",
+        "components": ["Phone"],
+        "services": ["PhoneService"]
+    }
+}
+```
+
+The runtime renders every service once, next to the views, as long as the project is open - not in the editor. It gets
+the props `VisServiceProps` of `@iobroker/types-vis-2`:
+
+- `widgets` - the widgets of the set (their `widgetSet` is the adapter) in all views of the project that the user may
+  see: with read permission for the project, the view and the widget, and not excluded by `visibility-groups`. Each is
+  `{ view, id, tpl, data }`, with `data` as stored in the project - the bindings are not resolved.
+- `adapter`, `socket`, `user` (without `system.user.`), `lang` and `changeView(view)`.
+
+A service is only loaded with its set, i.e. if the project uses a widget of the set. A crashing service is left out,
+the views and the other services go on.
+
 ## Development and Debugging
 
 In order to make adjustments to the vis-2 editor itself, to search for errors and to debug, the following steps must be carried out.
@@ -344,6 +373,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) Widget sets may bring background services (`common.visWidgets.<set>.services`): the runtime renders them once next to the views, with the widgets of the set in all views the user may see, whichever view is shown - e.g. so that a phone stays registered without "Render always"
 * (@GermanBluefox) The runtime shows the first view much sooner - measured on a tablet profile (4x slower CPU, WLAN): 4.5 s instead of 7 s for a small project, 9 s instead of 23 s for one of 760 widgets, and 0.6 s instead of 1.5 s on a desktop:
   * The runtime loads 3.4 MB of JavaScript instead of 4.6 MB: `@iobroker/gui-components` is tree-shaken, the date pickers are loaded with the widgets that use them, the words of the standard widgets only in the language of the system
   * The requests of the start go out side by side instead of one after the other, and the project file and its style sheets come over HTTP - compressed, from the browser cache while unchanged - and already while the socket connects
