@@ -36,6 +36,38 @@ function devBackendPlugin(): Plugin {
     };
 }
 
+/**
+ * Announces the shared modules of the federation host in the HTML of both pages.
+ *
+ * React, react-dom, MUI, emotion and moment are provided to the widget sets as shares. The federation bootstrap
+ * imports them one after the other - each one only once the one before ran - and Vite preloads only what the entry
+ * imports statically, which is the thin `loadShare` wrappers. Measured on a tablet: eight levels, 0.9 s before the
+ * first line of vis-2 ran. As `modulepreload` the browser fetches and compiles them all at once with the page and
+ * runs them when the bootstrap asks for them, in its order.
+ */
+function preloadSharesPlugin(): Plugin {
+    return {
+        name: 'vis-preload-shares',
+        apply: 'build',
+        transformIndexHtml: {
+            order: 'post',
+            handler: (html, ctx) => {
+                if (!ctx.bundle) {
+                    return html;
+                }
+                const files = Object.keys(ctx.bundle).filter(
+                    file => /__prebuild__.*\.js$/.test(file) || /(^|\/)pendingShares-[^/]+\.js$/.test(file),
+                );
+                return files.map(file => ({
+                    tag: 'link',
+                    attrs: { rel: 'modulepreload', crossorigin: true, href: `./${file}` },
+                    injectTo: 'head' as const,
+                }));
+            },
+        },
+    };
+}
+
 export default defineConfig({
     plugins: [
         // The host name configured here is used verbatim by @module-federation/vite
@@ -94,6 +126,7 @@ export default defineConfig({
         react(),
         commonjs(),
         devBackendPlugin(),
+        preloadSharesPlugin(),
     ],
     server: {
         port: PORT,

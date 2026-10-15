@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Blinds as BlindIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 import { I18n, type Connection } from '@iobroker/gui-components';
 
 import type { RxWidgetInfoAttributesField, WidgetData } from '@iobroker/types-vis-2';

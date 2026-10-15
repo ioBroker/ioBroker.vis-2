@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Videocam as CameraIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import CameraView from '../Base/controls/CameraView';
 import { asNumber, asText } from '../Base/controls/stateValue';

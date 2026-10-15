@@ -4,7 +4,7 @@ import { Dialog, DialogContent, IconButton } from '@mui/material';
 
 import { Close as CloseIcon, PlayArrow as ButtonIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import { asNumber } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';

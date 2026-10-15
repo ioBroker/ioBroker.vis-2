@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Palette as RgbIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import ColorWheel, { ColorTempSlider, ShadeSlider } from '../Base/controls/ColorWheel';
 import SlideToggle from '../Base/controls/SlideToggle';

@@ -9,7 +9,7 @@ import {
     CleaningServices as VacuumIcon,
 } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import ModeButtons, { type Mode } from '../Base/controls/ModeButtons';
 import { asNumber, asText } from '../Base/controls/stateValue';

@@ -840,6 +840,67 @@ export async function readFile(
     return data;
 }
 
+/** See readFileOverHttp */
+async function fetchFileOverHttp(id: string, fileName: string): Promise<string | null> {
+    const path = fileName
+        .split('/')
+        .map(part => encodeURIComponent(part))
+        .join('/');
+    // the page is `/vis-2/index.html` (or `/index.html` on the dev server, which proxies `/vis-2.0`)
+    const response = await fetch(`../${id}/${path}`, { credentials: 'include' });
+    if (response.status === 404) {
+        return null;
+    }
+    if (!response.ok || response.redirected || response.headers.get('content-type')?.includes('text/html')) {
+        throw new Error(`Cannot read "${id}/${fileName}" over HTTP: ${response.status}`);
+    }
+    return response.text();
+}
+
+/** Files asked for before anybody needed them, see prefetchFileOverHttp */
+const prefetchedFiles = new Map<string, Promise<string | null>>();
+
+/**
+ * Read a text file of the ioBroker file storage over HTTP, from the web adapter that served the page.
+ *
+ * Over the socket a file travels as a string inside a JSON message - escaped, parsed twice, and asked for anew on
+ * every load. The web adapter compresses it instead (a project of 2 MB arrives as 120 KB) and answers a reload
+ * with `304 Not Modified`.
+ *
+ * @param id - the storage, like `vis-2.0`
+ * @param fileName - path of the file in it
+ * @returns The content, or null if there is no such file. Rejects for every answer that is not the file itself -
+ *   a login page after a redirect, a page of the cloud, an error of the server - so that the caller can ask the
+ *   socket instead.
+ */
+export function readFileOverHttp(id: string, fileName: string): Promise<string | null> {
+    const prefetched = prefetchedFiles.get(`${id}/${fileName}`);
+    if (prefetched) {
+        // good for one read only: a later one comes because the file has changed
+        prefetchedFiles.delete(`${id}/${fileName}`);
+        return prefetched;
+    }
+    return fetchFileOverHttp(id, fileName);
+}
+
+/**
+ * Start reading a file over HTTP right away, so that {@link readFileOverHttp} finds it on its way.
+ *
+ * Over HTTP the files of a project do not need the socket - the page knows from its URL which project it shows,
+ * so they can travel while the socket still connects.
+ *
+ * @param id - the storage, like `vis-2.0`
+ * @param fileName - path of the file in it
+ */
+export function prefetchFileOverHttp(id: string, fileName: string): void {
+    if (!prefetchedFiles.has(`${id}/${fileName}`)) {
+        const promise = fetchFileOverHttp(id, fileName);
+        // whoever takes it over handles the error
+        promise.catch(() => {});
+        prefetchedFiles.set(`${id}/${fileName}`, promise);
+    }
+}
+
 export function addClass(actualClass: string, toAdd: string | undefined): string {
     if (actualClass) {
         const parts = actualClass

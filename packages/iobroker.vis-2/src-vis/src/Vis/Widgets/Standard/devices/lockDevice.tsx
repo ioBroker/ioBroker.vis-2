@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Lock as LockedIcon, LockOpen as UnlockedIcon, MeetingRoom as DoorOpenIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import SlideToggle from '../Base/controls/SlideToggle';
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';

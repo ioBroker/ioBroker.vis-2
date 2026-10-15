@@ -344,6 +344,13 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) The runtime shows the first view much sooner - measured on a tablet profile (4x slower CPU, WLAN): 4.5 s instead of 7 s for a small project, 9 s instead of 23 s for one of 760 widgets, and 0.6 s instead of 1.5 s on a desktop:
+  * The runtime loads 3.4 MB of JavaScript instead of 4.6 MB: `@iobroker/gui-components` is tree-shaken, the date pickers are loaded with the widgets that use them, the words of the standard widgets only in the language of the system
+  * The requests of the start go out side by side instead of one after the other, and the project file and its style sheets come over HTTP - compressed, from the browser cache while unchanged - and already while the socket connects
+  * The adapter lists the widget sets in `config.js`, so the runtime no longer reads every instance object of the system (1 MB) to find them
+  * The widget sets of the first view are loaded first; the others follow while it is already shown. A view of React widgets does not wait for the vis-1 libraries anymore
+  * Of `widgets.html` only the widget sets the project uses go into the page - with the style sheets and web fonts of all others, which were loaded although their scripts were skipped
+  * jQuery, jQuery UI, can.js and the scripts of a vis-1 widget set are fetched side by side (and still run in their order), the files of a widget set are announced to the browser out of its federation manifest, and the shared modules of vis-2 with the page
 * (@GermanBluefox) Changed: the AI assistant uses the shared libraries `@iobroker/ai-core` and `@iobroker/ai-gui`
 * (@GermanBluefox) Fixed: the AI push session is bound to the user who opened it, and testing the values of the AI settings form needs the "execute" right
 * (@GermanBluefox) The endpoint and the credential of an assistant request come out of the instance configuration and no longer out of the request. Both were taken from the message, and the key they resolve - a secret of this system, out of the configuration or out of the central credential store - travels with the request as its authorisation: whoever may send a message to this instance could therefore have that key carried to an address of their own. The editor never sent either of them, so nothing changes for it. The test buttons of the configuration page keep trying what stands in the form, with one limit: an address out of the form counts only together with a key out of the form - one's own key to one's own endpoint gives nothing away. In the central-store mode the saved address is used, so an endpoint of one's own has to be saved before it can be tested there

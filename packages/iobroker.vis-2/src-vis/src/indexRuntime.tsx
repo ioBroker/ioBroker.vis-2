@@ -8,11 +8,16 @@ import './index.css';
 // so the bundler never sees the editor import graph (multi-entry alternative to the
 // tasks.js copy-and-substitute build).
 import App from './Runtime';
+import VisEngine from './Vis/visEngine';
 import packageJson from './version.json';
 
 window.adapterName = 'vis-2';
 
 console.log(`iobroker.${window.adapterName}@${packageJson.version}`);
+
+// travel while the socket connects
+VisEngine.prefetchWidgetsHtml();
+App.prefetchProjectFiles(`${window.adapterName}.0`);
 
 void import('./Vis/visRxWidget').then(_VisRxWidget => (window.visRxWidget = _VisRxWidget.default));
 

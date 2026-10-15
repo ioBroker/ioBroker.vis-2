@@ -11,7 +11,7 @@ import {
     Window as WindowIcon,
 } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import { Icon } from '@iobroker/gui-components';
 

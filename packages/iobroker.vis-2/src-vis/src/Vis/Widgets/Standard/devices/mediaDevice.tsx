@@ -10,7 +10,7 @@ import {
     VolumeUp as VolumeIcon,
 } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import FatSlider from '../Base/controls/FatSlider';
 import { asNumber, asText } from '../Base/controls/stateValue';

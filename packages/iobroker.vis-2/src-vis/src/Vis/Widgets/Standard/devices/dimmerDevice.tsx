@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Lightbulb as DimmerIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import FatSlider from '../Base/controls/FatSlider';
 import SlideToggle from '../Base/controls/SlideToggle';

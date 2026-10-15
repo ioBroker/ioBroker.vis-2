@@ -10,7 +10,7 @@ import {
 
 import { alpha } from '@mui/material/styles';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import { Icon } from '@iobroker/gui-components';
 

@@ -14,39 +14,14 @@
  */
 
 import React from 'react';
-import dayjs from 'dayjs';
-
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import 'dayjs/locale/de';
-import 'dayjs/locale/en';
-import 'dayjs/locale/ru';
-import 'dayjs/locale/zh-cn';
-import 'dayjs/locale/uk';
-import 'dayjs/locale/it';
-import 'dayjs/locale/fr';
-import 'dayjs/locale/es';
-import 'dayjs/locale/pl';
-import 'dayjs/locale/pt';
-import 'dayjs/locale/nl';
 
 import type { TextFieldVariants } from '@mui/material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 
-const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
-    textRoot: {
-        '& .MuiInputBase-root': {
-            width: '100%',
-            height: '100%',
-        },
-        // the text takes the color of the widget, not that of the theme, see JQuiInput (#521)
-        '& .MuiPickersInputBase-root': {
-            color: 'inherit',
-        },
-    },
-};
+// the picker brings `@mui/x-date-pickers` and dayjs along, see DateTimePickers.tsx
+const VisDatePicker = React.lazy(() => import('./DateTimePickers').then(m => ({ default: m.VisDatePicker })));
 
 type RxData = {
     oid: string;
@@ -62,9 +37,6 @@ type RxData = {
 };
 
 class JQuiInputDate extends VisRxWidget<RxData> {
-    /** If a user does not want to use full date */
-    private readonly EASY_DATE_FORMAT = 'DD.MM.YYYY';
-
     static getWidgetInfo(): RxWidgetInfo {
         return {
             id: 'tplJquiInputDate',
@@ -155,48 +127,22 @@ class JQuiInputDate extends VisRxWidget<RxData> {
 
         return (
             <div className="vis-widget-body">
-                <LocalizationProvider
-                    dateAdapter={AdapterDayjs}
-                    adapterLocale={this.props.context.lang}
-                >
-                    <DatePicker
-                        value={
-                            this.state.rxData.asFullDate
-                                ? dayjs(this.state.values[`${this.state.rxData.oid}.val`])
-                                : dayjs(this.state.values[`${this.state.rxData.oid}.val`], this.EASY_DATE_FORMAT)
-                        }
-                        label={this.state.rxData.widgetTitle || null}
-                        autoFocus={this.state.rxData.autoFocus || false}
-                        onChange={newValue => {
-                            if (!newValue) {
-                                return;
-                            }
-
-                            const val = this.state.rxData.asFullDate
-                                ? newValue.toDate().toString()
-                                : newValue.format(this.EASY_DATE_FORMAT);
-                            this.props.context.setValue(this.state.rxData.oid, val);
-                        }}
-                        formatDensity={this.state.rxData.wideFormat ? 'spacious' : 'dense'}
-                        slotProps={{
-                            textField: {
-                                variant: this.state.rxData.variant || 'standard',
-                                style: {
-                                    width: '100%',
-                                    height: '100%',
-                                },
-                                sx: styles.textRoot,
-                            },
-                            field: {
-                                clearable: this.state.rxData.clearable,
-                                onClear: () => this.props.context.setValue(this.state.rxData.oid, ''),
-                            },
-                        }}
-                        disableFuture={this.state.rxData.disableFuture || false}
-                        disablePast={this.state.rxData.disablePast || false}
-                        displayWeekNumber={this.state.rxData.displayWeekNumber || false}
+                <React.Suspense fallback={null}>
+                    <VisDatePicker
+                        value={this.state.values[`${this.state.rxData.oid}.val`]}
+                        lang={this.props.context.lang}
+                        variant={this.state.rxData.variant}
+                        autoFocus={this.state.rxData.autoFocus}
+                        clearable={this.state.rxData.clearable}
+                        widgetTitle={this.state.rxData.widgetTitle}
+                        asFullDate={this.state.rxData.asFullDate}
+                        disableFuture={this.state.rxData.disableFuture}
+                        disablePast={this.state.rxData.disablePast}
+                        displayWeekNumber={this.state.rxData.displayWeekNumber}
+                        wideFormat={this.state.rxData.wideFormat}
+                        onChange={val => this.props.context.setValue(this.state.rxData.oid, val)}
                     />
-                </LocalizationProvider>
+                </React.Suspense>
             </div>
         );
     }

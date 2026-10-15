@@ -21,18 +21,18 @@
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@iobroker/eslint-config": "^2.3.4",
-        "@iobroker/gui-components": "^10.3.1",
-        "@iobroker/types": "^7.2.3",
+        "@iobroker/gui-components": "^10.3.11",
+        "@iobroker/types": "^7.2.5",
         "@types/react": "^19.3.0",
-        "lerna": "^10.0.1",
+        "lerna": "^10.1.1",
         "moment": "^2.31.0",
-        "react": "^19.3.0",
-        "react-dom": "^19.3.0",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
         "typescript": "~6.0.3"
     },
     "overrides": {
-        "react": "^19.3.0",
-        "react-dom": "^19.3.0"
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1"
     },
     "scripts": {
         "build": "npm run clean && lerna run build",

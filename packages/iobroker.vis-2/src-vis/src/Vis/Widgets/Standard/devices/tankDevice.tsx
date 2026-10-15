@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Opacity as TankIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import TankGauge from '../Base/controls/TankGauge';
 import { asNumber } from '../Base/controls/stateValue';

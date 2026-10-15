@@ -5,11 +5,16 @@ import { Utils } from '@iobroker/gui-components';
 
 import './index.css';
 import App from './Editor';
+import VisEngine from './Vis/visEngine';
 import packageJson from './version.json';
 
 window.adapterName = 'vis-2';
 
 console.log(`iobroker.${window.adapterName}@${packageJson.version}`);
+
+// travel while the socket connects
+VisEngine.prefetchWidgetsHtml();
+App.prefetchProjectFiles(`${window.adapterName}.0`);
 
 void import('./Vis/visRxWidget').then(_VisRxWidget => (window.visRxWidget = _VisRxWidget.default));
 

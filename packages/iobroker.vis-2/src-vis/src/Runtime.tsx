@@ -43,9 +43,17 @@ import type {
     WidgetStyle,
 } from '@iobroker/types-vis-2';
 import VisEngine from './Vis/visEngine';
-import { applyTitleAndIcon, extractBinding, readFile, syncMultipleWidgets } from './Vis/visUtils';
+import {
+    applyTitleAndIcon,
+    extractBinding,
+    prefetchFileOverHttp,
+    readFile,
+    readFileOverHttp,
+    syncMultipleWidgets,
+} from './Vis/visUtils';
 import { registerWidgetsLoadIndicator } from './Vis/visLoadWidgets';
 import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
+import { registerStandardWords } from './Vis/Widgets/Standard';
 import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 import { getNewViewSettings } from './Vis/visGridLayout';
 
@@ -146,6 +154,17 @@ declare global {
     }
 }
 
+/** The files a project is shown with, each of them on its way */
+interface ProjectFiles {
+    projectName: string;
+    /** `vis-views.json`; rejects if it cannot be read */
+    project: Promise<string>;
+    /** `vis-common-user.css`, or null if there is none */
+    commonCss: Promise<string | null>;
+    /** `vis-user.css` of the project, or null if there is none */
+    userCss: Promise<string | null>;
+}
+
 export default class Runtime<
     P extends RuntimeProps = RuntimeProps,
     S extends RuntimeState = RuntimeState,
@@ -173,6 +192,9 @@ export default class Runtime<
     needRestart = false;
 
     lastUploadedState: ioBroker.StateValue = null;
+
+    /** The files of a project that were asked for before `loadProject` needed them, see {@link prefetchProject} */
+    private prefetchedProject: ProjectFiles | null = null;
 
     protected checkForUpdates?: () => Promise<void>;
 
@@ -630,20 +652,89 @@ export default class Runtime<
         return result;
     }
 
+    /**
+     * The project the page is opened for: `?<project>` of the URL, else the one opened last, else `main`
+     */
+    static getProjectNameOfPage(): string {
+        let projectName = window.location.search.replace('?', '');
+        if (projectName) {
+            projectName = decodeURIComponent(projectName.split('&')[0]).split('/')[0];
+            if (projectName.includes('=')) {
+                projectName = '';
+            }
+        }
+        return projectName || window.localStorage.getItem('projectName') || 'main';
+    }
+
+    /**
+     * Ask for the files of the project of this page while the page still starts.
+     *
+     * Over HTTP they do not need the socket (see readProjectFiles), so they can travel while the socket connects
+     * instead of after it. Whatever is not taken over by `loadProject` is simply not used.
+     *
+     * @param adapterId - the storage of the projects, like `vis-2.0`
+     */
+    static prefetchProjectFiles(adapterId: string): void {
+        const projectName = Runtime.getProjectNameOfPage();
+        prefetchFileOverHttp(adapterId, `${projectName}/vis-views.json`);
+        prefetchFileOverHttp(adapterId, 'vis-common-user.css');
+        prefetchFileOverHttp(adapterId, `${projectName}/vis-user.css`);
+    }
+
+    /**
+     * Ask for the files of a project: the project itself and the two style sheets it is shown with.
+     *
+     * The style sheets used to be read by the engine only once the widgets were there, so the first frame of a
+     * view came without them.
+     *
+     * @param projectName - name of the project
+     * @returns The three files on their way
+     */
+    readProjectFiles(projectName: string): ProjectFiles {
+        // Over HTTP first, see readFileOverHttp. Whatever it does not deliver is asked of the socket - also a 404:
+        // a reverse proxy in front of the web adapter may not pass the file storage, and a project taken for
+        // missing would bring up the project dialog.
+        const read = (fileName: string): Promise<string> =>
+            readFileOverHttp(this.adapterId, fileName)
+                .catch((): null => null)
+                .then(data =>
+                    data !== null
+                        ? data
+                        : readFile(this.socket, this.adapterId, fileName).then(file =>
+                              typeof file === 'object' ? file.file : file,
+                          ),
+                );
+        const files: ProjectFiles = {
+            projectName,
+            project: read(`${projectName}/vis-views.json`),
+            commonCss: read('vis-common-user.css').catch(() => null),
+            userCss: read(`${projectName}/vis-user.css`).catch(() => null),
+        };
+        // whoever takes the files over handles the error; a prefetch that nobody takes must not end up unhandled
+        files.project.catch(() => {});
+        return files;
+    }
+
+    /**
+     * Start reading a project before `loadProject` is called for it - it is the biggest answer of the whole start
+     *
+     * @param projectName - name of the project that will be loaded next
+     */
+    prefetchProject(projectName: string): void {
+        this.prefetchedProject = this.readProjectFiles(projectName);
+    }
+
     loadProject = async (projectName: string): Promise<void> => {
         let fileStr: string;
         this.setLoadingText?.('Load project file...');
+        // a prefetch is only good once: later calls come because the files have changed
+        const files =
+            this.prefetchedProject?.projectName === projectName
+                ? this.prefetchedProject
+                : this.readProjectFiles(projectName);
+        this.prefetchedProject = null;
         try {
-            const file: string | { file: string; mimeType: string } = await readFile(
-                this.socket,
-                this.adapterId,
-                `${projectName}/vis-views.json`,
-            );
-            if (typeof file === 'object') {
-                fileStr = file.file;
-            } else {
-                fileStr = file;
-            }
+            fileStr = await files.project;
         } catch (err) {
             console.warn(`Cannot read project file "${projectName}/vis-views.json": ${err as Error}`);
             fileStr = '{}';
@@ -769,9 +860,29 @@ export default class Runtime<
 
         store.dispatch(updateProject(project));
 
+        if (this.state.runtime && this.socket.isConnected()) {
+            // The React widget sets depend on the project only, not on the vis-1 sets in widgets.html that the
+            // engine loads first. So they load side by side, instead of one after the other - see onWidgetsLoaded.
+            // The sets of the first view come first, the others follow while it is already shown.
+            // The editor waits: it loads every set and may change the project on the way.
+            VisWidgetsCatalog.onCatalogExtended = () =>
+                this.setState({ incompatibleSets: Runtime.getUnacknowledgedSets() });
+            void VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, undefined, [
+                selectedView,
+            ]).then(() =>
+                // a view of React widgets does not wait for widgets.html, see the constructor of VisEngine
+                this.setState({
+                    widgetsLoaded: Runtime.WIDGETS_LOADING_STEP_ALL_LOADED,
+                    incompatibleSets: Runtime.getUnacknowledgedSets(),
+                }),
+            );
+        }
+
+        const [visCommonCss, visUserCss] = await Promise.all([files.commonCss, files.userCss]);
+
         await this.setStateAsync({
-            visCommonCss: null,
-            visUserCss: null,
+            visCommonCss,
+            visUserCss,
             history: [project],
             historyCursor: 0,
             projectName,
@@ -865,9 +976,23 @@ export default class Runtime<
             await this.setStateAsync({ widgetsLoaded: Runtime.WIDGETS_LOADING_STEP_ALL_LOADED });
         }
 
-        const userName = await this.socket.getCurrentUser(); // just name, like "admin"
+        const projectName = Runtime.getProjectNameOfPage();
 
-        const currentUser = await this.socket.getObject(`system.user.${userName || 'admin'}`);
+        // None of the requests below waits for another one. They used to go out one after the other - a dozen
+        // round trips before the project was even asked for, which is what a remote connection pays most for.
+        this.prefetchProject(projectName);
+
+        const uploadedId = `${this.adapterName}.${this.instance}.info.uploaded`;
+        const [currentUser, groups, uploadedState] = await Promise.all([
+            // getCurrentUser gives just the name, like "admin"
+            this.socket.getCurrentUser().then(userName => this.socket.getObject(`system.user.${userName || 'admin'}`)),
+            this.socket.getGroups(),
+            this.socket
+                .subscribeState(uploadedId, this.onWidgetSetsChanged)
+                .then(() => this.socket.getState(uploadedId)),
+            registerStandardWords(I18n.getLanguage()),
+        ]);
+
         const name =
             typeof currentUser?.common.name === 'object'
                 ? currentUser.common.name[I18n.getLanguage()] || currentUser.common.name.en
@@ -875,7 +1000,6 @@ export default class Runtime<
 
         store.dispatch(updateActiveUser(name));
 
-        const groups = await this.socket.getGroups();
         const userGroups: Record<ioBroker.ObjectIDs.Group, ioBroker.GroupObject> = {};
         groups.forEach(group => (userGroups[group._id] = group));
 
@@ -886,13 +1010,6 @@ export default class Runtime<
             splitSizes: safeParseLS<[number, number, number]>('Vis.splitSizes', [20, 60, 20]),
         });
 
-        // subscribe on info.uploaded
-        await this.socket.subscribeState(
-            `${this.adapterName}.${this.instance}.info.uploaded`,
-            this.onWidgetSetsChanged,
-        );
-
-        const uploadedState = await this.socket.getState(`${this.adapterName}.${this.instance}.info.uploaded`);
         if (uploadedState && uploadedState.val !== this.lastUploadedState) {
             if (this.lastUploadedState) {
                 this.onVisChanged();
@@ -900,16 +1017,6 @@ export default class Runtime<
                 this.lastUploadedState = uploadedState.val;
             }
         }
-
-        // read project name from URL
-        let projectName = window.location.search.replace('?', '');
-        if (projectName) {
-            projectName = decodeURIComponent(projectName.split('&')[0]).split('/')[0];
-            if (projectName.includes('=')) {
-                projectName = '';
-            }
-        }
-        projectName ||= window.localStorage.getItem('projectName') || 'main';
 
         let projects = this.state.projects;
         if (!this.state.runtime) {
@@ -1077,6 +1184,10 @@ export default class Runtime<
     }
 
     async onWidgetsLoaded(): Promise<void> {
+        if (this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED) {
+            // the runtime showed the view already, see loadProject - a lost connection now must not take it away
+            return;
+        }
         let widgetsLoaded = Runtime.WIDGETS_LOADING_STEP_HTML_LOADED;
         if (this.socket.isConnected()) {
             await VisWidgetsCatalog.collectRxInformation(this.socket, store.getState().visProject, this.changeProject);

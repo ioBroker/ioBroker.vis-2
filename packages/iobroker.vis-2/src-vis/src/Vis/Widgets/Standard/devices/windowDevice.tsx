@@ -2,7 +2,7 @@ import React from 'react';
 
 import { DoorFront as DoorIcon, Window as WindowIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import WindowGlass, { type WindowState } from '../Base/controls/WindowGlass';
 import { asText } from '../Base/controls/stateValue';

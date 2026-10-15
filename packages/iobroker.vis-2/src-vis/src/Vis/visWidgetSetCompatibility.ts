@@ -63,8 +63,12 @@ const BREAKING_REACT_MAJOR = 19;
 /** The two names the federation manifest is written under, depending on the bundler of the widget set */
 const MANIFEST_FILES = ['mf-manifest.json', 'mf-stats.json'];
 
-interface FederationManifest {
+export interface FederationManifest {
     shared?: { name: string }[];
+    exposes?: {
+        name: string;
+        assets?: { js?: { sync?: string[]; async?: string[] } };
+    }[];
 }
 
 /** One request per widget set, no matter how many components it has */
@@ -96,6 +100,17 @@ async function readManifest(remoteEntryUrl: string): Promise<FederationManifest 
 }
 
 /**
+ * The federation manifest of a widget set, read once per set
+ *
+ * @param remoteEntryUrl - URL of the remote entry, as `fetch` resolves it
+ * @returns The manifest, or null if the widget set does not ship one
+ */
+export function getWidgetSetManifest(remoteEntryUrl: string): Promise<FederationManifest | null> {
+    manifestCache[remoteEntryUrl] ||= readManifest(remoteEntryUrl);
+    return manifestCache[remoteEntryUrl];
+}
+
+/**
  * Can a widget set be loaded by this vis-2?
  *
  * @param remoteEntryUrl - URL of the remote entry of the widget set
@@ -107,9 +122,7 @@ export function checkWidgetSetCompatibility(remoteEntryUrl: string): Promise<Wid
         return Promise.resolve(null);
     }
 
-    manifestCache[remoteEntryUrl] ||= readManifest(remoteEntryUrl);
-
-    return manifestCache[remoteEntryUrl].then(manifest => {
+    return getWidgetSetManifest(remoteEntryUrl).then(manifest => {
         // Without a manifest there is nothing to judge on. Let the widget set try - a set that works must not be
         // locked out because its bundler writes the manifest somewhere else
         if (!manifest?.shared?.length) {

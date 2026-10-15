@@ -2,7 +2,7 @@ import React from 'react';
 
 import { ShowChart as ChartIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import HistoryChart from '../Base/controls/HistoryChart';
 import { asNumber } from '../Base/controls/stateValue';

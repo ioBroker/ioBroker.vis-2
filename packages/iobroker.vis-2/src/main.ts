@@ -51,9 +51,52 @@ export interface VisAdapterConfig extends ioBroker.AdapterConfig, AiConfigSlice 
 
 const wwwDir = existsSync(`${__dirname}/../www`) ? `${__dirname}/../www` : `${__dirname}/www`;
 
+/**
+ * What the browser needs of an instance that brings React widgets or icon sets.
+ *
+ * The browser used to read every instance object to find these - the whole `native` of every adapter, 1 MB on an
+ * ordinary system, and that before the first widget set could be asked for. `config.js` carries the list now.
+ */
+interface VisWidgetInstance {
+    _id: string;
+    common: {
+        name: ioBroker.StringOrTranslated;
+        version: string;
+        icon?: string;
+        visWidgets?: ioBroker.InstanceCommon['visWidgets'];
+        visIconSets?: Record<string, any>;
+    };
+}
+
+/**
+ * The part of an instance object `config.js` lists, or null if the instance brings no widgets and no icons
+ *
+ * @param obj - the instance object
+ */
+function toVisWidgetInstance(obj: ioBroker.Object | null | undefined): VisWidgetInstance | null {
+    const common = obj?.type === 'instance' ? (obj.common as ioBroker.InstanceCommon & { visIconSets?: any }) : null;
+    if (!obj || !common || (!common.visWidgets && !common.visIconSets)) {
+        return null;
+    }
+    return {
+        _id: obj._id,
+        common: {
+            name: common.name,
+            version: common.version,
+            icon: common.icon,
+            visWidgets: common.visWidgets,
+            visIconSets: common.visIconSets,
+        },
+    };
+}
+
 class VisAdapter extends Adapter {
     declare public visConfig: VisAdapterConfig;
     private widgetInstances: Record<string, string> = {};
+    /** The instances that bring widgets or icon sets, as `config.js` lists them; sorted by id */
+    private visWidgetInstances: VisWidgetInstance[] = [];
+    /** The adapters with widgets of the last build - what `generateConfigPage` needs to run on its own */
+    private enabledList: { path: string; name: string; pack: ioBroker.AdapterObject }[] = [];
     private stoppingPromise: null | (() => void) = null;
     private isLicenseError = false;
     private lastProgressUpdate: number = 0;
@@ -110,24 +153,63 @@ class VisAdapter extends Adapter {
             if (obj && obj.type !== 'instance') {
                 return;
             }
+            const instanceId = id;
             id = id.substring('system.adapter.'.length).replace(/\.\d+$/, '');
+            let rebuild = false;
             if (!obj?.common?.version) {
                 if (this.widgetInstances[id]) {
                     delete this.widgetInstances[id];
-                    await this.buildHtmlPages(false);
+                    rebuild = true;
                 }
             } else if (POSSIBLE_WIDGET_SETS_LOCATIONS.find(dir => existsSync(`${dir}/iobroker.${id}/widgets/`))) {
                 // Check if the widgets folder exists
                 // still exists
                 if (!this.widgetInstances[id] || this.widgetInstances[id] !== obj.common.version) {
                     this.widgetInstances[id] = obj.common.version;
-                    await this.buildHtmlPages(false);
+                    rebuild = true;
                 }
             } else if (this.widgetInstances[id]) {
                 delete this.widgetInstances[id];
+                rebuild = true;
+            }
+
+            if (rebuild) {
                 await this.buildHtmlPages(false);
+            } else if (this.updateVisWidgetInstance(instanceId, obj)) {
+                // Only what the instance announces changed, not the adapter - the developer mode of a widget set
+                // does that, it points the url of the set to localhost. `config.js` is all that has to follow; a
+                // running build reads the instances anew anyway, so it is only asked to run once more.
+                if (this.synchronizing) {
+                    await this.buildHtmlPages(false);
+                } else {
+                    await this.generateConfigPage(false, this.enabledList);
+                }
             }
         }
+    }
+
+    /**
+     * Take over a changed instance object into the list of `config.js`
+     *
+     * @param instanceId - id of the instance object
+     * @param obj - the object, null if it was deleted
+     * @returns true if the list changed
+     */
+    updateVisWidgetInstance(instanceId: string, obj: ioBroker.Object | null | undefined): boolean {
+        const entry = toVisWidgetInstance(obj);
+        const index = this.visWidgetInstances.findIndex(item => item._id === instanceId);
+        const old = index === -1 ? null : this.visWidgetInstances[index];
+        if (JSON.stringify(old) === JSON.stringify(entry)) {
+            return false;
+        }
+        if (index !== -1) {
+            this.visWidgetInstances.splice(index, 1);
+        }
+        if (entry) {
+            this.visWidgetInstances.push(entry);
+            this.visWidgetInstances.sort((a, b) => (a._id > b._id ? 1 : a._id < b._id ? -1 : 0));
+        }
+        return true;
     }
 
     async processMessage(msg: ioBroker.Message): Promise<void> {
@@ -188,6 +270,11 @@ class VisAdapter extends Adapter {
     async readAdapterList(): Promise<{ path: string; name: string; pack: ioBroker.AdapterObject }[]> {
         const res = await this.getObjectViewAsync('system', 'instance', {});
 
+        this.visWidgetInstances = res.rows
+            .map(item => toVisWidgetInstance(item.value))
+            .filter((item): item is VisWidgetInstance => !!item)
+            .sort((a, b) => (a._id > b._id ? 1 : a._id < b._id ? -1 : 0));
+
         const instances: string[] = [];
         res.rows.forEach(item => {
             const obj = item.value;
@@ -221,6 +308,7 @@ class VisAdapter extends Adapter {
 
         this.synchronizing = true;
         const enabledList = await this.readAdapterList();
+        this.enabledList = enabledList;
         const configChanged = await this.generateConfigPage(forceBuild, enabledList);
 
         this.widgetInstances = {};
@@ -408,6 +496,8 @@ window.disableDataReporting = ${(this.common as any)?.disableDataReporting ? 'tr
 window.loadingBackgroundColor = '${this.visConfig.loadingBackgroundColor || ''}';
 window.loadingBackgroundImage = '${this.visConfig.loadingBackgroundImage ? `../${this.namespace}/loading-bg.png` : ''}';
 window.loadingHideLogo = '${this.visConfig.loadingHideLogo ? 'true' : ''}';
+// the instances that bring React widgets or icon sets, so that the browser does not have to read all instances
+window.visWidgetInstances = ${JSON.stringify(this.visWidgetInstances)};
 // for back compatibility with vis.1 on cloud
 window.visConfig = {
     "widgetSets": ${JSON.stringify(widgetSets)}

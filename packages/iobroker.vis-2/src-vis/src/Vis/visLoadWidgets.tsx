@@ -20,8 +20,10 @@ import { registerRemotes, loadRemote, init } from '@module-federation/runtime';
 import {
     checkWidgetSetCompatibility,
     getIncompatibilityText,
+    getWidgetSetManifest,
     type IncompatibleWidgetSet,
 } from './visWidgetSetCompatibility';
+import { getRemoteEntryUrl, preloadModule, preloadWidgetSet } from './visPreloadWidgetSet';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
@@ -66,6 +68,12 @@ declare global {
     interface Window {
         [promiseName: PromiseName]: Promise<any>;
         [widgetSetName: WidgetSetName]: WidgetSetStruct;
+        /**
+         * The instances that bring React widgets or icon sets, written into `config.js` by the adapter. Only `_id`
+         * and the fields of `common` that the widget sets are loaded with are there. An older adapter does not
+         * write it.
+         */
+        visWidgetInstances?: ioBroker.InstanceObject[];
     }
 }
 
@@ -151,16 +159,42 @@ function getText(text: string | ioBroker.StringOrTranslated): string {
 }
 
 /**
+ * The instances that bring widgets or icon sets
+ *
+ * @param socket Socket connection
+ * @param fromConfig Take the list the adapter wrote into `config.js`, if there is one. Reading all instances
+ *   instead costs 1 MB on an ordinary system and comes before the first widget set can be asked for. The editor
+ *   reads them anyway: the developer mode of a widget set changes an instance and reloads at once.
+ */
+function readWidgetInstances(socket: Connection, fromConfig: boolean): Promise<ioBroker.InstanceObject[]> {
+    if (fromConfig && window.visWidgetInstances) {
+        // the instances are written to below (the url of a set), so they must be copies
+        return Promise.resolve(JSON.parse(JSON.stringify(window.visWidgetInstances)));
+    }
+
+    let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
+    if (socket.getObjectViewSystemCached) {
+        getObjectViewSystem = socket.getObjectViewSystemCached.bind(socket);
+    }
+
+    return getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.香').then(objects =>
+        Object.values(objects),
+    );
+}
+
+/**
  * Load all remote widgets from instances
  *
  * !Do not make this funktion async because it is optimized to simultaneously load the widget sets
  *
  * @param socket Socket connection
  * @param onlyWidgetSets If array of names, load only these widget sets
+ * @param fromConfig Take the instances from `config.js`, see {@link readWidgetInstances}
  */
 function getRemoteWidgets(
     socket: Connection,
     onlyWidgetSets?: false | string[],
+    fromConfig?: boolean,
 ): Promise<
     | undefined
     | {
@@ -170,18 +204,12 @@ function getRemoteWidgets(
           incompatibleSets: IncompatibleWidgetSet[];
       }
 > {
-    let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
-    if (socket.getObjectViewSystemCached) {
-        getObjectViewSystem = socket.getObjectViewSystemCached.bind(socket);
-    }
-
-    return getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.\u9999')
-        .then(objects => {
+    return readWidgetInstances(socket, !!fromConfig)
+        .then(instances => {
             const result: VisRxWidgetWithInfo<any>[] = [];
             const additionalSets: AdditionalIconSet = {};
             const incompatibleSets: IncompatibleWidgetSet[] = [];
             const countRef = { count: 0, max: 0 };
-            const instances: ioBroker.InstanceObject[] = Object.values(objects);
             const dynamicWidgetInstances: ioBroker.InstanceObject[] = instances.filter(obj => {
                 if (!obj.common.visWidgets && !obj.common.visIconSets) {
                     return false;
@@ -257,6 +285,18 @@ function getRemoteWidgets(
                                     // boundary around the widgets cannot catch it and the message points at
                                     // nothing. Ask the federation manifest of the set beforehand instead
                                     const compatibility = checkWidgetSetCompatibility(fetchUrl);
+
+                                    // The files of the set travel side by side instead of one level after the
+                                    // other, see visPreloadWidgetSet.ts. The entry already while the manifest is
+                                    // read - preloading runs nothing, so an incompatible set is no danger yet.
+                                    const remoteEntryUrl = getRemoteEntryUrl(collection.url);
+                                    preloadModule(remoteEntryUrl);
+                                    void compatibility.then(async problem => {
+                                        const manifest = problem ? null : await getWidgetSetManifest(fetchUrl);
+                                        if (manifest) {
+                                            preloadWidgetSet(remoteEntryUrl, manifest);
+                                        }
+                                    });
 
                                     const loadComponentsIfCompatible = (): Promise<void[] | void> =>
                                         compatibility.then(problem => {

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { TrendingUp as ValueIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
 

@@ -25,11 +25,11 @@ import vacuumDevice from './devices/vacuumDevice';
 import valueDevice from './devices/valueDevice';
 import weatherDevice from './devices/weatherDevice';
 import windowDevice from './devices/windowDevice';
-import registerStandardWords from './i18n';
 
 // These widgets say `On`, `Closed` or `7 days` on the page itself, so their words belong in both bundles -
-// unlike the sets whose catalogs only name attributes, which the editor registers for itself.
-registerStandardWords();
+// unlike the sets whose catalogs only name attributes, which the editor registers for itself. They are loaded
+// for the language of the system, which is only known once the connection is up: `Runtime.onConnectionReady`.
+export { default as registerStandardWords } from './i18n';
 
 /**
  * The two widget sets vis-2 brings for the devices of a house.

@@ -426,7 +426,11 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
                 this.props.setLoadingText?.('Load widgets...');
 
-                return this.loadWidgets();
+                const widgetsLoaded = this.loadWidgets();
+                // The runtime shows a view as soon as the widgets of that view are there, and a view of React
+                // widgets needs nothing of widgets.html - `widgetsLoaded` from the catalog decides, see
+                // VisWidgetsCatalog.collectRxInformation. The editor waits for all of it.
+                return this.props.runtime ? undefined : widgetsLoaded;
             })
             .then(() => {
                 this.props.setLoadingText?.(null);
@@ -1830,19 +1834,29 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             newScript: HTMLScriptElement;
         }[],
     ): Promise<void> {
-        for (const { oldScript, newScript } of widgetSet) {
-            try {
-                newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-                oldScript.parentNode?.replaceChild(newScript, oldScript);
-
-                await new Promise((resolve, reject) => {
-                    newScript.onerror = reject;
-                    newScript.onload = resolve;
+        // All scripts of the set go into the document at once: the browser fetches them side by side, and
+        // `async = false` makes it run them in the order they were added, which is the order the set relies on.
+        // Added one after the other, a set of four scripts cost four round trips.
+        await Promise.all(
+            widgetSet.map(({ oldScript, newScript }) => {
+                const loaded = new Promise<void>(resolve => {
+                    newScript.onload = () => resolve();
+                    newScript.onerror = e => {
+                        console.error(`Cannot load script "${newScript.src}": ${JSON.stringify(e)}`);
+                        resolve();
+                    };
                 });
-            } catch (e) {
-                console.error(`Cannot load script "${newScript.src}": ${JSON.stringify(e)}`);
-            }
-        }
+                try {
+                    newScript.async = false;
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode?.replaceChild(newScript, oldScript);
+                } catch (e) {
+                    console.error(`Cannot load script "${newScript.src}": ${JSON.stringify(e)}`);
+                    return Promise.resolve();
+                }
+                return loaded;
+            }),
+        );
     }
 
     static loadedSources: string[] = [];
@@ -1945,23 +1959,64 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         return Promise.resolve();
     }
 
+    /** `widgets.html` on its way, see {@link prefetchWidgetsHtml} */
+    private static widgetsHtml: Promise<string> | null = null;
+
+    /**
+     * Ask for `widgets.html` as soon as the page starts.
+     *
+     * It is only used once the project is loaded, but it does not depend on it - so it travels while the socket
+     * connects and the project is read, instead of after that.
+     */
+    static prefetchWidgetsHtml(): void {
+        VisEngine.widgetsHtml ||= fetch('widgets.html').then(data => data.text());
+        // whoever takes it over handles the error, see loadWidgets
+        VisEngine.widgetsHtml.catch(() => {});
+    }
+
+    /**
+     * Keep only the parts of `widgets.html` that belong to the given widget sets.
+     *
+     * The adapter writes every vis-1 set between `<!-- --------------<set>.html--- START -->` and
+     * `<!-- --------------<set>.html--- END -->`. Put into the page as a whole, the file brings the templates of
+     * every installed set, and with them the style sheets and web fonts of all of them, which the browser loads
+     * the moment their `<link>` is in the document - only the scripts of the unused sets were skipped. A file
+     * without these marks stays as it is.
+     *
+     * @param html - the content of widgets.html
+     * @param widgetSets - names of the sets to keep, as `data-widgetset` names them
+     * @returns The part of the file the sets need
+     */
+    static filterWidgetSets(html: string, widgetSets: string[]): string {
+        return html.replace(
+            /<!-- --------------(.+?)\.html--- START -->[\s\S]*?<!-- --------------\1\.html--- END -->\n?/g,
+            (section: string, name: string) => (widgetSets.includes(name) ? section : ''),
+        );
+    }
+
     async loadWidgets(): Promise<void> {
         try {
-            const data = await fetch('widgets.html');
-            const text = await data.text();
+            const promise = VisEngine.widgetsHtml || fetch('widgets.html').then(data => data.text());
+            // the prefetch is good for the first engine only, a later one asks again
+            VisEngine.widgetsHtml = null;
+            let text = await promise;
             const div = document.createElement('div');
             document.body.appendChild(div);
 
-            await VisEngine.setInnerHTML(
-                div,
-                text,
-                this.props.runtime
-                    ? (VisWidgetsCatalog.getUsedWidgetSets(store.getState().visProject) as string[])
-                    : undefined,
-            );
+            const usedWidgetSets = this.props.runtime
+                ? VisWidgetsCatalog.getUsedWidgetSets(store.getState().visProject)
+                : false;
+            if (usedWidgetSets) {
+                text = VisEngine.filterWidgetSets(text, usedWidgetSets);
+            }
+
+            await VisEngine.setInnerHTML(div, text, usedWidgetSets || undefined);
+            VisWidgetsCatalog.setLegacyTemplatesLoaded();
 
             this.props.onLoaded?.();
         } catch (error) {
+            // the catalog of the React widgets must not wait for templates that will never come
+            VisWidgetsCatalog.setLegacyTemplatesLoaded();
             console.error(`Cannot load widgets: ${error as Error}`);
             console.error(`Cannot load widgets: ${JSON.stringify((error as Error).stack)}`);
         }

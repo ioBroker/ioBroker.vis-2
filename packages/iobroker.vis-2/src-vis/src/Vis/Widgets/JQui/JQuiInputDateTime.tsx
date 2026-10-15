@@ -15,38 +15,13 @@
 
 import React from 'react';
 
-import { TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from 'dayjs';
-import 'dayjs/locale/de';
-import 'dayjs/locale/en';
-import 'dayjs/locale/ru';
-import 'dayjs/locale/zh-cn';
-import 'dayjs/locale/uk';
-import 'dayjs/locale/it';
-import 'dayjs/locale/fr';
-import 'dayjs/locale/es';
-import 'dayjs/locale/pl';
-import 'dayjs/locale/pt';
-import 'dayjs/locale/nl';
-
 import type { TextFieldVariants } from '@mui/material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
 
-const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
-    textRoot: {
-        '& .MuiInputBase-root': {
-            width: '100%',
-            height: '100%',
-        },
-        // the text takes the color of the widget, not that of the theme, see JQuiInput (#521)
-        '& .MuiPickersInputBase-root': {
-            color: 'inherit',
-        },
-    },
-};
+// the picker brings `@mui/x-date-pickers` and dayjs along, see DateTimePickers.tsx
+const VisTimePicker = React.lazy(() => import('./DateTimePickers').then(m => ({ default: m.VisTimePicker })));
 
 type RxData = {
     oid: string;
@@ -147,51 +122,24 @@ class JQuiInputDateTime extends VisRxWidget<RxData> {
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
 
-        const val = this.state.values[`${this.state.rxData.oid}.val`];
-        const asDate = this.state.rxData.asDate;
         props.style.overflow = 'visible';
 
         return (
             <div className="vis-widget-body">
-                <LocalizationProvider
-                    dateAdapter={AdapterDayjs}
-                    adapterLocale={this.props.context.lang}
-                >
-                    <TimePicker
-                        value={val && !asDate ? dayjs(val, 'HH:mm') : dayjs(val)}
-                        ampm={this.state.rxData.ampm || false}
-                        minutesStep={parseInt(this.state.rxData.stepMinute as unknown as string, 10) || 1}
-                        label={this.state.rxData.widgetTitle || null}
-                        formatDensity="dense"
-                        format="HH:mm"
-                        autoFocus={this.state.rxData.autoFocus || false}
-                        onChange={value => {
-                            if (!value) {
-                                return;
-                            }
-
-                            const res = !asDate
-                                ? value.format('HH:mm')
-                                : value.second(0).millisecond(0).toDate().toString();
-
-                            this.props.context.setValue(this.state.rxData.oid, res);
-                        }}
-                        slotProps={{
-                            textField: {
-                                variant: this.state.rxData.variant || 'standard',
-                                style: {
-                                    width: '100%',
-                                    height: '100%',
-                                },
-                                sx: styles.textRoot,
-                            },
-                            field: {
-                                clearable: this.state.rxData.clearable,
-                                onClear: () => this.props.context.setValue(this.state.rxData.oid, ''),
-                            },
-                        }}
+                <React.Suspense fallback={null}>
+                    <VisTimePicker
+                        value={this.state.values[`${this.state.rxData.oid}.val`]}
+                        lang={this.props.context.lang}
+                        variant={this.state.rxData.variant}
+                        autoFocus={this.state.rxData.autoFocus}
+                        clearable={this.state.rxData.clearable}
+                        widgetTitle={this.state.rxData.widgetTitle}
+                        ampm={this.state.rxData.ampm}
+                        asDate={this.state.rxData.asDate}
+                        stepMinute={this.state.rxData.stepMinute}
+                        onChange={val => this.props.context.setValue(this.state.rxData.oid, val)}
                     />
-                </LocalizationProvider>
+                </React.Suspense>
             </div>
         );
     }

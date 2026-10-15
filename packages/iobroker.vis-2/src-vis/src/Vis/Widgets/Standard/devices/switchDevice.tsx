@@ -2,7 +2,7 @@ import React from 'react';
 
 import { PowerSettingsNew as SwitchIcon } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
 import SlideToggle from '../Base/controls/SlideToggle';

@@ -34,6 +34,8 @@ function loadScript(src: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.type = 'text/javascript';
+        // fetched side by side with the others, but run in the order they were added - see ensureLegacyLibs
+        script.async = false;
         script.src = src;
         script.onload = () => resolve();
         script.onerror = () => reject(new Error(`Cannot load ${src}`));
@@ -65,10 +67,9 @@ export async function ensureLegacyLibs(): Promise<void> {
             document.head.appendChild(link);
         });
 
-        // one after another - jQuery UI needs jQuery, and can.js needs both
-        for (const src of LEGACY_SCRIPTS) {
-            await loadScript(src);
-        }
+        // jQuery UI needs jQuery, and can.js needs both: they run in this order, but they are all asked for at
+        // once - five round trips one after the other were half a second on a tablet
+        await Promise.all(LEGACY_SCRIPTS.map(loadScript));
 
         // jQuery is loaded as a plain script, so it puts itself on `window` under both names. The vis-1 code
         // reads them from there, and `VisEngine` hands them into the widget context.

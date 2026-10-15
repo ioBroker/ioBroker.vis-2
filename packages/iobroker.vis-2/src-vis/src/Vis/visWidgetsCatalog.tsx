@@ -432,6 +432,10 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
     return (window as any).visWidgetTypes;
 };
 
+let resolveLegacyTemplates: () => void = () => {};
+/** Resolved once the templates of the vis-1 widget sets are in the document, see setLegacyTemplatesLoaded */
+const legacyTemplatesLoaded = new Promise<void>(resolve => (resolveLegacyTemplates = resolve));
+
 export default class VisWidgetsCatalog {
     static rxWidgets: Record<string, VisRxWidgetLoaded> | null = null;
 
@@ -534,89 +538,236 @@ export default class VisWidgetsCatalog {
         return views;
     }
 
+    /** The catalog while it is being built - see {@link collectRxInformation} */
+    private static rxWidgetsPromise: Promise<Record<string, VisRxWidget<any>>> | null = null;
+
+    /** Called when widget sets were added to the catalog after it was handed out, see {@link collectRxInformation} */
+    static onCatalogExtended: (() => void) | null = null;
+
+    /**
+     * Tell that the templates of the vis-1 widget sets are in the document now.
+     *
+     * The catalog lists them too, and it reads them out of the document. The runtime loads the React sets side by
+     * side with `widgets.html`, so whichever is first has to wait for the other.
+     */
+    static setLegacyTemplatesLoaded(): void {
+        resolveLegacyTemplates();
+    }
+
+    /**
+     * The widget sets a view needs to be shown: those of its own widgets and those of the views it shows inside
+     * itself - in a container, a tab, a dialog, a swipe.
+     *
+     * Which attribute names such a view differs from widget to widget, so every text attribute that is the name of
+     * a view counts. A view taken too many costs a little time; one too few shows its widgets a moment later,
+     * once all sets of the project are there.
+     *
+     * @param project - the project
+     * @param views - the views to start from
+     * @returns The names of the widget sets
+     */
+    static getWidgetSetsOfViews(project: Project, views: string[]): string[] {
+        const sets = new Set<string>();
+        VisWidgetsCatalog.getWidgetsOfViews(project, views).forEach(widget => {
+            if (widget.widgetSet) {
+                sets.add(widget.widgetSet);
+            }
+        });
+        return [...sets];
+    }
+
+    /**
+     * Does one of these views show a widget that is no React widget of the catalog as it is now - a vis-1 widget,
+     * which needs its template out of `widgets.html`?
+     *
+     * @param project - the project
+     * @param views - the views, with the views they show inside, see {@link getWidgetSetsOfViews}
+     * @returns true if the views must wait for the templates
+     */
+    static viewsNeedTemplates(project: Project, views: string[]): boolean {
+        return VisWidgetsCatalog.getWidgetsOfViews(project, views).some(
+            widget => !VisWidgetsCatalog.rxWidgets?.[widget.tpl],
+        );
+    }
+
+    /**
+     * The widgets of the views and of the views they show inside, see {@link getWidgetSetsOfViews}
+     *
+     * @param project - the project
+     * @param views - the views to start from
+     */
+    private static getWidgetsOfViews(project: Project, views: string[]): Widget[] {
+        const viewNames = new Set(Object.keys(project).filter(view => view !== '___settings'));
+        const widgets: Widget[] = [];
+        const done = new Set<string>();
+        const queue = [...views];
+        const takeView = (value: unknown): void => {
+            if (typeof value === 'string') {
+                // one view, or several separated by commas
+                value.split(',').forEach(part => viewNames.has(part.trim()) && queue.push(part.trim()));
+            } else if (Array.isArray(value)) {
+                value.forEach(takeView);
+            }
+        };
+
+        while (queue.length) {
+            const view = queue.shift() as string;
+            if (done.has(view) || !viewNames.has(view)) {
+                continue;
+            }
+            done.add(view);
+            Object.values(project[view].widgets || {}).forEach(widget => {
+                widgets.push(widget);
+                Object.values(widget.data || {}).forEach(takeView);
+            });
+        }
+
+        return widgets;
+    }
+
+    /**
+     * Load the widget sets and build the catalog of all React widgets out of them.
+     *
+     * It is built once. Whoever asks while it is still being built gets the same promise - `rxWidgets` already
+     * exists then, but is still empty.
+     *
+     * With `firstViews` the runtime gets its first view out sooner: the promise resolves once the widget sets of
+     * these views are loaded - and the templates of `widgets.html` only if they show a vis-1 widget. The rest of
+     * the project follows on its own; {@link onCatalogExtended} tells when.
+     *
+     * @param socket - connection to ioBroker
+     * @param project - the project; the runtime only loads the widget sets it uses
+     * @param changeProject - only the editor passes it: it loads every widget set and may complete the project
+     * @param firstViews - the views to make ready before all others, see {@link getWidgetSetsOfViews}
+     * @returns The catalog, by widget type
+     */
     static collectRxInformation(
         socket: Connection,
         project: Project,
         changeProject?: (newProject: Project) => void,
+        firstViews?: string[],
     ): Promise<Record<string, VisRxWidget<any>>> {
-        if (!VisWidgetsCatalog.rxWidgets) {
-            VisWidgetsCatalog.rxWidgets = {};
-            // collect all widget sets used in a project
-            let usedWidgetSets: string[] | false | null = null;
-            if (project) {
-                usedWidgetSets = VisWidgetsCatalog.getUsedWidgetSets(project);
+        VisWidgetsCatalog.rxWidgetsPromise ||= VisWidgetsCatalog.loadRxInformation(
+            socket,
+            project,
+            changeProject,
+            firstViews,
+        );
+        return VisWidgetsCatalog.rxWidgetsPromise;
+    }
+
+    /**
+     * Take the widgets of loaded widget sets into the catalog
+     *
+     * @param widgetSets - the widgets, as getRemoteWidgets delivers them
+     */
+    private static addRxWidgets(widgetSets: VisRxWidgetWithInfo<any>[]): void {
+        // the built-in widgets come first in the list, so they are known before any widget set
+        const collectedWidgets = [
+            ...(VisWidgetsCatalog.builtInAdded ? [] : WIDGETS),
+            ...widgetSets,
+        ] as VisRxWidgetWithInfo<any>[];
+        const builtInCount = VisWidgetsCatalog.builtInAdded ? 0 : WIDGETS.length;
+        VisWidgetsCatalog.builtInAdded = true;
+
+        collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>, index: number) => {
+            const builtIn = index < builtInCount;
+            if (!WidgetEl?.getWidgetInfo) {
+                console.error(`Invalid widget without getWidgetInfo: ${WidgetEl.constructor.name}`);
+            } else {
+                const info = WidgetEl.getWidgetInfo();
+                if (!info.visSet) {
+                    console.error(`No visSet in info for "${WidgetEl.constructor.name}"`);
+                }
+
+                if (!info.id) {
+                    console.error(`No id in info for "${WidgetEl.constructor.name}"`);
+                } else if (VisWidgetsCatalog.rxWidgets) {
+                    if (!builtIn && VisWidgetsCatalog.rxWidgets[info.id]) {
+                        // An installed widget set still brings a widget that vis-2 ships
+                        // itself now - the ones that came from the material set. The
+                        // built-in one wins, so that both do not end up in the palette.
+                        console.log(`Ignored ${info.visSet}/${info.id}: vis-2 brings this widget itself`);
+                    } else {
+                        VisWidgetsCatalog.rxWidgets[info.id] = WidgetEl;
+                    }
+                }
             }
+        });
+    }
 
-            return new Promise(resolve => {
-                setTimeout(
-                    () =>
-                        getRemoteWidgets(socket, !changeProject && usedWidgetSets ? usedWidgetSets : false).then(
-                            result => {
-                                const collectedWidgets: VisRxWidgetWithInfo<any>[] = [
-                                    ...WIDGETS,
-                                    ...(result?.widgetSets || []),
-                                ] as VisRxWidgetWithInfo<any>[];
+    private static builtInAdded = false;
 
-                                VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
-                                VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
+    private static async loadRxInformation(
+        socket: Connection,
+        project: Project,
+        changeProject?: (newProject: Project) => void,
+        firstViews?: string[],
+    ): Promise<Record<string, VisRxWidget<any>>> {
+        if (VisWidgetsCatalog.rxWidgets) {
+            return VisWidgetsCatalog.rxWidgets;
+        }
+        VisWidgetsCatalog.rxWidgets = {};
+        // collect all widget sets used in a project
+        const usedWidgetSets = project ? VisWidgetsCatalog.getUsedWidgetSets(project) : false;
+        // the editor loads every set
+        const onlyWidgetSets = !changeProject && usedWidgetSets ? usedWidgetSets : false;
+        const firstWidgetSets =
+            onlyWidgetSets && firstViews ? VisWidgetsCatalog.getWidgetSetsOfViews(project, firstViews) : null;
+        const first =
+            onlyWidgetSets && firstWidgetSets ? onlyWidgetSets.filter(s => firstWidgetSets.includes(s)) : null;
+        const later = onlyWidgetSets && first ? onlyWidgetSets.filter(s => !first.includes(s)) : [];
 
-                                collectedWidgets.forEach((WidgetEl: VisRxWidgetWithInfo<any>, index: number) => {
-                                    // the built-in widgets come first in the list, see above
-                                    const builtIn = index < WIDGETS.length;
-                                    if (!WidgetEl?.getWidgetInfo) {
-                                        console.error(
-                                            `Invalid widget without getWidgetInfo: ${WidgetEl.constructor.name}`,
-                                        );
-                                    } else {
-                                        const info = WidgetEl.getWidgetInfo();
-                                        if (!info.visSet) {
-                                            console.error(`No visSet in info for "${WidgetEl.constructor.name}"`);
-                                        }
+        const result = await getRemoteWidgets(socket, first || onlyWidgetSets, !changeProject);
 
-                                        if (!info.id) {
-                                            console.error(`No id in info for "${WidgetEl.constructor.name}"`);
-                                        } else if (VisWidgetsCatalog.rxWidgets) {
-                                            if (!builtIn && VisWidgetsCatalog.rxWidgets[info.id]) {
-                                                // An installed widget set still brings a widget that vis-2 ships
-                                                // itself now - the ones that came from the material set. The
-                                                // built-in one wins, so that both do not end up in the palette.
-                                                console.log(
-                                                    `Ignored ${info.visSet}/${info.id}: vis-2 brings this widget itself`,
-                                                );
-                                            } else {
-                                                VisWidgetsCatalog.rxWidgets[info.id] = WidgetEl;
-                                            }
-                                        }
-                                    }
-                                });
+        VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
+        VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
+        VisWidgetsCatalog.addRxWidgets(result?.widgetSets || []);
 
-                                // init all widgets
-                                if (changeProject) {
-                                    getWidgetTypes();
-                                } else if (usedWidgetSets) {
-                                    getWidgetTypes(usedWidgetSets);
-                                } else {
-                                    getWidgetTypes();
-                                }
+        // the other sets of the project travel while the first view is built
+        const laterLoaded = later.length ? getRemoteWidgets(socket, later, true) : null;
 
-                                if (usedWidgetSets === false && changeProject) {
-                                    // some widgets without a set found
-                                    const newProject = VisWidgetsCatalog.setUsedWidgetSets(project);
-                                    if (newProject) {
-                                        console.warn('Found widgets without widget set. Project updated');
-                                        changeProject(newProject);
-                                    }
-                                }
+        const buildWidgetTypes = (): void => {
+            (window as any).visWidgetTypes = undefined;
+            if (!changeProject && usedWidgetSets) {
+                getWidgetTypes(usedWidgetSets);
+            } else {
+                getWidgetTypes();
+            }
+        };
 
-                                resolve(VisWidgetsCatalog.rxWidgets || {});
-                            },
-                        ),
-                    0,
-                );
+        // The list of widget types reads the templates of the vis-1 sets out of the document. The first view only
+        // waits for them if it shows such a widget; otherwise the list is completed once they are there.
+        if (!firstViews || VisWidgetsCatalog.viewsNeedTemplates(project, firstViews)) {
+            await legacyTemplatesLoaded;
+        } else {
+            void legacyTemplatesLoaded.then(() => {
+                buildWidgetTypes();
+                VisWidgetsCatalog.onCatalogExtended?.();
             });
         }
+        buildWidgetTypes();
 
-        return Promise.resolve(VisWidgetsCatalog.rxWidgets);
+        if (usedWidgetSets === false && changeProject) {
+            // some widgets without a set found
+            const newProject = VisWidgetsCatalog.setUsedWidgetSets(project);
+            if (newProject) {
+                console.warn('Found widgets without widget set. Project updated');
+                changeProject(newProject);
+            }
+        }
+
+        void laterLoaded?.then(laterResult => {
+            VisWidgetsCatalog.incompatibleSets = [
+                ...VisWidgetsCatalog.incompatibleSets,
+                ...(laterResult?.incompatibleSets || []),
+            ];
+            VisWidgetsCatalog.addRxWidgets(laterResult?.widgetSets || []);
+            buildWidgetTypes();
+            VisWidgetsCatalog.onCatalogExtended?.();
+        });
+
+        return VisWidgetsCatalog.rxWidgets;
     }
 }
 

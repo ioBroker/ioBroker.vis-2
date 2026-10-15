@@ -9,7 +9,7 @@ import {
     Thermostat as ThermostatIcon,
 } from '@mui/icons-material';
 
-import { Types } from '@iobroker/type-detector';
+import { Types } from '../Base/deviceTypes';
 
 import ModeButtons, { type Mode } from '../Base/controls/ModeButtons';
 import { parsePresets, presetModes } from '../Base/presets';
