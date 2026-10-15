@@ -324,6 +324,10 @@ the props `VisServiceProps` of `@iobroker/types-vis-2`:
 A service is only loaded with its set, i.e. if the project uses a widget of the set. A crashing service is left out,
 the views and the other services go on.
 
+An older vis-2 ignores `services`, so the widgets have to work without them, e.g. hold the phone themselves. Whether the
+running vis-2 renders services, a widget asks with `window.visRxWidget.FEATURES?.includes('services')` - e.g. to tell
+the user in the editor that the view needs "Render always" only if it does not.
+
 ## Development and Debugging
 
 In order to make adjustments to the vis-2 editor itself, to search for errors and to debug, the following steps must be carried out.

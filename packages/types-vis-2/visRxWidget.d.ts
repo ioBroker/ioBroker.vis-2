@@ -26,6 +26,7 @@ import type {
     VisViewProps,
     VisBaseWidgetProps,
     VisWidgetCommand,
+    VisFeature,
 } from './index';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
 export type VisRxWidgetProps = VisBaseWidgetProps;
@@ -58,6 +59,11 @@ declare class VisRxWidget<
         }
 > {
     static POSSIBLE_MUI_STYLES: string[];
+    /**
+     * What this vis-2 can do beyond the widget API of every version, see `VisFeature`. Older versions have no list at
+     * all, so ask `window.visRxWidget.FEATURES?.includes(...)`.
+     */
+    static FEATURES?: VisFeature[];
     private linkContext;
     /** Method called when state changed */
     private readonly onStateChangedBind: (id: StateID, state: ioBroker.State, doNotApplyState?: any) => void;

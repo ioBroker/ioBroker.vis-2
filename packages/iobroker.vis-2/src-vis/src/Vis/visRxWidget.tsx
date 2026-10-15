@@ -37,6 +37,7 @@ import type {
     VisBaseWidgetProps,
     VisWidgetCommand,
     GroupData,
+    VisFeature,
 } from '@iobroker/types-vis-2';
 import { deepClone, calculateOverflow } from '../Utilities/utils';
 import VisBaseWidget, { type VisBaseWidgetState } from './visBaseWidget';
@@ -112,6 +113,9 @@ export class VisRxWidget<
     TState extends Partial<VisRxWidgetState> = VisRxWidgetState,
 > extends VisBaseWidget<VisRxWidgetState & TState & { rxData: TRxData }> {
     static POSSIBLE_MUI_STYLES = POSSIBLE_MUI_STYLES;
+
+    /** What this vis-2 can do beyond the widget API of every version, see `VisFeature` */
+    static FEATURES: VisFeature[] = ['services'];
 
     private linkContext: {
         IDs: string[];

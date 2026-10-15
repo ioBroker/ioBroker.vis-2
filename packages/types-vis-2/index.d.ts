@@ -160,6 +160,13 @@ export interface VisMarketplaceProps {
     onAdded?: () => void;
 }
 
+/**
+ * What a vis-2 can do beyond the widget API of every version, listed in `VisRxWidget.FEATURES` - for a widget set that has
+ * to behave differently on an older version:
+ * - `services`: background services of widget sets (`common.visWidgets.<set>.services`, see {@link VisServiceProps})
+ */
+export type VisFeature = 'services';
+
 /** A widget of the set of a background service, somewhere in the project */
 export interface VisServiceWidget {
     view: string;
