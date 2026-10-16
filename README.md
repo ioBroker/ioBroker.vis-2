@@ -376,7 +376,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.20.2 (2026-10-16)
 * (@GermanBluefox) Many, many updates: wizard, new widgets, load optimizations, AI assistant, and more. See the 2.20.1 for details.
 
 ### 2.20.1
@@ -542,15 +542,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 
 ### 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
-
-### 2.14.0 (2026-05-29)
-* (@GermanBluefox) Refactoring of the build process
-
-### 2.13.19 (2026-04-27)
-* (@GermanBluefox) Refactoring
-
-### 2.13.17 (2026-03-29)
-* (@GermanBluefox) Removed debug code for theme
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
