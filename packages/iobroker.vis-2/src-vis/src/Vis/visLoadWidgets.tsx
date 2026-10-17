@@ -105,6 +105,39 @@ interface VisLoadComponentContext {
     result: VisRxWidgetWithInfo<any>[];
     /** The background services of the sets */
     services: VisServiceWithInfo[];
+    /** Report that the remote of the set failed, see {@link reportLoadError} */
+    onLoadError: (error: unknown) => void;
+}
+
+/**
+ * Note a widget set whose remote failed in `loadRemote()`, so the dialog of the skipped sets names it
+ *
+ * The manifest check cannot see everything: a set with a correct manifest may still throw while its remote entry
+ * is initialized or its modules are evaluated (RUNTIME-015). Its widgets would otherwise just appear as unknown
+ * widget types. Every component of the set fails the same way, so the set is noted once only.
+ *
+ * @param incompatibleSets - the skipped sets collected so far
+ * @param name - name of the widget set
+ * @param instance - the instance that brings the set
+ * @param error - what `loadRemote()` rejected with
+ */
+function reportLoadError(
+    incompatibleSets: IncompatibleWidgetSet[],
+    name: string,
+    instance: ioBroker.InstanceObject,
+    error: unknown,
+): void {
+    if (incompatibleSets.some(set => set.name === name)) {
+        return;
+    }
+    const skipped: IncompatibleWidgetSet = {
+        name,
+        adapter: instance._id.substring('system.adapter.'.length).replace(/\.\d*$/, ''),
+        problem: 'load',
+        error: (error as Error)?.message || String(error),
+    };
+    incompatibleSets.push(skipped);
+    console.error(getIncompatibilityText(skipped));
 }
 
 // Must match the `name` configured in vite.config.ts (federation({ name: 'iobroker_vis' })).
@@ -159,6 +192,7 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
                     console.error(
                         `Cannot load widget ${context.dynamicWidgetInstance._id}: ${e?.stack || e?.toString?.() || e}`,
                     );
+                    context.onLoadError(e);
                 });
 
             promises.push(promise);
@@ -188,11 +222,12 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
                     }
                     window.__widgetsLoadIndicator?.(context.countRef.count, context.countRef.max);
                 })
-                .catch((e: any) =>
+                .catch((e: any) => {
                     console.error(
                         `Cannot load service ${name} of ${context.dynamicWidgetInstance._id}: ${e?.stack || e?.toString?.() || e}`,
-                    ),
-                ),
+                    );
+                    context.onLoadError(e);
+                }),
         );
     }
 
@@ -336,6 +371,9 @@ function getRemoteWidgets(
                                     // boundary around the widgets cannot catch it and the message points at
                                     // nothing. Ask the federation manifest of the set beforehand instead
                                     const compatibility = checkWidgetSetCompatibility(fetchUrl);
+                                    // ...and what the manifest cannot tell shows up only when the remote fails
+                                    const onLoadError = (error: unknown): void =>
+                                        reportLoadError(incompatibleSets, collection.name, instance, error);
 
                                     // The files of the set travel side by side instead of one level after the
                                     // other, see visPreloadWidgetSet.ts. The entry already while the manifest is
@@ -359,6 +397,7 @@ function getRemoteWidgets(
                                                     i18nPrefix,
                                                     result,
                                                     services,
+                                                    onLoadError,
                                                 });
                                             }
                                             const skipped: IncompatibleWidgetSet = {
@@ -439,9 +478,10 @@ function getRemoteWidgets(
                                                     I18n.extendTranslations(translations.default);
                                                     window.__widgetsLoadIndicator?.(countRef.count, promises.length);
                                                 })
-                                                .catch((error: string) =>
-                                                    console.log(`Cannot load i18n "${collection.name}": ${error}`),
-                                                );
+                                                .catch((error: string) => {
+                                                    console.log(`Cannot load i18n "${collection.name}": ${error}`);
+                                                    onLoadError(error);
+                                                });
                                         });
                                     } else if (collection.i18n && typeof collection.i18n === 'object') {
                                         try {

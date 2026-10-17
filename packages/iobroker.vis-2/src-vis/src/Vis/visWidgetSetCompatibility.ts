@@ -34,6 +34,9 @@
  *
  * As long as vis-2 itself runs on react 18 nothing is skipped: those widget sets work here, and the check exits
  * on the first line.
+ *
+ * The manifest does not tell everything: a set can list the right shared modules and still throw while its remote
+ * is initialized (RUNTIME-015). That is only seen once `loadRemote()` fails, and such a set is reported as `load`.
  */
 
 import { version as reactVersion } from 'react';
@@ -43,7 +46,9 @@ export type WidgetSetIncompatibility =
     /** Does not share react at all, so it would bring a second react into the page */
     | 'react'
     /** Shares react but not the JSX runtime, so it creates elements of the wrong react version */
-    | 'jsx-runtime';
+    | 'jsx-runtime'
+    /** Passed the check, but its remote failed while it was loaded or initialized */
+    | 'load';
 
 export interface IncompatibleWidgetSet {
     /** Name of the widget set, e.g. `vis2materialWidgets` */
@@ -52,6 +57,8 @@ export interface IncompatibleWidgetSet {
     adapter: string;
     /** What is wrong with it */
     problem: WidgetSetIncompatibility;
+    /** The message `loadRemote()` failed with, only for `load` */
+    error?: string;
 }
 
 /** Major of the react this vis-2 was built with */
@@ -153,6 +160,12 @@ export function getIncompatibilityText(set: IncompatibleWidgetSet): string {
         return (
             `The widget set "${set.adapter}" does not share react and would load a second copy of it. ` +
             `It has to be built again for vis-2 with react ${HOST_REACT_MAJOR}.`
+        );
+    }
+    if (set.problem === 'load') {
+        return (
+            `The widget set "${set.adapter}" could not be loaded: ${set.error || 'unknown error'}. ` +
+            `Its widgets are missing; the adapter may have to be updated.`
         );
     }
     return (

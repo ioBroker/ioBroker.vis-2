@@ -1197,7 +1197,8 @@ export default class Runtime<
     }
 
     /**
-     * Tells that widget sets were skipped because they were built for an older react
+     * Tells that widget sets were skipped because they were built for an older react, or failed while they were
+     * loaded
      *
      * Without it the widgets of such a set are simply absent - the views render with holes and nothing says why.
      */
@@ -1206,6 +1207,9 @@ export default class Runtime<
         if (!this.state.incompatibleSets?.length) {
             return null;
         }
+
+        const outdated = this.state.incompatibleSets.filter(set => set.problem !== 'load');
+        const failed = this.state.incompatibleSets.filter(set => set.problem === 'load');
 
         return (
             <Dialog
@@ -1216,12 +1220,35 @@ export default class Runtime<
             >
                 <DialogTitle>{I18n.t('Widget sets could not be loaded')}</DialogTitle>
                 <DialogContent>
-                    <div style={{ marginBottom: 12 }}>{I18n.t('widget_sets_incompatible_react')}</div>
-                    <ul style={{ margin: 0, paddingInlineStart: 20 }}>
-                        {this.state.incompatibleSets.map(set => (
-                            <li key={set.adapter}>{set.adapter}</li>
-                        ))}
-                    </ul>
+                    {outdated.length ? (
+                        <>
+                            <div style={{ marginBottom: 12 }}>{I18n.t('widget_sets_incompatible_react')}</div>
+                            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+                                {outdated.map(set => (
+                                    <li key={`${set.adapter}/${set.name}`}>{set.adapter}</li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : null}
+                    {failed.length ? (
+                        <>
+                            <div style={{ marginBottom: 12, marginTop: outdated.length ? 16 : 0 }}>
+                                {I18n.t('widget_sets_load_failed')}
+                            </div>
+                            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+                                {failed.map(set => (
+                                    <li key={`${set.adapter}/${set.name}`}>
+                                        {set.adapter}
+                                        {set.error ? (
+                                            <div style={{ fontSize: 'smaller', opacity: 0.7, wordBreak: 'break-word' }}>
+                                                {set.error}
+                                            </div>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : null}
                 </DialogContent>
                 <DialogActions>
                     <Button

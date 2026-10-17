@@ -72,5 +72,6 @@
   "vis_2_widgets_basic_view_in_widget": "在小部件中查看",
   "vis_2_widgets_basic_view_not_defined": "查看未定义",
   "welcome_message": "目前还没有一个项目存在。",
-  "widget_sets_incompatible_react": "以下小部件集是为较旧版本的 React 构建的，无法加载。请更新相应的适配器。"
+  "widget_sets_incompatible_react": "以下小部件集是为较旧版本的 React 构建的，无法加载。请更新相应的适配器。",
+  "widget_sets_load_failed": "以下小部件集加载失败，因此缺少其小部件。请更新相应的适配器或向其开发者报告该错误。"
 }
