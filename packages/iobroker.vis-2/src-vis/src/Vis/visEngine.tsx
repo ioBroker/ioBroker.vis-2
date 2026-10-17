@@ -71,7 +71,7 @@ import VisFormatUtils from './visFormatUtils';
 import { getUrlParameter, extractBinding, readFile, isLocalStateId } from './visUtils';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisServices from './visServices';
-import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded } from './visLoadLegacy';
+import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded, withoutAmd } from './visLoadLegacy';
 import { createStateValues, upgradeStateValues } from './visCanStates';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
@@ -1862,7 +1862,12 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
     static loadedSources: string[] = [];
 
-    static async setInnerHTML(elm: HTMLElement, html: string, usedWidgetSets?: string[]): Promise<void> {
+    static setInnerHTML(elm: HTMLElement, html: string, usedWidgetSets?: string[]): Promise<void> {
+        // the scripts of the vis-1 sets bring jQuery plugins that are UMD just like jQuery UI, see withoutAmd
+        return withoutAmd(() => VisEngine.runWidgetSetsHtml(elm, html, usedWidgetSets));
+    }
+
+    private static async runWidgetSetsHtml(elm: HTMLElement, html: string, usedWidgetSets?: string[]): Promise<void> {
         elm.innerHTML = html;
         // we must load script one after another, to keep the order
         const scripts: HTMLScriptElement[] = Array.from(elm.querySelectorAll('script'));

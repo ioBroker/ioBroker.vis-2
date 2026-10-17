@@ -35,8 +35,17 @@ function installDom(): void {
                 if (failing.includes(element.src)) {
                     element.onerror?.();
                 } else {
+                    const win = (globalThis as any).window;
                     if (element.src.includes('jquery-1')) {
-                        (globalThis as any).window.$ = () => undefined;
+                        win.$ = () => undefined;
+                    }
+                    if (element.src.includes('jquery-ui')) {
+                        // the UMD head of jQuery UI: with an AMD loader around, it registers there instead
+                        if (typeof win.define === 'function' && win.define.amd) {
+                            win.define(['jquery'], () => undefined);
+                        } else {
+                            win.$.ui = {};
+                        }
                     }
                     if (element.src.includes('can.custom')) {
                         (globalThis as any).window.can = { Map: class {} };
@@ -112,6 +121,72 @@ describe('ensureLegacyLibs', () => {
         failing = [];
         await ensureLegacyLibs();
         expect(appended.filter(src => src.includes('can.custom'))).toHaveLength(2);
+    });
+});
+
+describe('an AMD loader on the page', () => {
+    /** Monaco's loader, as it is there once the CSS or the script editor has been opened (#693) */
+    function installAmdLoader(): { define: ReturnType<typeof vi.fn> & { amd?: unknown }; amd: object } {
+        const amd = { jQuery: true };
+        const define = Object.assign(vi.fn(), { amd });
+        (globalThis as any).window.define = define;
+        return { define, amd };
+    }
+
+    it('does not take jQuery UI away from the global jQuery', async () => {
+        const { define } = installAmdLoader();
+        const { ensureLegacyLibs } = await load();
+        await ensureLegacyLibs();
+
+        expect((globalThis as any).window.$.ui).toBeDefined();
+        expect(define).not.toHaveBeenCalled();
+    });
+
+    it('gives the loader its flag back afterwards', async () => {
+        const { define, amd } = installAmdLoader();
+        const { ensureLegacyLibs } = await load();
+        await ensureLegacyLibs();
+
+        expect((globalThis as any).window.define).toBe(define);
+        expect(define.amd).toBe(amd);
+    });
+
+    it('gives the flag back after a failed load, too', async () => {
+        const { define, amd } = installAmdLoader();
+        const { ensureLegacyLibs } = await load();
+        failing = ['lib/js/jquery-ui-1.11.4.full.min.js'];
+
+        await expect(ensureLegacyLibs()).rejects.toThrow('jquery-ui');
+        expect(define.amd).toBe(amd);
+    });
+
+    it('leaves a define without the flag as it is', async () => {
+        const define = vi.fn();
+        (globalThis as any).window.define = define;
+        const { ensureLegacyLibs } = await load();
+        await ensureLegacyLibs();
+
+        expect('amd' in define).toBe(false);
+        expect((globalThis as any).window.$.ui).toBeDefined();
+    });
+
+    it('keeps the flag hidden until the last of two overlapping loads is done', async () => {
+        const { define, amd } = installAmdLoader();
+        const { withoutAmd } = await load();
+
+        let finishFirst!: () => void;
+        const first = withoutAmd(() => new Promise<void>(resolve => (finishFirst = resolve)));
+        let finishSecond!: () => void;
+        const second = withoutAmd(() => new Promise<void>(resolve => (finishSecond = resolve)));
+
+        expect(define.amd).toBeUndefined();
+        finishFirst();
+        await first;
+        // the second one still runs widget scripts that look at the flag
+        expect(define.amd).toBeUndefined();
+        finishSecond();
+        await second;
+        expect(define.amd).toBe(amd);
     });
 });
 

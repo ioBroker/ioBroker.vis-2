@@ -43,6 +43,40 @@ function loadScript(src: string): Promise<void> {
     });
 }
 
+/** How many loads keep the AMD flag hidden right now, and the flag they took away - see withoutAmd */
+let amdHidden = 0;
+let hiddenAmd: { define: { amd?: unknown }; amd: unknown } | null = null;
+
+/**
+ * Run vis-1 scripts as plain scripts, even with an AMD loader on the page.
+ *
+ * jQuery, jQuery UI and many jQuery plugins of the widget sets are UMD: when they find `define.amd`, they
+ * register as an AMD module instead of on the global jQuery, and `$.ui` stays undefined. Monaco brings such a
+ * loader as soon as the CSS or the script editor is open (#693). Its own modules call `define()` without
+ * looking at the flag, so hiding the flag - not `define` - keeps them working meanwhile.
+ *
+ * Known limit: a loader that only arrives while the scripts load keeps its flag.
+ *
+ * @param work loads the scripts; the flag stays hidden until the last of overlapping calls is done
+ */
+export async function withoutAmd<T>(work: () => Promise<T>): Promise<T> {
+    if (!amdHidden++) {
+        const define = (window as { define?: ((...args: unknown[]) => void) & { amd?: unknown } }).define;
+        if (typeof define === 'function' && define.amd) {
+            hiddenAmd = { define, amd: define.amd };
+            define.amd = undefined;
+        }
+    }
+    try {
+        return await work();
+    } finally {
+        if (!--amdHidden && hiddenAmd) {
+            hiddenAmd.define.amd = hiddenAmd.amd;
+            hiddenAmd = null;
+        }
+    }
+}
+
 /** True as soon as can.js is there, which is the last thing a legacy widget waits for */
 export function isLegacyLibsLoaded(): boolean {
     return !!window.can && !!window.jQuery;
@@ -69,7 +103,7 @@ export async function ensureLegacyLibs(): Promise<void> {
 
         // jQuery UI needs jQuery, and can.js needs both: they run in this order, but they are all asked for at
         // once - five round trips one after the other were half a second on a tablet
-        await Promise.all(LEGACY_SCRIPTS.map(loadScript));
+        await withoutAmd(() => Promise.all(LEGACY_SCRIPTS.map(loadScript)));
 
         // jQuery is loaded as a plain script, so it puts itself on `window` under both names. The vis-1 code
         // reads them from there, and `VisEngine` hands them into the widget context.
