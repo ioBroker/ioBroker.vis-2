@@ -101,6 +101,7 @@ import { DndPreview } from './Utils';
 import type { WidgetDragData } from './Palette/Widget';
 import { rememberWidget } from './Palette/recentWidgets';
 import VisWidgetsCatalog, {
+    applyDefaultsOfNewFields,
     getWidgetTypes,
     parseAttributes,
     type WidgetAttributesGroupInfoStored,
@@ -768,13 +769,16 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     if (field.name === 'oid') {
                         widgets[newKey].data.oid = 'nothing_selected';
                     }
-                    if (field.default != null) {
-                        widgets[newKey].data[field.name] = field.default;
-                        widgets[newKey].data[`g_${group.name}`] = true;
-                    }
                 });
             }
         });
+        // with the data, so that also the groups that the default of a count like `count` opens get theirs
+        applyDefaultsOfNewFields(
+            tplWidget.params as string | RxWidgetInfoGroup[],
+            null,
+            widgets[newKey].data,
+            tplWidget.set,
+        );
 
         // apply default style
         if (tplWidget.style) {
