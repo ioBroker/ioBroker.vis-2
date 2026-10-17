@@ -376,6 +376,9 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) The editor writes the default values of an attribute group that repeats as often as another attribute says, like `count`: when the widget is added and when that attribute grows later. Before, the fields of these groups had no value until they were edited by hand (#509)
+
 ### 2.20.2 (2026-10-16)
 * (@GermanBluefox) Many, many updates: wizard, new widgets, load optimizations, AI assistant, and more. See the 2.20.1 for details.
 
