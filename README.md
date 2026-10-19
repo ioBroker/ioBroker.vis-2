@@ -376,7 +376,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.20.3 (2026-10-19)
 * (@typhosj) The editor loads the widgets again when it starts with the CSS or the scripts tab open. The code editor of these tabs brings a module loader, and jQuery UI and the jQuery plugins of some widget sets registered with that loader instead of with jQuery, so `$.ui` was missing (#693)
 * (@GermanBluefox) Show all unloaded widget-sets in warning dialog
 * (@GermanBluefox) Editor: on narrow screens, or when the resolution of the view does not fit between the side panels, the palette and the attributes open as floating panels
@@ -549,9 +549,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) Fixed the signal condition if the state value is `null`
 * (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
 * (@typhosj) Fixed the visibility condition if the state value is `null`
-
-### 2.14.3 (2026-06-09)
-* (@GermanBluefox) Applied the user-defined style to tplValueInput
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
