@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Вирівняти висоту. Натисніть більше часу, щоб отримати потрібну висоту.",
   "Align horizontal/center": "Вирівняти по горизонталі/по центру",
   "Align horizontal/equal": "Вирівняти горизонтально/рівно",
+  "Align": "Вирівняти",
   "Align horizontal/left": "Вирівняти горизонтально/ліворуч",
   "Align horizontal/right": "Вирівняти горизонтально/праворуч",
   "Align vertical/bottom": "Вирівняти по вертикалі/низу",
@@ -975,5 +976,6 @@
   "otherwise": "інакше",
   "the detector found no state that could be shown": "детектор не знайшов стану, який можна показати",
   "pick the state first": "спершу виберіть стан",
-  "the state holds no rows at the moment": "стан наразі не містить рядків"
+  "the state holds no rows at the moment": "стан наразі не містить рядків",
+  "widget_sets_load_failed": "Наведені набори віджетів не вдалося завантажити, тому їхні віджети відсутні. Оновіть відповідні адаптери або повідомте про помилку їхнім розробникам."
 }

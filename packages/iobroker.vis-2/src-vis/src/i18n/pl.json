@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Wyrównaj wysokość. Naciśnij więcej czasu, aby uzyskać pożądaną wysokość.",
   "Align horizontal/center": "Wyrównaj poziomo/środek",
   "Align horizontal/equal": "Wyrównaj poziomo/równo",
+  "Align": "Wyrównaj",
   "Align horizontal/left": "Wyrównaj poziomo/lewo",
   "Align horizontal/right": "Wyrównaj poziomo/do prawej",
   "Align vertical/bottom": "Wyrównaj pionowo/do dołu",
@@ -975,5 +976,6 @@
   "otherwise": "w przeciwnym razie",
   "the detector found no state that could be shown": "detektor nie znalazł stanu, który można pokazać",
   "pick the state first": "najpierw wybierz stan",
-  "the state holds no rows at the moment": "stan nie zawiera teraz żadnych wierszy"
+  "the state holds no rows at the moment": "stan nie zawiera teraz żadnych wierszy",
+  "widget_sets_load_failed": "Nie udało się załadować poniższych zestawów widżetów, dlatego brakuje ich widżetów. Zaktualizuj odpowiednie adaptery lub zgłoś błąd ich twórcom."
 }

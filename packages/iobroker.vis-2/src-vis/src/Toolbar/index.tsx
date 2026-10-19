@@ -146,11 +146,39 @@ interface ToolbarState {
     right: boolean;
     lastCommand: string;
     upload: number;
+    /** The parts of the toolbar that are folded into a button with a menu, see `checkFit` */
+    folded: Record<FoldablePart, boolean>;
 }
+
+type FoldablePart = 'projects' | 'align' | 'views';
+
+/** What is folded first when the row has no room: what is used least. It is opened up the other way round. */
+const FOLD_ORDER: FoldablePart[] = ['projects', 'align', 'views'];
+
+const UNFOLDED: Record<FoldablePart, boolean> = { projects: false, align: false, views: false };
+
+/** Room the groups need beyond their own width before a menu opens up again, against flicker */
+const EXPAND_RESERVE = 8;
 
 export default class Toolbar extends React.Component<ToolbarProps, ToolbarState> {
     private readonly rightRef: React.RefObject<HTMLButtonElement | null>;
     private readonly lang: ioBroker.Languages;
+
+    private readonly groupsRef = React.createRef<HTMLDivElement>();
+
+    private groupsObserver: ResizeObserver | null = null;
+
+    /** How much wider the row is with a part opened up than with it folded, measured when it was folded */
+    private gain: Partial<Record<FoldablePart, number>> = {};
+
+    /** The part just folded and what the row needed before, so that `gain` can be measured after the render */
+    private measuring: { part: FoldablePart; needed: number } | null = null;
+
+    /** The part just opened up, to see whether the row wrapped because of it after all */
+    private unfolded: FoldablePart | null = null;
+
+    /** Parts that made the row wrap when they were opened up, with the room it had then */
+    private blocked: Partial<Record<FoldablePart, number>> = {};
 
     constructor(props: ToolbarProps) {
         super(props);
@@ -158,6 +186,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
             right: false,
             lastCommand: window.localStorage.getItem('Vis.lastCommand') || 'close',
             upload: 0,
+            folded: UNFOLDED,
         };
         this.rightRef = React.createRef();
         this.lang = I18n.getLanguage();
@@ -179,10 +208,90 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
 
     componentDidMount(): void {
         void this.props.socket.subscribeState(`system.adapter.${this.props.adapterName}.upload`, this.onUpload);
+        if (this.groupsRef.current) {
+            this.groupsObserver = new ResizeObserver(() => this.checkFit());
+            this.groupsObserver.observe(this.groupsRef.current);
+        }
+    }
+
+    componentDidUpdate(prevProps: ToolbarProps): void {
+        if (prevProps.toolbarHeight !== this.props.toolbarHeight) {
+            // every group has another width in another form: everything is measured again
+            this.gain = {};
+            this.blocked = {};
+            this.measuring = null;
+            this.unfolded = null;
+            if (FOLD_ORDER.some(part => this.state.folded[part])) {
+                this.setState({ folded: UNFOLDED });
+                return;
+            }
+        }
+        // the groups change their width with the selection as well, not only with the window
+        this.checkFit();
     }
 
     componentWillUnmount(): void {
         void this.props.socket.unsubscribeState(`system.adapter.${this.props.adapterName}.upload`, this.onUpload);
+        this.groupsObserver?.disconnect();
+        this.groupsObserver = null;
+    }
+
+    /**
+     * A group that does not fit wraps into a second row, and that row takes the height of a whole toolbar more
+     * from the view. So as long as the row wraps, one part after the other is folded into a button with a
+     * menu - the one used least first. Whatever fits into the room that is left is opened up again, in any
+     * order: the buttons for aligning may need more than there is, while the projects still fit.
+     *
+     * Folded, a part cannot be measured, so what it adds is taken when it is folded: the row before less the
+     * row after. Until everything is folded the groups do not shrink (see `render`), so these are their real
+     * widths, and a group that does not fit really goes into another row, where it can be seen here.
+     */
+    checkFit(): void {
+        const box = this.groupsRef.current;
+        // the dialogs of the groups are portals, so the children of the row are the groups
+        const groups = box ? (Array.from(box.children) as HTMLElement[]) : [];
+        if (!box || !groups.length) {
+            return;
+        }
+        const style = window.getComputedStyle(box);
+        const room = box.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+        const needed = groups.reduce((sum, group) => sum + group.offsetWidth, 0);
+        const wraps = groups.some(group => group.offsetTop > groups[0].offsetTop);
+
+        if (this.measuring) {
+            this.gain[this.measuring.part] = Math.max(0, this.measuring.needed - needed);
+            this.measuring = null;
+        }
+        const justUnfolded = this.unfolded;
+        this.unfolded = null;
+
+        if (wraps) {
+            if (justUnfolded) {
+                // measured too short: it stays folded until there is more room than now
+                this.blocked[justUnfolded] = room;
+            }
+            const part = FOLD_ORDER.find(name => !this.state.folded[name]);
+            if (part) {
+                this.measuring = { part, needed };
+                this.setState({ folded: { ...this.state.folded, [part]: true } });
+            }
+            return;
+        }
+
+        const free = room - needed;
+        const part = [...FOLD_ORDER]
+            .reverse()
+            .find(
+                name =>
+                    this.state.folded[name] &&
+                    this.gain[name] !== undefined &&
+                    free >= this.gain[name] + EXPAND_RESERVE &&
+                    (this.blocked[name] === undefined || room > this.blocked[name]),
+            );
+        if (part) {
+            this.unfolded = part;
+            this.setState({ folded: { ...this.state.folded, [part]: false } });
+        }
     }
 
     onUpload = (_id: string, state: ioBroker.State | null | undefined): void => {
@@ -455,18 +564,20 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                 {this.renderUserPart()}
                 <Box
                     component="div"
-                    sx={Utils.getStyle(
-                        this.props.theme,
-                        styles.toolbar,
-                        this.props.toolbarHeight !== 'full' && styles.narrowToolbar,
-                    )}
+                    ref={this.groupsRef}
+                    sx={{
+                        ...Utils.getStyle(
+                            this.props.theme,
+                            styles.toolbar,
+                            this.props.toolbarHeight !== 'full' && styles.narrowToolbar,
+                        ),
+                        // whole groups, so that one that does not fit wraps and `checkFit` folds something
+                        // away; only when nothing is left to fold may a group fold its own buttons
+                        '& > *': { flexShrink: FOLD_ORDER.every(part => this.state.folded[part]) ? undefined : 0 },
+                    }}
                     // The groups take the width the right part (user, theme, menu) leaves them. When they need
-                    // more, a group wraps into another row - otherwise they ran on under that part and lay over
-                    // the name of the user, first of all in the narrowest form, which moves the user up (#570).
-                    // Known limit: a single group wider than the room still reaches under it.
-                    // The groups take the width the right part leaves them, and a group that does not fit
-                    // wraps into another row instead of running under that part (#570). The narrowest form
-                    // of the toolbar is the one where that used to happen, being the widest.
+                    // more, parts of them are folded into menus, and only then a group wraps into another row -
+                    // otherwise they ran on under that part and lay over the name of the user (#570).
                     style={{
                         alignItems: 'initial',
                         flex: '1 1 auto',
@@ -492,9 +603,11 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                         theme={this.props.theme}
                         toggleView={this.props.toggleView}
                         viewsManager={this.props.viewsManager}
+                        compact={this.state.folded.views}
                     />
                     <Widgets
                         toolbarHeight={this.props.toolbarHeight}
+                        compactAlign={this.state.folded.align}
                         alignWidgets={this.props.alignWidgets}
                         changeProject={this.props.changeProject}
                         cloneWidgets={this.props.cloneWidgets}
@@ -525,6 +638,7 @@ export default class Toolbar extends React.Component<ToolbarProps, ToolbarState>
                     <Projects
                         theme={this.props.theme}
                         toolbarHeight={this.props.toolbarHeight}
+                        compact={this.state.folded.projects}
                         adapterName={this.props.adapterName}
                         changeProject={this.props.changeProject}
                         instance={this.props.instance}

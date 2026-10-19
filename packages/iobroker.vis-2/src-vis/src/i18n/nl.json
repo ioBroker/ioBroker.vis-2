@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Hoogte uitlijnen. Druk meer tijd om de gewenste hoogte te krijgen.",
   "Align horizontal/center": "Horizontaal/midden uitlijnen",
   "Align horizontal/equal": "Horizontaal/gelijk uitlijnen",
+  "Align": "Uitlijnen",
   "Align horizontal/left": "Horizontaal/links uitlijnen",
   "Align horizontal/right": "Horizontaal/rechts uitlijnen",
   "Align vertical/bottom": "Lijn verticaal/onder uit",
@@ -975,5 +976,6 @@
   "otherwise": "anders",
   "the detector found no state that could be shown": "de detector vond geen status die getoond kan worden",
   "pick the state first": "kies eerst het datapunt",
-  "the state holds no rows at the moment": "het datapunt bevat op dit moment geen rijen"
+  "the state holds no rows at the moment": "het datapunt bevat op dit moment geen rijen",
+  "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars."
 }

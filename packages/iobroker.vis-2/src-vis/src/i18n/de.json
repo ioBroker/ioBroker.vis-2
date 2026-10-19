@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Höhe ausrichten. Länger drücken, um die gewünschte Höhe zu erhalten.",
   "Align horizontal/center": "Horizontal/mittig ausrichten",
   "Align horizontal/equal": "Horizontal/gleich ausrichten",
+  "Align": "Ausrichten",
   "Align horizontal/left": "Horizontal/links ausrichten",
   "Align horizontal/right": "Horizontal/rechts ausrichten",
   "Align vertical/bottom": "Vertikal/unten ausrichten",
@@ -1050,5 +1051,6 @@
   "otherwise": "sonst",
   "the detector found no state that could be shown": "der Detektor hat keinen Zustand gefunden, der sich zeigen lässt",
   "pick the state first": "erst den Datenpunkt auswählen",
-  "the state holds no rows at the moment": "der Datenpunkt enthält gerade keine Zeilen"
+  "the state holds no rows at the moment": "der Datenpunkt enthält gerade keine Zeilen",
+  "widget_sets_load_failed": "Die folgenden Widget-Sets sind beim Laden fehlgeschlagen, ihre Widgets fehlen deshalb. Bitte aktualisiere die zugehörigen Adapter oder melde den Fehler den Entwicklern."
 }

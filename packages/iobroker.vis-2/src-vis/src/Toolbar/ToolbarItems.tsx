@@ -16,7 +16,7 @@ import {
     type SelectChangeEvent,
 } from '@mui/material';
 
-import { Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
 
 import { I18n, type ThemeType } from '@iobroker/gui-components';
 import type { ViewSettings, VisTheme } from '@iobroker/types-vis-2';
@@ -128,6 +128,13 @@ export interface ButtonToolbarItem extends BaseToolbarItem {
     onAction: () => void;
 }
 
+/** A button that opens a few rows of buttons as a menu, for a block the toolbar has no room for */
+export interface MenuToolbarItem extends BaseToolbarItem {
+    type: 'menu';
+    Icon: React.FC<any>;
+    items: ToolbarItem[][];
+}
+
 export interface DividerToolbarItem extends BaseToolbarItem {
     type: 'divider';
 }
@@ -146,13 +153,15 @@ export type ToolbarItem =
     | TextToolbarItem
     | ButtonToolbarItem
     | DividerToolbarItem
+    | MenuToolbarItem
     | TextFieldToolbarItem;
 
 export interface ToolbarGroup {
     name?: string | React.JSX.Element;
     doNotTranslateName?: boolean;
     items: (ToolbarItem[][] | ToolbarItem[] | ToolbarItem | null)[];
-    compact?: { tooltip: 'Projects'; icon: React.JSX.Element } | undefined;
+    /** The group is shown as one button that opens it as a menu */
+    compact?: { tooltip: string; icon: React.JSX.Element } | undefined;
 }
 
 interface ToolbarItemsProps {
@@ -168,12 +177,14 @@ interface ToolbarItemsProps {
 
 interface ToolbarItemsState {
     opened: HTMLButtonElement | null;
+    /** The button of the `menu` item whose menu is open */
+    openedMenu: HTMLButtonElement | null;
 }
 
 class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState> {
     constructor(props: ToolbarItemsProps) {
         super(props);
-        this.state = { opened: null };
+        this.state = { opened: null, openedMenu: null };
     }
 
     closeMenu(): void {
@@ -355,6 +366,74 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         );
     }
 
+    /**
+     * The menu stays open after a click: aligning the width is done by clicking the same button again until
+     * the widgets have the width that is wanted.
+     */
+    getItemMenu(item: MenuToolbarItem, key: number, full: boolean): React.JSX.Element {
+        const open = (e: React.MouseEvent<HTMLButtonElement>): void => this.setState({ openedMenu: e.currentTarget });
+        const name = I18n.t(item.name || '');
+
+        return (
+            <React.Fragment key={key}>
+                {this.props.toolbarHeight !== 'veryNarrow' && full ? (
+                    <div style={{ textAlign: 'center' }}>
+                        <ButtonBase
+                            onClick={open}
+                            style={{
+                                flexDirection: 'column',
+                                minWidth: 60,
+                                borderRadius: 4,
+                                height: '100%',
+                                justifyContent: 'start',
+                            }}
+                        >
+                            <div>
+                                <item.Icon fontSize="small" />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                {name}
+                                <ArrowDropDownIcon fontSize="small" />
+                            </div>
+                        </ButtonBase>
+                    </div>
+                ) : (
+                    <Tooltip
+                        title={name}
+                        slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                    >
+                        <IconButton
+                            size="small"
+                            onClick={open}
+                        >
+                            <item.Icon fontSize="small" />
+                            <ArrowDropDownIcon
+                                fontSize="small"
+                                style={{ marginLeft: -4 }}
+                            />
+                        </IconButton>
+                    </Tooltip>
+                )}
+                <Menu
+                    open={!!this.state.openedMenu}
+                    anchorEl={this.state.openedMenu}
+                    onClose={() => this.setState({ openedMenu: null })}
+                >
+                    <div style={{ ...styles.toolbarCol, padding: '0 8px' }}>
+                        {item.items.map((row, rowKey) => (
+                            <div
+                                key={rowKey}
+                                style={styles.toolbarRow}
+                            >
+                                {row.map((subItem, subKey) => this.getItem(subItem, subKey, false))}
+                            </div>
+                        ))}
+                    </div>
+                </Menu>
+            </React.Fragment>
+        );
+    }
+
     getItem(item: ToolbarItem, key: number, full?: boolean): null | React.JSX.Element {
         const { visProject } = store.getState();
         const view = visProject[this.props.selectedView];
@@ -382,6 +461,10 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
 
         if (item.type === 'icon-button') {
             return this.getItemIconButton(item, key, !!full);
+        }
+
+        if (item.type === 'menu') {
+            return this.getItemMenu(item, key, !!full);
         }
 
         if (item.type === 'text') {
@@ -491,19 +574,47 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
         );
 
         if (this.props.group.compact) {
+            const title = I18n.t(this.props.group.compact.tooltip);
+            const icon = this.props.group.compact.icon || <MenuIcon fontSize="small" />;
+            const toggle = (e: React.MouseEvent<HTMLButtonElement>): void =>
+                this.setState({ opened: this.state.opened ? null : e.currentTarget });
+
             return [
-                <Tooltip
-                    title={I18n.t(this.props.group.compact.tooltip)}
+                // a group of its own in the row, so it is set off from the others like one
+                <div
                     key="icon"
-                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                    style={{
+                        ...styles.toolbarBlock(this.props.theme),
+                        borderRightWidth: this.props.last ? 0 : undefined,
+                        justifyContent: 'center',
+                    }}
                 >
-                    <IconButton
-                        onClick={e => this.setState({ opened: this.state.opened ? null : e.currentTarget })}
-                        style={{ height: '100%' }}
-                    >
-                        {this.props.group.compact.icon || <MenuIcon />}
-                    </IconButton>
-                </Tooltip>,
+                    {this.props.toolbarHeight === 'veryNarrow' ? (
+                        <Tooltip
+                            title={title}
+                            slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                        >
+                            <IconButton
+                                size="small"
+                                onClick={toggle}
+                            >
+                                {icon}
+                            </IconButton>
+                        </Tooltip>
+                    ) : (
+                        // looks like the buttons of the other groups, with the arrow saying that it opens
+                        <ButtonBase
+                            onClick={toggle}
+                            style={{ flexDirection: 'column', minWidth: 60, borderRadius: 4, padding: '0 4px' }}
+                        >
+                            <div>{icon}</div>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                {title}
+                                <ArrowDropDownIcon fontSize="small" />
+                            </div>
+                        </ButtonBase>
+                    )}
+                </div>,
                 <Menu
                     key="menu"
                     onClose={() => this.closeMenu()}

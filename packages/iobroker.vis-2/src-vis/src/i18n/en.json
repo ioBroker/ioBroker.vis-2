@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Align height. Press more time to get the desired height.",
   "Align horizontal/center": "Align horizontal/center",
   "Align horizontal/equal": "Align horizontal/equal",
+  "Align": "Align",
   "Align horizontal/left": "Align horizontal/left",
   "Align horizontal/right": "Align horizontal/right",
   "Align vertical/bottom": "Align vertical/bottom",
@@ -1050,5 +1051,6 @@
   "otherwise": "otherwise",
   "the detector found no state that could be shown": "the detector found no state that could be shown",
   "pick the state first": "pick the state first",
-  "the state holds no rows at the moment": "the state holds no rows at the moment"
+  "the state holds no rows at the moment": "the state holds no rows at the moment",
+  "widget_sets_load_failed": "The following widget sets failed while they were loaded, so their widgets are missing. Please update these adapters or report the error to their developers."
 }

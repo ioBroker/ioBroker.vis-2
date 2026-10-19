@@ -62,6 +62,8 @@ interface WidgetsProps {
     widgetsClipboard: Editor['state']['widgetsClipboard'];
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
     theme: VisTheme;
+    /** The buttons for aligning do not fit into the row of the toolbar and open as a menu */
+    compactAlign: boolean;
 }
 
 const Widgets: React.FC<WidgetsProps> = props => {
@@ -90,6 +92,109 @@ const Widgets: React.FC<WidgetsProps> = props => {
                 ? widgets[widget].groupid === props.selectedGroup || widget === props.selectedGroup
                 : !widgets[widget].groupid,
         );
+
+        const alignRows: ToolbarItem[][] = [
+            [
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignHorizontalLeft,
+                    name: 'Align horizontal/left',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('left'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignVerticalTop,
+                    name: 'Align vertical/top',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('top'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignHorizontalCenter,
+                    name: 'Align horizontal/center',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('horizontal-center'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: CgArrowAlignH,
+                    name: 'Align horizontal/equal',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('horizontal-equal'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: AiOutlineColumnWidth,
+                    name: 'Align width. Press more time to get the desired width.',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('width'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: RiBringToFront,
+                    name: 'Bring to front',
+                    size: 'normal',
+                    disabled: !props.selectedWidgets.length,
+                    onAction: () => props.orderWidgets('front'),
+                },
+            ] as ToolbarItem[],
+            [
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignHorizontalRight,
+                    name: 'Align horizontal/right',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('right'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignVerticalBottom,
+                    name: 'Align vertical/bottom',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('bottom'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: MdAlignVerticalCenter,
+                    name: 'Align vertical/center',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('vertical-center'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: CgArrowAlignV,
+                    name: 'Align vertical/equal',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('vertical-equal'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: AiOutlineColumnHeight,
+                    name: 'Align height. Press more time to get the desired height.',
+                    size: 'normal',
+                    disabled: props.selectedWidgets.length < 2,
+                    onAction: () => props.alignWidgets('height'),
+                },
+                {
+                    type: 'icon-button',
+                    Icon: RiSendToBack,
+                    name: 'Send to back',
+                    size: 'normal',
+                    disabled: !props.selectedWidgets.length,
+                    onAction: () => props.orderWidgets('back'),
+                },
+            ] as ToolbarItem[],
+        ];
 
         return {
             name: 'Widgets',
@@ -259,111 +364,11 @@ const Widgets: React.FC<WidgetsProps> = props => {
 
                 { type: 'divider' },
 
-                window.innerWidth > 1410
-                    ? [
-                          [
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignHorizontalLeft,
-                                  name: 'Align horizontal/left',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('left'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignVerticalTop,
-                                  name: 'Align vertical/top',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('top'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignHorizontalCenter,
-                                  name: 'Align horizontal/center',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('horizontal-center'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: CgArrowAlignH,
-                                  name: 'Align horizontal/equal',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('horizontal-equal'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: AiOutlineColumnWidth,
-                                  name: 'Align width. Press more time to get the desired width.',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('width'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: RiBringToFront,
-                                  name: 'Bring to front',
-                                  size: 'normal',
-                                  disabled: !props.selectedWidgets.length,
-                                  onAction: () => props.orderWidgets('front'),
-                              },
-                          ] as ToolbarItem[],
-                          [
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignHorizontalRight,
-                                  name: 'Align horizontal/right',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('right'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignVerticalBottom,
-                                  name: 'Align vertical/bottom',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('bottom'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: MdAlignVerticalCenter,
-                                  name: 'Align vertical/center',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('vertical-center'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: CgArrowAlignV,
-                                  name: 'Align vertical/equal',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('vertical-equal'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: AiOutlineColumnHeight,
-                                  name: 'Align height. Press more time to get the desired height.',
-                                  size: 'normal',
-                                  disabled: props.selectedWidgets.length < 2,
-                                  onAction: () => props.alignWidgets('height'),
-                              },
-                              {
-                                  type: 'icon-button',
-                                  Icon: RiSendToBack,
-                                  name: 'Send to back',
-                                  size: 'normal',
-                                  disabled: !props.selectedWidgets.length,
-                                  onAction: () => props.orderWidgets('back'),
-                              },
-                          ] as ToolbarItem[],
-                      ]
-                    : null,
-                window.innerWidth > 1410 ? { type: 'divider' } : null,
+                // folded into one button with a menu when the toolbar has no room for them, see `Toolbar.checkFit`
+                props.compactAlign
+                    ? { type: 'menu', Icon: MdAlignHorizontalLeft, name: 'Align', items: alignRows }
+                    : alignRows,
+                { type: 'divider' },
                 [
                     // Both of these are about editing and nothing else: what is dragged, and the name plate a
                     // widget wears while a page is built. In the runtime there is nothing to drag and no
@@ -424,6 +429,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
         props.history.length,
         props.widgetsLoaded,
         props.openedViews.length,
+        props.compactAlign,
         viewSettings,
     ]);
 

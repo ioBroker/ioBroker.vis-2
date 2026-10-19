@@ -41,6 +41,8 @@ interface ToolsProps {
     theme: VisTheme;
     themeType: ThemeType;
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
+    /** The group does not fit into the row of the toolbar and opens as a menu, see `Toolbar.checkFit` */
+    compact: boolean;
 }
 
 const Tools = (props: ToolsProps): React.JSX.Element => {
@@ -50,7 +52,7 @@ const Tools = (props: ToolsProps): React.JSX.Element => {
 
     const toolbar: ToolbarGroup = {
         name: 'Projects',
-        compact: window.innerWidth < 1230 ? { tooltip: 'Projects', icon: <MenuIcon /> } : undefined,
+        compact: props.compact ? { tooltip: 'Projects', icon: <MenuIcon fontSize="small" /> } : undefined,
         items: [
             {
                 type: 'icon-button',

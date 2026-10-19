@@ -90,6 +90,19 @@ describe('applyDefaultsOfNewFields', () => {
         }
     });
 
+    it('writes the defaults of the attributes of a vis-1 widget, given as a string', () => {
+        const params = 'count[2]/number;group.value/byindex;iconSize(1-count)[24]/number;text(1-count)';
+        const data: Record<string, any> = {};
+        applyDefaultsOfNewFields(params, null, data);
+        expect(data).toMatchObject({ count: '2', iconSize1: '24', iconSize2: '24' });
+        expect(data.iconSize3).toBeUndefined();
+
+        const newData: Record<string, any> = { ...data, count: 3 };
+        expect(applyDefaultsOfNewFields(params, data, newData)).toBe(true);
+        expect(newData.iconSize3).toBe('24');
+        expect('text3' in newData).toBe(false);
+    });
+
     it('knows the groups of a fixed count from the start', () => {
         const params: RxWidgetInfoGroup[] = [
             // a number is allowed (SCHEMA.md), the published type only knows the name of an attribute

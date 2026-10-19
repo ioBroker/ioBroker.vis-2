@@ -131,6 +131,29 @@ import ukLang from './i18n/uk.json';
 import zhLang from './i18n/zh-cn.json';
 import { isDevServer } from '@/Utilities/devServer';
 
+/**
+ * Below this width of the work area palette and attributes no longer stand in columns beside the view but
+ * float over it when they are opened. The columns are at least 240 pixels each, and what is left between
+ * them is too little for a view to be worked on.
+ */
+const NARROW_LAYOUT_WIDTH = 1200;
+
+/**
+ * Below these heights of the window the toolbar takes a narrower form than the one chosen: in its full form it
+ * is well over a hundred pixels high, and on a low screen - or with the developer tools open - that is a good
+ * part of what the view has.
+ */
+const TOOLBAR_NARROW_HEIGHT = 900;
+const TOOLBAR_VERY_NARROW_HEIGHT = 700;
+
+const TOOLBAR_FORMS: EditorState['toolbarHeight'][] = ['full', 'narrow', 'veryNarrow'];
+
+/** The narrowest a column of the splitter gets, whatever its share says */
+const COLUMN_MIN_WIDTH = 240;
+
+/** What the canvas needs beside the view itself: the scrollbar it keeps free and the gutters of the splitter */
+const CANVAS_MARGIN = 24;
+
 const styles: Record<string, any> = {
     block: {
         // A flex column so the content area can take whatever the header and the tabs leave over. `overflow`
@@ -312,6 +335,8 @@ interface EditorDndProps {
     selectedView: string;
     /** Where the pointer is while a widget is dragged, so the view can mark the section it would land in */
     onDragOverPoint: (point: { x: number; y: number } | null) => void;
+    /** A widget is being dragged (true) or the drag is over, dropped or called off (false) */
+    onDragActive: (active: boolean) => void;
     children: React.ReactNode;
 }
 
@@ -366,12 +391,14 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
     const onDragStart = (event: DragStartEvent): void => {
         pointer.current = pointerPoint(event.activatorEvent);
         watchPointer(true);
+        props.onDragActive(true);
     };
 
     const onDragEnd = (event: DragEndEvent): void => {
         watchPointer(false);
         // the mark of the section under the pointer goes with the drag
         props.onDragOverPoint(null);
+        props.onDragActive(false);
 
         const target = event.over?.data.current as ViewDropData | undefined;
         const item = event.active.data.current as WidgetDragData | undefined;
@@ -415,6 +442,7 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
             onDragCancel={() => {
                 watchPointer(false);
                 props.onDragOverPoint(null);
+                props.onDragActive(false);
             }}
         >
             <DndPreview />
@@ -459,7 +487,17 @@ export interface EditorState extends RuntimeState {
     /** The assistant is open beside the work area */
     aiOpen: boolean;
     hideAttributes: boolean;
+    /** The work area is too narrow for the columns: palette and attributes float over the view instead */
+    narrowLayout: boolean;
+    /** The panel that floats over the view in the narrow layout */
+    floatingPanel: 'palette' | 'attributes' | null;
+    /** A widget is dragged out of the floating palette, which steps aside so the view can be seen */
+    paletteDragging: boolean;
     toolbarHeight: 'full' | 'narrow' | 'veryNarrow';
+    /** The form the height of the window asks for, see `TOOLBAR_NARROW_HEIGHT` */
+    toolbarAuto: 'full' | 'narrow' | 'veryNarrow';
+    /** The form was chosen by hand while the height decided it, so the height no longer does */
+    toolbarAutoOff: boolean;
     loadingText: string;
     legacyFileSelector:
         | {
@@ -510,6 +548,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     };
 
     mainRef: React.RefObject<HTMLDivElement | null> | null = null;
+
+    /** Watches the width of the work area, which decides between the columns and the floating panels */
+    layoutObserver: ResizeObserver | null = null;
 
     tempProject: Project | null = null;
 
@@ -570,6 +611,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             lockDragging: safeParseLS<boolean>('lockDragging', false),
             disableInteraction: safeParseLS<boolean>('disableInteraction', false),
             toolbarHeight: window.localStorage.getItem('Vis.toolbarForm') || 'full',
+            toolbarAuto: Editor.getToolbarAuto(),
+            toolbarAutoOff: false,
             updateWidgetsDialog: false,
             deleteWidgetsDialog: false,
             messageDialog: null,
@@ -577,6 +620,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             hidePalette: window.localStorage.getItem('Vis.hidePalette') === 'true',
             aiOpen: window.localStorage.getItem('Vis.aiOpen') === 'true',
             hideAttributes: window.localStorage.getItem('Vis.hideAttributes') === 'true',
+            // a first guess until the work area is measured, so a small screen does not start with the columns
+            narrowLayout: window.innerWidth < NARROW_LAYOUT_WIDTH,
+            floatingPanel: null,
+            paletteDragging: false,
             loadingProgress: { step: 0, total: 0 },
             loadingText: null,
             showCodeDialog: null,
@@ -592,6 +639,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         super.componentDidMount();
         window.addEventListener('keydown', this.onKeyDown, false);
         window.addEventListener('beforeunload', this.onBeforeUnload, false);
+        window.addEventListener('resize', this.onWindowResize, false);
     }
 
     componentWillUnmount(): void {
@@ -602,7 +650,114 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         super.componentWillUnmount();
         window.removeEventListener('keydown', this.onKeyDown, false);
         window.removeEventListener('beforeunload', this.onBeforeUnload, false);
+        window.removeEventListener('resize', this.onWindowResize, false);
+        this.layoutObserver?.disconnect();
+        this.layoutObserver = null;
     }
+
+    /**
+     * The work area is measured, not the window: the assistant beside it takes 380 pixels away, and with it
+     * open a screen that is wide enough for the columns otherwise is no longer.
+     */
+    setMainRef = (el: HTMLDivElement | null): void => {
+        if (this.mainRef) {
+            this.mainRef.current = el;
+        }
+        this.layoutObserver?.disconnect();
+        this.layoutObserver = null;
+        if (el) {
+            this.layoutObserver = new ResizeObserver(() => this.updateNarrowLayout());
+            this.layoutObserver.observe(el);
+        }
+    };
+
+    static getToolbarAuto(): EditorState['toolbarAuto'] {
+        if (window.innerHeight < TOOLBAR_VERY_NARROW_HEIGHT) {
+            return 'veryNarrow';
+        }
+        return window.innerHeight < TOOLBAR_NARROW_HEIGHT ? 'narrow' : 'full';
+    }
+
+    onWindowResize = (): void => {
+        const toolbarAuto = Editor.getToolbarAuto();
+        if (toolbarAuto !== this.state.toolbarAuto) {
+            this.setState({ toolbarAuto });
+        }
+    };
+
+    /** The form of the toolbar: the one chosen, or a narrower one if the window is too low for it */
+    getToolbarHeight(): EditorState['toolbarHeight'] {
+        if (this.state.toolbarAutoOff) {
+            return this.state.toolbarHeight;
+        }
+        return TOOLBAR_FORMS[
+            Math.max(TOOLBAR_FORMS.indexOf(this.state.toolbarHeight), TOOLBAR_FORMS.indexOf(this.state.toolbarAuto))
+        ];
+    }
+
+    setToolbarHeight = (toolbarHeight: EditorState['toolbarHeight']): void => {
+        window.localStorage.setItem('Vis.toolbarForm', toolbarHeight);
+        // a click while the height decided the form would otherwise change nothing that can be seen
+        const toolbarAutoOff = this.state.toolbarAutoOff || this.getToolbarHeight() !== this.state.toolbarHeight;
+        this.setState({ toolbarHeight, toolbarAutoOff });
+    };
+
+    componentDidUpdate(): void {
+        // the view, its resolution, the shares of the columns and which of them are shown all decide it as well
+        this.updateNarrowLayout();
+    }
+
+    /**
+     * The columns go when the work area is too narrow for them, or when the view has a resolution and would no
+     * longer fit between them: a view of 1280 pixels on a screen of 1440 is otherwise only seen in part and
+     * has to be scrolled sideways all the time, while over the whole width it fits.
+     *
+     * The width is that of the columns, not of the canvas now, so the decision does not undo itself: in the
+     * narrow layout the canvas is as wide as the work area.
+     */
+    updateNarrowLayout(): void {
+        const width = this.mainRef?.current?.clientWidth;
+        if (!width) {
+            return;
+        }
+        let narrowLayout = width < NARROW_LAYOUT_WIDTH;
+        if (!narrowLayout) {
+            const sizex = parseFloat(
+                store.getState().visProject[this.state.selectedView]?.settings?.sizex as unknown as string,
+            );
+            if (sizex > 0) {
+                const [paletteShare, , attributesShare] = this.state.splitSizes;
+                const columns =
+                    (this.state.hidePalette ? 0 : Math.max((width * paletteShare) / 100, COLUMN_MIN_WIDTH)) +
+                    (this.state.hideAttributes ? 0 : Math.max((width * attributesShare) / 100, COLUMN_MIN_WIDTH));
+                narrowLayout = width - columns < sizex + CANVAS_MARGIN;
+            }
+        }
+        if (narrowLayout !== this.state.narrowLayout) {
+            this.setState({ narrowLayout, floatingPanel: null, paletteDragging: false });
+        }
+    }
+
+    toggleFloatingPanel(panel: 'palette' | 'attributes'): void {
+        // one at a time: two of them leave nothing of the view to see on a screen this narrow
+        this.setState({ floatingPanel: this.state.floatingPanel === panel ? null : panel });
+    }
+
+    /**
+     * A widget taken out of the floating palette has to be dropped on the view the palette covers. So the
+     * palette gets out of the way while the widget is dragged - hidden, not unmounted, as the entry being
+     * dragged lives in it - and stays closed after the drop, which leaves the new widget in sight.
+     */
+    onDragActive = (active: boolean): void => {
+        if (!this.state.narrowLayout || this.state.floatingPanel !== 'palette') {
+            return;
+        }
+        if (active) {
+            this.setState({ paletteDragging: true });
+        } else {
+            this.setState({ paletteDragging: false, floatingPanel: null });
+        }
+    };
 
     onBeforeUnload = (e: BeforeUnloadEvent): null | string => {
         if (this.state.needSave) {
@@ -772,6 +927,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 });
             }
         });
+        // used by tests. Before the defaults, so that a `count` given here opens the groups that get them.
+        data && Object.assign(widgets[newKey].data, data);
         // with the data, so that also the groups that the default of a count like `count` opens get theirs
         applyDefaultsOfNewFields(
             tplWidget.params as string | RxWidgetInfoGroup[],
@@ -807,7 +964,6 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         }
 
         // used by tests
-        data && Object.assign(widgets[newKey].data, data);
         style && Object.assign(widgets[newKey].style, style);
 
         const widgetSet = tplWidget.set;
@@ -2077,7 +2233,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
         return (
             <div style={styles.tabsContainer}>
-                {this.state.hidePalette ? (
+                {this.state.hidePalette || this.state.narrowLayout ? (
                     <Tooltip
                         title={I18n.t('Show palette')}
                         slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -2085,7 +2241,12 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         <div style={styles.tabButton}>
                             <IconButton
                                 size="small"
+                                color={this.state.floatingPanel === 'palette' ? 'primary' : undefined}
                                 onClick={() => {
+                                    if (this.state.narrowLayout) {
+                                        this.toggleFloatingPanel('palette');
+                                        return;
+                                    }
                                     window.localStorage.removeItem('Vis.hidePalette');
                                     this.setState({ hidePalette: false });
                                 }}
@@ -2140,7 +2301,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                 : this.state.selectedView
                         }
                         style={{
-                            width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette ? 40 : 0) + (this.state.hideAttributes ? 40 : 0)}px)`,
+                            width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette || this.state.narrowLayout ? 40 : 0) + (this.state.hideAttributes || this.state.narrowLayout ? 40 : 0)}px)`,
                         }}
                         sx={styles.viewTabs}
                         variant="scrollable"
@@ -2245,7 +2406,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         </div>
                     </Tooltip>
                 ) : null}
-                {this.state.hideAttributes ? (
+                {this.state.hideAttributes || this.state.narrowLayout ? (
                     <Tooltip
                         title={I18n.t('Show attributes')}
                         slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -2253,7 +2414,12 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         <div style={styles.tabButton}>
                             <IconButton
                                 size="small"
+                                color={this.state.floatingPanel === 'attributes' ? 'primary' : undefined}
                                 onClick={() => {
+                                    if (this.state.narrowLayout) {
+                                        this.toggleFloatingPanel('attributes');
+                                        return;
+                                    }
                                     window.localStorage.removeItem('Vis.hideAttributes');
                                     this.setState({ hideAttributes: false });
                                 }}
@@ -2336,18 +2502,45 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         );
     }
 
+    /** Palette or attributes over the view, at the edge their column would have stood at */
+    renderFloatingPanel(): React.JSX.Element | null {
+        const panel = this.state.floatingPanel;
+        if (!this.state.narrowLayout || !panel) {
+            return null;
+        }
+        return (
+            <Paper
+                elevation={8}
+                square
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    [panel === 'palette' ? 'left' : 'right']: 0,
+                    // a strip of the view stays free beside it on a phone, too
+                    width: 'min(360px, calc(100% - 48px))',
+                    // above the widgets of the view, below the menus and dialogs the panels open themselves
+                    zIndex: 1200,
+                    visibility: this.state.paletteDragging ? 'hidden' : undefined,
+                }}
+            >
+                {panel === 'palette' ? this.renderPalette() : this.renderAttributes()}
+            </Paper>
+        );
+    }
+
     renderPalette(): React.JSX.Element {
         return (
             <div
                 className="vis-editor-column"
                 style={{
                     ...styles.block,
-                    ...(this.state.toolbarHeight === 'narrow' ? styles.blockNarrow : undefined),
-                    ...(this.state.toolbarHeight === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
+                    ...(this.getToolbarHeight() === 'narrow' ? styles.blockNarrow : undefined),
+                    ...(this.getToolbarHeight() === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
                     ...this.state.theme.classes.lightedPanel,
                     // square corners on purpose: a rounded panel reads as dated in this editor
                     border: `1px solid ${this.state.theme.palette.divider}`,
-                    display: this.state.hidePalette ? 'none' : undefined,
+                    display: this.state.hidePalette && !this.state.narrowLayout ? 'none' : undefined,
                 }}
             >
                 {this.state.widgetsLoaded !== Runtime.WIDGETS_LOADING_STEP_ALL_LOADED ? (
@@ -2360,6 +2553,11 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     theme={this.state.theme}
                     widgetsLoaded={this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED}
                     onHide={() => {
+                        // floating, the panel is only closed: the choice for the columns stays as it was
+                        if (this.state.narrowLayout) {
+                            this.setState({ floatingPanel: null });
+                            return;
+                        }
                         window.localStorage.setItem('Vis.hidePalette', 'true');
                         this.setState({ hidePalette: true });
                     }}
@@ -2448,8 +2646,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 className="vis-editor-column"
                 style={{
                     ...styles.block,
-                    ...(this.state.toolbarHeight === 'narrow' ? styles.blockNarrow : undefined),
-                    ...(this.state.toolbarHeight === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
+                    ...(this.getToolbarHeight() === 'narrow' ? styles.blockNarrow : undefined),
+                    ...(this.getToolbarHeight() === 'veryNarrow' ? styles.blockVeryNarrow : undefined),
                     ...this.state.theme.classes.lightedPanel,
                     // square corners on purpose: a rounded panel reads as dated in this editor
                     border: `1px solid ${this.state.theme.palette.divider}`,
@@ -2482,6 +2680,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     saveCssFile={this.saveCssFile}
                     editMode={this.state.editMode}
                     onHide={() => {
+                        if (this.state.narrowLayout) {
+                            this.setState({ floatingPanel: null });
+                            return;
+                        }
                         window.localStorage.setItem('Vis.hideAttributes', 'true');
                         this.setState({ hideAttributes: true });
                     }}
@@ -2924,11 +3126,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             toggleWidgetHint={this.toggleWidgetHint}
                             instance={this.instance}
                             editMode={this.state.editMode}
-                            toolbarHeight={this.state.toolbarHeight}
-                            setToolbarHeight={value => {
-                                window.localStorage.setItem('Vis.toolbarForm', value);
-                                this.setState({ toolbarHeight: value });
-                            }}
+                            toolbarHeight={this.getToolbarHeight()}
+                            setToolbarHeight={this.setToolbarHeight}
                             version={this.props.version}
                         />
                         <div
@@ -2938,89 +3137,93 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         >
                             <div
                                 style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%' }}
-                                ref={this.mainRef}
+                                ref={this.setMainRef}
                             >
                                 <EditorDnd
                                     addWidget={this.addWidget}
                                     selectedView={this.state.selectedView}
                                     addMarketplaceWidget={this.addMarketplaceWidget}
                                     onDragOverPoint={this.onPaletteDragOver}
+                                    onDragActive={this.onDragActive}
                                 >
-                                    {this.state.hidePalette && this.state.hideAttributes
+                                    {(this.state.hidePalette && this.state.hideAttributes) || this.state.narrowLayout
                                         ? this.renderWorkspace()
                                         : null}
-                                    <ReactSplit
-                                        direction={SplitDirection.Horizontal}
-                                        initialSizes={
-                                            this.state.hidePalette && !this.state.hideAttributes
-                                                ? [
-                                                      this.state.splitSizes[0] + this.state.splitSizes[1],
-                                                      this.state.splitSizes[2],
-                                                  ]
-                                                : !this.state.hidePalette && this.state.hideAttributes
-                                                  ? [
-                                                        this.state.splitSizes[0],
-                                                        this.state.splitSizes[1] + this.state.splitSizes[2],
-                                                    ]
-                                                  : this.state.splitSizes
-                                        }
-                                        minWidths={
-                                            this.state.hidePalette && !this.state.hideAttributes
-                                                ? [0, 240]
-                                                : !this.state.hidePalette && this.state.hideAttributes
-                                                  ? [240, 0]
-                                                  : [240, 0, 240]
-                                        }
-                                        onResizeFinished={(gutterIdx: number, newSizes: number[]) => {
-                                            let splitSizes: [number, number, number] = [0, 0, 0];
-                                            if (this.state.hidePalette && !this.state.hideAttributes) {
-                                                splitSizes[0] = this.state.splitSizes[0];
-                                                splitSizes[1] = newSizes[0] - this.state.splitSizes[0];
-                                                splitSizes[2] = newSizes[1];
-                                            } else if (!this.state.hidePalette && this.state.hideAttributes) {
-                                                splitSizes[0] = newSizes[0];
-                                                splitSizes[1] = newSizes[1] - this.state.splitSizes[2];
-                                                splitSizes[2] = this.state.splitSizes[2];
-                                            } else {
-                                                splitSizes = newSizes as [number, number, number];
+                                    {this.renderFloatingPanel()}
+                                    {this.state.narrowLayout ? null : (
+                                        <ReactSplit
+                                            direction={SplitDirection.Horizontal}
+                                            initialSizes={
+                                                this.state.hidePalette && !this.state.hideAttributes
+                                                    ? [
+                                                          this.state.splitSizes[0] + this.state.splitSizes[1],
+                                                          this.state.splitSizes[2],
+                                                      ]
+                                                    : !this.state.hidePalette && this.state.hideAttributes
+                                                      ? [
+                                                            this.state.splitSizes[0],
+                                                            this.state.splitSizes[1] + this.state.splitSizes[2],
+                                                        ]
+                                                      : this.state.splitSizes
                                             }
+                                            minWidths={
+                                                this.state.hidePalette && !this.state.hideAttributes
+                                                    ? [0, 240]
+                                                    : !this.state.hidePalette && this.state.hideAttributes
+                                                      ? [240, 0]
+                                                      : [240, 0, 240]
+                                            }
+                                            onResizeFinished={(gutterIdx: number, newSizes: number[]) => {
+                                                let splitSizes: [number, number, number] = [0, 0, 0];
+                                                if (this.state.hidePalette && !this.state.hideAttributes) {
+                                                    splitSizes[0] = this.state.splitSizes[0];
+                                                    splitSizes[1] = newSizes[0] - this.state.splitSizes[0];
+                                                    splitSizes[2] = newSizes[1];
+                                                } else if (!this.state.hidePalette && this.state.hideAttributes) {
+                                                    splitSizes[0] = newSizes[0];
+                                                    splitSizes[1] = newSizes[1] - this.state.splitSizes[2];
+                                                    splitSizes[2] = this.state.splitSizes[2];
+                                                } else {
+                                                    splitSizes = newSizes as [number, number, number];
+                                                }
 
-                                            const sum = splitSizes.reduce((prev, curr) => prev + curr);
-                                            if (Math.ceil(sum) !== 100) {
-                                                if (Math.ceil(sum) === 101 || Math.ceil(sum) === 99) {
-                                                    // Round the first 2 sizes to 0.01 and calculate the last
-                                                    splitSizes[0] = Math.round(splitSizes[0] * 100) / 100;
-                                                    splitSizes[1] = Math.round(splitSizes[1] * 100) / 100;
-                                                    splitSizes[2] = 100 - splitSizes[0] - splitSizes[1];
+                                                const sum = splitSizes.reduce((prev, curr) => prev + curr);
+                                                if (Math.ceil(sum) !== 100) {
+                                                    if (Math.ceil(sum) === 101 || Math.ceil(sum) === 99) {
+                                                        // Round the first 2 sizes to 0.01 and calculate the last
+                                                        splitSizes[0] = Math.round(splitSizes[0] * 100) / 100;
+                                                        splitSizes[1] = Math.round(splitSizes[1] * 100) / 100;
+                                                        splitSizes[2] = 100 - splitSizes[0] - splitSizes[1];
+                                                        this.setState({ splitSizes });
+                                                        window.localStorage.setItem(
+                                                            'Vis.splitSizes',
+                                                            JSON.stringify(splitSizes),
+                                                        );
+                                                    } else {
+                                                        // https://github.com/devbookhq/splitter/issues/15
+                                                        console.log(
+                                                            'Decline resize, to work around bug in @devbookhq/splitter',
+                                                        );
+                                                        this.setState({ splitSizes: this.state.splitSizes });
+                                                    }
+                                                } else {
                                                     this.setState({ splitSizes });
                                                     window.localStorage.setItem(
                                                         'Vis.splitSizes',
                                                         JSON.stringify(splitSizes),
                                                     );
-                                                } else {
-                                                    // https://github.com/devbookhq/splitter/issues/15
-                                                    console.log(
-                                                        'Decline resize, to work around bug in @devbookhq/splitter',
-                                                    );
-                                                    this.setState({ splitSizes: this.state.splitSizes });
                                                 }
-                                            } else {
-                                                this.setState({ splitSizes });
-                                                window.localStorage.setItem(
-                                                    'Vis.splitSizes',
-                                                    JSON.stringify(splitSizes),
-                                                );
+                                            }}
+                                            // theme={this.state.themeType === 'dark' ? GutterTheme.Dark : GutterTheme.Light}
+                                            gutterClassName={
+                                                this.state.themeType === 'dark' ? 'Dark visGutter' : 'Light visGutter'
                                             }
-                                        }}
-                                        // theme={this.state.themeType === 'dark' ? GutterTheme.Dark : GutterTheme.Light}
-                                        gutterClassName={
-                                            this.state.themeType === 'dark' ? 'Dark visGutter' : 'Light visGutter'
-                                        }
-                                    >
-                                        {!this.state.hidePalette ? this.renderPalette() : null}
-                                        {this.renderWorkspace()}
-                                        {!this.state.hideAttributes ? this.renderAttributes() : null}
-                                    </ReactSplit>
+                                        >
+                                            {!this.state.hidePalette ? this.renderPalette() : null}
+                                            {this.renderWorkspace()}
+                                            {!this.state.hideAttributes ? this.renderAttributes() : null}
+                                        </ReactSplit>
+                                    )}
                                 </EditorDnd>
                                 {this.renderAiButton()}
                             </div>

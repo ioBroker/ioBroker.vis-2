@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "对齐高度。按更多时间以获得所需的高度。",
   "Align horizontal/center": "水平/居中对齐",
   "Align horizontal/equal": "水平对齐/相等",
+  "Align": "对齐",
   "Align horizontal/left": "水平/左对齐",
   "Align horizontal/right": "水平/右对齐",
   "Align vertical/bottom": "垂直/底部对齐",
@@ -975,5 +976,6 @@
   "otherwise": "否则",
   "the detector found no state that could be shown": "检测器没有找到可以显示的状态",
   "pick the state first": "请先选择数据点",
-  "the state holds no rows at the moment": "该数据点目前没有行"
+  "the state holds no rows at the moment": "该数据点目前没有行",
+  "widget_sets_load_failed": "以下小部件集加载失败，因此缺少其小部件。请更新相应的适配器或向其开发者报告该错误。"
 }

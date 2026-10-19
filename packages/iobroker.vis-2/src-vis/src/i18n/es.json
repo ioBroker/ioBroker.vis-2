@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Alinear altura. Presione más tiempo para obtener la altura deseada.",
   "Align horizontal/center": "Alinear horizontal/centro",
   "Align horizontal/equal": "Alinear horizontal/igual",
+  "Align": "Alinear",
   "Align horizontal/left": "Alinear horizontal/izquierda",
   "Align horizontal/right": "Alinear horizontal/derecha",
   "Align vertical/bottom": "Alinear vertical/inferior",
@@ -975,5 +976,6 @@
   "otherwise": "si no",
   "the detector found no state that could be shown": "el detector no encontró ningún estado que se pueda mostrar",
   "pick the state first": "elija primero el estado",
-  "the state holds no rows at the moment": "el estado no contiene filas ahora mismo"
+  "the state holds no rows at the moment": "el estado no contiene filas ahora mismo",
+  "widget_sets_load_failed": "Los siguientes conjuntos de widgets fallaron al cargarse, por lo que faltan sus widgets. Actualice los adaptadores correspondientes o informe del error a sus desarrolladores."
 }

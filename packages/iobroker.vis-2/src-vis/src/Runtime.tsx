@@ -694,16 +694,39 @@ export default class Runtime<
         // Over HTTP first, see readFileOverHttp. Whatever it does not deliver is asked of the socket - also a 404:
         // a reverse proxy in front of the web adapter may not pass the file storage, and a project taken for
         // missing would bring up the project dialog.
+        //
+        // What comes over HTTP may be old, though: with "cache" in its settings the web adapter keeps every file it
+        // served in RAM and hands out that first version for good - a `?query` does not get past it either. A
+        // project saved since then came back as it was, so the editor seemed not to save, and the runtime showed
+        // a page long gone. So the answer is held against the size the file storage knows, and a file whose size
+        // differs is read from the socket.
+        const listings = new Map<string, Promise<ioBroker.ReadDirResult[] | null>>();
+        const sizeInStorage = (fileName: string): Promise<number | null> => {
+            const pos = fileName.lastIndexOf('/');
+            const dir = pos === -1 ? '' : fileName.substring(0, pos);
+            let listing = listings.get(dir);
+            if (!listing) {
+                listing = this.socket.readDir(this.adapterId, dir).catch((): null => null);
+                listings.set(dir, listing);
+            }
+            return listing.then(
+                entries => entries?.find(entry => entry.file === fileName.substring(pos + 1))?.stats?.size ?? null,
+            );
+        };
         const read = (fileName: string): Promise<string> =>
             readFileOverHttp(this.adapterId, fileName)
                 .catch((): null => null)
-                .then(data =>
-                    data !== null
-                        ? data
-                        : readFile(this.socket, this.adapterId, fileName).then(file =>
-                              typeof file === 'object' ? file.file : file,
-                          ),
-                );
+                .then(async data => {
+                    if (data !== null) {
+                        const size = await sizeInStorage(fileName);
+                        // no size to compare with: the HTTP answer is all there is to go by
+                        if (size === null || size === new TextEncoder().encode(data).length) {
+                            return data;
+                        }
+                    }
+                    const file = await readFile(this.socket, this.adapterId, fileName);
+                    return typeof file === 'object' ? file.file : file;
+                });
         const files: ProjectFiles = {
             projectName,
             project: read(`${projectName}/vis-views.json`),

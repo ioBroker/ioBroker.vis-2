@@ -71,6 +71,7 @@ import type {
 
 import {
     applyDefaultsOfNewFields,
+    getWidgetTypes,
     type RxFieldOption,
     type RxWidgetInfoAttributesFieldAll,
     type WidgetAttributeInfoStored,
@@ -419,13 +420,16 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
     /** Give the groups that a growing count like `count` opens their defaults, see applyDefaultsOfNewFields */
     const applyNewDefaults = (widgetId: AnyWidgetId, newData: Record<string, any>): void => {
-        const params = props.widgetType?.params;
+        const oldWidget = store.getState().visProject[props.selectedView]?.widgets[widgetId];
+        // not props.widgetType: with several widgets selected, that is only the type of the last one
+        const widgetType = oldWidget && getWidgetTypes().find(type => type.name === oldWidget.tpl);
+        const params = widgetType?.params;
         if (typeof params === 'string' || Array.isArray(params)) {
             applyDefaultsOfNewFields(
                 params as string | RxWidgetInfoGroup[],
-                store.getState().visProject[props.selectedView]?.widgets[widgetId]?.data || {},
+                oldWidget?.data || {},
                 newData,
-                props.widgetType?.set,
+                widgetType?.set,
             );
         }
     };

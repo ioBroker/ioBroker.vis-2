@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Выровнять высоту. Нажмите еще раз, чтобы получить желаемую высоту.",
   "Align horizontal/center": "Выровнять по горизонтали/по центру",
   "Align horizontal/equal": "Выровнять по горизонтали/на одинаковом расстоянии",
+  "Align": "Выровнять",
   "Align horizontal/left": "Выровнять по горизонтали/слева",
   "Align horizontal/right": "Выровнять по горизонтали/справа",
   "Align vertical/bottom": "Выровнять по вертикали/снизу",
@@ -975,5 +976,6 @@
   "otherwise": "иначе",
   "the detector found no state that could be shown": "детектор не нашёл состояния, которое можно показать",
   "pick the state first": "сначала выберите состояние",
-  "the state holds no rows at the moment": "в состоянии сейчас нет строк"
+  "the state holds no rows at the moment": "в состоянии сейчас нет строк",
+  "widget_sets_load_failed": "Следующие наборы виджетов не удалось загрузить, поэтому их виджеты отсутствуют. Обновите соответствующие адаптеры или сообщите об ошибке их разработчикам."
 }

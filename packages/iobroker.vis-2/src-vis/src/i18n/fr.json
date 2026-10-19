@@ -44,6 +44,7 @@
   "Align height. Press more time to get the desired height.": "Aligner la hauteur. Appuyez plus longtemps pour obtenir la hauteur souhaitée.",
   "Align horizontal/center": "Aligner horizontalement/centrer",
   "Align horizontal/equal": "Aligner horizontalement/égal",
+  "Align": "Aligner",
   "Align horizontal/left": "Aligner horizontalement/gauche",
   "Align horizontal/right": "Aligner horizontalement/à droite",
   "Align vertical/bottom": "Aligner vertical/bas",
@@ -975,5 +976,6 @@
   "otherwise": "sinon",
   "the detector found no state that could be shown": "le détecteur n’a trouvé aucun état qui puisse être montré",
   "pick the state first": "choisissez d’abord l’état",
-  "the state holds no rows at the moment": "l’état ne contient aucune ligne pour l’instant"
+  "the state holds no rows at the moment": "l’état ne contient aucune ligne pour l’instant",
+  "widget_sets_load_failed": "Le chargement des ensembles de widgets suivants a échoué, leurs widgets sont donc absents. Veuillez mettre à jour les adaptateurs correspondants ou signaler l'erreur à leurs développeurs."
 }

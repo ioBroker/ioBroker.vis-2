@@ -17,7 +17,7 @@ import { store } from '@/Store';
 import type { GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import ViewsManager from './ViewsManager';
 
-import ToolbarItems, { type ToolbarItem } from './ToolbarItems';
+import ToolbarItems, { type ToolbarGroup, type ToolbarItem } from './ToolbarItems';
 import ViewDialog from './ViewsManager/ViewDialog';
 
 // the wizard brings the type detector with it, and it is opened rarely, so it is loaded when it is asked for
@@ -54,6 +54,8 @@ interface ViewsProps {
     themeName: ThemeName;
     toggleView: Editor['toggleView'];
     socket: Connection;
+    /** The group does not fit into the row of the toolbar and opens as a menu, see `Toolbar.checkFit` */
+    compact: boolean;
 }
 
 const Views = (props: ViewsProps): React.JSX.Element => {
@@ -89,7 +91,9 @@ const Views = (props: ViewsProps): React.JSX.Element => {
     const toolbar: {
         name: React.JSX.Element;
         items: (ToolbarItem | ToolbarItem[] | ToolbarItem[][])[];
+        compact: ToolbarGroup['compact'];
     } = {
+        compact: props.compact ? { tooltip: 'Pages', icon: <MenuIcon fontSize="small" /> } : undefined,
         name: (
             <span style={styles.label}>
                 <Tooltip
