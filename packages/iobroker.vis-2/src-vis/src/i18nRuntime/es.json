@@ -72,5 +72,6 @@
   "vis_2_widgets_basic_view_in_widget": "Ver en widget",
   "vis_2_widgets_basic_view_not_defined": "Vista no definida",
   "welcome_message": "Aún no existe ningún proyecto.",
-  "widget_sets_incompatible_react": "Los siguientes conjuntos de widgets se compilaron para una versión anterior de React y no se pueden cargar. Actualice los adaptadores correspondientes."
+  "widget_sets_incompatible_react": "Los siguientes conjuntos de widgets se compilaron para una versión anterior de React y no se pueden cargar. Actualice los adaptadores correspondientes.",
+  "widget_sets_load_failed": "Los siguientes conjuntos de widgets fallaron al cargarse, por lo que faltan sus widgets. Actualice los adaptadores correspondientes o informe del error a sus desarrolladores."
 }
