@@ -235,8 +235,14 @@ function getParents(id: string, objects: Record<string, DetectionObject>): { cha
     return { channelId, deviceId };
 }
 
-/** The name and the icon a device is shown with: the ones of its channel or device, if it has one */
-function getNameAndIcon(
+/**
+ * The name and the icon a device is shown with: the ones of its channel or device, if it has one.
+ *
+ * A folder above the channel only fills in what is still missing. It is what holds the devices of a room, as in
+ * `0_userdata.0.Bathroom.Light.on`, and its name - the name of the room - would otherwise replace the one of
+ * the channel, while the room is written above the device anyway.
+ */
+export function getNameAndIcon(
     id: string,
     objects: Record<string, DetectionObject>,
     language: ioBroker.Languages,
@@ -251,8 +257,15 @@ function getNameAndIcon(
         if (!parent) {
             continue;
         }
-        name = getText(parent.common?.name, language) || name;
-        icon = getObjectIcon(parent, parentId, '../..') || icon;
+        const parentName = getText(parent.common?.name, language);
+        const parentIcon = getObjectIcon(parent, parentId, '../..');
+        if (parent.type === 'folder' && parentId === deviceId) {
+            name ||= parentName;
+            icon ||= parentIcon;
+        } else {
+            name = parentName || name;
+            icon = parentIcon || icon;
+        }
     }
 
     return { name, icon };
@@ -343,7 +356,8 @@ export async function detectDevices(options: DetectDevicesOptions): Promise<Wiza
                 id: mainId,
                 type: control.type,
                 // "Living room.Ceiling lamp" is the lamp of the living room, and the room is written above it
-                name: cleanName(name, roomName) || mainId,
+                // a device that is named like its room keeps that name rather than becoming its ID
+                name: cleanName(name, roomName) || cleanName(name) || mainId,
                 icon,
                 roomId,
                 functionId: inEnum(functions.members),

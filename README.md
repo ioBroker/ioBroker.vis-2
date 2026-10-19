@@ -384,6 +384,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) The runtime no longer shows an old project when the web adapter serves it from its file cache
 * (@GermanBluefox) The defaults of the groups that a count opens are taken from the type of each selected widget, not of the last one
 * (@typhosj) The editor writes the default values of an attribute group that repeats as often as another attribute says, like `count`: when the widget is added and when that attribute grows later. Before, the fields of these groups had no value until they were edited by hand (#509)
+* (@GermanBluefox) The device wizard names a device after its channel again when the devices of a room sit in a folder named like the room, e.g. `0_userdata.0.Bathroom.Light.on`: the folder replaced the name of the channel, the room was then cut out of it, and the device was listed under its object ID
 
 ### 2.20.2 (2026-10-16)
 * (@GermanBluefox) Many, many updates: wizard, new widgets, load optimizations, AI assistant, and more. See the 2.20.1 for details.
