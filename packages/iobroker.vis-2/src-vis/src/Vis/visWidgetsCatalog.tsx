@@ -1255,3 +1255,52 @@ export const parseAttributes = (
 
     return null;
 };
+
+/**
+ * Write the defaults of the fields that only exist since `oldData` became `newData`.
+ *
+ * The fields of an indexed group exist only once the attribute named in its `indexTo` - like `count` - says how
+ * many of the group there are, so the defaults of a group that a growing count opens were never written (#509).
+ * A field that was there before keeps what it has, even when that is empty: the user may have cleared it.
+ *
+ * @param widgetParams the attributes of the widget type
+ * @param oldData the data before the change, null for a new widget - then every field is new
+ * @param newData the data after the change; the defaults are written into it
+ * @param widgetSet the widget set, for attributes given as a string
+ * @returns true if a default was written
+ */
+export function applyDefaultsOfNewFields(
+    widgetParams: string | RxWidgetInfoGroup[],
+    oldData: Record<string, any> | null,
+    newData: Record<string, any>,
+    widgetSet?: string,
+): boolean {
+    const known = new Set<string>();
+    if (oldData) {
+        parseAttributes(widgetParams, 0, undefined, undefined, widgetSet, oldData)?.forEach(group =>
+            group.fields?.forEach(field => known.add(field.name)),
+        );
+    }
+
+    let written = false;
+    // A default may be the count itself and open further groups, so look again - but only fields that are still
+    // undefined get a value, so the second round writes nothing new unless a group opened.
+    for (let round = 0; round < 3; round++) {
+        let writtenNow = false;
+        parseAttributes(widgetParams, 0, undefined, undefined, widgetSet, newData)?.forEach(group =>
+            group.fields?.forEach(field => {
+                if (!known.has(field.name) && field.default != null && newData[field.name] === undefined) {
+                    newData[field.name] = field.default;
+                    newData[`g_${group.name}`] = true;
+                    writtenNow = true;
+                }
+            }),
+        );
+        if (!writtenNow) {
+            break;
+        }
+        written = true;
+    }
+
+    return written;
+}

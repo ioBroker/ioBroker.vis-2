@@ -72,5 +72,6 @@
   "vis_2_widgets_basic_view_in_widget": "View in widget",
   "vis_2_widgets_basic_view_not_defined": "View not defined",
   "welcome_message": "No one project yet exists.",
-  "widget_sets_incompatible_react": "The following widget sets were built for an older version of react and cannot be loaded. Please update these adapters."
+  "widget_sets_incompatible_react": "The following widget sets were built for an older version of react and cannot be loaded. Please update these adapters.",
+  "widget_sets_load_failed": "The following widget sets failed while they were loaded, so their widgets are missing. Please update these adapters or report the error to their developers."
 }

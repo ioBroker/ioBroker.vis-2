@@ -72,5 +72,6 @@
   "vis_2_widgets_basic_view_in_widget": "Bekijk in widget",
   "vis_2_widgets_basic_view_not_defined": "Uitzicht niet gedefinieerd",
   "welcome_message": "Er is nog geen enkel project.",
-  "widget_sets_incompatible_react": "De volgende widgetsets zijn gebouwd voor een oudere versie van React en kunnen niet worden geladen. Werk de bijbehorende adapters bij."
+  "widget_sets_incompatible_react": "De volgende widgetsets zijn gebouwd voor een oudere versie van React en kunnen niet worden geladen. Werk de bijbehorende adapters bij.",
+  "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars."
 }

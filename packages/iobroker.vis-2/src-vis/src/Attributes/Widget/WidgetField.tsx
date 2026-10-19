@@ -64,15 +64,17 @@ import type {
     WidgetStyle,
     ClassesValue,
     RxWidgetInfoAttributesField,
+    RxWidgetInfoGroup,
     VisTheme,
     AdditionalIconSet,
 } from '@iobroker/types-vis-2';
 
-import type {
-    RxFieldOption,
-    RxWidgetInfoAttributesFieldAll,
-    WidgetAttributeInfoStored,
-    WidgetType,
+import {
+    applyDefaultsOfNewFields,
+    type RxFieldOption,
+    type RxWidgetInfoAttributesFieldAll,
+    type WidgetAttributeInfoStored,
+    type WidgetType,
 } from '@/Vis/visWidgetsCatalog';
 import commonStyles from '@/Utilities/styles';
 import TextDialog from './TextDialog';
@@ -415,6 +417,19 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
     let onChangeTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    /** Give the groups that a growing count like `count` opens their defaults, see applyDefaultsOfNewFields */
+    const applyNewDefaults = (widgetId: AnyWidgetId, newData: Record<string, any>): void => {
+        const params = props.widgetType?.params;
+        if (typeof params === 'string' || Array.isArray(params)) {
+            applyDefaultsOfNewFields(
+                params as string | RxWidgetInfoGroup[],
+                store.getState().visProject[props.selectedView]?.widgets[widgetId]?.data || {},
+                newData,
+                props.widgetType?.set,
+            );
+        }
+    };
+
     const applyValue = (newValues: any): void => {
         const project = deepClone(store.getState().visProject);
         props.selectedWidgets.forEach((selectedWidget, i) => {
@@ -425,6 +440,9 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 : project[props.selectedView].widgets[selectedWidget].data;
 
             (data as Record<string, any>)[field.name] = value;
+            if (!props.isStyle) {
+                applyNewDefaults(selectedWidget, data);
+            }
 
             const widgetSet = props.widgetType?.set;
             if (field.onChangeFunc && widgetSet) {
@@ -448,6 +466,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                     JSON.parse(JSON.stringify(data)),
                     (newData: WidgetData) => {
                         const _project = JSON.parse(JSON.stringify(store.getState().visProject));
+                        applyNewDefaults(selectedWidget, newData);
                         _project[props.selectedView].widgets[selectedWidget].data = newData;
                         onChangeTimeout && clearTimeout(onChangeTimeout);
                         onChangeTimeout = setTimeout(() => {
@@ -1641,6 +1660,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                                     _project[props.selectedView].widgets[selectedWidget].data[attr] = newData[attr];
                                 }
                             });
+                            applyNewDefaults(selectedWidget, _project[props.selectedView].widgets[selectedWidget].data);
                         });
                         props.changeProject(_project);
                         store.dispatch(recalculateFields(true));
