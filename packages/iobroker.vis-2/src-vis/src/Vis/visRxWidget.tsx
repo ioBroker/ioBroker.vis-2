@@ -140,6 +140,13 @@ export class VisRxWidget<
 
     private updateTimer?: ReturnType<typeof setTimeout>;
 
+    /**
+     * The values handed to `setState` that React has not applied yet. Until then `this.state.values` is older,
+     * and a state change in between must not start from it: it would drop the values of that update. A value
+     * that comes only once, like the first one after the widget was mounted, then stayed missing (#565).
+     */
+    private pendingValues: VisRxWidgetStateValues | null = null;
+
     private ignoreMouseEvents?: boolean;
 
     private mouseDownOnView?:
@@ -340,7 +347,7 @@ export class VisRxWidget<
         doNotApplyState?: boolean,
     ): Partial<VisRxWidgetState & TState & { rxData: TRxData }> | null {
         this.newState ||= {
-            values: deepClone(this.state.values || {}),
+            values: deepClone(this.pendingValues || this.state.values || {}),
             rxData: { ...this.state.data } as unknown as TRxData,
             rxStyle: { ...this.state.style },
             editMode: this.props.editMode,
@@ -425,6 +432,7 @@ export class VisRxWidget<
                 const newState = this.newState ?? null;
                 this.newState = null;
                 if (newState) {
+                    this.pendingValues = newState.values || null;
                     this.setState(newState as VisRxWidgetState & TState & { rxData: TRxData });
                 }
             }, 50);
@@ -566,6 +574,9 @@ export class VisRxWidget<
     componentDidUpdate(_prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
         // the base class ends a gesture here, so it must not be cut off
         super.componentDidUpdate();
+        if (this.pendingValues && this.state.values === this.pendingValues) {
+            this.pendingValues = null;
+        }
         if (prevState) {
             if (JSON.stringify(this.state.rxData) !== JSON.stringify(prevState.rxData)) {
                 this.onRxDataChanged(prevState.rxData);
@@ -593,7 +604,7 @@ export class VisRxWidget<
         this.stateUpdatedTimers.clear();
 
         if (this.linkContext.IDs.length) {
-            this.props.context.socket.unsubscribeState(this.linkContext.IDs, this.onIoBrokerStateChanged);
+            this.props.context.socket.unsubscribeState(this.linkContext.IDs, this.onStateChangedBind);
         }
 
         if (this.localStateChangeCb) {
@@ -679,13 +690,13 @@ export class VisRxWidget<
         const unsubscribe = oldIDs.filter(id => !this.linkContext.IDs.includes(id));
         if (unsubscribe.length) {
             // legacy connection can process arrays
-            context.socket.unsubscribeState(unsubscribe, this.onIoBrokerStateChanged);
+            context.socket.unsubscribeState(unsubscribe, this.onStateChangedBind);
         }
 
         const subscribe = this.linkContext.IDs.filter(id => !oldIDs.includes(id));
         if (subscribe.length) {
             // legacy connection can process arrays
-            void context.socket.subscribeState(subscribe, this.onIoBrokerStateChanged);
+            void context.socket.subscribeState(subscribe, this.onStateChangedBind);
         }
 
         this.onStateChanged();
