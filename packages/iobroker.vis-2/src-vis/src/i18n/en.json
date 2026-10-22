@@ -1008,6 +1008,8 @@
   "Navigation menu": "Navigation menu",
   "navigation_project_help": "How the menu looks, for every page at once. A page may still say something else; everything a page leaves empty comes from here. Which page carries an entry, what it is called and in which order it stands stays with the page.",
   "App bar color": "App bar color",
+  "App bar height": "App bar height",
+  "Bar height": "Bar height",
   "%s of %s devices": "%s of %s devices",
   "%s rules": "%s rules",
   "A colour per condition, the first that holds wins": "A colour per condition, the first that holds wins",

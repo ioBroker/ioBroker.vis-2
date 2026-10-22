@@ -933,6 +933,8 @@
   "Navigation menu": "导航菜单",
   "navigation_project_help": "菜单的样子，一次管所有页面。页面仍可另有说法；页面留空的部分都来自这里。哪个页面有入口、叫什么、排第几，仍归页面自己管。",
   "App bar color": "应用栏颜色",
+  "App bar height": "应用栏高度",
+  "Bar height": "栏高度",
   "%s of %s devices": "%s / %s 个设备",
   "%s rules": "%s 条规则",
   "A colour per condition, the first that holds wins": "每个条件一种颜色，第一个成立的生效",

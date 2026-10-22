@@ -933,6 +933,8 @@
   "Navigation menu": "Menu de navigation",
   "navigation_project_help": "L'aspect du menu, pour toutes les pages à la fois. Une page peut toujours dire autre chose ; tout ce qu'une page laisse vide vient d'ici. Quelle page a une entrée, son nom et son rang restent l'affaire de la page.",
   "App bar color": "Couleur de la barre d'application",
+  "App bar height": "Hauteur de la barre d’application",
+  "Bar height": "Hauteur de la barre",
   "%s of %s devices": "%s sur %s appareils",
   "%s rules": "%s règles",
   "A colour per condition, the first that holds wins": "Une couleur par condition, la première vraie l’emporte",

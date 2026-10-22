@@ -933,6 +933,8 @@
   "Navigation menu": "Menu nawigacji",
   "navigation_project_help": "Jak wygląda menu — dla wszystkich stron naraz. Strona nadal może powiedzieć co innego; wszystko, co strona zostawia puste, pochodzi stąd. Która strona ma wpis, jak się nazywa i w jakiej kolejności stoi, zostaje przy stronie.",
   "App bar color": "Kolor paska aplikacji",
+  "App bar height": "Wysokość paska aplikacji",
+  "Bar height": "Wysokość paska",
   "%s of %s devices": "%s z %s urządzeń",
   "%s rules": "reguły: %s",
   "A colour per condition, the first that holds wins": "Kolor na warunek, wygrywa pierwszy spełniony",

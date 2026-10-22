@@ -376,6 +376,9 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### **WORK IN PROGRESS**
+* (@typhosj) The height of the app bar can be set, from 24 to 120 px, per view under "App bar" or for the whole project in the project settings. Before, it was always 48 px (#569)
+
 ### 2.20.3 (2026-10-19)
 * (@typhosj) The editor loads the widgets again when it starts with the CSS or the scripts tab open. The code editor of these tabs brings a module loader, and jQuery UI and the jQuery plugins of some widget sets registered with that loader instead of with jQuery, so `$.ui` was missing (#693)
 * (@GermanBluefox) Show all unloaded widget-sets in warning dialog

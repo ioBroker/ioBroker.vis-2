@@ -30,11 +30,13 @@ import {
 import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
-import { resolveNavigationSettings } from './visNavigationSettings';
+import { getNavigationBarHeight, NAVIGATION_BAR_HEIGHT, resolveNavigationSettings } from './visNavigationSettings';
 
 const MENU_WIDTH_FULL = 200;
 const MENU_WIDTH_NARROW = 56;
 const TOOLBAR_SIZE = 48;
+/** The height of the icon button that opens the menu */
+const OPEN_MENU_BUTTON_SIZE = 40;
 
 const styles: Record<string, any> = {
     root: {
@@ -772,6 +774,18 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         }
         style.opacity = this.props.editMode ? 0.4 : 1;
 
+        // a bar of its own height (#569); the default keeps the sizes of the styles
+        const barHeight = getNavigationBarHeight(settings);
+        if (barHeight !== NAVIGATION_BAR_HEIGHT.default) {
+            style.height = barHeight;
+            style.lineHeight = `${barHeight}px`;
+            if (this.props.menuWidth === 'hidden') {
+                // room for the button that opens the menu, which sits in the bar, see getOpenMenuButtonSize()
+                // the button starts 9 px from the edge, the text keeps 15 px away from it, as in the default bar
+                style.paddingLeft = 24 + VisNavigation.getOpenMenuButtonSize(barHeight);
+            }
+        }
+
         let icon: string | undefined = settings.navigationBarIcon || settings.navigationBarImage;
         if (icon?.startsWith('_PRJ_NAME/')) {
             icon = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
@@ -804,7 +818,8 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                 {icon ? (
                     <Icon
                         src={icon}
-                        style={styles.toolbarIcon}
+                        // a low bar gets a smaller icon, with a little room above and below
+                        style={{ ...styles.toolbarIcon, height: Math.min(32, barHeight - 8) }}
                     />
                 ) : null}
                 {settings.navigationBarText || this.props.activeView}
@@ -820,7 +835,13 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         this.props.setMenuWidth('hidden');
     }
 
-    renderOpenMenuButton(settings: ViewSettings): React.JSX.Element {
+    renderOpenMenuButton(settings: ViewSettings, barHeight: number): React.JSX.Element {
+        // in an app bar lower than the button, the button shrinks to the height of the bar; the icon stays 24 px
+        const size = VisNavigation.getOpenMenuButtonSize(barHeight);
+        const padding =
+            this.props.menuWidth === 'hidden' && settings.navigationBar && size < OPEN_MENU_BUTTON_SIZE
+                ? (size - 24) / 2
+                : undefined;
         let backgroundColor: string | undefined;
         let color: string | undefined;
         if (this.props.menuWidth === 'hidden') {
@@ -868,7 +889,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                         this.props.setMenuWidth('full');
                     }
                 }}
-                style={{ backgroundColor }}
+                style={{ backgroundColor, padding }}
             >
                 <ChevronLeftIcon
                     style={{
@@ -883,6 +904,25 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         );
     }
 
+    /**
+     * The button that opens a hidden menu sits in the app bar: as high as the icon button is anyway (40 px), but
+     * not higher than the bar.
+     *
+     * @param barHeight - the height of the app bar
+     */
+    static getOpenMenuButtonSize(barHeight: number): number {
+        return Math.min(barHeight, OPEN_MENU_BUTTON_SIZE);
+    }
+
+    /**
+     * The page below the app bar
+     *
+     * @param barHeight - the height of the app bar
+     */
+    static getContentStyle(barHeight: number): React.CSSProperties {
+        return { ...styles.viewContentWithToolbar, height: `calc(100% - ${barHeight}px)` };
+    }
+
     render(): React.JSX.Element | null {
         if (!this.props.context.views?.[this.props.view]) {
             return null;
@@ -893,6 +933,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             this.props.context.views[this.props.view].settings,
         );
         const menuFullWidth = parseInt(settings.navigationWidth as any as string, 10) || MENU_WIDTH_FULL;
+        const barHeight = getNavigationBarHeight(settings);
 
         // The menu at the bottom edge, for a phone: the page fills everything above it
         if (
@@ -908,7 +949,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                         style={{
                             ...styles.viewContentWithToolbar,
                             // the bar takes its height from the bottom of the page, not from the top
-                            height: `calc(100% - ${TOOLBAR_SIZE + (settings.navigationBar ? TOOLBAR_SIZE : 0)}px)`,
+                            height: `calc(100% - ${TOOLBAR_SIZE + (settings.navigationBar ? barHeight : 0)}px)`,
                         }}
                     >
                         {this.props.children}
@@ -945,7 +986,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             return (
                 <div style={styles.afterMenuHidden}>
                     {this.renderToolbar(settings)}
-                    <div style={styles.viewContentWithToolbar}>{this.props.children}</div>
+                    <div style={VisNavigation.getContentStyle(barHeight)}>{this.props.children}</div>
                 </div>
             );
         }
@@ -964,6 +1005,13 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             Object.assign(styleMenu, styles.openMenuButtonHidden);
             if (settings.navigationBar) {
                 styleMenu.opacity = 1;
+                if (barHeight !== NAVIGATION_BAR_HEIGHT.default) {
+                    // in the middle of a bar of its own height
+                    const size = VisNavigation.getOpenMenuButtonSize(barHeight);
+                    styleMenu.width = size;
+                    styleMenu.height = size;
+                    styleMenu.top = (barHeight - size) / 2;
+                }
             }
         }
 
@@ -985,7 +1033,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         return (
             <div style={styles.root}>
                 {!settings.navigationHideMenu ? (
-                    <div style={styleMenu}>{this.renderOpenMenuButton(settings)}</div>
+                    <div style={styleMenu}>{this.renderOpenMenuButton(settings, barHeight)}</div>
                 ) : null}
 
                 {!settings.navigationHideMenu ? this.renderMenu(settings, menuFullWidth) : null}
@@ -994,7 +1042,9 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                     {this.renderToolbar(settings)}
                     <div
                         style={
-                            settings.navigationBar ? styles.viewContentWithToolbar : styles.viewContentWithoutToolbar
+                            settings.navigationBar
+                                ? VisNavigation.getContentStyle(barHeight)
+                                : styles.viewContentWithoutToolbar
                         }
                     >
                         {this.props.children}
