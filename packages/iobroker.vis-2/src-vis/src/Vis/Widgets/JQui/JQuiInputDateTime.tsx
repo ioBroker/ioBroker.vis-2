@@ -22,6 +22,7 @@ import VisRxWidget from '../../visRxWidget';
 
 // the picker brings `@mui/x-date-pickers` and dayjs along, see DateTimePickers.tsx
 const VisTimePicker = React.lazy(() => import('./DateTimePickers').then(m => ({ default: m.VisTimePicker })));
+const VisDateTimePicker = React.lazy(() => import('./DateTimePickers').then(m => ({ default: m.VisDateTimePicker })));
 
 type RxData = {
     oid: string;
@@ -32,6 +33,8 @@ type RxData = {
     ampm: boolean;
     asDate: boolean;
     stepMinute: number;
+    withDate: boolean;
+    dateTimeFormat: string;
 };
 
 class JQuiInputDateTime extends VisRxWidget<RxData> {
@@ -83,9 +86,22 @@ class JQuiInputDateTime extends VisRxWidget<RxData> {
                             type: 'checkbox',
                         },
                         {
+                            name: 'withDate',
+                            label: 'jqui_withDate',
+                            type: 'checkbox',
+                        },
+                        {
                             name: 'asDate',
                             label: 'jqui_asDate',
                             type: 'checkbox',
+                        },
+                        {
+                            name: 'dateTimeFormat',
+                            label: 'jqui_dateTimeFormat',
+                            type: 'text',
+                            // DEFAULT_DATE_TIME_FORMAT of dateTimeValue.ts, whose dayjs must stay out of the runtime bundle
+                            default: 'YYYY-MM-DD HH:mm',
+                            hidden: '!data.withDate || !!data.asDate',
                         },
                         {
                             name: 'stepMinute',
@@ -124,21 +140,30 @@ class JQuiInputDateTime extends VisRxWidget<RxData> {
 
         props.style.overflow = 'visible';
 
+        const pickerProps = {
+            value: this.state.values[`${this.state.rxData.oid}.val`],
+            lang: this.props.context.lang,
+            variant: this.state.rxData.variant,
+            autoFocus: this.state.rxData.autoFocus,
+            clearable: this.state.rxData.clearable,
+            widgetTitle: this.state.rxData.widgetTitle,
+            ampm: this.state.rxData.ampm,
+            asDate: this.state.rxData.asDate,
+            stepMinute: this.state.rxData.stepMinute,
+            onChange: (val: string) => this.props.context.setValue(this.state.rxData.oid, val),
+        };
+
         return (
             <div className="vis-widget-body">
                 <React.Suspense fallback={null}>
-                    <VisTimePicker
-                        value={this.state.values[`${this.state.rxData.oid}.val`]}
-                        lang={this.props.context.lang}
-                        variant={this.state.rxData.variant}
-                        autoFocus={this.state.rxData.autoFocus}
-                        clearable={this.state.rxData.clearable}
-                        widgetTitle={this.state.rxData.widgetTitle}
-                        ampm={this.state.rxData.ampm}
-                        asDate={this.state.rxData.asDate}
-                        stepMinute={this.state.rxData.stepMinute}
-                        onChange={val => this.props.context.setValue(this.state.rxData.oid, val)}
-                    />
+                    {this.state.rxData.withDate ? (
+                        <VisDateTimePicker
+                            {...pickerProps}
+                            dateTimeFormat={this.state.rxData.dateTimeFormat}
+                        />
+                    ) : (
+                        <VisTimePicker {...pickerProps} />
+                    )}
                 </React.Suspense>
             </div>
         );

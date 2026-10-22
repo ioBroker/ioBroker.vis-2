@@ -377,6 +377,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) The jQui input "Input Time" can take the date too, with the new option "With date". It writes the date and time as text in a format of its own, `YYYY-MM-DD HH:mm` by default, or as a date with "As date" - like the vis-1 widget "Input Datetime" did (#577)
 * (@typhosj) A time or a date can be typed into the jQui inputs "Input Time" and "Input Date" again. Each typed digit was written into the state at once, and the value coming back made the field start the part being typed anew: "0845" became 00:45. A date or time that is not complete yet is no longer written
 
 ### 2.20.3 (2026-10-19)

@@ -547,6 +547,8 @@
   "jqui_active_color": "Couleur active",
   "jqui_ampm": "Matin après-midi",
   "jqui_asDate": "Comme date",
+  "jqui_dateTimeFormat": "Format de la valeur",
+  "jqui_withDate": "Avec date",
   "jqui_asFullDate": "Utilisation de la date analysable complète",
   "jqui_as_string": "En tant que chaîne",
   "jqui_auto": "auto",
