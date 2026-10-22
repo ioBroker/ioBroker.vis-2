@@ -1,5 +1,8 @@
 import type { Project, ViewSettings } from '@iobroker/types-vis-2';
 
+import { isConditionMet } from './visConditions';
+import { DEFAULT_CONDITION } from './visSections';
+
 /**
  * The settings of the menu that a project may hold for all of its views.
  *
@@ -65,4 +68,50 @@ export function resolveNavigationSettings(project: Project, viewSettings: ViewSe
     }
 
     return resolved || viewSettings;
+}
+
+/**
+ * The states the menu has to listen to: those the entries of the views are shown by (#592)
+ *
+ * @param project - the whole project
+ */
+export function getNavigationEntryStateIds(project: Project): string[] {
+    const ids: string[] = [];
+    Object.keys(project || {}).forEach(view => {
+        if (view === '___settings') {
+            return;
+        }
+        const settings = project[view]?.settings;
+        const oid = typeof settings?.navigationEntryOid === 'string' ? settings.navigationEntryOid.trim() : '';
+        if (settings?.navigation && !settings.navigationHideEntry && oid && !ids.includes(oid)) {
+            ids.push(oid);
+        }
+    });
+    return ids;
+}
+
+/**
+ * Whether the entry of a view is in the menu by its condition. Without a state it always is. While the value of
+ * the state is not known yet, the entry is not shown, like a widget, so it does not flash up and vanish.
+ *
+ * @param viewSettings - the settings of the view the entry stands for
+ * @param states - the values of the states, by `<id>.val`
+ * @param view - the name of the view, only for the log
+ */
+export function isNavigationEntryShown(
+    viewSettings: ViewSettings,
+    states: Record<string, unknown>,
+    view: string,
+): boolean {
+    const oid = typeof viewSettings.navigationEntryOid === 'string' ? viewSettings.navigationEntryOid.trim() : '';
+    if (!oid) {
+        return true;
+    }
+    return isConditionMet(
+        states,
+        oid,
+        viewSettings.navigationEntryCond || DEFAULT_CONDITION,
+        viewSettings.navigationEntryVal,
+        view,
+    );
 }
