@@ -100,3 +100,52 @@ describe('syncWidgetSets', () => {
         assert.deepStrictEqual(widgetSets, [{ name: 'basic', v2: false }]);
     });
 });
+
+describe('widgetFilesToCheck', () => {
+    let root;
+
+    beforeEach(() => {
+        root = createSandbox();
+        addWidgetSet(path.join(root, 'www', 'widgets'), 'basic');
+    });
+
+    afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    function filesToCheck(enabledList) {
+        const { widgetSets } = sync(root, enabledList);
+        const { widgetFilesToCheck } = require(path.join(root, 'build', 'lib', 'install.js'));
+        return widgetFilesToCheck(widgetSets, enabledList);
+    }
+
+    it('lists the HTML file of every set and the entry of every vis-2 collection', () => {
+        const bring = addAdapter(root, 'iobroker.vis-bring', 'bring');
+        const material = addAdapter(root, 'iobroker.vis-2-widgets-material', 'vis-2-widgets-material', {
+            visWidgets: { vis2material: { url: 'vis-2-widgets-material/customWidgets.js' } },
+        });
+        fs.writeFileSync(path.join(material.path, 'widgets', 'vis-2-widgets-material', 'customWidgets.js'), '');
+
+        assert.deepStrictEqual(filesToCheck([bring, material]), [
+            'widgets/basic.html',
+            'widgets/bring.html',
+            'widgets/vis-2-widgets-material.html',
+            'widgets/vis-2-widgets-material/customWidgets.js',
+        ]);
+    });
+
+    it('skips a collection without a local file on disk', () => {
+        const material = addAdapter(root, 'iobroker.vis-2-widgets-material', 'vis-2-widgets-material', {
+            visWidgets: {
+                remote: { url: 'https://example.com/customWidgets.js' },
+                missing: { url: 'vis-2-widgets-material/notThere.js' },
+                noUrl: {},
+                empty: { url: '' },
+            },
+        });
+
+        assert.deepStrictEqual(filesToCheck([material]), ['widgets/basic.html', 'widgets/vis-2-widgets-material.html']);
+    });
+
+    it('lists only the generic sets when no adapter is installed', () => {
+        assert.deepStrictEqual(filesToCheck([]), ['widgets/basic.html']);
+    });
+});

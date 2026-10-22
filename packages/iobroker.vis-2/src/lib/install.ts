@@ -158,3 +158,23 @@ export function syncWidgetSets(
 
     return { widgetSets, filesChanged };
 }
+
+/**
+ * The files in the `vis-2` file storage that show whether the widget sets in www/widgets were uploaded:
+ * the HTML file of every set and the entry of every vis-2 widget collection. Only files present on disk
+ * are listed, so a collection that names a missing file does not cause an upload on every start.
+ */
+export function widgetFilesToCheck(
+    widgetSets: { name: string }[],
+    enabledList: { pack: ioBroker.AdapterObject }[],
+): string[] {
+    const files = widgetSets.map(set => `widgets/${set.name}.html`);
+    for (const { pack } of enabledList) {
+        for (const collection of Object.values(pack.common.visWidgets || {})) {
+            if (collection.url && !collection.url.startsWith('http')) {
+                files.push(`widgets/${collection.url}`);
+            }
+        }
+    }
+    return files.filter(file => existsSync(`${wwwDir}${file}`));
+}

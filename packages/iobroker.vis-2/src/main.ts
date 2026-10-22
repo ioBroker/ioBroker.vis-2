@@ -13,7 +13,7 @@ import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSy
 import { normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
-import { syncWidgetSets } from './lib/install';
+import { syncWidgetSets, widgetFilesToCheck } from './lib/install';
 import { VIS_AI_FIELDS, type AiConfigSlice } from './lib/ai';
 
 function loadIoPack(): ioBroker.AdapterObject {
@@ -364,7 +364,8 @@ class VisAdapter extends Adapter {
             filesChanged ||
             uploadedIndexHtml !== indexHtml ||
             uploadedEditHtml !== editHtml ||
-            forceBuild
+            forceBuild ||
+            (await this.widgetFilesMissing(widgetSets, enabledList))
         ) {
             try {
                 await this.uploadAdapter();
@@ -398,6 +399,24 @@ class VisAdapter extends Adapter {
             this.synchronizingQueued = null;
             setImmediate(() => void this.buildHtmlPages(forceBuild));
         }
+    }
+
+    /**
+     * The files on disk can be complete while the file storage lacks some of them: a restart stopped the
+     * upload, and the next start found nothing to copy. Then the browser gets a 404 for the widget set.
+     */
+    async widgetFilesMissing(
+        widgetSets: { name: string }[],
+        enabledList: { pack: ioBroker.AdapterObject }[],
+    ): Promise<boolean> {
+        for (const file of widgetFilesToCheck(widgetSets, enabledList)) {
+            // an error of the file storage is no reason for an upload, which would fail the same way
+            if (!(await this.fileExistsAsync('vis-2', file).catch(() => true))) {
+                this.log.info(`${file} is missing in the file storage, uploading the widgets again`);
+                return true;
+            }
+        }
+        return false;
     }
 
     async generateWidgetsHtml(widgetSets: { name: string; v2: boolean }[], forceBuild: boolean): Promise<boolean> {
@@ -1182,14 +1201,8 @@ if (typeof exports !== 'undefined') {
             });
         }
 
-        const filesToDelete = await this.collectExistingFilesToDelete('/');
-        this.log.debug(`Erasing files: ${filesToDelete.length}`);
-
-        if (this.stoppingPromise) {
-            return;
-        }
-
-        // write temp index.html and edit.html
+        // write temp index.html and edit.html. They also mark the upload as unfinished: if a restart stops it
+        // from here on, the next start finds them different from www/ and uploads again.
         await this.writeFileAsync(
             'vis-2',
             'index.html',
@@ -1200,6 +1213,13 @@ if (typeof exports !== 'undefined') {
             'edit.html',
             readFileSync(`${__dirname}/lib/updating.html`).toString('utf8'),
         );
+
+        const filesToDelete = await this.collectExistingFilesToDelete('/');
+        this.log.debug(`Erasing files: ${filesToDelete.length}`);
+
+        if (this.stoppingPromise) {
+            return;
+        }
 
         // delete old files, before upload of new
         await this.eraseFiles(filesToDelete);
