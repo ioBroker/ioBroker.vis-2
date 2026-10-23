@@ -149,3 +149,58 @@ describe('widgetFilesToCheck', () => {
         assert.deepStrictEqual(filesToCheck([]), ['widgets/basic.html']);
     });
 });
+
+describe('filesFingerprint', () => {
+    let root;
+    let www;
+
+    beforeEach(() => {
+        root = createSandbox();
+        www = path.join(root, 'www');
+        addWidgetSet(path.join(www, 'widgets'), 'basic');
+        fs.writeFileSync(path.join(www, 'index.html'), '<html></html>');
+    });
+
+    afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+
+    function fingerprint(files) {
+        const { filesFingerprint } = require(path.join(root, 'build', 'lib', 'install.js'));
+        return filesFingerprint(www, files || allFiles());
+    }
+
+    function allFiles() {
+        return [
+            path.join(www, 'index.html'),
+            path.join(www, 'widgets', 'basic.html'),
+            path.join(www, 'widgets', 'basic', 'widget.js'),
+        ];
+    }
+
+    it('does not depend on the order of the files', () => {
+        assert.strictEqual(fingerprint(allFiles()), fingerprint(allFiles().reverse()));
+    });
+
+    it('changes when a file is written, even with the same size', () => {
+        const file = path.join(www, 'widgets', 'basic', 'widget.js');
+        const before = fingerprint();
+        fs.writeFileSync(file, '');
+        const time = new Date(Date.now() + 60000);
+        fs.utimesSync(file, time, time);
+        assert.notStrictEqual(fingerprint(), before);
+    });
+
+    it('changes when a file is added or its size changes', () => {
+        const before = fingerprint();
+        fs.writeFileSync(path.join(www, 'widgets', 'basic', 'widget.js'), 'new content');
+        const changed = fingerprint();
+        assert.notStrictEqual(changed, before);
+
+        const added = path.join(www, 'widgets', 'basic', 'more.js');
+        fs.writeFileSync(added, '');
+        assert.notStrictEqual(fingerprint([...allFiles(), added]), changed);
+    });
+
+    it('stays the same when nothing is written', () => {
+        assert.strictEqual(fingerprint(), fingerprint());
+    });
+});

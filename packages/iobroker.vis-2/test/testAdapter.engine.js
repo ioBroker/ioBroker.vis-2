@@ -1,3 +1,4 @@
+const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert');
 const setup = require('@iobroker/legacy-testing');
@@ -27,6 +28,33 @@ function checkConnectionOfAdapter(cb, counter) {
     });
 }
 
+function getState(id) {
+    return new Promise((resolve, reject) => states.getState(id, (err, state) => (err ? reject(err) : resolve(state))));
+}
+
+/**
+ * Wait until vis-2 has written `info.uploaded` after `after`, which it does at the end of every build that uploaded
+ *
+ * @param {number} after - the time of the last build seen
+ * @param {number} seconds - how long to wait
+ * @returns {Promise<number>} the time of the new build
+ */
+async function waitForUpload(after, seconds) {
+    for (let i = 0; i < seconds; i++) {
+        const state = await getState(`${adapterShortName}.0.info.uploaded`);
+        if (state?.val && state.ts > after) {
+            return state.ts;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    throw new Error(`${adapterShortName} did not upload its files within ${seconds} seconds`);
+}
+
+async function restartAdapter(beforeStart) {
+    await setup.stopAdapter();
+    beforeStart?.();
+    setup.startAdapter(objects, states);
+}
 
 describe(`Test ${adapterShortName} adapter`, function () {
     before(`Test ${adapterShortName} adapter: Start js-controller`, function (_done) {
@@ -83,6 +111,36 @@ describe(`Test ${adapterShortName} adapter`, function () {
         });
     });
     /**/
+
+    it(`Test ${adapterShortName} adapter: uploads a widget set again that is missing in the file storage`, async function () {
+        this.timeout(600000);
+        const lastUpload = await waitForUpload(0, 300);
+        assert(await objects.fileExists('vis-2', 'widgets/basic.html'), 'widgets/basic.html was not uploaded');
+
+        // what a restart during the upload of a new widget set left behind before #697
+        await objects.unlinkAsync('vis-2', 'widgets/basic.html');
+        await restartAdapter();
+
+        await waitForUpload(lastUpload, 300);
+        assert(await objects.fileExists('vis-2', 'widgets/basic.html'), 'widgets/basic.html was not uploaded again');
+    });
+
+    it(`Test ${adapterShortName} adapter: uploads a file again that changed on disk after the last upload`, async function () {
+        this.timeout(600000);
+        const lastUpload = await waitForUpload(0, 300);
+        const file = path.join(__dirname, '../tmp/node_modules', setup.adapterName, 'www/widgets/basic/doc.html');
+
+        // what a kill between copying a widget set into www/ and its upload leaves behind: the file storage has the
+        // old file, and nothing on disk is left to copy
+        await restartAdapter(() => fs.appendFileSync(file, '\n<!-- changed after the upload -->\n'));
+
+        await waitForUpload(lastUpload, 300);
+        const { file: data } = await objects.readFile('vis-2', 'widgets/basic/doc.html');
+        assert(
+            data.toString().includes('<!-- changed after the upload -->'),
+            'widgets/basic/doc.html was not uploaded again',
+        );
+    });
 
     /*
     PUT YOUR OWN TESTS HERE USING
