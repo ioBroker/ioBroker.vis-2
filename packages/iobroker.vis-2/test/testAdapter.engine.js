@@ -128,7 +128,7 @@ describe(`Test ${adapterShortName} adapter`, function () {
     it(`Test ${adapterShortName} adapter: uploads a file again that changed on disk after the last upload`, async function () {
         this.timeout(600000);
         const lastUpload = await waitForUpload(0, 300);
-        const file = path.join(__dirname, '../tmp/node_modules', `iobroker.${adapterShortName}`, 'www/widgets/basic/doc.html');
+        const file = path.join(__dirname, `../tmp/node_modules/iobroker.${adapterShortName}/www/widgets/basic/doc.html`);
 
         // what a kill between copying a widget set into www/ and its upload leaves behind: the file storage has the
         // old file, and nothing on disk is left to copy
