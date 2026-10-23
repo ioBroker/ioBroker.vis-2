@@ -380,6 +380,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@GermanBluefox) A formula in a binding takes a value with double quotes, e.g. JSON from iCal or MQTT like `{"connected":true}`, as the object or the text it is. The script broke on the quotes and the binding showed 0 (#45)
 * (@GermanBluefox) The runtime can go back to a view by itself when nobody has used it for a while: "Back to a view without input" in the project settings, with the view and the seconds. Every key press, click or touch starts the time anew (#13)
 * (@GermanBluefox) The jQui widgets "Write value" and "Increment with Icon" write a number into a number state and a boolean into a boolean one. Before, the value of the attribute was always written as text (#439)
 * (@GermanBluefox) vis-1 scripts and HTML widgets can call `servConn` again, e.g. `servConn.setState()` or `servConn.getStates()` (#55)

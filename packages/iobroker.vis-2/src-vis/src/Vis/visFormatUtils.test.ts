@@ -101,3 +101,52 @@ describe('getArrayIndex', () => {
         expect(getArrayIndex('nothing')).toBeNaN();
     });
 });
+
+/**
+ * A formula like `{n:0_userdata.0.json;n[0].event}` gets the value of the state as a JavaScript variable. The
+ * value has to be written into the script so that it stays what it is, whatever characters it holds.
+ */
+describe('the formula of a binding', () => {
+    const format = (binding: string, value: unknown): string => {
+        const utils = new VisFormatUtils({ vis: { editMode: false, states: {} } } as any);
+        return utils.formatBinding({
+            format: binding,
+            view: 'v',
+            wid: 'w000001',
+            widget: { tpl: '', data: {}, style: {} } as any,
+            widgetData: {},
+            values: { 'a.0.x.val': value },
+            moment: undefined,
+        });
+    };
+
+    // #45: JSON with double quotes, e.g. from iCal or MQTT, broke the script
+    it('takes JSON with double quotes as the object or the array it is', () => {
+        expect(format('{b:a.0.x;b.connected ? "on" : "off"}', '{"connected":true}')).toBe('on');
+        expect(format('{n:a.0.x;n[0].event}', '[{"date":"01.12.2022 10:30","event":"Abwesend"}]')).toBe('Abwesend');
+        expect(format('{n:a.0.x;n[0].text}', '[{"text":"a \\"quoted\\" word"}]')).toBe('a "quoted" word');
+    });
+
+    it('takes a text with quotes, backslashes or line breaks as it is', () => {
+        expect(format('{s:a.0.x;s}', 'he said "hello"')).toBe('he said "hello"');
+        expect(format('{s:a.0.x;s.length}', 'C:\\temp')).toBe('7');
+        expect(format('{s:a.0.x;s.split("\\n").length}', 'one\ntwo')).toBe('2');
+    });
+
+    it('still takes a number or a boolean written as a text as a text', () => {
+        expect(format('{s:a.0.x;typeof s}', '5')).toBe('string');
+        expect(format('{s:a.0.x;s + 1}', '5')).toBe('51');
+        expect(format('{s:a.0.x;s === "true"}', 'true')).toBe('true');
+    });
+
+    it('takes numbers, booleans and null as they are', () => {
+        expect(format('{s:a.0.x;s + 1}', 5)).toBe('6');
+        expect(format('{s:a.0.x;s ? "yes" : "no"}', false)).toBe('no');
+        expect(format('{s:a.0.x;s === null}', null)).toBe('true');
+    });
+
+    // vis-1 wrote the quotes of a formula in HTML attributes as \" - they are still meant as quotes
+    it('takes \\" in the formula as a quote', () => {
+        expect(format('{s:a.0.x;s == \\"on\\" ? \\"An\\" : \\"Aus\\"}', 'on')).toBe('An');
+    });
+});

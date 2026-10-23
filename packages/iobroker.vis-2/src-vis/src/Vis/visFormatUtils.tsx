@@ -432,17 +432,23 @@ class VisFormatUtils {
                             } else {
                                 const type = typeof value;
                                 if (type === 'string') {
+                                    let parsed: unknown = value;
                                     try {
-                                        value = JSON.parse(value);
-                                        // if array or object, we format it correctly, else it should be a string
-                                        if (typeof value === 'object') {
-                                            string += `const ${evalArgs[a].name} = JSON.parse("${JSON.stringify(value).replace(/\x22/g, '\\\x22')}");`;
-                                        } else {
-                                            string += `const ${evalArgs[a].name} = "${value}";`;
-                                        }
+                                        parsed = JSON.parse(value);
                                     } catch {
-                                        string += `const ${evalArgs[a].name} = "${value}";`;
+                                        // not JSON: the text it is
                                     }
+                                    // JSON.stringify writes a literal that JavaScript reads back as it was, whatever
+                                    // quotes, backslashes or line breaks it holds (#45). An array or an object is
+                                    // passed as such, everything else as a text.
+                                    string += `const ${evalArgs[a].name} = ${
+                                        typeof parsed === 'object'
+                                            ? JSON.stringify(parsed)
+                                            : // a number or a boolean of JSON, as a text
+                                              JSON.stringify(
+                                                  typeof parsed === 'string' ? parsed : JSON.stringify(parsed),
+                                              )
+                                    };`;
                                 } else if (type === 'object') {
                                     string += `const ${evalArgs[a].name} = ${JSON.stringify(value)};`;
                                 } else {
@@ -458,11 +464,9 @@ class VisFormatUtils {
                             w.data = widgetData;
                             string += `const widget = ${JSON.stringify(w)};`;
                         }
-                        string += `return ${operation.formula};`;
-
-                        if (string.includes('\\"')) {
-                            string = string.replace(/\\"/g, '"');
-                        }
+                        // vis-1 wrote the quotes of a formula in HTML attributes as \" - in the formula only: in the
+                        // values above, \" is a quote inside a text and must stay one
+                        string += `return ${formula?.replace(/\\"/g, '"')};`;
 
                         // string += '}())';
                         try {
