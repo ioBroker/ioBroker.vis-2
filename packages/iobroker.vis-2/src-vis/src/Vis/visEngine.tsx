@@ -216,6 +216,8 @@ declare global {
         can: any;
         app: any;
         $$: any;
+        /** The connection of vis-1, which its widgets and scripts call directly, e.g. `servConn.setState()` */
+        servConn: LegacyVisConnection;
     }
 }
 
@@ -399,6 +401,8 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
 
         window._ = this.vis._; // legacy translation function
         window.vis = this.vis;
+        // vis-1 had it as a global next to vis, and HTML widgets and scripts still call it (#55)
+        window.servConn = this.conn;
         window.translateWord = _translateWord; // legacy translation function
         window._setTimeout = (func, timeout, arg1, arg2, arg3, arg4, arg5, arg6) =>
             setTimeout(() => func(arg1, arg2, arg3, arg4, arg5, arg6), timeout);
