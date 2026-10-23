@@ -28,6 +28,7 @@ export const PROJECT_NAVIGATION_KEYS: (keyof ViewSettings)[] = [
     'navigationNoHide',
     'navigationBar',
     'navigationBarColor',
+    'navigationBarHeight',
     'navigationBack',
 ];
 
@@ -68,6 +69,23 @@ export function resolveNavigationSettings(project: Project, viewSettings: ViewSe
     }
 
     return resolved || viewSettings;
+}
+
+/** The height of the app bar if none is set, and the limits of one that is (#569) */
+export const NAVIGATION_BAR_HEIGHT = { default: 48, min: 24, max: 120 };
+
+/**
+ * The height of the app bar in px. A value that is no number takes the default, one out of range the nearest
+ * limit: a bar lower than an icon, or higher than a third of a phone screen, is a typo.
+ *
+ * @param settings - the resolved settings of the menu
+ */
+export function getNavigationBarHeight(settings: ViewSettings): number {
+    const height = parseInt(settings.navigationBarHeight as unknown as string, 10);
+    if (Number.isNaN(height)) {
+        return NAVIGATION_BAR_HEIGHT.default;
+    }
+    return Math.min(NAVIGATION_BAR_HEIGHT.max, Math.max(NAVIGATION_BAR_HEIGHT.min, height));
 }
 
 /**

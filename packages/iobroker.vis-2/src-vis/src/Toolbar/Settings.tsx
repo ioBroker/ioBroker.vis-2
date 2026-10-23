@@ -247,6 +247,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
         { type: 'checkbox', name: 'Do not hide menu', field: 'navigationNoHide' },
         { type: 'checkbox', name: 'Show app bar', field: 'navigationBar' },
         { type: 'color', name: 'App bar color', field: 'navigationBarColor' },
+        { type: 'number', name: 'App bar height', field: 'navigationBarHeight' },
         { type: 'checkbox', name: 'Show a way back', field: 'navigationBack' },
     ];
 

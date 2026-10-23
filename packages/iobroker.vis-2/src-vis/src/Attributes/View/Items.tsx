@@ -11,6 +11,7 @@ import { store } from '@/Store';
 import type { Project, View, VisTheme } from '@iobroker/types-vis-2';
 import commonStyles from '@/Utilities/styles';
 import { GRID_LAYOUT_DEFAULTS } from '@/Vis/visGridLayout';
+import { NAVIGATION_BAR_HEIGHT } from '@/Vis/visNavigationSettings';
 import { conditionNeedsValue } from '@/Vis/visConditions';
 import { ConditionSelect, ConditionValueField, StateIdField } from '@/Attributes/StateCondition';
 
@@ -824,6 +825,17 @@ export function getFields(
                     notStyle: true,
                     hidden: '!data.navigationBar',
                     applyToAll: true,
+                },
+                {
+                    type: 'slider',
+                    label: 'Bar height',
+                    attr: 'navigationBarHeight',
+                    notStyle: true,
+                    hidden: '!data.navigationBar',
+                    applyToAll: true,
+                    min: NAVIGATION_BAR_HEIGHT.min,
+                    max: NAVIGATION_BAR_HEIGHT.max,
+                    default: NAVIGATION_BAR_HEIGHT.default,
                 },
                 {
                     type: 'text',

@@ -937,6 +937,8 @@
   "Navigation menu": "Navigatiemenu",
   "navigation_project_help": "Hoe het menu eruitziet, voor alle pagina's tegelijk. Een pagina mag nog steeds iets anders zeggen; alles wat een pagina leeg laat, komt hiervandaan. Welke pagina een item heeft, hoe het heet en in welke volgorde het staat, blijft bij de pagina.",
   "App bar color": "Kleur van de applicatiebalk",
+  "App bar height": "Hoogte van de app-balk",
+  "Bar height": "Hoogte van de balk",
   "%s of %s devices": "%s van %s apparaten",
   "%s rules": "%s regels",
   "A colour per condition, the first that holds wins": "Een kleur per voorwaarde, de eerste die klopt wint",

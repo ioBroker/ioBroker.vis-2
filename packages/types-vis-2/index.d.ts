@@ -815,6 +815,7 @@ export type ProjectNavigationSettings = Pick<
     | 'navigationNoHide'
     | 'navigationBar'
     | 'navigationBarColor'
+    | 'navigationBarHeight'
     | 'navigationBack'
 >;
 
@@ -1139,6 +1140,8 @@ export interface ViewSettings {
 
     navigationBar?: boolean;
     navigationBarColor?: string;
+    /** The height of the app bar in px, 48 if not set */
+    navigationBarHeight?: number;
     navigationBarText?: string;
     navigationBarIcon?: string;
     navigationBarImage?: string;

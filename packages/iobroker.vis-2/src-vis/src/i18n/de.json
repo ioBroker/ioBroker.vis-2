@@ -1012,6 +1012,8 @@
   "Navigation menu": "Navigationsmenü",
   "navigation_project_help": "Wie das Menü aussieht, für alle Seiten auf einmal. Eine Seite darf weiterhin etwas anderes sagen; alles, was eine Seite leer lässt, kommt von hier. Welche Seite einen Eintrag hat, wie er heißt und an welcher Stelle er steht, bleibt bei der Seite.",
   "App bar color": "Farbe der Anwendungsleiste",
+  "App bar height": "Höhe der App-Leiste",
+  "Bar height": "Höhe der Leiste",
   "%s of %s devices": "%s von %s Geräten",
   "%s rules": "%s Regeln",
   "A colour per condition, the first that holds wins": "Eine Farbe je Bedingung, die erste zutreffende gewinnt",

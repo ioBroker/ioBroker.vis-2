@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { Project, ViewSettings } from '@iobroker/types-vis-2';
 
-import { getNavigationEntryStateIds, isNavigationEntryShown, resolveNavigationSettings } from './visNavigationSettings';
+import {
+    getNavigationBarHeight,
+    getNavigationEntryStateIds,
+    isNavigationEntryShown,
+    PROJECT_NAVIGATION_KEYS,
+    resolveNavigationSettings,
+} from './visNavigationSettings';
 
 /**
  * The look of the menu can be said once for the project and overruled per view.
@@ -77,6 +83,33 @@ describe('resolveNavigationSettings', () => {
         const settings = { navigation: true } as ViewSettings;
 
         expect(resolveNavigationSettings({} as Project, settings)).toBe(settings);
+    });
+});
+
+/** #569: the height of the app bar */
+describe('getNavigationBarHeight', () => {
+    it('is 48 px without a height', () => {
+        expect(getNavigationBarHeight({})).toBe(48);
+        expect(getNavigationBarHeight({ navigationBarHeight: undefined })).toBe(48);
+        expect(getNavigationBarHeight({ navigationBarHeight: '' as unknown as number })).toBe(48);
+        expect(getNavigationBarHeight({ navigationBarHeight: 'abc' as unknown as number })).toBe(48);
+    });
+
+    it('takes a height, also as text', () => {
+        expect(getNavigationBarHeight({ navigationBarHeight: 32 })).toBe(32);
+        expect(getNavigationBarHeight({ navigationBarHeight: '36' as unknown as number })).toBe(36);
+    });
+
+    it('keeps a height within 24 and 120 px', () => {
+        expect(getNavigationBarHeight({ navigationBarHeight: 0 })).toBe(24);
+        expect(getNavigationBarHeight({ navigationBarHeight: -10 })).toBe(24);
+        expect(getNavigationBarHeight({ navigationBarHeight: 24 })).toBe(24);
+        expect(getNavigationBarHeight({ navigationBarHeight: 120 })).toBe(120);
+        expect(getNavigationBarHeight({ navigationBarHeight: 500 })).toBe(120);
+    });
+
+    it('can be set for the whole project', () => {
+        expect(PROJECT_NAVIGATION_KEYS).toContain('navigationBarHeight');
     });
 });
 
