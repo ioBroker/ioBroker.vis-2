@@ -432,8 +432,14 @@ export class VisRxWidget<
                 const newState = this.newState ?? null;
                 this.newState = null;
                 if (newState) {
-                    this.pendingValues = newState.values || null;
-                    this.setState(newState as VisRxWidgetState & TState & { rxData: TRxData });
+                    const pendingValues = newState.values || null;
+                    this.pendingValues = pendingValues;
+                    // in the callback, not in componentDidUpdate: some widgets override that without calling super
+                    this.setState(newState as VisRxWidgetState & TState & { rxData: TRxData }, () => {
+                        if (this.pendingValues === pendingValues) {
+                            this.pendingValues = null;
+                        }
+                    });
                 }
             }, 50);
         } else {
@@ -574,9 +580,6 @@ export class VisRxWidget<
     componentDidUpdate(_prevProps: VisRxWidgetProps, prevState: typeof this.state): void {
         // the base class ends a gesture here, so it must not be cut off
         super.componentDidUpdate();
-        if (this.pendingValues && this.state.values === this.pendingValues) {
-            this.pendingValues = null;
-        }
         if (prevState) {
             if (JSON.stringify(this.state.rxData) !== JSON.stringify(prevState.rxData)) {
                 this.onRxDataChanged(prevState.rxData);

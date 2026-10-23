@@ -23,11 +23,16 @@ function createWidget(): {
     widget.updateMarksRect = () => {};
     widget.onRxDataChanged = () => {};
     widget.onRxStyleChanged = () => {};
-    widget.setState = (state: any) => setStates.push(state);
+    const callbacks: ((() => void) | undefined)[] = [];
+    widget.setState = (state: any, callback?: () => void) => {
+        setStates.push(state);
+        callbacks.push(callback);
+    };
     const commit = (): void => {
         const prevState = widget.state;
         widget.state = { ...widget.state, ...setStates.shift() };
         widget.componentDidUpdate(widget.props, prevState);
+        callbacks.shift()?.();
     };
     return { widget, setStates, commit };
 }
@@ -74,6 +79,19 @@ describe('VisRxWidget.onStateChanged', () => {
 
         expect(setStates[0].values['a.0.other.val']).toBe('x');
         expect(setStates[0].values['a.0.number.val']).toBe(2);
+    });
+
+    // JQuiButton, JQuiBinaryState and JQuiInput override componentDidUpdate without calling super
+    it('forgets the pending values once React applied them, even if componentDidUpdate does not call super', () => {
+        const { widget, commit } = createWidget();
+        widget.componentDidUpdate = () => {};
+
+        widget.onStateChanged('a.0.number', { val: 1, ack: true });
+        vi.advanceTimersByTime(60);
+        expect(widget.pendingValues).not.toBeNull();
+        commit();
+
+        expect(widget.pendingValues).toBeNull();
     });
 
     it('applies nothing for a change that changes nothing', () => {
