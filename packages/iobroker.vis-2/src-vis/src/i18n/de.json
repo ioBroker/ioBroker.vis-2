@@ -989,6 +989,8 @@
   "help_section_cells": "Nur für die Zellen dieses Abschnitts. Leer übernimmt den Wert der Seite.",
   "help_section_groups": "Der Abschnitt wird nur den Mitgliedern dieser Gruppen gezeigt.",
   "help_section_visibility_state": "Der Abschnitt wird nur angezeigt, solange dieser Datenpunkt die Bedingung erfüllt. Der Editor zeigt einen ausgeblendeten Abschnitt abgeblendet.",
+  "Entry only if state": "Eintrag nur wenn Zustand",
+  "help_navigation_entry_state": "Der Eintrag dieser Seite steht nur im Menü, solange dieser Zustand die Bedingung erfüllt.",
   "help_section_collapsible": "In der Runtime klappt ein Klick auf die Kopfzeile den Abschnitt auf und zu. Der Browser merkt sich die Wahl.",
   "help_section_expand_state": "Der Abschnitt klappt auf, solange dieser Datenpunkt die Bedingung erfüllt, und zu, wenn nicht. Ein Klick auf die Kopfzeile klappt ihn trotzdem auf und zu, bis sich der Datenpunkt ändert.",
   "help_view_display": "Nur für die Widgets mit relativer Position im Spalten-Layout. Das Raster mit Abschnitten ordnet sie selbst an.",

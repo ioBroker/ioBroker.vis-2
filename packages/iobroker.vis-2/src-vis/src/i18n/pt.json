@@ -914,6 +914,8 @@
   "help_section_cells": "Só para as células desta seção. Vazio usa o valor da página.",
   "help_section_groups": "A seção só é mostrada aos membros destes grupos.",
   "help_section_visibility_state": "A seção só é mostrada enquanto este estado cumpre a condição. O editor mostra uma seção oculta esbatida.",
+  "Entry only if state": "Entrada só se o estado",
+  "help_navigation_entry_state": "A entrada desta página só aparece no menu enquanto este estado cumprir a condição.",
   "help_section_collapsible": "No runtime um clique no cabeçalho abre e fecha a seção. O navegador lembra-se da escolha.",
   "help_section_expand_state": "A seção abre enquanto este estado cumpre a condição e fecha quando não cumpre. Um clique no cabeçalho continua a abri-la e fechá-la até o estado mudar.",
   "help_view_display": "Só para os widgets com posição relativa no layout de colunas. A grelha com seções organiza-os sozinha.",

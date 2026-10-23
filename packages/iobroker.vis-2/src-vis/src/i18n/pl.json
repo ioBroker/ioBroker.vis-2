@@ -914,6 +914,8 @@
   "help_section_cells": "Tylko dla komórek tej sekcji. Puste przejmuje wartość widoku.",
   "help_section_groups": "Sekcja jest pokazywana tylko członkom tych grup.",
   "help_section_visibility_state": "Sekcja jest pokazywana tylko, dopóki ten stan spełnia warunek. Edytor pokazuje ukrytą sekcję przyciemnioną.",
+  "Entry only if state": "Pozycja tylko gdy stan",
+  "help_navigation_entry_state": "Pozycja tej strony jest w menu tylko, dopóki ten stan spełnia warunek.",
   "help_section_collapsible": "W runtime kliknięcie nagłówka rozwija i zwija sekcję. Przeglądarka zapamiętuje wybór.",
   "help_section_expand_state": "Sekcja rozwija się, dopóki ten stan spełnia warunek, i zwija, gdy nie. Kliknięcie nagłówka i tak ją rozwija i zwija, dopóki stan się nie zmieni.",
   "help_view_display": "Tylko dla widżetów z pozycją względną w układzie kolumn. Siatka z sekcjami układa je sama.",

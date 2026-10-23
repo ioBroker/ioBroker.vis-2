@@ -914,6 +914,8 @@
   "help_section_cells": "仅用于此分区的单元格。留空则使用视图的值。",
   "help_section_groups": "该分区仅向这些组的成员显示。",
   "help_section_visibility_state": "仅当该状态满足条件时才显示分区。编辑器会以变暗的方式显示被隐藏的分区。",
+  "Entry only if state": "仅当状态满足时显示条目",
+  "help_navigation_entry_state": "仅当此状态满足条件时，此页面的条目才会出现在菜单中。",
   "help_section_collapsible": "在运行时，点击标题栏可展开和折叠分区。浏览器会记住该选择。",
   "help_section_expand_state": "当该状态满足条件时分区展开，否则折叠。在状态改变之前，点击标题栏仍可展开和折叠它。",
   "help_view_display": "仅适用于列布局中相对定位的小部件。带分区的网格会自行排列它们。",

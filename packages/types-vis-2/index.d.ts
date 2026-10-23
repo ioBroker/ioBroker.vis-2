@@ -1098,6 +1098,10 @@ export interface ViewSettings {
     navigation?: boolean;
     /** The view shows the navigation menu, but has no entry of its own in it */
     navigationHideEntry?: boolean;
+    /** The entry of the view is in the menu only while this state fulfills `navigationEntryCond` with `navigationEntryVal` */
+    navigationEntryOid?: string | null;
+    navigationEntryCond?: VisStateCondition | null;
+    navigationEntryVal?: string | number | boolean | null;
     navigationTitle?: string;
     navigationOrder?: number;
     navigationIcon?: string;
