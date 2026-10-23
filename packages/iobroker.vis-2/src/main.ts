@@ -97,6 +97,8 @@ class VisAdapter extends Adapter {
     private visWidgetInstances: VisWidgetInstance[] = [];
     /** The adapters with widgets of the last build - what `generateConfigPage` needs to run on its own */
     private enabledList: { path: string; name: string; pack: ioBroker.AdapterObject }[] = [];
+    /** The vis-1 widget sets in `widgets.html` of the last build, in their order - `config.js` names them */
+    private widgetsHtmlSets: string[] = [];
     /** The fingerprint of www/ at which a widget file was still missing in the file storage after the upload */
     private repairFailedFor: string | null = null;
     private stoppingPromise: null | (() => void) = null;
@@ -311,6 +313,11 @@ class VisAdapter extends Adapter {
         this.synchronizing = true;
         const enabledList = await this.readAdapterList();
         this.enabledList = enabledList;
+
+        // before config.js, which names the sets of widgets.html
+        const { widgetSets, filesChanged } = syncWidgetSets(enabledList, forceBuild);
+        this.widgetsHtmlSets = widgetSets.filter(set => !set.v2).map(set => set.name);
+
         const configChanged = await this.generateConfigPage(forceBuild, enabledList);
 
         this.widgetInstances = {};
@@ -319,7 +326,6 @@ class VisAdapter extends Adapter {
                 (this.widgetInstances[instance.name.substring('iobroker.'.length)] = instance.pack?.common?.version),
         );
 
-        const { widgetSets, filesChanged } = syncWidgetSets(enabledList, forceBuild);
         const widgetsChanged = await this.generateWidgetsHtml(widgetSets, forceBuild);
 
         let uploadedIndexHtml: string | null;
@@ -521,16 +527,11 @@ class VisAdapter extends Adapter {
 
         // collect vis-1 widgets
         enabledList.forEach(obj => {
-            if (!obj.pack.common.visWidgets) {
-                // find folder in widgets
-                let widgetsPath = `${__dirname}/../node_modules/${obj.name}/widgets`;
-                if (!existsSync(widgetsPath)) {
-                    widgetsPath = `${__dirname}/../${obj.name}/widgets`;
-                    if (!existsSync(widgetsPath)) {
-                        widgetsPath = '';
-                    }
-                }
-                if (widgetsPath) {
+            if (!obj.pack?.common?.visWidgets) {
+                // where the adapter was found - this looked next to `main.js` before, which is in `build/` now,
+                // and found none of them
+                const widgetsPath = `${obj.path}/widgets`;
+                if (existsSync(widgetsPath)) {
                     readdirSync(widgetsPath).forEach(file => {
                         if (file.match(/\.html$/)) {
                             const folderName = file.replace('.html', '');
@@ -553,7 +554,9 @@ window.loadingHideLogo = '${this.visConfig.loadingHideLogo ? 'true' : ''}';
 window.visWidgetInstances = ${JSON.stringify(this.visWidgetInstances)};
 // for back compatibility with vis.1 on cloud
 window.visConfig = {
-    "widgetSets": ${JSON.stringify(widgetSets)}
+    "widgetSets": ${JSON.stringify(widgetSets)},
+    // the vis-1 sets in widgets.html, in its order: the cloud puts the file together out of its own copies
+    "widgetsHtml": ${JSON.stringify(this.widgetsHtmlSets)}
 };
 if (typeof exports !== 'undefined') {
     exports.config = visConfig;
