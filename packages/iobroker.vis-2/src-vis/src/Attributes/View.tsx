@@ -223,7 +223,13 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
     }
 
     const fields = useMemo(
-        () => (view ? getFields(resolutionSelect, view, props.selectedView, props.editMode, props.changeProject) : []),
+        () =>
+            view
+                ? getFields(resolutionSelect, view, props.selectedView, props.editMode, props.changeProject, {
+                      socket: props.socket,
+                      theme: props.theme,
+                  })
+                : [],
         // sizex/sizey are listed explicitly, so the fields are rebuilt if only the view size changed
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
@@ -234,6 +240,8 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
             props.selectedView,
             props.editMode,
             props.changeProject,
+            props.socket,
+            props.theme,
         ],
     );
 

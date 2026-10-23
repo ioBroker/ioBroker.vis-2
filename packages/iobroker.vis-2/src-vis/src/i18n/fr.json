@@ -912,6 +912,8 @@
   "help_section_cells": "Seulement pour les cellules de cette section. Vide reprend la valeur de la vue.",
   "help_section_groups": "La section n'est montrée qu'aux membres de ces groupes.",
   "help_section_visibility_state": "La section n'est affichée que tant que cet état remplit la condition. L'éditeur montre une section masquée estompée.",
+  "Entry only if state": "Entrée seulement si état",
+  "help_navigation_entry_state": "L’entrée de cette page n’apparaît dans le menu que tant que cet état remplit la condition.",
   "help_section_collapsible": "Dans le runtime, un clic sur l'en-tête ouvre et ferme la section. Le navigateur retient le choix.",
   "help_section_expand_state": "La section s'ouvre tant que cet état remplit la condition et se ferme sinon. Un clic sur l'en-tête l'ouvre et la ferme quand même jusqu'au changement de l'état.",
   "help_view_display": "Seulement pour les widgets en position relative dans la mise en page en colonnes. La grille avec sections les dispose elle-même.",

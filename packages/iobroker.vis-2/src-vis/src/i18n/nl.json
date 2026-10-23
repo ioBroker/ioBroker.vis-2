@@ -912,6 +912,8 @@
   "help_section_cells": "Alleen voor de cellen van deze sectie. Leeg neemt de waarde van de weergave.",
   "help_section_groups": "De sectie wordt alleen aan de leden van deze groepen getoond.",
   "help_section_visibility_state": "De sectie wordt alleen getoond zolang deze toestand aan de voorwaarde voldoet. De editor toont een verborgen sectie gedimd.",
+  "Entry only if state": "Item alleen als status",
+  "help_navigation_entry_state": "Het item van deze pagina staat alleen in het menu zolang deze status aan de voorwaarde voldoet.",
   "help_section_collapsible": "In de runtime opent en sluit een klik op de kop de sectie. De browser onthoudt de keuze.",
   "help_section_expand_state": "De sectie opent zolang deze toestand aan de voorwaarde voldoet en sluit als dat niet zo is. Een klik op de kop opent en sluit haar toch, tot de toestand verandert.",
   "help_view_display": "Alleen voor de widgets met relatieve positie in de kolomindeling. Het raster met secties schikt ze zelf.",

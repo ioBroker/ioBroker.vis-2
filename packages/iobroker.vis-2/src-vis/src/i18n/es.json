@@ -912,6 +912,8 @@
   "help_section_cells": "Solo para las celdas de esta sección. Vacío toma el valor de la vista.",
   "help_section_groups": "La sección solo se muestra a los miembros de estos grupos.",
   "help_section_visibility_state": "La sección solo se muestra mientras este estado cumple la condición. El editor muestra atenuada una sección oculta.",
+  "Entry only if state": "Entrada solo si estado",
+  "help_navigation_entry_state": "La entrada de esta página solo está en el menú mientras este estado cumpla la condición.",
   "help_section_collapsible": "En el runtime, un clic en el encabezado abre y cierra la sección. El navegador recuerda la elección.",
   "help_section_expand_state": "La sección se abre mientras este estado cumple la condición y se cierra cuando no. Un clic en el encabezado la sigue abriendo y cerrando hasta que el estado cambie.",
   "help_view_display": "Solo para los widgets con posición relativa en el diseño de columnas. La cuadrícula con secciones los ordena sola.",
