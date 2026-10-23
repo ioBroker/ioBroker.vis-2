@@ -38,10 +38,11 @@ function mayUse(project: Project, view: string, id: AnyWidgetId, user: ServiceUs
  * see, with the same permissions the runtime applies when it renders them.
  *
  * @param project - the project
- * @param adapter - the adapter that brings the set; its widgets carry it as `widgetSet`
+ * @param setNames - the names the widgets of the set carry as `widgetSet`: the adapter, and the key and the name of the
+ *   collection in `common.visWidgets` (see `getCollectionSetNames`)
  * @param user - who looks at the runtime
  */
-export function getServiceWidgets(project: Project, adapter: string, user: ServiceUser): VisServiceWidget[] {
+export function getServiceWidgets(project: Project, setNames: string[], user: ServiceUser): VisServiceWidget[] {
     const result: VisServiceWidget[] = [];
     if (!hasProjectAccess({ project, user: user.permissionsName, editMode: false })) {
         return result;
@@ -57,7 +58,7 @@ export function getServiceWidgets(project: Project, adapter: string, user: Servi
         const widgets = project[view].widgets;
         for (const id of Object.keys(widgets) as AnyWidgetId[]) {
             const widget = widgets[id];
-            if (widget.widgetSet !== adapter || !mayUse(project, view, id, user)) {
+            if (!widget.widgetSet || !setNames.includes(widget.widgetSet) || !mayUse(project, view, id, user)) {
                 continue;
             }
             // the member of a group is only rendered with its group

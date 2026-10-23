@@ -67,7 +67,7 @@ interface VisServicesProps {
 }
 
 export default class VisServices extends Component<VisServicesProps> {
-    /** The widgets of each adapter, so that a service gets the same array while the project and the user stay */
+    /** The widgets of each set, so that a service gets the same array while the project and the user stay */
     private widgetsCache = new Map<string, { key: unknown[]; widgets: VisServiceWidget[] }>();
 
     /** The engine renders often; the services only care about these */
@@ -85,15 +85,16 @@ export default class VisServices extends Component<VisServicesProps> {
         );
     }
 
-    private getWidgets(adapter: string): VisServiceWidget[] {
+    private getWidgets(service: VisServiceWithInfo): VisServiceWidget[] {
         const { project, permissionsName, user, userGroups } = this.props;
         const key = [project, permissionsName, user, userGroups];
-        const cached = this.widgetsCache.get(adapter);
+        const cacheKey = service.setNames.join('|');
+        const cached = this.widgetsCache.get(cacheKey);
         if (cached?.key.every((value, i) => value === key[i])) {
             return cached.widgets;
         }
-        const widgets = getServiceWidgets(project, adapter, { permissionsName, id: user, userGroups });
-        this.widgetsCache.set(adapter, { key, widgets });
+        const widgets = getServiceWidgets(project, service.setNames, { permissionsName, id: user, userGroups });
+        this.widgetsCache.set(cacheKey, { key, widgets });
         return widgets;
     }
 
@@ -109,7 +110,7 @@ export default class VisServices extends Component<VisServicesProps> {
                             name={name}
                         >
                             <Service
-                                widgets={this.getWidgets(service.adapter)}
+                                widgets={this.getWidgets(service)}
                                 adapter={service.adapter}
                                 socket={this.props.socket}
                                 user={this.props.user}

@@ -59,11 +59,11 @@ function project(): Project {
 }
 
 const extensions = (user: ServiceUser, data = project()): string[] =>
-    getServiceWidgets(data, 'intercom', user).map(widget => widget.data.extension);
+    getServiceWidgets(data, ['intercom'], user).map(widget => widget.data.extension);
 
 describe('getServiceWidgets', () => {
     it('collects the widgets of the set in all views', () => {
-        const widgets = getServiceWidgets(project(), 'intercom', anna);
+        const widgets = getServiceWidgets(project(), ['intercom'], anna);
         expect(widgets.map(widget => widget.data.extension)).toEqual(['100', '101', '102', '103', '104', '105']);
         expect(widgets[0]).toEqual({
             view: 'door',
@@ -71,7 +71,14 @@ describe('getServiceWidgets', () => {
             tpl: 'tplAsteriskPhone',
             data: { extension: '100' },
         });
-        expect(getServiceWidgets(project(), 'basic', anna).map(widget => widget.id)).toEqual(['w000002']);
+        expect(getServiceWidgets(project(), ['basic'], anna).map(widget => widget.id)).toEqual(['w000002']);
+    });
+
+    // #691: a set may be named by its collection, so the widgets of every name of the set count
+    it('collects the widgets of every name of the set', () => {
+        expect(getServiceWidgets(project(), ['vis2IntercomWidgets'], anna)).toEqual([]);
+        expect(getServiceWidgets(project(), ['vis2IntercomWidgets', 'intercom'], anna)).toHaveLength(6);
+        expect(getServiceWidgets(project(), ['intercom', 'basic'], anna)).toHaveLength(7);
     });
 
     it('leaves out what the user may not see', () => {

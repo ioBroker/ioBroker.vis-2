@@ -186,9 +186,9 @@ export interface VisServiceWidget {
  */
 export interface VisServiceProps {
     /**
-     * The widgets of the set (their `widgetSet` is the adapter) in all views of the project that the user may see: with
-     * read permission for the project, the view and the widget, and not excluded by `visibility-groups`. Changes with
-     * the project.
+     * The widgets of the set in all views of the project that the user may see: with read permission for the project,
+     * the view and the widget, and not excluded by `visibility-groups`. Changes with the project. Their `widgetSet` is
+     * one of the names of the set: the adapter, or the key or the `name` of its collection in `common.visWidgets`.
      */
     widgets: VisServiceWidget[];
     /** Adapter that brings the set */

@@ -25,6 +25,7 @@ import {
     type IncompatibleWidgetSet,
 } from './visWidgetSetCompatibility';
 import { getRemoteEntryUrl, preloadModule, preloadWidgetSet } from './visPreloadWidgetSet';
+import { getCollectionSetNames, isCollectionUsed } from './visWidgetSetNames';
 
 export type WidgetSetName = Branded<string, 'WidgetSetName'>;
 export type PromiseName = `_promise_${WidgetSetName}`;
@@ -52,10 +53,12 @@ export interface VisRxWidgetWithInfo<
 
 /** A background service of a widget set, see `VisServiceProps` */
 export interface VisServiceWithInfo {
-    /** Adapter that brings the set; the widgets of the set carry it as `widgetSet` */
+    /** Adapter that brings the set */
     adapter: string;
     /** Name of the widget set, the federation remote */
     set: string;
+    /** The names the widgets of the set carry as `widgetSet`, see {@link getCollectionSetNames} */
+    setNames: string[];
     /** Name of the exposed module, as listed in `services` */
     name: string;
     Component: ComponentType<VisServiceProps>;
@@ -105,6 +108,8 @@ interface VisLoadComponentContext {
     result: VisRxWidgetWithInfo<any>[];
     /** The background services of the sets */
     services: VisServiceWithInfo[];
+    /** The names the widgets of the collection carry as `widgetSet` */
+    setNames: string[];
     /** Report that the remote of the set failed, see {@link reportLoadError} */
     onLoadError: (error: unknown) => void;
 }
@@ -212,6 +217,7 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
                         context.services.push({
                             adapter,
                             set: context.visWidgetsCollection.name,
+                            setNames: context.setNames,
                             name,
                             Component: module.default,
                         });
@@ -232,6 +238,11 @@ function _loadComponentHelper(context: VisLoadComponentContext): Promise<void[]>
     }
 
     return Promise.all(promises);
+}
+
+/** The adapter of an instance, e.g. `vis-2-widgets-material` for `system.adapter.vis-2-widgets-material.0` */
+function getAdapterName(instance: ioBroker.InstanceObject): string {
+    return instance._id.substring('system.adapter.'.length).replace(/\.\d*$/, '');
 }
 
 function getText(text: string | ioBroker.StringOrTranslated): string {
@@ -303,9 +314,21 @@ function getRemoteWidgets(
                 if (obj.common.visWidgets) {
                     // @ts-expect-error deprecated, but we still check it
                     const ignoreVersions: number[] = obj.common.visWidgets.ignoreInVersions || [];
-                    return (
-                        !ignoreVersions.includes(2) &&
-                        (!onlyWidgetSets || onlyWidgetSets.includes(getText(obj.common.name)))
+                    if (ignoreVersions.includes(2)) {
+                        return false;
+                    }
+                    if (!onlyWidgetSets || onlyWidgetSets.includes(getText(obj.common.name))) {
+                        return true;
+                    }
+                    // a set may be named by its collection too, not only by the adapter (#691)
+                    const visWidgets = obj.common.visWidgets as Record<string, VisWidgetCollection>;
+                    return Object.keys(visWidgets).some(
+                        key =>
+                            key !== 'i18n' &&
+                            isCollectionUsed(
+                                getCollectionSetNames(getAdapterName(obj), key, visWidgets[key]?.name),
+                                onlyWidgetSets,
+                            ),
                     );
                 }
                 // It is only icon set, and they must not be loaded in runtime
@@ -333,6 +356,21 @@ function getRemoteWidgets(
                         if (
                             Array.isArray(visWidgetsCollection.ignoreInVersions) &&
                             visWidgetsCollection.ignoreInVersions.includes(2)
+                        ) {
+                            continue;
+                        }
+
+                        const setNames = getCollectionSetNames(
+                            getAdapterName(dynamicWidgetInstance),
+                            widgetSetName,
+                            visWidgetsCollection.name,
+                        );
+                        // of an adapter with several sets, only those the project uses (#691). A project that uses
+                        // the adapter itself as the set gets all of them, as before
+                        if (
+                            onlyWidgetSets &&
+                            !onlyWidgetSets.includes(getText(dynamicWidgetInstance.common.name)) &&
+                            !isCollectionUsed(setNames, onlyWidgetSets)
                         ) {
                             continue;
                         }
@@ -397,6 +435,7 @@ function getRemoteWidgets(
                                                     i18nPrefix,
                                                     result,
                                                     services,
+                                                    setNames,
                                                     onLoadError,
                                                 });
                                             }

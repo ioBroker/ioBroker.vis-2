@@ -319,10 +319,14 @@ in `io-package.json`:
 The runtime renders every service once, next to the views, as long as the project is open - not in the editor. It gets
 the props `VisServiceProps` of `@iobroker/types-vis-2`:
 
-- `widgets` - the widgets of the set (their `widgetSet` is the adapter) in all views of the project that the user may
+- `widgets` - the widgets of the set (their `widgetSet` is one of the names of the set, see below) in all views of the project that the user may
   see: with read permission for the project, the view and the widget, and not excluded by `visibility-groups`. Each is
   `{ view, id, tpl, data }`, with `data` as stored in the project - the bindings are not resolved.
 - `adapter`, `socket`, `user` (without `system.user.`), `lang` and `changeView(view)`.
+
+The `visSet` that the widgets of a set return in `getWidgetInfo()` names the set; the runtime loads only the sets the
+project uses. A set may be named after the adapter, or after the key or the `name` of its collection in `visWidgets` -
+so one adapter can bring several sets, each with its own `visSet`.
 
 A service is only loaded with its set, i.e. if the project uses a widget of the set. A crashing service is left out,
 the views and the other services go on.
@@ -381,6 +385,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 ## Changelog
 ### **WORK IN PROGRESS**
 * (@GermanBluefox) A formula in a binding takes a value with double quotes, e.g. JSON from iCal or MQTT like `{"connected":true}`, as the object or the text it is. The script broke on the quotes and the binding showed 0 (#45)
+* (@GermanBluefox) An adapter can bring several vis-2 widget sets: the `visSet` of a widget may be the key or the `name` of its collection in `common.visWidgets`, not only the adapter. Before, the runtime loaded only a set named like its adapter, and the widgets of any other set showed up as unknown (#691)
 * (@GermanBluefox) The runtime can go back to a view by itself when nobody has used it for a while: "Back to a view without input" in the project settings, with the view and the seconds. Every key press, click or touch starts the time anew (#13)
 * (@GermanBluefox) The jQui widgets "Write value" and "Increment with Icon" write a number into a number state and a boolean into a boolean one. Before, the value of the attribute was always written as text (#439)
 * (@GermanBluefox) vis-1 scripts and HTML widgets can call `servConn` again, e.g. `servConn.setState()` or `servConn.getStates()` (#55)
