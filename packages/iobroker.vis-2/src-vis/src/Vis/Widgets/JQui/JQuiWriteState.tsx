@@ -28,6 +28,7 @@ import type {
 } from '@iobroker/types-vis-2';
 
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
+import { toStateType } from './stateValue';
 
 type RxData = {
     oid: string;
@@ -54,6 +55,7 @@ type RxData = {
 
 interface JQuiWriteStateState extends VisRxWidgetState {
     value: string | number;
+    /** `common.type` of the state a click writes, or null if it is not known */
     valueType: string | null;
 }
 
@@ -281,6 +283,7 @@ class JQuiWriteState<
 
     async componentDidMount(): Promise<void> {
         super.componentDidMount();
+        void this.readValueType();
         if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
             try {
                 const state = await this.props.context.socket.getState(this.state.rxData.oid);
@@ -310,6 +313,30 @@ class JQuiWriteState<
             if (this.state.value !== value.toString()) {
                 this.setState({ value: value.toString() });
             }
+        }
+    }
+
+    onRxDataChanged(prevRxData: typeof this.state.rxData): void {
+        super.onRxDataChanged(prevRxData);
+        if (prevRxData.oid !== this.state.rxData.oid || prevRxData.click_id !== this.state.rxData.click_id) {
+            void this.readValueType();
+        }
+    }
+
+    /** Reads the type of the state a click writes, so that the value goes in as that type and not as text (#439) */
+    async readValueType(): Promise<void> {
+        const oid = this.getControlOid();
+        let valueType: string | null = null;
+        if (oid) {
+            try {
+                const obj = await this.props.context.socket.getObject(oid);
+                valueType = (obj as ioBroker.StateObject | null | undefined)?.common?.type || null;
+            } catch {
+                // a local_ state or an ID without an object: the value is written as it is
+            }
+        }
+        if (oid === this.getControlOid() && valueType !== this.state.valueType) {
+            this.setState({ valueType });
         }
     }
 
@@ -365,11 +392,7 @@ class JQuiWriteState<
 
         const oid = this.getControlOid();
         if (oid) {
-            if (this.state.valueType === 'number') {
-                this.props.context.setValue(oid, parseFloat(value));
-            } else {
-                this.props.context.setValue(oid, value);
-            }
+            this.props.context.setValue(oid, toStateType(value, this.state.valueType));
         }
         this.setState({ value });
     }
