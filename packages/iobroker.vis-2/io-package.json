@@ -286,6 +286,18 @@
       "native": {}
     },
     {
+      "_id": "info.uploadedFingerprint",
+      "type": "state",
+      "common": {
+        "name": "Fingerprint of the uploaded files",
+        "type": "string",
+        "role": "text",
+        "read": true,
+        "write": false
+      },
+      "native": {}
+    },
+    {
       "_id": "control",
       "type": "channel",
       "common": {

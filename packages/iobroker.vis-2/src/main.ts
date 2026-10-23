@@ -13,7 +13,7 @@ import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSy
 import { normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
-import { syncWidgetSets, widgetFilesToCheck } from './lib/install';
+import { filesFingerprint, syncWidgetSets, widgetFilesToCheck } from './lib/install';
 import { VIS_AI_FIELDS, type AiConfigSlice } from './lib/ai';
 
 function loadIoPack(): ioBroker.AdapterObject {
@@ -97,6 +97,8 @@ class VisAdapter extends Adapter {
     private visWidgetInstances: VisWidgetInstance[] = [];
     /** The adapters with widgets of the last build - what `generateConfigPage` needs to run on its own */
     private enabledList: { path: string; name: string; pack: ioBroker.AdapterObject }[] = [];
+    /** The fingerprint of www/ at which a widget file was still missing in the file storage after the upload */
+    private repairFailedFor: string | null = null;
     private stoppingPromise: null | (() => void) = null;
     private isLicenseError = false;
     private lastProgressUpdate: number = 0;
@@ -358,17 +360,33 @@ class VisAdapter extends Adapter {
             uploadedEditHtml = '';
         }
 
-        if (
+        // the files on disk at the last upload that ran through: a stop or a kill on the way leaves the old one, even
+        // when the files were copied before the upload started
+        const fingerprint = filesFingerprint(wwwDir, this.walk(wwwDir));
+        const uploadedFingerprint = (await this.getStateAsync('info.uploadedFingerprint'))?.val;
+
+        const uploadNeeded =
             configChanged ||
             widgetsChanged ||
             filesChanged ||
             uploadedIndexHtml !== indexHtml ||
             uploadedEditHtml !== editHtml ||
             forceBuild ||
-            (await this.widgetFilesMissing(widgetSets, enabledList))
-        ) {
+            fingerprint !== uploadedFingerprint;
+
+        let missingFile: string | null = null;
+        if (!uploadNeeded && this.repairFailedFor !== fingerprint) {
+            missingFile = await this.missingWidgetFile(widgetSets, enabledList);
+            if (missingFile) {
+                this.log.info(`${missingFile} is missing in the file storage, uploading the widgets again`);
+            }
+        }
+
+        if (uploadNeeded || missingFile) {
+            let uploaded = false;
             try {
                 await this.uploadAdapter();
+                uploaded = true;
             } catch (e) {
                 this.log.error(`Could not upload adapter: ${e.message}`);
             }
@@ -384,6 +402,21 @@ class VisAdapter extends Adapter {
             }
 
             await this.setState('info.uploaded', Date.now(), true);
+
+            if (uploaded) {
+                await this.setState('info.uploadedFingerprint', fingerprint, true);
+
+                // A file the upload could not write would start the next upload at every rebuild, and a rebuild
+                // follows every change of a widget adapter. One more try only when the files change, or at the next
+                // start.
+                missingFile = await this.missingWidgetFile(widgetSets, enabledList);
+                if (missingFile) {
+                    this.repairFailedFor = fingerprint;
+                    this.log.warn(
+                        `${missingFile} is still missing in the file storage after the upload. The widget set will not be shown. Run "iobroker upload vis-2" or check the file storage`,
+                    );
+                }
+            }
         } else {
             const state = await this.getStateAsync('info.uploaded');
             if (state?.val == null) {
@@ -404,19 +437,20 @@ class VisAdapter extends Adapter {
     /**
      * The files on disk can be complete while the file storage lacks some of them: a restart stopped the
      * upload, and the next start found nothing to copy. Then the browser gets a 404 for the widget set.
+     *
+     * @returns the first file of the widget sets that the file storage lacks, null if it has them all
      */
-    async widgetFilesMissing(
+    async missingWidgetFile(
         widgetSets: { name: string }[],
         enabledList: { pack: ioBroker.AdapterObject }[],
-    ): Promise<boolean> {
+    ): Promise<string | null> {
         for (const file of widgetFilesToCheck(widgetSets, enabledList)) {
             // an error of the file storage is no reason for an upload, which would fail the same way
             if (!(await this.fileExistsAsync('vis-2', file).catch(() => true))) {
-                this.log.info(`${file} is missing in the file storage, uploading the widgets again`);
-                return true;
+                return file;
             }
         }
-        return false;
+        return null;
     }
 
     async generateWidgetsHtml(widgetSets: { name: string; v2: boolean }[], forceBuild: boolean): Promise<boolean> {
