@@ -622,6 +622,8 @@
   "jqui_active_color": "Active color",
   "jqui_ampm": "Am/Pm",
   "jqui_asDate": "As date",
+  "jqui_dateTimeFormat": "Format of the value",
+  "jqui_withDate": "With date",
   "jqui_asFullDate": "Usage of full parseable date",
   "jqui_as_string": "As string",
   "jqui_auto": "auto",

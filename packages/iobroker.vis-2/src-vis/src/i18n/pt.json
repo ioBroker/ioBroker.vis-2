@@ -547,6 +547,8 @@
   "jqui_active_color": "Cor ativa",
   "jqui_ampm": "Manhã tarde",
   "jqui_asDate": "Como data",
+  "jqui_dateTimeFormat": "Formato do valor",
+  "jqui_withDate": "Com data",
   "jqui_asFullDate": "Uso de data analisável completa",
   "jqui_as_string": "Como corda",
   "jqui_auto": "auto",

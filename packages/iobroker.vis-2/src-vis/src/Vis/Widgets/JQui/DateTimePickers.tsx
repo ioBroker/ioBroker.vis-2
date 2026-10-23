@@ -21,7 +21,7 @@
 import React from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 
-import { DatePicker, TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker, DateTimePicker, TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/de';
 import 'dayjs/locale/en';
@@ -37,6 +37,7 @@ import 'dayjs/locale/nl';
 
 import type { TextFieldVariants } from '@mui/material';
 
+import { formatDateTime, parseDateTime } from './dateTimeValue';
 import { WrittenValues } from './writtenValues';
 
 const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
@@ -203,6 +204,59 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
                                 : newValue.second(0).millisecond(0).toDate().toString()
                             : null,
                     );
+                }}
+                slotProps={{
+                    textField: {
+                        variant: props.variant || 'standard',
+                        style: {
+                            width: '100%',
+                            height: '100%',
+                        },
+                        sx: styles.textRoot,
+                    },
+                    field: {
+                        clearable: props.clearable,
+                        onClear: () => change(null, ''),
+                    },
+                }}
+            />
+        </LocalizationProvider>
+    );
+}
+
+export interface VisDateTimePickerProps extends PickerProps {
+    ampm: boolean;
+    asDate: boolean;
+    stepMinute: number;
+    /** The dayjs format the value is written in, unless `asDate` */
+    dateTimeFormat: string;
+}
+
+/** The input "Input Time" with the day too, like the vis-1 widget "Input Datetime" (#577) */
+export function VisDateTimePicker(props: VisDateTimePickerProps): React.JSX.Element {
+    const { asDate, dateTimeFormat } = props;
+    const [value, change] = useTypedValue(
+        props.value,
+        () => parseDateTime(props.value, asDate, dateTimeFormat),
+        props.onChange,
+        `${asDate}|${dateTimeFormat}`,
+    );
+
+    return (
+        <LocalizationProvider
+            dateAdapter={AdapterDayjs}
+            adapterLocale={props.lang}
+        >
+            <DateTimePicker
+                value={value}
+                ampm={props.ampm || false}
+                minutesStep={parseInt(props.stepMinute as unknown as string, 10) || 1}
+                label={props.widgetTitle || null}
+                formatDensity="dense"
+                autoFocus={props.autoFocus || false}
+                onChange={newValue => {
+                    // a date that is still being typed is shown, but not written
+                    change(newValue, newValue?.isValid() ? formatDateTime(newValue, asDate, dateTimeFormat) : null);
                 }}
                 slotProps={{
                     textField: {
