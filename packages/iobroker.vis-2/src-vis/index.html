@@ -55,8 +55,8 @@
                 }));
         }
 
-        // if we are in the cloud
-        if (window.location.hostname.includes('iobroker.in')) {
+        // if we are in the cloud: only iobroker.in and its subdomains - a host like iobroker.internal is not (#484)
+        if (window.location.hostname === 'iobroker.in' || window.location.hostname.endsWith('.iobroker.in')) {
             // load config.js over file service from the iobroker instance
             window.visConfigLoaded = new Promise(resolve => {
                 const promiseInfo = loadRemoteScript('_socket/info.js', 'https://remote-files.iobroker.in/vis-2/_socket/info.js');
