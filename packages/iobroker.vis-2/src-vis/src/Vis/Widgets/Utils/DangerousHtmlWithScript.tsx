@@ -40,8 +40,9 @@ class DangerousHtmlWithScript extends React.Component<DangerousHtmlWithScriptPro
      * values only after the widget was mounted, so the first run sees no values yet (#514). They also run again
      * when the widget is mounted again, e.g. after a view switch.
      *
-     * Known limit: a `let` or `const` at the top level of a script throws when the script runs the second time,
-     * as it did in vis-1. `var` works.
+     * Known limits, as in vis-1: a `let` or `const` at the top level of a script throws when the script runs the
+     * second time, `var` works. A timer or an event listener a script starts is started again at every run, so the
+     * script has to end the previous one itself.
      */
     runScripts(): void {
         this.removeScripts();

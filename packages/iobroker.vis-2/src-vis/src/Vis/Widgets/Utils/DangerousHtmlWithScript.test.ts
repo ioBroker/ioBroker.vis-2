@@ -15,7 +15,9 @@ beforeEach(() => {
         parseFromString(html: string): { getElementsByTagName: () => { innerHTML: string }[] } {
             return {
                 getElementsByTagName: () =>
-                    [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => ({ innerHTML: match[1] })),
+                    [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map(match => ({
+                        innerHTML: match[1],
+                    })),
             };
         }
     };
