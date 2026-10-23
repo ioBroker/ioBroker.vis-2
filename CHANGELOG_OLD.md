@@ -356,6 +356,27 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.14.4 (2026-08-10)
+* (@typhosj) The entries of the horizontal navigation menu can be scrolled now instead of being cut off in a narrow window
+* (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views. Their IDs changed from `<view>_<widget>` to `v<view>_<widget>`, so a user script or CSS that addresses such a copy must be adapted
+* (@typhosj) Fixed the double click on a widget shown in multiple views jumping to a wrong view
+* (@typhosj) Show the text of the button widgets as entered and not upper cased
+* (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
+* (@typhosj) Subscribed to object IDs that are the result of a binding
+* (@typhosj) Fixed the ignored read-only option of the Bool SVG widget
+* (@GermanBluefox) Fixed the position of a new group created inside another group
+* (@typhosj) Fixed the position of the members when a nested group is dissolved
+* (@GermanBluefox) Fixed "same width"/"same height" applying the sizes of a previously selected widget
+* (@GermanBluefox) Fixed the widget selection when a stored selected widget does not exist anymore
+* (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
+* (@GermanBluefox) The user permissions are now applied to widgets embedded via `getWidgetInWidget`, which can return `null` now
+* (@typhosj) Fixed the user permissions being ignored for widgets inside a group
+* (@typhosj) Added the CSS classes `vis-filter-item` and `vis-filter-item-active` to the `filter - dropdown` widget
+* (@GermanBluefox) Fixed `exist`/`not exist` of signals evaluating the comparison value instead of the state value
+* (@GermanBluefox) Fixed the signal condition if the state value is `null`
+* (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
+* (@typhosj) Fixed the visibility condition if the state value is `null`
+
 ## 2.14.3 (2026-06-09)
 * (@GermanBluefox) Applied the user-defined style to tplValueInput
 

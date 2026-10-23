@@ -376,7 +376,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.20.4 (2026-10-23)
 * (@GermanBluefox) `config.js` names the vis-1 widget sets of `widgets.html` (`visConfig.widgetsHtml`), so that the cloud can put the file together out of its own copies. `visConfig.widgetSets` lists the installed vis-1 sets again: since the adapter moved to `build/`, it named only the five sets every vis-2 has
 * (@typhosj) A widget set whose upload into the file storage was stopped by a restart is uploaded again on the next start. Before, its files stayed missing, the browser got a 404 for them and showed "Unknown widget type" until `iobroker upload vis-2` was run (#697)
 * (@GermanBluefox) vis-2 remembers the files of its last complete upload (`info.uploadedFingerprint`) and uploads again when the files on disk changed since, also when the adapter was killed after copying a widget set and before uploading it. A widget file still missing in the file storage after an upload is reported as a warning and no longer uploads everything again at every change of a widget adapter. The first start after the update uploads the files once
@@ -540,27 +540,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) `@mui/material`, `@mui/system`, `@mui/icons-material` and `@mui/styles` are shared per version now instead of as a singleton. A widget set that is rebuilt keeps its own MUI copy if it was built against another MUI major than vis-2, instead of being given the one of vis-2
 * (@GermanBluefox) Added `@mui/private-theming` to the shared modules, so the theme of vis-2 also reaches a widget set that uses its own MUI major
 * (@GermanBluefox) The widgeteria is not shown in the GUI anymore
-
-### 2.14.4 (2026-08-10)
-* (@typhosj) The entries of the horizontal navigation menu can be scrolled now instead of being cut off in a narrow window
-* (@typhosj) Fixed the invalid HTML element IDs of the widgets shown in multiple views. Their IDs changed from `<view>_<widget>` to `v<view>_<widget>`, so a user script or CSS that addresses such a copy must be adapted
-* (@typhosj) Fixed the double click on a widget shown in multiple views jumping to a wrong view
-* (@typhosj) Show the text of the button widgets as entered and not upper cased
-* (@GermanBluefox) Fixed the ignored "small" option of the `filter - dropdown` widget
-* (@typhosj) Subscribed to object IDs that are the result of a binding
-* (@typhosj) Fixed the ignored read-only option of the Bool SVG widget
-* (@GermanBluefox) Fixed the position of a new group created inside another group
-* (@typhosj) Fixed the position of the members when a nested group is dissolved
-* (@GermanBluefox) Fixed "same width"/"same height" applying the sizes of a previously selected widget
-* (@GermanBluefox) Fixed the widget selection when a stored selected widget does not exist anymore
-* (@typhosj) Fixed dissolving a group deleting a member widget instead of the group
-* (@GermanBluefox) The user permissions are now applied to widgets embedded via `getWidgetInWidget`, which can return `null` now
-* (@typhosj) Fixed the user permissions being ignored for widgets inside a group
-* (@typhosj) Added the CSS classes `vis-filter-item` and `vis-filter-item-active` to the `filter - dropdown` widget
-* (@GermanBluefox) Fixed `exist`/`not exist` of signals evaluating the comparison value instead of the state value
-* (@GermanBluefox) Fixed the signal condition if the state value is `null`
-* (@typhosj) Fixed the URL attributes of the `iFrame 8` widget being subscribed as object IDs
-* (@typhosj) Fixed the visibility condition if the state value is `null`
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
