@@ -56,6 +56,7 @@ import VisWidgetsCatalog from './Vis/visWidgetsCatalog';
 import { registerStandardWords } from './Vis/Widgets/Standard';
 import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 import { getNewViewSettings } from './Vis/visGridLayout';
+import { IdleView } from './Vis/visIdleView';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -182,6 +183,20 @@ export default class Runtime<
     checkTimeout: ReturnType<typeof setTimeout> | null = null;
 
     resolutionTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Goes back to the view of the project settings after a time without input (#13) */
+    idleView = new IdleView({
+        getState: () => {
+            const project = store.getState().visProject;
+            return {
+                settings: project?.___settings,
+                view: this.state.selectedView,
+                views: Object.keys(project || {}).filter(view => view !== '___settings'),
+                active: !!this.state.runtime,
+            };
+        },
+        onIdle: view => this.changeView(view).catch(e => console.error(`Cannot change view: ${e as Error}`)),
+    });
 
     lastProjectJSONfile = '';
 
@@ -386,6 +401,7 @@ export default class Runtime<
         this.setState(newState as S);
 
         window.addEventListener('hashchange', this.onHashChange, false);
+        this.idleView.start();
 
         if (newState.runtime) {
             // Listen for resize changes
@@ -397,6 +413,7 @@ export default class Runtime<
     componentWillUnmount(): void {
         super.componentWillUnmount();
         window.removeEventListener('hashchange', this.onHashChange, false);
+        this.idleView.stop();
         if (this.checkTimeout) {
             clearTimeout(this.checkTimeout);
             this.checkTimeout = null;
@@ -1138,6 +1155,8 @@ export default class Runtime<
         }
 
         await this.setStateAsync(newState);
+        // the time until going back counts from the view that is open now
+        this.idleView.restart();
     };
 
     showAlert(message: string, type: 'error' | 'warning' | 'info' | 'success'): void {

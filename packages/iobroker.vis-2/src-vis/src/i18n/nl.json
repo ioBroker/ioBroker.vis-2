@@ -983,5 +983,10 @@
   "the detector found no state that could be shown": "de detector vond geen status die getoond kan worden",
   "pick the state first": "kies eerst het datapunt",
   "the state holds no rows at the moment": "het datapunt bevat op dit moment geen rijen",
-  "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars."
+  "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars.",
+  "Back to a view without input": "Terug naar een weergave zonder invoer",
+  "idle_view_help": "Na deze tijd zonder invoer opent de runtime de weergave weer. Elke toetsaanslag, klik of aanraking start de tijd opnieuw.",
+  "View to go back to": "Weergave om naar terug te keren",
+  "idle_no_view": "niet terugkeren",
+  "Seconds without input": "Seconden zonder invoer"
 }

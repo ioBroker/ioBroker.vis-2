@@ -983,5 +983,10 @@
   "the detector found no state that could be shown": "il rilevatore non ha trovato alcuno stato da mostrare",
   "pick the state first": "scegliere prima lo stato",
   "the state holds no rows at the moment": "lo stato non contiene righe al momento",
-  "widget_sets_load_failed": "Il caricamento dei seguenti set di widget non è riuscito, quindi i loro widget mancano. Aggiorna i relativi adattatori o segnala l'errore ai loro sviluppatori."
+  "widget_sets_load_failed": "Il caricamento dei seguenti set di widget non è riuscito, quindi i loro widget mancano. Aggiorna i relativi adattatori o segnala l'errore ai loro sviluppatori.",
+  "Back to a view without input": "Ritorno a una vista senza input",
+  "idle_view_help": "Dopo questo tempo senza input, il runtime riapre la vista. Ogni pressione di tasto, clic o tocco fa ripartire il tempo.",
+  "View to go back to": "Vista a cui tornare",
+  "idle_no_view": "non tornare",
+  "Seconds without input": "Secondi senza input"
 }

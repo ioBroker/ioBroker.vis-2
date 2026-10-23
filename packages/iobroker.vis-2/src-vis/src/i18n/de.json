@@ -1058,5 +1058,10 @@
   "the detector found no state that could be shown": "der Detektor hat keinen Zustand gefunden, der sich zeigen lässt",
   "pick the state first": "erst den Datenpunkt auswählen",
   "the state holds no rows at the moment": "der Datenpunkt enthält gerade keine Zeilen",
-  "widget_sets_load_failed": "Die folgenden Widget-Sets sind beim Laden fehlgeschlagen, ihre Widgets fehlen deshalb. Bitte aktualisiere die zugehörigen Adapter oder melde den Fehler den Entwicklern."
+  "widget_sets_load_failed": "Die folgenden Widget-Sets sind beim Laden fehlgeschlagen, ihre Widgets fehlen deshalb. Bitte aktualisiere die zugehörigen Adapter oder melde den Fehler den Entwicklern.",
+  "Back to a view without input": "Zurück zu einer Ansicht ohne Bedienung",
+  "idle_view_help": "Nach dieser Zeit ohne Bedienung öffnet die Runtime wieder die Ansicht. Jeder Tastendruck, Klick oder jede Berührung startet die Zeit neu.",
+  "View to go back to": "Ansicht, zu der zurückgekehrt wird",
+  "idle_no_view": "nicht zurückkehren",
+  "Seconds without input": "Sekunden ohne Bedienung"
 }

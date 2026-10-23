@@ -844,6 +844,10 @@ export interface ProjectSettings extends ProjectNavigationSettings {
     favicon?: string;
     /** Do not show error if the widget is not loaded */
     ignoreNotLoaded?: boolean;
+    /** The runtime goes back to this view after `idleTimeout` seconds without input */
+    idleView?: string;
+    /** Seconds without input after which the runtime goes back to `idleView`. Empty or 0: it does not */
+    idleTimeout?: number;
 }
 
 export type SingleWidgetId = `w${string}`;

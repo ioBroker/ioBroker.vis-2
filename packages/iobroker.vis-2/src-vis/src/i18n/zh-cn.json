@@ -983,5 +983,10 @@
   "the detector found no state that could be shown": "检测器没有找到可以显示的状态",
   "pick the state first": "请先选择数据点",
   "the state holds no rows at the moment": "该数据点目前没有行",
-  "widget_sets_load_failed": "以下小部件集加载失败，因此缺少其小部件。请更新相应的适配器或向其开发者报告该错误。"
+  "widget_sets_load_failed": "以下小部件集加载失败，因此缺少其小部件。请更新相应的适配器或向其开发者报告该错误。",
+  "Back to a view without input": "无操作时返回视图",
+  "idle_view_help": "无操作达到此时间后，运行时会重新打开该视图。每次按键、点击或触摸都会重新计时。",
+  "View to go back to": "返回的视图",
+  "idle_no_view": "不返回",
+  "Seconds without input": "无操作秒数"
 }

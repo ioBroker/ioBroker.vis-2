@@ -216,6 +216,22 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                 { value: 'visible', name: 'visible' },
             ],
         },
+        // a panel on the wall goes back to its start view by itself (#13)
+        { type: 'header', name: 'Back to a view without input', help: 'idle_view_help' },
+        {
+            type: 'select',
+            name: 'View to go back to',
+            field: 'idleView',
+            noTranslate: true,
+            fullWidth: true,
+            items: [
+                { value: '', name: I18n.t('idle_no_view') },
+                ...Object.keys(store.getState().visProject)
+                    .filter(view => view !== '___settings')
+                    .map(view => ({ value: view, name: view })),
+            ],
+        },
+        { type: 'number', name: 'Seconds without input', field: 'idleTimeout' },
         /*
          * How the menu looks, for every page at once.
          *

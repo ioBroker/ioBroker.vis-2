@@ -983,5 +983,10 @@
   "the detector found no state that could be shown": "le détecteur n’a trouvé aucun état qui puisse être montré",
   "pick the state first": "choisissez d’abord l’état",
   "the state holds no rows at the moment": "l’état ne contient aucune ligne pour l’instant",
-  "widget_sets_load_failed": "Le chargement des ensembles de widgets suivants a échoué, leurs widgets sont donc absents. Veuillez mettre à jour les adaptateurs correspondants ou signaler l'erreur à leurs développeurs."
+  "widget_sets_load_failed": "Le chargement des ensembles de widgets suivants a échoué, leurs widgets sont donc absents. Veuillez mettre à jour les adaptateurs correspondants ou signaler l'erreur à leurs développeurs.",
+  "Back to a view without input": "Retour à une vue sans saisie",
+  "idle_view_help": "Après ce délai sans saisie, le runtime rouvre la vue. Chaque touche, clic ou toucher relance le délai.",
+  "View to go back to": "Vue de retour",
+  "idle_no_view": "ne pas revenir",
+  "Seconds without input": "Secondes sans saisie"
 }
