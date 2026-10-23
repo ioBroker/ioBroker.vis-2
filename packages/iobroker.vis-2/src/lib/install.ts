@@ -7,8 +7,10 @@ import {
     readdirSync,
     unlinkSync,
     rmdirSync,
+    statSync,
 } from 'node:fs';
-import { join, basename, normalize } from 'node:path';
+import { join, basename, normalize, relative } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const wwwDir = existsSync(`${__dirname}/../../www/`) ? `${__dirname}/../../www/` : `${__dirname}/../www/`;
 
@@ -157,4 +159,41 @@ export function syncWidgetSets(
     }
 
     return { widgetSets, filesChanged };
+}
+
+/**
+ * The files in the `vis-2` file storage that show whether the widget sets in www/widgets were uploaded:
+ * the HTML file of every set and the entry of every vis-2 widget collection. Only files present on disk
+ * are listed, so a collection that names a missing file does not cause an upload on every start.
+ */
+export function widgetFilesToCheck(
+    widgetSets: { name: string }[],
+    enabledList: { pack: ioBroker.AdapterObject }[],
+): string[] {
+    const files = widgetSets.map(set => `widgets/${set.name}.html`);
+    for (const { pack } of enabledList) {
+        for (const collection of Object.values(pack.common.visWidgets || {})) {
+            if (collection.url && !collection.url.startsWith('http')) {
+                files.push(`widgets/${collection.url}`);
+            }
+        }
+    }
+    return files.filter(file => existsSync(`${wwwDir}${file}`));
+}
+
+/**
+ * The fingerprint of the files in `dir` that an upload writes into the file storage: their paths, sizes and times
+ * of modification. Copying a widget set writes only the files that changed, so the fingerprint changes exactly then.
+ * Stored after an upload that ran through, it tells the next start whether the file storage has these files.
+ */
+export function filesFingerprint(dir: string, files: string[]): string {
+    const entries = files.map(file => ({ file, name: relative(dir, file).replace(/\\/g, '/') }));
+    entries.sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
+
+    const hash = createHash('sha256');
+    for (const { file, name } of entries) {
+        const stat = statSync(file, { throwIfNoEntry: false });
+        hash.update(`${name}\t${stat?.size ?? -1}\t${Math.floor(stat?.mtimeMs ?? 0)}\n`);
+    }
+    return hash.digest('hex');
 }
