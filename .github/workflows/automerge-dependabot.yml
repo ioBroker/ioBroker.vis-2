@@ -1,0 +1,29 @@
+# Automatically merge Dependabot PRs when version comparison is within the range
+# that is configured in .github/auto-merge.yml
+
+name: Auto-Merge Dependabot PRs
+
+on:
+    # Normally pull_request gets a GITHUB_TOKEN with read access only.
+    # But workflows run for PRs created by dependabot get write access anyway,
+    # so the less secure 'pull_request_target' trigger is not required (#692).
+    pull_request:
+        types: [opened, synchronize, reopened]
+
+jobs:
+    auto-merge:
+        runs-on: ubuntu-latest
+        # Only run if actor is dependabot
+        if: github.actor == 'dependabot[bot]'
+
+        permissions:
+            contents: write
+            pull-requests: write
+
+        steps:
+            - name: Auto-merge Dependabot PRs
+              uses: iobroker-bot-orga/action-automerge-dependabot@v1
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  # the repository allows squash merges only
+                  merge-method: 'squash'
