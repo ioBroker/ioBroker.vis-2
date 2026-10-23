@@ -4,14 +4,16 @@ import { type SelectChangeEvent, TextField } from '@mui/material';
 
 import { Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/gui-components';
+import { I18n, type Connection } from '@iobroker/gui-components';
 
 import { background, theme as ViewTheme } from '@/Attributes/ViewData';
 import { store } from '@/Store';
-import type { Project, View } from '@iobroker/types-vis-2';
+import type { Project, View, VisTheme } from '@iobroker/types-vis-2';
 import commonStyles from '@/Utilities/styles';
 import { GRID_LAYOUT_DEFAULTS } from '@/Vis/visGridLayout';
 import { NAVIGATION_BAR_HEIGHT } from '@/Vis/visNavigationSettings';
+import { conditionNeedsValue } from '@/Vis/visConditions';
+import { ConditionSelect, ConditionValueField, StateIdField } from '@/Attributes/StateCondition';
 
 export interface Field {
     label: string;
@@ -102,7 +104,25 @@ export function getFields(
     selectedView: string,
     editMode: boolean,
     changeProject: (project: Project) => void,
+    /** What the inputs of a condition on a state need, see StateCondition.tsx */
+    conditionContext: { socket: Connection; theme: VisTheme },
 ): FieldGroup[] {
+    /** Writes these settings of the view at once; null removes one */
+    const changeSettings = (values: Record<string, unknown>): void => {
+        const project = JSON.parse(JSON.stringify(store.getState().visProject));
+        Object.entries(values).forEach(([attr, value]) => {
+            if (value === null) {
+                delete project[selectedView].settings[attr];
+            } else {
+                project[selectedView].settings[attr] = value;
+            }
+        });
+        changeProject(project);
+    };
+    const entryOid = view.settings?.navigationEntryOid;
+    const entryHidden = '!data.navigation || !!data.navigationHideEntry';
+    const noEntryOid = `${entryHidden} || !data.navigationEntryOid`;
+
     return [
         {
             label: 'CSS Common',
@@ -535,6 +555,73 @@ export function getFields(
                     attr: 'navigationHideEntry',
                     notStyle: true,
                     hidden: '!data.navigation',
+                },
+                // the entry is in the menu only while a state fulfills a condition, like a widget is shown (#592)
+                {
+                    type: 'raw',
+                    label: 'Entry only if state',
+                    attr: 'navigationEntryOid',
+                    notStyle: true,
+                    title: 'help_navigation_entry_state',
+                    hidden: entryHidden,
+                    Component: (
+                        <StateIdField
+                            value={entryOid}
+                            socket={conditionContext.socket}
+                            theme={conditionContext.theme}
+                            disabled={!editMode}
+                            // a state picked anew has other values: its condition and value start over
+                            onChange={(newOid, picked) =>
+                                changeSettings(
+                                    picked
+                                        ? {
+                                              navigationEntryOid: newOid,
+                                              navigationEntryCond: null,
+                                              navigationEntryVal: null,
+                                          }
+                                        : { navigationEntryOid: newOid },
+                                )
+                            }
+                        />
+                    ),
+                },
+                {
+                    type: 'raw',
+                    label: 'Condition',
+                    attr: 'navigationEntryCond',
+                    notStyle: true,
+                    hidden: noEntryOid,
+                    Component: (
+                        <ConditionSelect
+                            oid={entryOid}
+                            value={view.settings?.navigationEntryCond}
+                            socket={conditionContext.socket}
+                            disabled={!editMode}
+                            onChange={condition =>
+                                changeSettings(
+                                    conditionNeedsValue(condition)
+                                        ? { navigationEntryCond: condition }
+                                        : { navigationEntryCond: condition, navigationEntryVal: null },
+                                )
+                            }
+                        />
+                    ),
+                },
+                {
+                    type: 'raw',
+                    label: 'Value',
+                    attr: 'navigationEntryVal',
+                    notStyle: true,
+                    hidden: `${noEntryOid} || data.navigationEntryCond === "exist" || data.navigationEntryCond === "not exist"`,
+                    Component: (
+                        <ConditionValueField
+                            oid={entryOid}
+                            value={view.settings?.navigationEntryVal}
+                            socket={conditionContext.socket}
+                            disabled={!editMode}
+                            onChange={value => changeSettings({ navigationEntryVal: value })}
+                        />
+                    ),
                 },
                 {
                     type: 'text',

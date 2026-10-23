@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { Project, ViewSettings } from '@iobroker/types-vis-2';
 
-import { getNavigationBarHeight, PROJECT_NAVIGATION_KEYS, resolveNavigationSettings } from './visNavigationSettings';
+import {
+    getNavigationBarHeight,
+    getNavigationEntryStateIds,
+    isNavigationEntryShown,
+    PROJECT_NAVIGATION_KEYS,
+    resolveNavigationSettings,
+} from './visNavigationSettings';
 
 /**
  * The look of the menu can be said once for the project and overruled per view.
@@ -104,5 +110,66 @@ describe('getNavigationBarHeight', () => {
 
     it('can be set for the whole project', () => {
         expect(PROJECT_NAVIGATION_KEYS).toContain('navigationBarHeight');
+    });
+});
+
+/** #592: an entry of the menu shown or hidden by a state, with the conditions of the widget visibility */
+describe('getNavigationEntryStateIds', () => {
+    it('collects the states of the views that have an entry, each once and trimmed', () => {
+        const views = {
+            ___settings: { navigationEntryOid: 'not.a.view' },
+            a: { settings: { navigation: true, navigationEntryOid: ' 0_userdata.0.greenhouse ' } },
+            b: { settings: { navigation: true, navigationEntryOid: '0_userdata.0.greenhouse' } },
+            c: { settings: { navigation: true, navigationEntryOid: '0_userdata.0.garage' } },
+            // no entry at all: nothing to listen to
+            d: { settings: { navigation: false, navigationEntryOid: '0_userdata.0.off' } },
+            e: { settings: { navigation: true, navigationHideEntry: true, navigationEntryOid: '0_userdata.0.hidden' } },
+            f: { settings: { navigation: true, navigationEntryOid: '' } },
+            g: { settings: { navigation: true, navigationEntryOid: null } },
+            h: {},
+        } as unknown as Project;
+
+        expect(getNavigationEntryStateIds(views)).toEqual(['0_userdata.0.greenhouse', '0_userdata.0.garage']);
+    });
+
+    it('lists nothing for an empty project', () => {
+        expect(getNavigationEntryStateIds({} as Project)).toEqual([]);
+        expect(getNavigationEntryStateIds(null as unknown as Project)).toEqual([]);
+    });
+});
+
+describe('isNavigationEntryShown', () => {
+    const oid = '0_userdata.0.greenhouse';
+    const settings = (more: Partial<ViewSettings>): ViewSettings => ({
+        navigation: true,
+        navigationEntryOid: oid,
+        ...more,
+    });
+
+    it('shows an entry without a state', () => {
+        expect(isNavigationEntryShown({ navigation: true }, {}, 'a')).toBe(true);
+        expect(isNavigationEntryShown({ navigation: true, navigationEntryOid: '  ' }, {}, 'a')).toBe(true);
+    });
+
+    it('hides the entry while the value of the state is not known', () => {
+        expect(isNavigationEntryShown(settings({ navigationEntryVal: true }), {}, 'a')).toBe(false);
+    });
+
+    it('compares with == by default, a boolean also with its text', () => {
+        const shown = settings({ navigationEntryVal: 'true' });
+        expect(isNavigationEntryShown(shown, { [`${oid}.val`]: true }, 'a')).toBe(true);
+        expect(isNavigationEntryShown(shown, { [`${oid}.val`]: false }, 'a')).toBe(false);
+    });
+
+    it('takes the other conditions', () => {
+        const states = { [`${oid}.val`]: 12 };
+        expect(
+            isNavigationEntryShown(settings({ navigationEntryCond: '>', navigationEntryVal: 10 }), states, 'a'),
+        ).toBe(true);
+        expect(
+            isNavigationEntryShown(settings({ navigationEntryCond: '<', navigationEntryVal: 10 }), states, 'a'),
+        ).toBe(false);
+        expect(isNavigationEntryShown(settings({ navigationEntryCond: 'exist' }), states, 'a')).toBe(true);
+        expect(isNavigationEntryShown(settings({ navigationEntryCond: 'not exist' }), states, 'a')).toBe(false);
     });
 });

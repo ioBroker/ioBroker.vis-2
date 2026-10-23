@@ -987,6 +987,8 @@
   "help_section_cells": "The cells of this section only. Empty takes the value of the view.",
   "help_section_groups": "The section is shown only to the members of these groups.",
   "help_section_visibility_state": "The section is shown only while this state fulfills the condition. The editor shows a hidden section dimmed.",
+  "Entry only if state": "Entry only if state",
+  "help_navigation_entry_state": "The entry of this view is in the menu only while this state fulfills the condition.",
   "help_section_collapsible": "In the runtime a click on the header opens and closes the section. The browser remembers the choice.",
   "help_section_expand_state": "The section opens while this state fulfills the condition and closes when it does not. A click on the header still opens and closes it until the state changes.",
   "help_view_display": "Only for the widgets with relative position in the column layout. The grid with sections arranges them by itself.",

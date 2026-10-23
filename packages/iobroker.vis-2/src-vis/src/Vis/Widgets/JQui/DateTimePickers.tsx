@@ -19,7 +19,7 @@
 // `React.lazy` when one of them is really rendered.
 
 import React from 'react';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 
 import { DatePicker, TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -36,6 +36,8 @@ import 'dayjs/locale/pt';
 import 'dayjs/locale/nl';
 
 import type { TextFieldVariants } from '@mui/material';
+
+import { WrittenValues } from './writtenValues';
 
 const styles: { textRoot: { [key: string]: React.CSSProperties } } = {
     textRoot: {
@@ -65,6 +67,44 @@ interface PickerProps {
     onChange: (value: string) => void;
 }
 
+/**
+ * The value a picker shows, and how it changes it. The echoes of its own writes do not replace what it shows,
+ * see `WrittenValues`.
+ *
+ * @param stateValue the value of the state
+ * @param fromState what the picker shows for the value of the state
+ * @param write writes a value into the state
+ * @param parseKey changes when `fromState` reads the value of the state differently
+ */
+function useTypedValue(
+    stateValue: ioBroker.StateValue | undefined,
+    fromState: () => Dayjs | null,
+    write: (value: string) => void,
+    parseKey: string,
+): [Dayjs | null, (shown: Dayjs | null, value: string | null) => void] {
+    const [shown, setShown] = React.useState<Dayjs | null>(fromState);
+    const written = React.useRef(new WrittenValues());
+
+    React.useEffect(() => {
+        if (!written.current.isEcho(stateValue)) {
+            setShown(fromState());
+        }
+        // `fromState` is new in every render, `parseKey` says when it reads the value differently
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stateValue, parseKey]);
+
+    return [
+        shown,
+        (value, text) => {
+            setShown(value);
+            if (text !== null) {
+                written.current.write(text);
+                write(text);
+            }
+        },
+    ];
+}
+
 export interface VisDatePickerProps extends PickerProps {
     asFullDate: boolean;
     disableFuture: boolean;
@@ -74,21 +114,32 @@ export interface VisDatePickerProps extends PickerProps {
 }
 
 export function VisDatePicker(props: VisDatePickerProps): React.JSX.Element {
+    const [value, change] = useTypedValue(
+        props.value,
+        () => (props.asFullDate ? dayjs(props.value) : dayjs(props.value, EASY_DATE_FORMAT)),
+        props.onChange,
+        String(props.asFullDate),
+    );
+
     return (
         <LocalizationProvider
             dateAdapter={AdapterDayjs}
             adapterLocale={props.lang}
         >
             <DatePicker
-                value={props.asFullDate ? dayjs(props.value) : dayjs(props.value, EASY_DATE_FORMAT)}
+                value={value}
                 label={props.widgetTitle || null}
                 autoFocus={props.autoFocus || false}
                 onChange={newValue => {
-                    if (!newValue) {
-                        return;
-                    }
-
-                    props.onChange(props.asFullDate ? newValue.toDate().toString() : newValue.format(EASY_DATE_FORMAT));
+                    // a date that is still being typed is shown, but not written
+                    change(
+                        newValue,
+                        newValue?.isValid()
+                            ? props.asFullDate
+                                ? newValue.toDate().toString()
+                                : newValue.format(EASY_DATE_FORMAT)
+                            : null,
+                    );
                 }}
                 formatDensity={props.wideFormat ? 'spacious' : 'dense'}
                 slotProps={{
@@ -102,7 +153,7 @@ export function VisDatePicker(props: VisDatePickerProps): React.JSX.Element {
                     },
                     field: {
                         clearable: props.clearable,
-                        onClear: () => props.onChange(''),
+                        onClear: () => change(null, ''),
                     },
                 }}
                 disableFuture={props.disableFuture || false}
@@ -122,6 +173,12 @@ export interface VisTimePickerProps extends PickerProps {
 export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
     const val = props.value;
     const asDate = props.asDate;
+    const [value, change] = useTypedValue(
+        val,
+        () => (val && !asDate ? dayjs(val, 'HH:mm') : dayjs(val)),
+        props.onChange,
+        String(asDate),
+    );
 
     return (
         <LocalizationProvider
@@ -129,20 +186,22 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
             adapterLocale={props.lang}
         >
             <TimePicker
-                value={val && !asDate ? dayjs(val, 'HH:mm') : dayjs(val)}
+                value={value}
                 ampm={props.ampm || false}
                 minutesStep={parseInt(props.stepMinute as unknown as string, 10) || 1}
                 label={props.widgetTitle || null}
                 formatDensity="dense"
                 format="HH:mm"
                 autoFocus={props.autoFocus || false}
-                onChange={value => {
-                    if (!value) {
-                        return;
-                    }
-
-                    props.onChange(
-                        !asDate ? value.format('HH:mm') : value.second(0).millisecond(0).toDate().toString(),
+                onChange={newValue => {
+                    // a time that is still being typed is shown, but not written
+                    change(
+                        newValue,
+                        newValue?.isValid()
+                            ? !asDate
+                                ? newValue.format('HH:mm')
+                                : newValue.second(0).millisecond(0).toDate().toString()
+                            : null,
                     );
                 }}
                 slotProps={{
@@ -156,7 +215,7 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
                     },
                     field: {
                         clearable: props.clearable,
-                        onClear: () => props.onChange(''),
+                        onClear: () => change(null, ''),
                     },
                 }}
             />

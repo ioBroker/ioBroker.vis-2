@@ -30,7 +30,13 @@ import {
 import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
-import { getNavigationBarHeight, NAVIGATION_BAR_HEIGHT, resolveNavigationSettings } from './visNavigationSettings';
+import {
+    getNavigationBarHeight,
+    getNavigationEntryStateIds,
+    isNavigationEntryShown,
+    NAVIGATION_BAR_HEIGHT,
+    resolveNavigationSettings,
+} from './visNavigationSettings';
 
 const MENU_WIDTH_FULL = 200;
 const MENU_WIDTH_NARROW = 56;
@@ -298,6 +304,8 @@ const visited: string[] = [];
 interface VisNavigationState {
     /** Which folders of the menu are open */
     openFolders: Record<string, boolean>;
+    /** The values of the states the entries are shown by, by `<id>.val`, see getNavigationEntryStateIds() */
+    entryStates: Record<string, unknown>;
 }
 
 class VisNavigation extends React.Component<VisNavigationProps, VisNavigationState> {
@@ -309,16 +317,55 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         } catch {
             // a broken entry is no reason to show no menu
         }
-        this.state = { openFolders };
+        this.state = { openFolders, entryStates: {} };
     }
+
+    /** The states this menu listens to, see subscribeEntryStates() */
+    private entryStateIds: string[] = [];
 
     componentDidMount(): void {
         this.rememberView();
+        this.subscribeEntryStates();
     }
 
     componentDidUpdate(): void {
         this.rememberView();
+        this.subscribeEntryStates();
     }
+
+    componentWillUnmount(): void {
+        if (this.entryStateIds.length) {
+            this.props.context.socket.unsubscribeState(this.entryStateIds, this.onEntryStateChange);
+            this.entryStateIds = [];
+        }
+    }
+
+    /**
+     * Listen to the states that show or hide the entries of the views (#592). The views are edited while the menu
+     * lives, so this runs at every update and only subscribes what is new and unsubscribes what is gone.
+     */
+    subscribeEntryStates(): void {
+        const ids = getNavigationEntryStateIds(this.props.context.views);
+        const added = ids.filter(id => !this.entryStateIds.includes(id));
+        const removed = this.entryStateIds.filter(id => !ids.includes(id));
+        this.entryStateIds = ids;
+        if (removed.length) {
+            this.props.context.socket.unsubscribeState(removed, this.onEntryStateChange);
+        }
+        if (added.length) {
+            // delivers the current values at once
+            void this.props.context.socket.subscribeState(added, this.onEntryStateChange);
+        }
+    }
+
+    onEntryStateChange = (id: string, state: ioBroker.State | null | undefined): void => {
+        const key = `${id}.val`;
+        const val = state ? state.val : null;
+        if (key in this.state.entryStates && this.state.entryStates[key] === val) {
+            return;
+        }
+        this.setState(prevState => ({ entryStates: { ...prevState.entryStates, [key]: val } }));
+    };
 
     /** Keep the trail of views, so the app bar knows whether there is a way back */
     rememberView(): void {
@@ -370,7 +417,11 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             }
             const viewSettings = this.props.context.views[view].settings;
             // a view can show the menu without being an entry of it
-            if (viewSettings.navigation && !viewSettings.navigationHideEntry) {
+            if (
+                viewSettings.navigation &&
+                !viewSettings.navigationHideEntry &&
+                isNavigationEntryShown(viewSettings, this.state.entryStates, view)
+            ) {
                 const item: MenuItem = {
                     text:
                         settings.navigationOrientation === 'horizontal' && viewSettings.navigationOnlyIcon

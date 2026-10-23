@@ -912,6 +912,8 @@
   "help_section_cells": "Solo per le celle di questa sezione. Vuoto usa il valore della vista.",
   "help_section_groups": "La sezione viene mostrata solo ai membri di questi gruppi.",
   "help_section_visibility_state": "La sezione viene mostrata solo finché questo stato soddisfa la condizione. L'editor mostra una sezione nascosta attenuata.",
+  "Entry only if state": "Voce solo se stato",
+  "help_navigation_entry_state": "La voce di questa pagina è nel menu solo finché questo stato soddisfa la condizione.",
   "help_section_collapsible": "Nel runtime un clic sull'intestazione apre e chiude la sezione. Il browser ricorda la scelta.",
   "help_section_expand_state": "La sezione si apre finché questo stato soddisfa la condizione e si chiude altrimenti. Un clic sull'intestazione la apre e chiude comunque finché lo stato non cambia.",
   "help_view_display": "Solo per i widget con posizione relativa nel layout a colonne. La griglia con sezioni li dispone da sé.",

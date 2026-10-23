@@ -47,6 +47,8 @@ import type {
     Writeable,
 } from '@iobroker/types-vis-2';
 
+import { getMenuStyle } from './menuStyle';
+
 // Editor-only dialog: lazy-loaded so it is excluded from the runtime bundle (see tasks.js stub)
 const BulkEditor = React.lazy(() => import('./BulkEditor'));
 
@@ -779,6 +781,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                         value={this.state.value === undefined ? '' : this.state.value}
                         onChange={e => this.onClick(this.getSelectedIndex(e.target.value))}
                         variant={variant}
+                        MenuProps={{ slotProps: { paper: { style: getMenuStyle(buttonStyle) } } }}
                         sx={{
                             // the text takes the color of the widget, not that of the theme, see JQuiInput (#521)
                             color: 'inherit',
