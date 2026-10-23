@@ -33,8 +33,6 @@ Additionally, you need a license to use the adapter. The following license editi
 ![Demo interface](packages/iobroker.vis-2/img/user0.png)
 ![Demo interface](packages/iobroker.vis-2/img/user7.png)
 
-[Online Demos](https://iobroker.click/)
-
 ### Widgets
 
 - [Standard widgets](packages/iobroker.vis-2/docs/widgets-standard.md) - the devices of a house, as cards for
