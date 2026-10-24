@@ -1,0 +1,30 @@
+License information for ioBroker.vis-2
+
+To use vis-2 you need two things:
+
+1. Accept the source code license
+
+   The source code of vis-2 is published under the Creative Commons
+   Attribution-NonCommercial 4.0 International license (CC BY-NC 4.0).
+   Full text: https://github.com/ioBroker/ioBroker.vis-2/blob/master/LICENSE
+
+2. Have a license to run the adapter
+
+   The editions, their prices and where to buy them:
+   https://iobroker.net/www/pricing
+
+   - Community License - free for private use.
+     Get it by registering an account on https://iobroker.net. The license is
+     checked online against the ioBroker license server when the adapter starts,
+     so an internet connection is required at that moment.
+
+   - Private use Offline License - for private use only.
+     For a small support fee, the online check at the start of the adapter is
+     no longer needed.
+
+   - Commercial License - for use in a commercial environment, or for selling
+     vis-2 as part of ioBroker packages to your customers. The license check
+     does not need an internet connection.
+
+The license is entered in the settings of the vis-2 instance, or taken from the
+license manager.
