@@ -1063,5 +1063,7 @@
   "idle_view_help": "Nach dieser Zeit ohne Bedienung öffnet die Runtime wieder die Ansicht. Jeder Tastendruck, Klick oder jede Berührung startet die Zeit neu.",
   "View to go back to": "Ansicht, zu der zurückgekehrt wird",
   "idle_no_view": "nicht zurückkehren",
-  "Seconds without input": "Sekunden ohne Bedienung"
+  "Seconds without input": "Sekunden ohne Bedienung",
+  "Reload if sleep longer than (seconds)": "Neu laden nach Ruhezustand länger als (Sekunden)",
+  "reload_on_sleep_help": "Nur in der Runtime, mindestens 30 Sekunden, leer oder 0 für nie. Z. B. lädt ein Tablet, dessen Bildschirm aus war, neu, statt jede verpasste Änderung nachzuholen."
 }

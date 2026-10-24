@@ -988,5 +988,7 @@
   "idle_view_help": "无操作达到此时间后，运行时会重新打开该视图。每次按键、点击或触摸都会重新计时。",
   "View to go back to": "返回的视图",
   "idle_no_view": "不返回",
-  "Seconds without input": "无操作秒数"
+  "Seconds without input": "无操作秒数",
+  "Reload if sleep longer than (seconds)": "休眠超过此时间后重新加载（秒）",
+  "reload_on_sleep_help": "仅在运行时生效，至少 30 秒，留空或 0 表示从不。例如，屏幕关闭过的平板会重新加载，而不是逐一处理错过的所有更改。"
 }

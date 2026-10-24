@@ -57,6 +57,7 @@ import { registerStandardWords } from './Vis/Widgets/Standard';
 import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 import { getNewViewSettings } from './Vis/visGridLayout';
 import { IdleView } from './Vis/visIdleView';
+import { getSleepReloadDelay, SleepReload } from './Vis/visSleepReload';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -196,6 +197,12 @@ export default class Runtime<
             };
         },
         onIdle: view => this.changeView(view).catch(e => console.error(`Cannot change view: ${e as Error}`)),
+    });
+
+    /** Reloads the runtime after the device slept longer than the project settings say (#339) */
+    sleepReload = new SleepReload({
+        getDelay: () => (this.state.runtime ? getSleepReloadDelay(store.getState().visProject?.___settings) : 0),
+        reload: () => window.location.reload(),
     });
 
     lastProjectJSONfile = '';
@@ -402,6 +409,7 @@ export default class Runtime<
 
         window.addEventListener('hashchange', this.onHashChange, false);
         this.idleView.start();
+        this.sleepReload.start();
 
         if (newState.runtime) {
             // Listen for resize changes
@@ -414,6 +422,7 @@ export default class Runtime<
         super.componentWillUnmount();
         window.removeEventListener('hashchange', this.onHashChange, false);
         this.idleView.stop();
+        this.sleepReload.stop();
         if (this.checkTimeout) {
             clearTimeout(this.checkTimeout);
             this.checkTimeout = null;

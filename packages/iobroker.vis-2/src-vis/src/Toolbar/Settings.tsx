@@ -149,6 +149,13 @@ export function Settings(props: SettingsProps): React.JSX.Element {
         },
         { type: 'checkbox', name: 'Dark reconnect screen', field: 'darkReloadScreen' },
         { name: 'States Debounce Time (millis)', field: 'statesDebounceTime', type: 'number' },
+        // a tablet whose screen was off works off every missed change for long seconds (#339)
+        {
+            name: 'Reload if sleep longer than (seconds)',
+            field: 'reloadOnSleep',
+            type: 'number',
+            help: 'reload_on_sleep_help',
+        },
         {
             type: 'raw',
             Node: (

@@ -988,5 +988,7 @@
   "idle_view_help": "Po tym czasie bez obsługi runtime ponownie otwiera widok. Każde naciśnięcie klawisza, kliknięcie lub dotknięcie liczy czas od nowa.",
   "View to go back to": "Widok, do którego wrócić",
   "idle_no_view": "nie wracać",
-  "Seconds without input": "Sekundy bez obsługi"
+  "Seconds without input": "Sekundy bez obsługi",
+  "Reload if sleep longer than (seconds)": "Przeładuj po uśpieniu dłuższym niż (sekundy)",
+  "reload_on_sleep_help": "Tylko w runtime, co najmniej 30 sekund, puste lub 0 oznacza nigdy. Np. tablet z wyłączonym ekranem przeładowuje się zamiast nadrabiać każdą pominiętą zmianę."
 }

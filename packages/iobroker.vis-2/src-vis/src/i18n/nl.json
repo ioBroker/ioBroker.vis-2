@@ -988,5 +988,7 @@
   "idle_view_help": "Na deze tijd zonder invoer opent de runtime de weergave weer. Elke toetsaanslag, klik of aanraking start de tijd opnieuw.",
   "View to go back to": "Weergave om naar terug te keren",
   "idle_no_view": "niet terugkeren",
-  "Seconds without input": "Seconden zonder invoer"
+  "Seconds without input": "Seconden zonder invoer",
+  "Reload if sleep longer than (seconds)": "Herladen na slaapstand langer dan (seconden)",
+  "reload_on_sleep_help": "Alleen in de runtime, minstens 30 seconden, leeg of 0 voor nooit. Bijv. een tablet waarvan het scherm uit was, herlaadt in plaats van elke gemiste wijziging in te halen."
 }

@@ -1063,5 +1063,7 @@
   "idle_view_help": "After this time without input, the runtime opens the view again. Every key press, click or touch starts the time anew.",
   "View to go back to": "View to go back to",
   "idle_no_view": "do not go back",
-  "Seconds without input": "Seconds without input"
+  "Seconds without input": "Seconds without input",
+  "Reload if sleep longer than (seconds)": "Reload if sleep longer than (seconds)",
+  "reload_on_sleep_help": "Only in the runtime, at least 30 seconds, empty or 0 for never. E.g. a tablet whose screen was off reloads instead of working off every missed change."
 }

@@ -830,6 +830,8 @@ export interface ProjectSettings extends ProjectNavigationSettings {
     reloadOnEdit: boolean;
     /** Do not send the command during this period and collect all changes for one object ID */
     statesDebounceTime: number;
+    /** The runtime reloads after the device slept longer than this many seconds (at least 30); nothing or 0 for never */
+    reloadOnSleep?: number;
     /** Project JavaScript scripts */
     scripts: null | string;
     /** Defines which users have read or write access to the project */
