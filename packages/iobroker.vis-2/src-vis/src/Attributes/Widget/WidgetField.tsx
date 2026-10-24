@@ -414,6 +414,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
     >([]);
 
     const cacheTimer = useRef<ReturnType<typeof setTimeout>>(null);
+    /** The change that waits for the typing to pause, see `change` */
+    const pendingChange = useRef<(() => void) | null>(null);
     const refCustom = useRef<HTMLDivElement>(null);
 
     let onChangeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -502,8 +504,10 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         } else if (changeValue !== cachedValue) {
             setCachedValue(changeValue);
             cacheTimer.current && clearTimeout(cacheTimer.current);
+            pendingChange.current = () => applyValue(changeValue);
             cacheTimer.current = setTimeout(() => {
                 cacheTimer.current = null;
+                pendingChange.current = null;
                 applyValue(changeValue);
             }, 300);
         }
@@ -514,10 +518,33 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         propValue = null;
     }
 
+    const selection = props.selectedWidgets.join(',');
+
+    // Another widget is selected, or none: what was typed belongs to the one before, and must not wait for a
+    // change of the next one to be dropped (#508)
+    useEffect(
+        () => () => {
+            const apply = pendingChange.current;
+            if (apply) {
+                cacheTimer.current && clearTimeout(cacheTimer.current);
+                cacheTimer.current = null;
+                pendingChange.current = null;
+                apply();
+            }
+        },
+        [selection],
+    );
+
+    // The value of the widget, also of the one selected now even if it has the same value as the one before (#508).
+    // Not while somebody types: the store then has an older text than the field, which would jump back and lose
+    // the keys typed since (#546).
     useEffect(() => {
-        if (propValue !== undefined) {
+        if (!pendingChange.current) {
             setCachedValue(propValue);
         }
+    }, [propValue, selection]);
+
+    useEffect(() => {
         if (field.type === 'instance' || field.type === 'history') {
             if (field.adapter === '_dataSources' || field.type === 'history') {
                 void props.socket.getAdapterInstances('').then(_instances => {
