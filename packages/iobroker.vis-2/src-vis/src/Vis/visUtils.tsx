@@ -30,6 +30,7 @@ import type {
 } from '@iobroker/types-vis-2';
 import { deepClone, getMultiViewWidgetId } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
+import { applyManifest } from './visManifest';
 
 declare global {
     interface Window {
@@ -1075,25 +1076,5 @@ export function applyTitleAndIcon(
         window.document.head.appendChild(newLink);
     }
 
-    // Create a manifest.json
-    const manifestJSON = {
-        short_name: title,
-        name: title,
-        icons: [
-            {
-                src: icon,
-                sizes: '64x64 32x32 24x24 16x16',
-                type: 'image/x-icon',
-            },
-        ],
-        start_url: '.',
-        display: 'standalone',
-        theme_color: options.themeType === 'dark' ? 'rgb(51, 51, 51)' : 'rgb(230, 230, 230)',
-        background_color: options.themeType === 'dark' ? '#000' : '#FFF',
-    };
-
-    const stringManifest = JSON.stringify(manifestJSON);
-    const blob = new Blob([stringManifest], { type: 'application/json' });
-    const manifestURL = URL.createObjectURL(blob);
-    document.querySelector('#vis-manifest')?.setAttribute('href', manifestURL);
+    applyManifest({ title, icon, themeType: options.themeType });
 }
