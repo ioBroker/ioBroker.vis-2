@@ -706,7 +706,7 @@ function calcProject(
             const dps = getUsedObjectIDs(json, false);
             if (dps?.IDs) {
                 result.push({
-                    id: `vis-2.${instance}.datapoints.${project.file.replace(/[.\\s]/g, '_')}`,
+                    id: `vis-2.${instance}.datapoints.${project.file.replace(/[.\s]/g, '_')}`,
                     val: dps.IDs.length,
                 });
             }
