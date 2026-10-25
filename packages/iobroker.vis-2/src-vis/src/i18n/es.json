@@ -988,5 +988,7 @@
   "idle_view_help": "Tras este tiempo sin interacción, el runtime vuelve a abrir la vista. Cada pulsación de tecla, clic o toque reinicia el tiempo.",
   "View to go back to": "Vista a la que volver",
   "idle_no_view": "no volver",
-  "Seconds without input": "Segundos sin interacción"
+  "Seconds without input": "Segundos sin interacción",
+  "Reload if sleep longer than (seconds)": "Recargar tras una suspensión de más de (segundos)",
+  "reload_on_sleep_help": "Solo en el runtime, al menos 30 segundos, vacío o 0 para nunca. P. ej., una tableta con la pantalla apagada se recarga en lugar de procesar cada cambio perdido."
 }

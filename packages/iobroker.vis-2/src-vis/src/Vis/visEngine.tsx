@@ -73,6 +73,7 @@ import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisServices from './visServices';
 import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded, withoutAmd } from './visLoadLegacy';
 import { createStateValues, upgradeStateValues } from './visCanStates';
+import { VisControlStates } from './visControlState';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
     if (!text) {
@@ -247,6 +248,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     _cmdData: ioBroker.StateValue = null;
 
     _cmdInstance: ioBroker.StateValue = null;
+
+    /** Which values of the control states were set since the runtime subscribed (#487) */
+    controlStates = new VisControlStates(this.props.socket);
 
     wakeUpDetectorInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -425,9 +429,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 this.vis.language = systemConfig.common.language || 'en';
                 this.systemConfig = systemConfig;
 
-                void this.props.socket.subscribeState(this.ID_CONTROL_INSTANCE, this.onStateChange);
-                void this.props.socket.subscribeState(this.ID_CONTROL_DATA, this.onStateChange);
-                void this.props.socket.subscribeState(this.ID_CONTROL_COMMAND, this.onStateChange);
+                void this.controlStates.subscribe(this.ID_CONTROL_INSTANCE, this.onStateChange);
+                void this.controlStates.subscribe(this.ID_CONTROL_DATA, this.onStateChange);
+                void this.controlStates.subscribe(this.ID_CONTROL_COMMAND, this.onStateChange);
 
                 this.props.setLoadingText?.('Load widgets...');
 
@@ -534,9 +538,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         // unsubscribe all
         Object.keys(this.subscribes).forEach(id => this.props.socket.unsubscribeState(id, this.onStateChange));
 
-        this.props.socket.unsubscribeState(this.ID_CONTROL_INSTANCE, this.onStateChange);
-        this.props.socket.unsubscribeState(this.ID_CONTROL_DATA, this.onStateChange);
-        this.props.socket.unsubscribeState(this.ID_CONTROL_COMMAND, this.onStateChange);
+        this.controlStates.unsubscribe(this.ID_CONTROL_INSTANCE, this.onStateChange);
+        this.controlStates.unsubscribe(this.ID_CONTROL_DATA, this.onStateChange);
+        this.controlStates.unsubscribe(this.ID_CONTROL_COMMAND, this.onStateChange);
 
         let userScript = window.document.getElementById('vis_user_scripts');
         if (userScript) {
@@ -2223,8 +2227,8 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 return;
             }
 
-            // ignore too old commands
-            if (state.ts && Date.now() - state.ts > 5_000) {
+            // not the command the state had when the runtime subscribed
+            if (!this.controlStates.isNew(id)) {
                 return;
             }
 
@@ -2269,8 +2273,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 return;
             }
 
-            // ignore too old commands
-            if (this._cmdData !== undefined && state.ts && Date.now() - state.ts > 5_000) {
+            if (!this.controlStates.isNew(id)) {
                 return;
             }
             this._cmdData = state.val ?? null;
@@ -2282,8 +2285,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
                 return;
             }
 
-            // ignore too old commands
-            if (this._cmdInstance !== undefined && state.ts && Date.now() - state.ts > 5_000) {
+            if (!this.controlStates.isNew(id)) {
                 return;
             }
             this._cmdInstance = state.val ?? null;

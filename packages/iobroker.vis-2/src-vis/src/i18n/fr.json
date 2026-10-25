@@ -988,5 +988,7 @@
   "idle_view_help": "Après ce délai sans saisie, le runtime rouvre la vue. Chaque touche, clic ou toucher relance le délai.",
   "View to go back to": "Vue de retour",
   "idle_no_view": "ne pas revenir",
-  "Seconds without input": "Secondes sans saisie"
+  "Seconds without input": "Secondes sans saisie",
+  "Reload if sleep longer than (seconds)": "Recharger après une veille de plus de (secondes)",
+  "reload_on_sleep_help": "Uniquement dans le runtime, au moins 30 secondes, vide ou 0 pour jamais. Par ex. une tablette dont l'écran était éteint se recharge au lieu de traiter chaque changement manqué."
 }
