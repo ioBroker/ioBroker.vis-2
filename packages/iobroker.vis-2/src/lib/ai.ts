@@ -17,8 +17,11 @@ export interface AiConfigSlice {
     /** The address of an OpenAI-compatible endpoint of one's own: a proxy, or Ollama on the same host */
     aiCustomUrl?: string;
     aiCustomKey?: string;
-    /** `manual`: the keys stand in this configuration; `manager`: only ids of the credential store */
-    aiCredentialType?: 'manual' | 'manager';
+    /**
+     * `system`: the AI settings of the system (`system.ai`, set up in admin); `manual`: the keys stand in
+     * this configuration; `manager`: only ids of the credential store
+     */
+    aiCredentialType?: 'system' | 'manual' | 'manager';
     aiCredentialOpenAi?: string;
     aiCredentialAnthropic?: string;
     aiCredentialGemini?: string;

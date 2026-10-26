@@ -243,7 +243,7 @@
     "loadingBackgroundColor": "",
     "loadingHideLogo": false,
     "loadingBackgroundImage": false,
-    "aiCredentialType": "manual",
+    "aiCredentialType": "system",
     "aiMaxTokens": 8192,
     "aiOpenAiKey": "",
     "aiAnthropicKey": "",

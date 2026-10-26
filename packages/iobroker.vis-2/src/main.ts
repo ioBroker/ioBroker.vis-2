@@ -8,7 +8,7 @@
  *
  */
 import { Adapter, type AdapterOptions } from '@iobroker/adapter-core';
-import { AiBackend, readAiSettings } from '@iobroker/ai-core';
+import { AiBackend, readAdapterAiSettings } from '@iobroker/ai-core';
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { normalize } from 'node:path';
 import https from 'node:https';
@@ -109,7 +109,8 @@ class VisAdapter extends Adapter {
     private vendorPrefix = '';
     /** The AI assistant of the editor: providers, keys and the pushed answers, see `@iobroker/ai-core` */
     private ai = new AiBackend(this, {
-        getSettings: () => readAiSettings(this.config, VIS_AI_FIELDS),
+        // the own keys, or the AI settings of the system (`system.ai`) that are set up once in admin
+        getSettings: () => readAdapterAiSettings(this, this.config, VIS_AI_FIELDS),
         // the command names the editor used before ai-core
         aliases: { getAvailableAiProviders: 'ai:providers', aiModels: 'ai:models', aiChat: 'ai:chat' },
     });

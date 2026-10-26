@@ -114,14 +114,19 @@
                     "max": 200000,
                     "default": 8192,
                     "xs": 12,
-                    "sm": 5
+                    "sm": 5,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiCredentialType": {
                     "newLine": true,
                     "type": "select",
                     "label": "Where the keys are kept",
-                    "default": "manual",
+                    "default": "system",
                     "options": [
+                        {
+                            "label": "In the AI settings of the system",
+                            "value": "system"
+                        },
                         {
                             "label": "In this configuration",
                             "value": "manual"
@@ -134,11 +139,31 @@
                     "xs": 12,
                     "sm": 6
                 },
+                "_aiSystemHint": {
+                    "newLine": true,
+                    "type": "staticText",
+                    "text": "ai_system_hint",
+                    "hidden": "!(data.aiCredentialType === 'system' || !(data.aiCredentialType === 'manager' ? (data.aiCredentialOpenAi || data.aiCredentialAnthropic || data.aiCredentialGemini || data.aiCredentialDeepSeek || data.aiCustomUrl) : (data.aiOpenAiKey || data.aiAnthropicKey || data.aiGeminiKey || data.aiDeepSeekKey || data.aiCustomUrl)))",
+                    "xs": 12
+                },
+                "_aiSystemLink": {
+                    "newLine": true,
+                    "type": "staticLink",
+                    "label": "Open the AI settings of the system",
+                    "href": "#tab-intro/system/tabAi",
+                    "target": "_blank",
+                    "button": true,
+                    "variant": "outlined",
+                    "icon": "info",
+                    "hidden": "!(data.aiCredentialType === 'system' || !(data.aiCredentialType === 'manager' ? (data.aiCredentialOpenAi || data.aiCredentialAnthropic || data.aiCredentialGemini || data.aiCredentialDeepSeek || data.aiCustomUrl) : (data.aiOpenAiKey || data.aiAnthropicKey || data.aiGeminiKey || data.aiDeepSeekKey || data.aiCustomUrl)))",
+                    "xs": 12,
+                    "sm": 6
+                },
                 "aiOpenAiKey": {
                     "newLine": true,
                     "type": "password",
                     "label": "OpenAI API key",
-                    "hidden": "data.aiCredentialType === 'manager'",
+                    "hidden": "data.aiCredentialType === 'manager' || data.aiCredentialType === 'system'",
                     "xs": 12,
                     "sm": 9,
                     "help": "platform.openai.com",
@@ -161,13 +186,14 @@
                     "variant": "outlined",
                     "xs": 12,
                     "sm": 3,
-                    "showProcess": true
+                    "showProcess": true,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiAnthropicKey": {
                     "newLine": true,
                     "type": "password",
                     "label": "Anthropic API key",
-                    "hidden": "data.aiCredentialType === 'manager'",
+                    "hidden": "data.aiCredentialType === 'manager' || data.aiCredentialType === 'system'",
                     "xs": 12,
                     "sm": 9,
                     "help": "console.anthropic.com",
@@ -190,13 +216,14 @@
                     "variant": "outlined",
                     "xs": 12,
                     "sm": 3,
-                    "showProcess": true
+                    "showProcess": true,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiGeminiKey": {
                     "newLine": true,
                     "type": "password",
                     "label": "Gemini API key",
-                    "hidden": "data.aiCredentialType === 'manager'",
+                    "hidden": "data.aiCredentialType === 'manager' || data.aiCredentialType === 'system'",
                     "xs": 12,
                     "sm": 9,
                     "help": "aistudio.google.com",
@@ -219,13 +246,14 @@
                     "variant": "outlined",
                     "xs": 12,
                     "sm": 3,
-                    "showProcess": true
+                    "showProcess": true,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiDeepSeekKey": {
                     "newLine": true,
                     "type": "password",
                     "label": "DeepSeek API key",
-                    "hidden": "data.aiCredentialType === 'manager'",
+                    "hidden": "data.aiCredentialType === 'manager' || data.aiCredentialType === 'system'",
                     "xs": 12,
                     "sm": 9,
                     "help": "platform.deepseek.com",
@@ -248,14 +276,16 @@
                     "variant": "outlined",
                     "xs": 12,
                     "sm": 3,
-                    "showProcess": true
+                    "showProcess": true,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "_aiCustomHeader": {
                     "newLine": true,
                     "type": "header",
                     "text": "Own endpoint",
                     "size": 5,
-                    "xs": 12
+                    "xs": 12,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiCustomUrl": {
                     "newLine": true,
@@ -263,13 +293,14 @@
                     "label": "Address of an OpenAI-compatible endpoint",
                     "help": "ai_custom_help",
                     "xs": 12,
-                    "sm": 9
+                    "sm": 9,
+                    "hidden": "data.aiCredentialType === 'system'"
                 },
                 "aiCustomKey": {
                     "newLine": true,
                     "type": "password",
                     "label": "Key of that endpoint, if it wants one",
-                    "hidden": "data.aiCredentialType === 'manager'",
+                    "hidden": "data.aiCredentialType === 'manager' || data.aiCredentialType === 'system'",
                     "xs": 12,
                     "sm": 9
                 },
@@ -291,7 +322,8 @@
                     "disabled": "!data.aiCustomUrl",
                     "xs": 12,
                     "sm": 3,
-                    "showProcess": true
+                    "showProcess": true,
+                    "hidden": "data.aiCredentialType === 'system'"
                 }
             }
         }
