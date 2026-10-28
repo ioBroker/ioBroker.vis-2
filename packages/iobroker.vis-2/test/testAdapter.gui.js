@@ -428,6 +428,78 @@ describe('vis', () => {
         await new Promise(resolve => setTimeout(resolve, 2_000));
     });
 
+    // A binding in the CSS of a view, like its background color, is evaluated like one of a widget (#19). Without
+    // that, the text of the binding ends up in the style, which the browser drops, and the view has no background.
+    it('Check a binding in the background color of a view', async function () {
+        this.timeout(60_000);
+
+        const binding = "{a:system.adapter.vis-2.0.alive;a ? 'rgb(1, 2, 3)' : 'rgb(4, 5, 6)'}";
+
+        // the "View" tab of the attributes, the one before "Widget" in every language
+        const clickViewTab = () =>
+            gPage.evaluate(() => {
+                const tab = [...document.querySelectorAll('[role=tab]')].find(
+                    el => el.nextElementSibling?.textContent === 'Widget',
+                );
+                tab?.click();
+                return !!tab;
+            });
+        if (!(await clickViewTab())) {
+            // a view wider than the work area leaves no room for the column of the attributes: they float over it
+            await gPage.evaluate(() =>
+                document
+                    .querySelector('[aria-label="Show attributes"] button, button[aria-label="Show attributes"]')
+                    ?.click(),
+            );
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            await clickViewTab();
+        }
+        await new Promise(resolve => setTimeout(resolve, 1_000));
+
+        const field = await gPage.evaluateHandle(() => {
+            const label = [...document.querySelectorAll('tr *')].find(
+                el => !el.children.length && el.textContent.trim() === '-color',
+            );
+            const input = label?.closest('tr').querySelector('input[type=text]');
+            if (input && getComputedStyle(input).visibility === 'hidden') {
+                // the group "CSS background" is closed
+                input.closest('.MuiAccordion-root')?.querySelector('.MuiAccordionSummary-root')?.click();
+            }
+            return input;
+        });
+        assert.ok(await field.evaluate(input => !!input), 'the background color of the view is not found');
+        await new Promise(resolve => setTimeout(resolve, 1_000));
+
+        const typeIntoField = async text => {
+            await field.focus();
+            await gPage.keyboard.down('Control');
+            await gPage.keyboard.press('a');
+            await gPage.keyboard.up('Control');
+            await gPage.keyboard.press('Backspace');
+            text && (await gPage.keyboard.type(text));
+            await new Promise(resolve => setTimeout(resolve, 2_000));
+        };
+
+        let background;
+        try {
+            await typeIntoField(binding);
+            background = await gPage.evaluate(() => {
+                const view = [...document.querySelectorAll('.vis-view[id^=visview_]')].find(
+                    el => getComputedStyle(el).display !== 'none',
+                );
+                return view && getComputedStyle(view).backgroundColor;
+            });
+        } finally {
+            // the view goes back to the background it had
+            await typeIntoField('');
+        }
+
+        assert.ok(
+            ['rgb(1, 2, 3)', 'rgb(4, 5, 6)'].includes(background),
+            `the background of the view is "${background}", not one of the values of its binding`,
+        );
+    });
+
     // The right part of the toolbar - user, theme, menu - floats at its right edge, and the groups of the toolbar
     // take the width that is left. When they need more, they have to wrap into another row instead of running on
     // under that part: in the narrowest form the user moves up into it, and the groups lay over its name (#570).

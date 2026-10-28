@@ -47,6 +47,9 @@ But there is another option for how to bind *any* attribute of widget to some Ob
 Just write into attribute `{object.id}` e.g. `{hm-rpc.0.OEQ1880105.4.ACTUAL_TEMPERATURE}` and it will be bound to this object's value. 
 If you use the special format, you can even make some simple operations with it, e.g., multiplying or formatting.
 
+The CSS attributes of a view can be bound the same way, e.g. the background color of a view
+`{a:javascript.0.alarm;a ? 'red' : 'green'}`.
+
 E.g., to calculate the hypotenuse of a triangle:
 
 `{h:javascript.0.myCustom.height;w:javascript.0.myCustom.width;Math.max(20, Math.sqrt(h*h + w*w))}` will be interpreted as function:
@@ -384,6 +387,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) A binding in the CSS of a view, e.g. `{a:javascript.0.alarm;a ? 'red' : 'green'}` as its background color, is evaluated and follows its states, in the runtime and in the editor. Before, the text of the binding went into the style as it was, the browser dropped it, and the view had no background (#19)
 * (@GermanBluefox) Added: the AI assistant uses the AI settings of the system that are set up once in admin (System settings → AI) - for new instances and for instances without own keys
 
 ### 2.20.5 (2026-10-25)
