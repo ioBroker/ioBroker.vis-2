@@ -393,6 +393,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@typhosj) A binding in the CSS of a view, e.g. `{a:javascript.0.alarm;a ? 'red' : 'green'}` as its background color, is evaluated and follows its states, in the runtime and in the editor. Before, the text of the binding went into the style as it was, the browser dropped it, and the view had no background (#19)
 * (@GermanBluefox) Added: the AI assistant uses the AI settings of the system that are set up once in admin (System settings → AI) - for new instances and for instances without own keys
 * (@GermanBluefox) Added: OpenRouter, if it is chosen in the system-wide AI settings of admin (`@iobroker/ai-core` 0.0.6)
+* (@GermanBluefox) Added: the code editors for HTML, CSS, JavaScript and JSON can format the code with prettier (button in the editor or Shift+Alt+F)
 
 ### 2.20.5 (2026-10-25)
 * (@typhosj) vis-2 can be installed from the Admin again: the license dialog stayed empty and could not be accepted, because the Admin loads `licenseInformation.link` as the text of that dialog and the browser may not read the pricing page. The link points at `LICENSE-INFORMATION.txt` now, a plain text with the source code license and the license editions (#707)
