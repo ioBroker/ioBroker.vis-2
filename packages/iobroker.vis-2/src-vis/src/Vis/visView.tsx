@@ -84,6 +84,7 @@ import {
     isSectionOpen,
     isSectionVisible,
 } from './visSections';
+import { applyViewStyleBindings, getViewStyleStateIds } from './visViewStyle';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
 import { resolveNavigationSettings } from './visNavigationSettings';
@@ -196,7 +197,10 @@ interface VisViewState {
         sections: GridSection[];
         dropped?: boolean;
     } | null;
-    /** The values of the states the sections of the grid layout depend on, by `<id>.val`, see subscribeSectionStates() */
+    /**
+     * The values of the states the sections of the grid layout and the CSS of the view depend on, by `<id>.val`,
+     * see subscribeSectionStates()
+     */
     sectionStates: Record<string, any>;
     /** Whether the user opened (true) or closed (false) a section by its header, by section id */
     sectionOpen: Record<string, boolean>;
@@ -308,7 +312,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      */
     private gridCellObserver: ResizeObserver | null = null;
 
-    /** The states the sections of the grid layout listen to, see subscribeSectionStates() */
+    /** The states the sections of the grid layout and the CSS of the view listen to, see subscribeSectionStates() */
     private sectionStateIds: string[] = [];
 
     /**
@@ -481,7 +485,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      * Listen to the states the sections of the grid layout depend on - their conditions and the bindings in their
      * headers, see getSectionStateIds(). The sections are edited while the view lives, so this runs at every update
      * and only subscribes what is new and unsubscribes what is gone. The editor listens as well: it dims a section
-     * that would be hidden, and shows the values in the headers.
+     * that would be hidden, and shows the values in the headers. The bindings in the CSS of the view, like its
+     * background color (#19), are listened to the same way, in every layout.
      */
     private subscribeSectionStates(): void {
         const settings = store.getState().visProject[this.props.view]?.settings;
@@ -498,6 +503,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 });
             });
         }
+        getViewStyleStateIds(settings?.style).forEach(id => !ids.includes(id) && ids.push(id));
         this.sectionTimeIds = timeIds;
         const added = ids.filter(id => !this.sectionStateIds.includes(id));
         const removed = this.sectionStateIds.filter(id => !ids.includes(id));
@@ -776,6 +782,20 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
 
     /** A text of a section header with its bindings, like `Kitchen {javascript.0.temp}°C` */
     private formatSectionText(section: ViewSection, text: string): string {
+        return this.formatBindingText(section.id, '_section', text);
+    }
+
+    /** A value of the CSS of the view with its bindings, like `{a:javascript.0.alarm;a ? 'red' : 'green'}` (#19) */
+    private formatViewText = (text: string): string => this.formatBindingText(this.props.view, '_view', text);
+
+    /**
+     * A text with its bindings, with the values of subscribeSectionStates()
+     *
+     * @param id - the section or the view the text belongs to, `wid` of the binding
+     * @param tpl - what the text belongs to - a section or a view is no widget, but a binding may ask for one
+     * @param text - the text
+     */
+    private formatBindingText(id: string, tpl: string, text: string): string {
         if (!text.includes('{')) {
             return text;
         }
@@ -783,15 +803,14 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             return this.props.context.formatUtils.formatBinding({
                 format: text,
                 view: this.props.view,
-                wid: section.id as AnyWidgetId,
-                // a section is no widget, but a binding may ask for one
-                widget: { tpl: '_section', widgetSet: '', data: {}, style: {} },
+                wid: id as AnyWidgetId,
+                widget: { tpl, widgetSet: '', data: {}, style: {} },
                 widgetData: {},
                 values: this.state.sectionStates as VisRxWidgetStateValues,
                 moment: this.props.context.moment,
             });
         } catch (e) {
-            console.warn(`Cannot format the header of section ${section.id}: ${e as Error}`);
+            console.warn(`Cannot format "${text}" of ${id}: ${e as Error}`);
             return text;
         }
     }
@@ -3665,16 +3684,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             }
         }
         const backgroundStyle: React.CSSProperties = {};
-        const backgroundClass: string = settings?.style?.background_class || '';
+        const viewStyle = applyViewStyleBindings(settings?.style, this.formatViewText);
+        const backgroundClass: string = viewStyle?.background_class || '';
 
-        settings?.style &&
-            Object.keys(settings.style).forEach(attr => {
+        viewStyle &&
+            Object.keys(viewStyle).forEach(attr => {
                 if (attr === 'background_class') {
-                    className = addClass(className, settings.style?.background_class);
+                    className = addClass(className, viewStyle.background_class);
                 } else {
                     const isBg = attr.startsWith('background');
                     if (!settings['bg-image'] || !isBg) {
-                        const value: string = (settings.style as Record<string, string>)[attr];
+                        const value: string = (viewStyle as Record<string, string>)[attr];
                         // convert background-color => backgroundColor
                         attr = attr.replace(/(-\w)/g, text => text[1].toUpperCase());
                         (style as Record<string, string>)[attr] = value;
