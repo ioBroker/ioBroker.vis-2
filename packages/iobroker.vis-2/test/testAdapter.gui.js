@@ -510,12 +510,15 @@ describe('vis', () => {
 
         const binding = "{a:system.adapter.vis-2.0.alive;a ? 'rgb(1, 2, 3)' : 'rgb(4, 5, 6)'}";
 
-        // the "View" tab of the attributes, the one before "Widget" in every language
+        // The "View" tab of the attributes is always the first of them. It is not the one before "Widget": a view
+        // with a grid layout puts "Section" in between. The tabs are found by their aria-label, which they carry
+        // also when they show only their icons.
         const clickViewTab = () =>
             gPage.evaluate(() => {
-                const tab = [...document.querySelectorAll('[role=tab]')].find(
-                    el => el.nextElementSibling?.textContent === 'Widget',
-                );
+                const tab = document
+                    .querySelector('[role=tab][aria-label="Widget"]')
+                    ?.closest('[role=tablist]')
+                    ?.querySelector('[role=tab]');
                 tab?.click();
                 return !!tab;
             });
