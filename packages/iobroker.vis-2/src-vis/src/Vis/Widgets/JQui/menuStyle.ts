@@ -38,3 +38,30 @@ export function getMenuStyle(widgetStyle: React.CSSProperties): React.CSSPropert
         ).map(attr => [attr, widgetStyle[attr]]),
     );
 }
+
+const FIELD_FONT_STYLES = [
+    'fontFamily',
+    'fontSize',
+    'fontStyle',
+    'fontVariant',
+    'fontWeight',
+    'letterSpacing',
+    'textShadow',
+    'wordSpacing',
+] as const;
+
+/**
+ * The font of the field of a closed select. The field takes the font of the theme, so the font of the widget
+ * reached only the items of the list, not the value shown when the list is closed (#284). The line height is left
+ * to the field, as its height is worked out from it.
+ *
+ * @param widgetStyle the style of the widget, see `getMuiStyle`
+ */
+export function getFieldFontStyle(widgetStyle: React.CSSProperties): React.CSSProperties {
+    return Object.fromEntries(
+        FIELD_FONT_STYLES.filter(attr => widgetStyle[attr] != null && widgetStyle[attr] !== '').map(attr => [
+            attr,
+            widgetStyle[attr],
+        ]),
+    );
+}

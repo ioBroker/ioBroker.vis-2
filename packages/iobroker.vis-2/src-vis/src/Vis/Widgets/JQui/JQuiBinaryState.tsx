@@ -957,8 +957,11 @@ class JQuiBinaryState extends VisRxWidget<RxData, JQuiBinaryStateState> {
         } else if (type === 'html' || (type === 'button' && this.state.rxData.jquery_style)) {
             bodyStyle.display = 'flex';
             bodyStyle.flexDirection = this.state.height > this.state.width ? 'column' : 'row';
-            bodyStyle.alignItems = 'center';
-            bodyStyle.justifyContent = 'center';
+            // a text-align of left or right of the widget moves the content to that side (#512), see getMuiStyle
+            const justify = buttonStyle.justifyContent || 'center';
+            bodyStyle.alignItems = bodyStyle.flexDirection === 'column' ? justify : 'center';
+            bodyStyle.justifyContent = bodyStyle.flexDirection === 'column' ? 'center' : justify;
+            bodyStyle.textAlign = buttonStyle.textAlign || 'center';
             bodyStyle.cursor = !this.state.rxData.readOnly ? 'pointer' : undefined;
 
             content = this.renderHtml(isOn);
