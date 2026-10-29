@@ -456,17 +456,25 @@ describe('vis', () => {
         }
         await new Promise(resolve => setTimeout(resolve, 1_000));
 
-        const field = await gPage.evaluateHandle(() => {
-            const label = [...document.querySelectorAll('tr *')].find(
-                el => !el.children.length && el.textContent.trim() === '-color',
+        const findField = () =>
+            gPage.evaluateHandle(() => {
+                const label = [...document.querySelectorAll('tr *')].find(
+                    el => !el.children.length && el.textContent.trim() === '-color',
+                );
+                return label?.closest('tr').querySelector('input[type=text]') || null;
+            });
+        let field = await findField();
+        if (!(await field.evaluate(input => !!input && getComputedStyle(input).visibility !== 'hidden'))) {
+            // A group of the view attributes renders its fields only after it was opened once, so in a fresh browser
+            // "-color" is not there at all, and in a closed group it is hidden: open "CSS background" first
+            await gPage.evaluate(() =>
+                [...document.querySelectorAll('.MuiAccordionSummary-root')]
+                    .find(el => el.textContent.trim().startsWith('CSS background'))
+                    ?.click(),
             );
-            const input = label?.closest('tr').querySelector('input[type=text]');
-            if (input && getComputedStyle(input).visibility === 'hidden') {
-                // the group "CSS background" is closed
-                input.closest('.MuiAccordion-root')?.querySelector('.MuiAccordionSummary-root')?.click();
-            }
-            return input;
-        });
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            field = await findField();
+        }
         assert.ok(await field.evaluate(input => !!input), 'the background color of the view is not found');
         await new Promise(resolve => setTimeout(resolve, 1_000));
 
