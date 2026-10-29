@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getMenuStyle, isTransparent } from './menuStyle';
+import { getFieldFontStyle, getMenuStyle, isTransparent } from './menuStyle';
 
 describe('getMenuStyle', () => {
     // #573: the list of a select kept the dark paper of the theme around items in the colors of the widget
@@ -62,5 +62,53 @@ describe('getMenuStyle', () => {
     it('keeps the theme for a widget without colors', () => {
         expect(getMenuStyle({})).toEqual({});
         expect(getMenuStyle({ backgroundColor: '', color: undefined })).toEqual({});
+    });
+});
+
+describe('getFieldFontStyle', () => {
+    // #284: the font of the widget reached only the items of the list, not the value in the closed select
+    it('takes the font of the widget', () => {
+        expect(
+            getFieldFontStyle({
+                fontFamily: 'Georgia',
+                fontSize: '20px',
+                fontStyle: 'italic',
+                fontVariant: 'small-caps',
+                fontWeight: 700,
+                letterSpacing: '1px',
+                textShadow: '1px 1px red',
+                wordSpacing: '4px',
+            }),
+        ).toEqual({
+            fontFamily: 'Georgia',
+            fontSize: '20px',
+            fontStyle: 'italic',
+            fontVariant: 'small-caps',
+            fontWeight: 700,
+            letterSpacing: '1px',
+            textShadow: '1px 1px red',
+            wordSpacing: '4px',
+        });
+    });
+
+    it('leaves the line height, the colors and the layout of the widget to the field', () => {
+        expect(
+            getFieldFontStyle({
+                fontSize: 0,
+                lineHeight: '40px',
+                color: 'red',
+                backgroundColor: 'white',
+                textAlign: 'left',
+                justifyContent: 'flex-start',
+                textTransform: 'none',
+            }),
+        ).toEqual({ fontSize: 0 });
+    });
+
+    it('gives nothing for a widget without a font', () => {
+        expect(getFieldFontStyle({})).toEqual({});
+        expect(
+            getFieldFontStyle({ fontFamily: '', fontSize: undefined, fontWeight: null as unknown as number }),
+        ).toEqual({});
     });
 });

@@ -426,6 +426,36 @@ describe('vis', () => {
         // takes the disabled color of the theme on purpose.
     });
 
+    // The closed select of the jQui "States control" took the font of the theme, so the font of the widget reached
+    // only the items of its list, not the value shown in the field (#284).
+    it('Check that the select of the jQui states control takes the font of the widget', async function () {
+        this.timeout(60_000);
+
+        const wid = await gPage.evaluate(
+            (data, style) => window.visAddWidget('tplJquiButtonState', 0, 0, data, style),
+            {
+                oid: 'system.adapter.vis-2.0.alive',
+                type: 'select',
+                count: 2,
+                value1: 'true',
+                text1: 'On',
+                value2: 'false',
+                text2: 'Off',
+            },
+            { 'font-family': 'monospace', 'font-size': '30px', 'font-weight': '700' },
+        );
+        await gPage.waitForSelector(`#${wid} .MuiSelect-select`, { timeout: 5_000 });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const font = await gPage.evaluate(id => {
+            const style = getComputedStyle(document.querySelector(`#${id} .MuiSelect-select`));
+            return { family: style.fontFamily, size: style.fontSize, weight: style.fontWeight };
+        }, wid);
+        await helper.view.deleteWidget(gPage, wid, 3_500);
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+
+        assert.deepStrictEqual(font, { family: 'monospace', size: '30px', weight: '700' });
+    });
+
     // The runtime clips the content of a widget at its box (`.vis-widget { overflow: hidden }`), and the editor has
     // to show the same: an image larger than its widget was drawn whole in the editor and cut in the runtime
     // (#582). The editor used to lift the clipping for its name plate, which sat outside the box - that plate is
