@@ -127,6 +127,51 @@ describe('vis', () => {
         );
     });
 
+    // The binary state of type "html" centered its content whatever the text-align of the widget said, so widgets
+    // standing one below the other could not be lined up at the left (#512).
+    it('Check text-align of a binary state with HTML', async function () {
+        this.timeout(60_000);
+
+        const gaps = {};
+        for (const align of ['left', 'right', 'center']) {
+            const wid = await gPage.evaluate(
+                (data, style) => window.visAddWidget('tplJquiBool', 0, 0, data, style),
+                { type: 'html', html_false: '<span class="label512">Label</span>' },
+                {
+                    position: 'absolute',
+                    left: '20px',
+                    top: '20px',
+                    width: '240px',
+                    height: '40px',
+                    'text-align': align,
+                },
+            );
+            const label = await gPage.waitForSelector(`#${wid} .label512`, { timeout: 5_000 });
+            await new Promise(resolve => setTimeout(resolve, 1_000));
+            // the space between the label and the edges of the widget
+            gaps[align] = await label.evaluate((el, id) => {
+                const text = el.getBoundingClientRect();
+                const box = document.getElementById(id).getBoundingClientRect();
+                return { left: Math.round(text.left - box.left), right: Math.round(box.right - text.right) };
+            }, wid);
+            await helper.view.deleteWidget(gPage, wid, 3_500);
+        }
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+
+        assert.ok(
+            gaps.left.left < gaps.left.right,
+            `text-align: left must put the label at the left (${gaps.left.left}px left, ${gaps.left.right}px right)`,
+        );
+        assert.ok(
+            gaps.right.right < gaps.right.left,
+            `text-align: right must put the label at the right (${gaps.right.left}px left, ${gaps.right.right}px right)`,
+        );
+        assert.ok(
+            Math.abs(gaps.center.left - gaps.center.right) <= 2,
+            `text-align: center must keep the label in the middle (${gaps.center.left}px left, ${gaps.center.right}px right)`,
+        );
+    });
+
     // The push mode of the binary state keeps the state on for as long as the button is held. It ran on mouse
     // events, which a finger fires only when it is lifted, so on a touch screen the button was never on while it
     // was held (#475). A mouse released outside of the button left it on for good.
@@ -379,6 +424,36 @@ describe('vis', () => {
         );
         // The select of `tplJquiSelectList` is not checked here: the editor disables it, and a disabled input
         // takes the disabled color of the theme on purpose.
+    });
+
+    // The closed select of the jQui "States control" took the font of the theme, so the font of the widget reached
+    // only the items of its list, not the value shown in the field (#284).
+    it('Check that the select of the jQui states control takes the font of the widget', async function () {
+        this.timeout(60_000);
+
+        const wid = await gPage.evaluate(
+            (data, style) => window.visAddWidget('tplJquiButtonState', 0, 0, data, style),
+            {
+                oid: 'system.adapter.vis-2.0.alive',
+                type: 'select',
+                count: 2,
+                value1: 'true',
+                text1: 'On',
+                value2: 'false',
+                text2: 'Off',
+            },
+            { 'font-family': 'monospace', 'font-size': '30px', 'font-weight': '700' },
+        );
+        await gPage.waitForSelector(`#${wid} .MuiSelect-select`, { timeout: 5_000 });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const font = await gPage.evaluate(id => {
+            const style = getComputedStyle(document.querySelector(`#${id} .MuiSelect-select`));
+            return { family: style.fontFamily, size: style.fontSize, weight: style.fontWeight };
+        }, wid);
+        await helper.view.deleteWidget(gPage, wid, 3_500);
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+
+        assert.deepStrictEqual(font, { family: 'monospace', size: '30px', weight: '700' });
     });
 
     // The runtime clips the content of a widget at its box (`.vis-widget { overflow: hidden }`), and the editor has

@@ -125,6 +125,9 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
 
     private bindingsTimer: ReturnType<typeof setTimeout> | null = null;
 
+    /** Renders the widget again after a binding of its data changed, once for all bindings of one change */
+    private rerenderTimer: ReturnType<typeof setTimeout> | null = null;
+
     private filterDisplay: React.CSSProperties['display'] | undefined;
 
     private lastState: string | undefined;
@@ -227,6 +230,10 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
     componentWillUnmount(): void {
         super.componentWillUnmount();
         this.unmounted = true;
+        if (this.rerenderTimer) {
+            clearTimeout(this.rerenderTimer);
+            this.rerenderTimer = null;
+        }
 
         if (this.props.context.linkContext) {
             if (this.props.context.linkContext?.unregisterChangeHandler) {
@@ -1173,6 +1180,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
         }
 
         const widget = this.props.context.views[this.props.view].widgets[this.props.id];
+        let dataChanged = false;
 
         this.bindings[stateId].forEach((item: VisLinkContextBinding) => {
             widgetStyle ||= widgetContext.style;
@@ -1192,6 +1200,7 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                 } else if (widgetContext) {
                     // trigger observable
                     widgetContext.data.attr(item.attr, value);
+                    dataChanged = true;
                 }
                 this.subscribeBoundId(item.attr, value);
             } else if (item.type === 'style') {
@@ -1213,9 +1222,18 @@ class VisCanWidget extends VisBaseWidget<VisCanWidgetState> {
                         );
                 }
             }
-            // TODO
-            // this.reRenderWidget(binding.view, binding.view, bid);
         });
+
+        // Only a template that reads its data through `this.data.attr()` follows the observable. One that reads it
+        // once, e.g. to set up a jQuery plugin with the color of a binding like the metro slider, does not, so the
+        // runtime renders the widget again, as vis-1 did (#301). renderWidget() leaves it alone when its data
+        // with the bindings applied is still the same.
+        if (dataChanged && !this.state.editMode && !this.rerenderTimer) {
+            this.rerenderTimer = setTimeout(() => {
+                this.rerenderTimer = null;
+                !this.unmounted && this.renderWidget(false);
+            }, 0);
+        }
     }
 
     calcData(
