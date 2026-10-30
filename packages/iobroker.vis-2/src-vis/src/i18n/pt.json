@@ -646,6 +646,8 @@
   "jqui_slider_vertical": "Controle deslizante vertical",
   "jqui_state_note": "Descontinuada. Use o widget \"Controle de estados\" com a opção \"incremento/decremento\". Mantido apenas para compatibilidade com vis.1",
   "jqui_states_control": "Controle dos Estados",
+  "jqui_states_from_object": "Valores do objeto",
+  "jqui_states_from_object_tooltip": "Os valores e textos da lista vêm da lista de valores (common.states) do objeto quando a página é exibida. Ícones, cores e dicas de uma entrada com o mesmo valor são mantidos.",
   "jqui_stepMinute": "Passo minuto",
   "jqui_test": "Valor de teste",
   "jqui_text": "Texto",

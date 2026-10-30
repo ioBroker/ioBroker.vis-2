@@ -721,6 +721,8 @@
   "jqui_slider_vertical": "Vertikaler Schieberegler",
   "jqui_state_note": "Veraltet. Verwenden Sie das Widget „Zustände steuern“ mit der Option „Erhöhen/Verringern“. Wird nur aus Kompatibilitätsgründen mit vis.1 beibehalten",
   "jqui_states_control": "Zustände steuern",
+  "jqui_states_from_object": "Werte aus dem Objekt",
+  "jqui_states_from_object_tooltip": "Werte und Texte der Liste kommen beim Anzeigen der Seite aus der Werteliste (common.states) des Objekts. Symbole, Farben und Tooltips eines Eintrags mit demselben Wert bleiben erhalten.",
   "jqui_stepMinute": "Schrittminute",
   "jqui_test": "Testwert",
   "jqui_text": "Text",

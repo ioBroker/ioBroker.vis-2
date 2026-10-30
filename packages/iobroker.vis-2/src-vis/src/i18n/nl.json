@@ -646,6 +646,8 @@
   "jqui_slider_vertical": "Verticale schuifregelaar",
   "jqui_state_note": "Verouderd. Gebruik de widget \"Statescontrole\" met de optie \"verhogen/verlagen\". Alleen bewaard voor compatibiliteit met vis.1",
   "jqui_states_control": "Controle door staten",
+  "jqui_states_from_object": "Waarden uit het object",
+  "jqui_states_from_object_tooltip": "De waarden en teksten van de lijst komen uit de waardelijst (common.states) van het object wanneer de pagina wordt getoond. Pictogrammen, kleuren en tooltips van een item met dezelfde waarde blijven behouden.",
   "jqui_stepMinute": "Stap minuut",
   "jqui_test": "Testwaarde",
   "jqui_text": "Tekst",
