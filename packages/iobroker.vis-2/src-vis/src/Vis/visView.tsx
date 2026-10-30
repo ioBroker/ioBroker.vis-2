@@ -84,7 +84,7 @@ import {
     isSectionOpen,
     isSectionVisible,
 } from './visSections';
-import { applyViewStyleBindings, getViewStyleStateIds } from './visViewStyle';
+import { applyViewStyleBindings, defaultViewBackgroundColor, getViewStyleStateIds } from './visViewStyle';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
 import { resolveNavigationSettings } from './visNavigationSettings';
@@ -3724,14 +3724,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             theme = this.theme[customThemeType];
         }
 
-        if (!style.backgroundColor && !style.background) {
-            if (this.props.customSettings?.viewStyle?.backgroundColor) {
-                backgroundStyle.backgroundColor = this.props.customSettings.viewStyle.backgroundColor;
-            } else if (this.props.customSettings?.themeType === 'dark') {
-                backgroundStyle.backgroundColor = '#000';
-            } else {
-                backgroundStyle.backgroundColor = theme.palette.mode === 'dark' ? '#000' : '#fff';
-            }
+        const defaultBackgroundColor = defaultViewBackgroundColor(
+            style,
+            backgroundClass,
+            {
+                backgroundColor: this.props.customSettings?.viewStyle?.backgroundColor,
+                themeType: this.props.customSettings?.themeType,
+            },
+            theme.palette.mode,
+        );
+        if (defaultBackgroundColor) {
+            backgroundStyle.backgroundColor = defaultBackgroundColor;
         }
 
         if (!style.color) {
