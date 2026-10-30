@@ -810,6 +810,8 @@
   "right": "right",
   "Show widgets as icons": "Widgets als pictogrammen tonen",
   "Show widgets as list": "Widgets als lijst tonen",
+  "Hide vis-1 widgets": "vis-1-widgets verbergen",
+  "Show vis-1 widgets": "vis-1-widgets tonen",
   "Recently used": "Recent gebruikt",
   "vis_2_widgets_swipe_left_view": "Weergave bij vegen naar links",
   "vis_2_widgets_swipe_right_view": "Weergave bij vegen naar rechts",

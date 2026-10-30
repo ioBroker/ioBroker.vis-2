@@ -810,6 +810,8 @@
   "right": "right",
   "Show widgets as icons": "Показувати віджети значками",
   "Show widgets as list": "Показувати віджети списком",
+  "Hide vis-1 widgets": "Приховати віджети vis-1",
+  "Show vis-1 widgets": "Показати віджети vis-1",
   "Recently used": "Нещодавно використані",
   "vis_2_widgets_swipe_left_view": "Вигляд при свайпі вліво",
   "vis_2_widgets_swipe_right_view": "Вигляд при свайпі вправо",
