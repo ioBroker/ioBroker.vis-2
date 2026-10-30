@@ -8,6 +8,8 @@
  *  http://creativecommons.org/licenses/by-nc/4.0/
  */
 
+import type { CSSProperties } from 'react';
+
 import type { ViewSettings } from '@iobroker/types-vis-2';
 
 import { getBindingStateIds } from './visSections';
@@ -47,4 +49,30 @@ export function applyViewStyleBindings(style: ViewStyle, format: (text: string) 
     const result: Record<string, unknown> = { ...style };
     entries.forEach(([attr, value]) => (result[attr] = format(value)));
     return result;
+}
+
+/**
+ * The background color a view gets when it sets no background itself: the one of the widget that shows the view,
+ * else the one of the theme. A view with a background class gets none - an inline color covers the color of the
+ * class, and the transparent parts of "Carbon fibre" turned white in a light theme (#511).
+ *
+ * @param style - the CSS of the view, with camelCase names
+ * @param backgroundClass - the background class of the view, as it is applied
+ * @param customSettings - the colors of the widget that shows the view, if any
+ * @param themeMode - the mode of the theme the view is shown in
+ * @returns the color, or null if the view brings its own background
+ */
+export function defaultViewBackgroundColor(
+    style: Pick<CSSProperties, 'backgroundColor' | 'background'>,
+    backgroundClass: string,
+    customSettings: { backgroundColor?: string; themeType?: string } | undefined,
+    themeMode: 'light' | 'dark',
+): string | null {
+    if (style.backgroundColor || style.background || backgroundClass.trim()) {
+        return null;
+    }
+    if (customSettings?.backgroundColor) {
+        return customSettings.backgroundColor;
+    }
+    return customSettings?.themeType === 'dark' || themeMode === 'dark' ? '#000' : '#fff';
 }

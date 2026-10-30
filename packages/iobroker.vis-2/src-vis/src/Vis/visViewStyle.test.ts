@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ViewSettings } from '@iobroker/types-vis-2';
 
-import { applyViewStyleBindings, getViewStyleStateIds } from './visViewStyle';
+import { applyViewStyleBindings, defaultViewBackgroundColor, getViewStyleStateIds } from './visViewStyle';
 
 const style = (props: Record<string, unknown>): ViewSettings['style'] => props;
 
@@ -51,5 +51,32 @@ describe('applyViewStyleBindings', () => {
         const stored = style({ color: '{0_userdata.0.color}' });
         applyViewStyleBindings(stored, format);
         expect(stored).toEqual({ color: '{0_userdata.0.color}' });
+    });
+});
+
+describe('defaultViewBackgroundColor', () => {
+    it('gives a view without a background of its own the color of the theme', () => {
+        expect(defaultViewBackgroundColor({}, '', undefined, 'light')).toBe('#fff');
+        expect(defaultViewBackgroundColor({}, '', undefined, 'dark')).toBe('#000');
+        expect(defaultViewBackgroundColor({}, '', {}, 'light')).toBe('#fff');
+    });
+
+    it('takes the colors of the widget that shows the view', () => {
+        expect(defaultViewBackgroundColor({}, '', { backgroundColor: '#123456' }, 'light')).toBe('#123456');
+        expect(defaultViewBackgroundColor({}, '', { themeType: 'dark' }, 'light')).toBe('#000');
+    });
+
+    it('gives none to a view that sets its background itself', () => {
+        expect(defaultViewBackgroundColor({ backgroundColor: '#ff0000' }, '', undefined, 'light')).toBeNull();
+        expect(defaultViewBackgroundColor({ background: 'red' }, '', undefined, 'dark')).toBeNull();
+    });
+
+    it('gives none to a view with a background class, whose own color it would cover (#511)', () => {
+        expect(defaultViewBackgroundColor({}, 'hq-background-carbon-fibre', undefined, 'light')).toBeNull();
+        expect(
+            defaultViewBackgroundColor({}, 'hq-background-carbon-fibre1', { backgroundColor: '#123456' }, 'dark'),
+        ).toBeNull();
+        // a class that a binding makes empty is no class
+        expect(defaultViewBackgroundColor({}, '  ', undefined, 'light')).toBe('#fff');
     });
 });
