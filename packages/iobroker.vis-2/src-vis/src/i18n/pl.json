@@ -646,6 +646,8 @@
   "jqui_slider_vertical": "Suwak pionowy",
   "jqui_state_note": "Przestarzałe. Użyj widżetu „Kontrola stanów” z opcją „zwiększ/zmniejsz”. Zachowane tylko ze względu na zgodność z vis.1",
   "jqui_states_control": "Kontrola państw",
+  "jqui_states_from_object": "Wartości z obiektu",
+  "jqui_states_from_object_tooltip": "Wartości i teksty listy pochodzą z listy wartości (common.states) obiektu podczas wyświetlania strony. Ikony, kolory i podpowiedzi wpisu o tej samej wartości zostają zachowane.",
   "jqui_stepMinute": "Krok minuta",
   "jqui_test": "Wartość testowa",
   "jqui_text": "Tekst",

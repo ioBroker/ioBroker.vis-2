@@ -721,6 +721,8 @@
   "jqui_slider_vertical": "Vertical slider",
   "jqui_state_note": "Deprecated. Use \"States control\" widget with \"increment/decrement\" option. Keeped just for compatibility with vis.1",
   "jqui_states_control": "States control",
+  "jqui_states_from_object": "Values from the object",
+  "jqui_states_from_object_tooltip": "The values and texts of the list come from the value list (common.states) of the object when the page is shown. Icons, colors and tooltips of an entry with the same value stay.",
   "jqui_stepMinute": "Step minute",
   "jqui_test": "Test value",
   "jqui_text": "Text",

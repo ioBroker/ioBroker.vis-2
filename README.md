@@ -387,6 +387,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 -->
 ## Changelog
 ### **WORK IN PROGRESS**
+* (@typhosj) Added: the jQui "States control" (and "Select from list", "Radio list") has the option "Values from the object" - the list takes its values and texts from `common.states` of the object when the page is shown, so it follows a list that changes in the object without "Generate" in the editor. Icons, colors and tooltips set for a value stay with that value (#482)
 * (@typhosj) The jQui "Binary state" of type "html", and of type "button" with the jQuery style, puts its content to the left or the right when the widget has a `text-align` of left or right. It always stood in the middle, so such widgets one below the other could not be lined up (#512)
 * (@typhosj) The select of the jQui "States control" and "Select from list" shows the value in the font of the widget - family, size, weight, style and spacing from "CSS Font & Text". Before, only the items of the opened list took it, the closed field kept the small font of the theme (#284)
 * (@typhosj) A vis-1 widget is rendered again in the runtime when a binding in one of its attributes changes, like in vis-1. A widget that reads an attribute only once kept the first value of the binding, e.g. the color of the metro slider `{v:javascript.0.temp;v > 20 ? 'green' : 'red'}` (#301)

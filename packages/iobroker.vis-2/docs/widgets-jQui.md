@@ -48,5 +48,7 @@ It has the following derived widgets:
   - Radio button (steps) (tplJquiRadioSteps)   
   - Select from list (tplJquiSelectList)
 
+With "Values from the object" the values and texts of the list come from `common.states` of the object of the widget, read when the page is shown. An entry defined in the widget with the same value keeps its icon, colors and tooltip; entries of the widget whose values are not in the object are not shown.
+
 ## Write value (tplIconState). It has the following derived widgets:
   - Increment with Icon (tplIconInc)   
