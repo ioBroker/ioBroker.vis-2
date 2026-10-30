@@ -48,6 +48,7 @@ type RxData = {
     src: string;
     icon: string;
     text: string;
+    onlyIcon: boolean;
     invert_icon: boolean;
     invert_icon_active: boolean;
     variant: 'contained' | 'outlined' | 'standard';
@@ -231,6 +232,7 @@ class JQuiWriteState<
                             name: 'text',
                             type: 'text',
                             default: I18n.t('jqui_Write state'),
+                            hidden: (data: RxData) => JQuiWriteState.isOnlyIcon(data),
                         },
                         {
                             name: 'src',
@@ -243,6 +245,12 @@ class JQuiWriteState<
                             type: 'icon64',
                             label: 'jqui_icon',
                             hidden: (data: RxData) => !!data.src,
+                        },
+                        {
+                            name: 'onlyIcon',
+                            type: 'checkbox',
+                            label: 'jqui_only_icon',
+                            hidden: (data: RxData) => !data.icon && !data.src,
                         },
                         {
                             name: 'text_active',
@@ -433,7 +441,21 @@ class JQuiWriteState<
         return null;
     }
 
+    /**
+     * Whether the button shows its icon alone (#440). Without "Only icon" an empty text falls back to the value it
+     * writes, so a button with an icon always carried a text next to it. Without an icon the option does nothing,
+     * or the button would be empty.
+     *
+     * @param data - the data of the widget
+     */
+    static isOnlyIcon(data: Pick<RxData, 'onlyIcon' | 'icon' | 'src'>): boolean {
+        return !!data.onlyIcon && !!(data.icon || data.src);
+    }
+
     renderText(): React.JSX.Element | null {
+        if (JQuiWriteState.isOnlyIcon(this.state.rxData)) {
+            return null;
+        }
         let text = this.state.rxData.text;
         const color = this.state.rxStyle?.color;
 

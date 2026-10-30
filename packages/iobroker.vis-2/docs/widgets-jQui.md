@@ -49,4 +49,6 @@ It has the following derived widgets:
   - Select from list (tplJquiSelectList)
 
 ## Write value (tplIconState). It has the following derived widgets:
-  - Increment with Icon (tplIconInc)   
+  - Increment with Icon (tplIconInc)
+
+With "Only icon" (group "style", shown when an icon or image is set) the button shows the icon alone; its size follows the size of the widget.
