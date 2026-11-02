@@ -23,6 +23,8 @@ import {
     Palette as IconPalette,
     History as HistoryIcon,
     Widgets as WidgetSetIcon,
+    FilterAlt as FilterIcon,
+    FilterAltOff as FilterOffIcon,
 } from '@mui/icons-material';
 
 import { I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
@@ -37,6 +39,7 @@ import Widget from './Widget';
 import MarketplacePalette from '../Marketplace/MarketplacePalette';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 import { getRecentWidgets, onRecentWidgetsChanged } from './recentWidgets';
+import { isHiddenInPalette, ONLY_VIS2_KEY } from './paletteFilter';
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
 import { isDevServer } from '@/Utilities/devServer';
 
@@ -216,6 +219,8 @@ interface PaletteState {
     /** The widget types placed last, see recentWidgets.ts */
     recent: string[];
     filter: string;
+    /** "Hide vis-1 widgets", see paletteFilter.ts */
+    onlyVis2: boolean;
     marketplaceUpdates: MarketplaceWidgetRevision[] | null;
     marketplaceDeleted: string[] | null;
     marketplaceLoading: boolean;
@@ -250,6 +255,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
             view: window.localStorage.getItem('paletteView') === 'full' ? 'full' : 'grid',
             recent: getRecentWidgets(),
             filter: '',
+            onlyVis2: window.localStorage.getItem(ONLY_VIS2_KEY) === 'true',
             marketplaceUpdates: null,
             marketplaceDeleted: null,
             marketplaceLoading: false,
@@ -395,7 +401,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 title.toLowerCase().includes(filter) ||
                 widgetTypeName.toLowerCase().includes(filter) ||
                 (widgetSetProps[widgetTypeName]?.label || '').toLowerCase().includes(filter);
-            if (widgetType.hidden || !found) {
+            if (isHiddenInPalette(widgetType, this.state.onlyVis2) || !found) {
                 return;
             }
 
@@ -476,7 +482,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
         // a type of a set that is not installed any more is simply gone
         const recent = this.state.recent
             .map(name => types.find(type => type.name === name))
-            .filter((type): type is WidgetType => !!type);
+            .filter((type): type is WidgetType => !!type && !isHiddenInPalette(type, this.state.onlyVis2));
 
         if (!recent.length) {
             return null;
@@ -766,6 +772,22 @@ class Palette extends Component<PaletteProps, PaletteState> {
                             }}
                         >
                             {this.state.view === 'grid' ? <ViewListIcon /> : <ViewGridIcon />}
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip
+                        title={I18n.t(this.state.onlyVis2 ? 'Show vis-1 widgets' : 'Hide vis-1 widgets')}
+                        slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                    >
+                        <IconButton
+                            size="small"
+                            aria-pressed={this.state.onlyVis2}
+                            onClick={() => {
+                                const onlyVis2 = !this.state.onlyVis2;
+                                window.localStorage.setItem(ONLY_VIS2_KEY, onlyVis2 ? 'true' : 'false');
+                                this.setState({ onlyVis2 }, () => this.buildListTrigger());
+                            }}
+                        >
+                            {this.state.onlyVis2 ? <FilterOffIcon /> : <FilterIcon />}
                         </IconButton>
                     </Tooltip>
                     {!allOpened ? (

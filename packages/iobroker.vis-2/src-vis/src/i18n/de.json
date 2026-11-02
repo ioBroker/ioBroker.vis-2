@@ -885,6 +885,8 @@
   "right": "rechts",
   "Show widgets as icons": "Widgets als Symbole zeigen",
   "Show widgets as list": "Widgets als Liste zeigen",
+  "Hide vis-1 widgets": "vis-1-Widgets ausblenden",
+  "Show vis-1 widgets": "vis-1-Widgets anzeigen",
   "Recently used": "Zuletzt benutzt",
   "vis_2_widgets_swipe_left_view": "Ansicht beim Wischen nach links",
   "vis_2_widgets_swipe_right_view": "Ansicht beim Wischen nach rechts",

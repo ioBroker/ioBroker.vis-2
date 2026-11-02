@@ -810,6 +810,8 @@
   "right": "right",
   "Show widgets as icons": "Mostra i widget come icone",
   "Show widgets as list": "Mostra i widget come elenco",
+  "Hide vis-1 widgets": "Nascondi i widget vis-1",
+  "Show vis-1 widgets": "Mostra i widget vis-1",
   "Recently used": "Usati di recente",
   "vis_2_widgets_swipe_left_view": "Vista scorrendo a sinistra",
   "vis_2_widgets_swipe_right_view": "Vista scorrendo a destra",

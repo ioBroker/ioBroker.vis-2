@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { Project, ViewSettings } from '@iobroker/types-vis-2';
 
 import {
+    getMenuWidth,
     getNavigationBarHeight,
     getNavigationEntryStateIds,
     isNavigationEntryShown,
@@ -171,5 +172,26 @@ describe('isNavigationEntryShown', () => {
         ).toBe(false);
         expect(isNavigationEntryShown(settings({ navigationEntryCond: 'exist' }), states, 'a')).toBe(true);
         expect(isNavigationEntryShown(settings({ navigationEntryCond: 'not exist' }), states, 'a')).toBe(false);
+    });
+});
+
+describe('getMenuWidth', () => {
+    const hideOnSelection = { navigationHideOnSelection: true } as ViewSettings;
+    const plain = {} as ViewSettings;
+
+    it('closes a narrow menu on a view whose menu hides itself after a selection', () => {
+        // the narrow state was left behind by another view; the page here takes the whole width
+        expect(getMenuWidth('narrow', hideOnSelection)).toBe('hidden');
+    });
+
+    it('keeps an open or closed menu on such a view', () => {
+        expect(getMenuWidth('full', hideOnSelection)).toBe('full');
+        expect(getMenuWidth('hidden', hideOnSelection)).toBe('hidden');
+    });
+
+    it('leaves the state alone on any other view', () => {
+        expect(getMenuWidth('narrow', plain)).toBe('narrow');
+        expect(getMenuWidth('full', plain)).toBe('full');
+        expect(getMenuWidth('hidden', plain)).toBe('hidden');
     });
 });
