@@ -395,6 +395,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) Added: the AI assistant uses the AI settings of the system that are set up once in admin (System settings → AI) - for new instances and for instances without own keys
 * (@GermanBluefox) Added: OpenRouter, if it is chosen in the system-wide AI settings of admin (`@iobroker/ai-core` 0.0.6)
 * (@GermanBluefox) Added: the code editors for HTML, CSS, JavaScript and JSON can format the code with prettier (button in the editor or Shift+Alt+F)
+* (@GermanBluefox) The editor shows its toolbar, the tabs and the view again when the palette and the attributes are both hidden. The work area was drawn twice then - alone and once more below it - so every widget was there twice and the editor was scrolled until its toolbar was out of sight
 * (@GermanBluefox) The background of a view covers its widgets in the editor, also those that lie beyond its screen size or, in a view without a screen size, below the editor area. The background stopped at the screen size or at the editor area, so a widget further down - common in views brought over from vis-1 - stood on the background of the editor
 
 ### 2.20.5 (2026-10-25)
