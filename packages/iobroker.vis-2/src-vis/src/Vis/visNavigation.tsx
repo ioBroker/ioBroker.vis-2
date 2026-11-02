@@ -31,9 +31,11 @@ import { I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
 import {
+    getMenuWidth,
     getNavigationBarHeight,
     getNavigationEntryStateIds,
     isNavigationEntryShown,
+    type MenuWidth,
     NAVIGATION_BAR_HEIGHT,
     resolveNavigationSettings,
 } from './visNavigationSettings';
@@ -487,6 +489,15 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
     }
 
     /**
+     * The width the menu is drawn with on this view, see getMenuWidth()
+     *
+     * @param settings - the resolved settings of the menu
+     */
+    getMenuWidth(settings: ViewSettings): MenuWidth {
+        return getMenuWidth(this.props.menuWidth, settings);
+    }
+
+    /**
      * Open or close a folder of the menu.
      *
      * @param id - the folder
@@ -506,7 +517,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
      */
     renderMenuItem(item: MenuItem, settings: ViewSettings, inFolder: boolean): React.JSX.Element {
         const active = this.props.activeView === item.view;
-        const full = this.props.menuWidth === 'full';
+        const full = this.getMenuWidth(settings) === 'full';
         const color = active ? settings.navigationSelectedColor : settings.navigationColor;
         // a project that set a colour of its own keeps it: it wins over the fill of the theme
         const ownBackground = active ? settings.navigationSelectedBackground : undefined;
@@ -566,7 +577,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                             '& .MuiListItemText-primary': Utils.getStyle(
                                 this.props.theme,
                                 styles.listItemText,
-                                this.props.menuWidth === 'narrow' && styles.listItemTextNarrow,
+                                this.getMenuWidth(settings) === 'narrow' && styles.listItemTextNarrow,
                             ),
                         }}
                     />
@@ -576,7 +587,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
 
         return (
             <Tooltip
-                title={this.props.menuWidth !== 'full' ? item.text : ''}
+                title={this.getMenuWidth(settings) !== 'full' ? item.text : ''}
                 key={item.view}
                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
             >
@@ -595,7 +606,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
      * @param settings - the colours of the menu
      */
     renderEntries(items: MenuItem[], settings: ViewSettings): React.JSX.Element[] {
-        if (this.props.menuWidth !== 'full' || settings.navigationFlat) {
+        if (this.getMenuWidth(settings) !== 'full' || settings.navigationFlat) {
             return items.map(item => this.renderMenuItem(item, settings, false));
         }
 
@@ -774,10 +785,10 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
 
         const menuStyle: React.CSSProperties = {
             ...styles.menu,
-            width: this.props.menuWidth === 'full' ? menuFullWidth : undefined,
-            ...(this.props.menuWidth === 'full' ? styles.menuFull : undefined),
-            ...(this.props.menuWidth === 'narrow' ? styles.menuNarrow : undefined),
-            ...(this.props.menuWidth === 'hidden' ? styles.menuHidden : undefined),
+            width: this.getMenuWidth(settings) === 'full' ? menuFullWidth : undefined,
+            ...(this.getMenuWidth(settings) === 'full' ? styles.menuFull : undefined),
+            ...(this.getMenuWidth(settings) === 'narrow' ? styles.menuNarrow : undefined),
+            ...(this.getMenuWidth(settings) === 'hidden' ? styles.menuHidden : undefined),
             opacity: this.props.editMode ? 0.4 : 1,
             backgroundColor: settings.navigationBackground || undefined,
         };
@@ -793,9 +804,9 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
 
         const menuToolbarStyle: React.CSSProperties = {
             ...styles.menuToolbar,
-            ...(this.props.menuWidth === 'full' ? styles.menuToolbarFull : undefined),
-            ...(this.props.menuWidth === 'narrow' ? styles.menuToolbarNarrow : undefined),
-            ...(this.props.menuWidth === 'hidden' ? styles.menuToolbarNarrow : undefined),
+            ...(this.getMenuWidth(settings) === 'full' ? styles.menuToolbarFull : undefined),
+            ...(this.getMenuWidth(settings) === 'narrow' ? styles.menuToolbarNarrow : undefined),
+            ...(this.getMenuWidth(settings) === 'hidden' ? styles.menuToolbarNarrow : undefined),
             color: settings.navigationHeaderTextColor || undefined,
         };
 
@@ -830,7 +841,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         if (barHeight !== NAVIGATION_BAR_HEIGHT.default) {
             style.height = barHeight;
             style.lineHeight = `${barHeight}px`;
-            if (this.props.menuWidth === 'hidden') {
+            if (this.getMenuWidth(settings) === 'hidden') {
                 // room for the button that opens the menu, which sits in the bar, see getOpenMenuButtonSize()
                 // the button starts 9 px from the edge, the text keeps 15 px away from it, as in the default bar
                 style.paddingLeft = 24 + VisNavigation.getOpenMenuButtonSize(barHeight);
@@ -848,7 +859,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                 sx={Utils.getStyle(
                     this.props.theme,
                     styles.toolBar,
-                    this.props.menuWidth === 'hidden' && styles.toolBarWithClosedMenu,
+                    this.getMenuWidth(settings) === 'hidden' && styles.toolBarWithClosedMenu,
                 )}
                 style={style}
             >
@@ -890,12 +901,12 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         // in an app bar lower than the button, the button shrinks to the height of the bar; the icon stays 24 px
         const size = VisNavigation.getOpenMenuButtonSize(barHeight);
         const padding =
-            this.props.menuWidth === 'hidden' && settings.navigationBar && size < OPEN_MENU_BUTTON_SIZE
+            this.getMenuWidth(settings) === 'hidden' && settings.navigationBar && size < OPEN_MENU_BUTTON_SIZE
                 ? (size - 24) / 2
                 : undefined;
         let backgroundColor: string | undefined;
         let color: string | undefined;
-        if (this.props.menuWidth === 'hidden') {
+        if (this.getMenuWidth(settings) === 'hidden') {
             if (settings.navigationButtonBackground) {
                 backgroundColor = this.props.context.themeType === 'dark' ? '#FFFFFF40' : '#00000040';
             } else {
@@ -919,16 +930,16 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             <IconButton
                 onClick={() => {
                     if (settings.navigationHideOnSelection) {
-                        if (this.props.menuWidth === 'full') {
+                        if (this.getMenuWidth(settings) === 'full') {
                             this.hideNavigationMenu();
                         } else {
                             window.localStorage.setItem('vis.navOpened', 'full');
                             this.props.setMenuWidth('full');
                         }
-                    } else if (this.props.menuWidth === 'full') {
+                    } else if (this.getMenuWidth(settings) === 'full') {
                         window.localStorage.setItem('vis.navOpened', 'narrow');
                         this.props.setMenuWidth('narrow');
-                    } else if (this.props.menuWidth === 'narrow') {
+                    } else if (this.getMenuWidth(settings) === 'narrow') {
                         if (!settings.navigationNoHide) {
                             this.hideNavigationMenu();
                         } else {
@@ -944,8 +955,8 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             >
                 <ChevronLeftIcon
                     style={{
-                        ...(this.props.menuWidth === 'hidden' ||
-                        (this.props.menuWidth === 'narrow' && settings.navigationNoHide)
+                        ...(this.getMenuWidth(settings) === 'hidden' ||
+                        (this.getMenuWidth(settings) === 'narrow' && settings.navigationNoHide)
                             ? styles.openMenuButtonIconHidden
                             : undefined),
                         color,
@@ -1044,13 +1055,13 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
 
         const menuWidth: 'hidden' | 'full' | 'narrow' = settings.navigationHideOnSelection
             ? 'hidden'
-            : this.props.menuWidth;
+            : this.getMenuWidth(settings);
 
         const styleMenu: React.CSSProperties = { ...styles.openMenuButton };
-        if (this.props.menuWidth === 'full') {
+        if (this.getMenuWidth(settings) === 'full') {
             styleMenu.left = menuFullWidth - TOOLBAR_SIZE;
             Object.assign(styleMenu, styles.openMenuButtonFull);
-        } else if (this.props.menuWidth === 'narrow') {
+        } else if (this.getMenuWidth(settings) === 'narrow') {
             Object.assign(styleMenu, styles.openMenuButtonNarrow);
         } else {
             Object.assign(styleMenu, styles.openMenuButtonHidden);
