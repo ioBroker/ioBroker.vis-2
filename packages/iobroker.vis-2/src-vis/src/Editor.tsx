@@ -3146,11 +3146,15 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                     onDragOverPoint={this.onPaletteDragOver}
                                     onDragActive={this.onDragActive}
                                 >
+                                    {/* The workspace is rendered exactly once: alone when there is no panel beside
+                                        it, otherwise inside the splitter. Twice meant two copies of every widget
+                                        with the same ids, the second one below the first and the page scrolled. */}
                                     {(this.state.hidePalette && this.state.hideAttributes) || this.state.narrowLayout
                                         ? this.renderWorkspace()
                                         : null}
                                     {this.renderFloatingPanel()}
-                                    {this.state.narrowLayout ? null : (
+                                    {(this.state.hidePalette && this.state.hideAttributes) ||
+                                    this.state.narrowLayout ? null : (
                                         <ReactSplit
                                             direction={SplitDirection.Horizontal}
                                             initialSizes={

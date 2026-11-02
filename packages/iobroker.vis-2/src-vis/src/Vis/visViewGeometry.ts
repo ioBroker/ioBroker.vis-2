@@ -280,21 +280,90 @@ export function autoScrollSpeed(pointer: { x: number; y: number }, pane: Box): {
     };
 }
 
+/** How far the widgets of a view reach to the right and down, in pixels */
+export interface WidgetsExtent {
+    right: number;
+    bottom: number;
+}
+
+/** The parts of a widget `widgetsExtent()` reads */
+interface ExtentWidget {
+    grouped?: boolean;
+    usedInWidget?: boolean;
+    style?: object | null;
+}
+
 /**
- * The least size of a view in the editor: the screen size set for it.
+ * A coordinate of the widget style in pixels: a number, or a string of one with or without `px`.
+ * Anything else - `%`, `calc()`, `em` - is relative to something and is not a fixed place.
+ */
+function fixedPixels(value: unknown): number | null {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const match = value.trim().match(/^(-?\d+(?:\.\d+)?|-?\.\d+)(?:px)?$/);
+    return match ? parseFloat(match[1]) : null;
+}
+
+/**
+ * How far the absolutely positioned widgets of a view reach, taken from their stored style.
+ *
+ * Only fixed pixel values count. A widget placed or sized in `%` follows the view - if the view grew to take
+ * it in, it would grow along, and the view after it, without end (a widget at `left: 61px` with `width: 100%`
+ * is always 61px wider than the view). A fixed position with a size that is not fixed still counts with its
+ * position. Widgets inside a group are placed in their group, and the group counts for them; relative widgets
+ * are in the flow of the view and make it grow on their own.
+ *
+ * @param widgets - the widgets of the view
+ * @returns the right and the bottom edge of the widgets that reach the farthest, 0 if none does
+ */
+export function widgetsExtent(widgets: Iterable<ExtentWidget | null | undefined>): WidgetsExtent {
+    const extent: WidgetsExtent = { right: 0, bottom: 0 };
+    for (const widget of widgets) {
+        if (!widget || widget.grouped || widget.usedInWidget) {
+            continue;
+        }
+        const style = (widget.style || {}) as Record<string, unknown>;
+        if (style.position && style.position !== 'absolute') {
+            continue;
+        }
+        const left = fixedPixels(style.left);
+        if (left !== null) {
+            extent.right = Math.max(extent.right, left + Math.max(fixedPixels(style.width) ?? 0, 0));
+        }
+        const top = fixedPixels(style.top);
+        if (top !== null) {
+            extent.bottom = Math.max(extent.bottom, top + Math.max(fixedPixels(style.height) ?? 0, 0));
+        }
+    }
+    return extent;
+}
+
+/**
+ * The least size of a view in the editor: its screen size, or as far as its widgets reach, if that is farther.
  *
  * The editor scrolls the view in a pane of its own, and the view was only as big as that pane - with a larger
  * screen size its background stopped where the first screenful ended, and everything scrolled to beyond it was
- * white (#560). `max()`, because this replaces the `min-width` / `min-height: 100%` of `.vis-view`.
+ * white (#560). Absolutely positioned widgets do not make the view bigger either, so the same happened below a
+ * widget that lies outside the screen size, or outside the pane of a view without one - which views brought
+ * over from vis-1 often have. `max()`, because this replaces the `min-width` / `min-height: 100%` of `.vis-view`.
  *
  * @param sizeX - width of the screen, as the view settings store it
  * @param sizeY - height of the screen, as the view settings store it
- * @returns `minWidth` and `minHeight` for the style of the view, each only if that size is set
+ * @param extent - how far the widgets of the view reach, see `widgetsExtent()`
+ * @returns `minWidth` and `minHeight` for the style of the view, each only if there is something to cover
  */
-export function editorViewMinSize(sizeX: unknown, sizeY: unknown): { minWidth?: string; minHeight?: string } {
+export function editorViewMinSize(
+    sizeX: unknown,
+    sizeY: unknown,
+    extent?: WidgetsExtent,
+): { minWidth?: string; minHeight?: string } {
     const result: { minWidth?: string; minHeight?: string } = {};
-    const width = parseFloat(sizeX as string);
-    const height = parseFloat(sizeY as string);
+    const width = Math.max(parseFloat(sizeX as string) || 0, extent?.right || 0);
+    const height = Math.max(parseFloat(sizeY as string) || 0, extent?.bottom || 0);
     if (Number.isFinite(width) && width > 0) {
         result.minWidth = `max(100%, ${width}px)`;
     }

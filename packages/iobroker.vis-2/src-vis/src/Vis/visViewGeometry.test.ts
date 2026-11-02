@@ -13,6 +13,7 @@ import {
     selectionRect,
     snapToGrid,
     snapToWidgets,
+    widgetsExtent,
 } from './visViewGeometry';
 
 const box = (left: number, top: number, right: number, bottom: number): Box => ({ left, top, right, bottom });
@@ -277,5 +278,69 @@ describe('editorViewMinSize', () => {
         expect(editorViewMinSize(0, 0)).toEqual({});
         expect(editorViewMinSize(-100, 'abc')).toEqual({});
         expect(editorViewMinSize(Infinity, NaN)).toEqual({});
+    });
+
+    it('covers the widgets that reach beyond the screen size', () => {
+        expect(editorViewMinSize(800, 600, { right: 1000, bottom: 900 })).toEqual({
+            minWidth: 'max(100%, 1000px)',
+            minHeight: 'max(100%, 900px)',
+        });
+        expect(editorViewMinSize(1200, 1000, { right: 1000, bottom: 900 })).toEqual({
+            minWidth: 'max(100%, 1200px)',
+            minHeight: 'max(100%, 1000px)',
+        });
+    });
+
+    it('covers the widgets of a view without a screen size', () => {
+        expect(editorViewMinSize(undefined, undefined, { right: 429, bottom: 888.5 })).toEqual({
+            minWidth: 'max(100%, 429px)',
+            minHeight: 'max(100%, 888.5px)',
+        });
+        expect(editorViewMinSize(undefined, undefined, { right: 0, bottom: 0 })).toEqual({});
+    });
+});
+
+describe('widgetsExtent', () => {
+    it('takes the farthest edges of the absolute widgets, as their style stores them', () => {
+        expect(
+            widgetsExtent([
+                { style: { left: 50.5, top: '730.5', width: '378.5px', height: '158px' } },
+                { style: { left: '10px', top: '20px', width: 900, height: 100 } },
+            ]),
+        ).toEqual({ right: 910, bottom: 888.5 });
+    });
+
+    it('does not let a widget that follows the view make the view grow', () => {
+        // left: 61px + width: 100% is always 61px wider than the view - counting it would never end
+        expect(widgetsExtent([{ style: { left: '61px', top: '170.5px', width: '100%', height: '209.5px' } }])).toEqual({
+            right: 61,
+            bottom: 380,
+        });
+        expect(widgetsExtent([{ style: { left: '50%', top: 'calc(100% - 20px)', width: 100, height: 100 } }])).toEqual({
+            right: 0,
+            bottom: 0,
+        });
+    });
+
+    it('counts the position of a widget without a fixed size', () => {
+        expect(widgetsExtent([{ style: { left: 300, top: 400 } }])).toEqual({ right: 300, bottom: 400 });
+        expect(widgetsExtent([{ style: { left: 300, top: 400, width: -50, height: 'auto' } }])).toEqual({
+            right: 300,
+            bottom: 400,
+        });
+    });
+
+    it('skips grouped, built-in and relative widgets', () => {
+        expect(
+            widgetsExtent([
+                { grouped: true, style: { left: 2000, top: 2000, width: 10, height: 10 } },
+                { usedInWidget: true, style: { left: 2000, top: 2000, width: 10, height: 10 } },
+                { style: { position: 'relative', left: 2000, top: 2000, width: 10, height: 10 } },
+                { style: { position: 'absolute', left: 100, top: 100, width: 10, height: 10 } },
+                null,
+                undefined,
+                {},
+            ]),
+        ).toEqual({ right: 110, bottom: 110 });
     });
 });

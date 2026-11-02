@@ -56,6 +56,7 @@ import {
     selectionRect,
     snapToGrid,
     snapToWidgets,
+    widgetsExtent,
 } from './visViewGeometry';
 import {
     applyGridDrop,
@@ -3668,10 +3669,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             height: this.isGridLayout() && !VisView.isScreenLimited(settings) ? 'auto' : '100%',
         };
 
-        // in the editor the view is at least its screen size, so its background covers what is scrolled to (#560);
-        // the runtime puts the background on the whole document, see below
+        // in the editor the view is at least its screen size and as far as its widgets reach, so its background
+        // covers what is scrolled to (#560); the runtime puts the background on the whole document, see below
         if (this.props.editMode && !VisView.isScreenLimited(settings)) {
-            Object.assign(style, editorViewMinSize(settings?.sizex, settings?.sizey));
+            Object.assign(
+                style,
+                editorViewMinSize(
+                    settings?.sizex,
+                    settings?.sizey,
+                    widgetsExtent(Object.values(contextView.widgets || {})),
+                ),
+            );
         }
 
         if (this.state.loadedjQueryTheme !== this.getJQueryThemeName() && this.props.view) {
