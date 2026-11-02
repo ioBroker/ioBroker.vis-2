@@ -205,6 +205,43 @@ function describeWidgets(project: Project, view: string): unknown[] {
     });
 }
 
+/**
+ * The style of a widget the assistant puts on a page.
+ *
+ * A tile of a grid takes its place from its section and needs nothing. A widget on a plan needs a place,
+ * and it has to be `absolute` there: several widget sets declare themselves relative by default
+ * (the gauges: `position: relative`, `width: 100%`, `absoluteWidth`), and a relative widget flows after
+ * the one before it and ignores the `left`/`top` it was given - a page of them ends up in a heap.
+ *
+ * @param grid - the page has the layout with sections
+ * @param typeStyle - `visDefaultStyle` of the widget type
+ * @param wanted - the style the model asked for
+ */
+export function newWidgetStyle(
+    grid: boolean,
+    typeStyle: Partial<WidgetStyle> | undefined,
+    wanted: Partial<WidgetStyle> | undefined,
+): WidgetStyle {
+    const style: Record<string, unknown> = {
+        ...(grid ? {} : { position: 'absolute', width: 200, height: 120, left: 20, top: 20 }),
+        ...(typeStyle || {}),
+        ...(wanted || {}),
+        bindings: [],
+    };
+
+    // only the model may still ask for a relative widget on a plan, the type may not
+    if (!grid && wanted?.position !== 'relative') {
+        style.position = 'absolute';
+        // the `100%` of a relative type is the width of the whole page; it has a width of its own for this
+        if (style.width === '100%' && !wanted?.width) {
+            style.width = typeStyle?.absoluteWidth || 200;
+        }
+        delete style.absoluteWidth;
+    }
+
+    return style;
+}
+
 /** A name that is not taken yet */
 function uniqueViewName(project: Project, wanted: string): string {
     const name = wanted.trim() || 'View';
@@ -371,13 +408,7 @@ export function runTool(name: string, args: Record<string, any>, context: AiTool
                 tpl: type.name,
                 widgetSet: type.set,
                 data: { ...(args.data || {}), bindings: [] } as WidgetData,
-                style: {
-                    // a tile of a grid takes its place from the section; a widget on a plan needs one
-                    ...(grid ? {} : { position: 'absolute', width: 200, height: 120, left: 20, top: 20 }),
-                    ...(type.style || {}),
-                    ...((args.style as WidgetStyle) || {}),
-                    bindings: [],
-                } as WidgetStyle,
+                style: newWidgetStyle(grid, type.style, args.style as Partial<WidgetStyle> | undefined),
             } as any;
 
             if (grid) {

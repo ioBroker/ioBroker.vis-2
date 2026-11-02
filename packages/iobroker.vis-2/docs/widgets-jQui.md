@@ -51,4 +51,6 @@ It has the following derived widgets:
 With "Values from the object" the values and texts of the list come from `common.states` of the object of the widget, read when the page is shown. An entry defined in the widget with the same value keeps its icon, colors and tooltip; entries of the widget whose values are not in the object are not shown.
 
 ## Write value (tplIconState). It has the following derived widgets:
-  - Increment with Icon (tplIconInc)   
+  - Increment with Icon (tplIconInc)
+
+With "Only icon" (group "style", shown when an icon or image is set) the button shows the icon alone; its size follows the size of the widget.

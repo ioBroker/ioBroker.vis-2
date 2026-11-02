@@ -56,6 +56,7 @@ import {
     selectionRect,
     snapToGrid,
     snapToWidgets,
+    widgetsExtent,
 } from './visViewGeometry';
 import {
     applyGridDrop,
@@ -84,7 +85,7 @@ import {
     isSectionOpen,
     isSectionVisible,
 } from './visSections';
-import { applyViewStyleBindings, getViewStyleStateIds } from './visViewStyle';
+import { applyViewStyleBindings, defaultViewBackgroundColor, getViewStyleStateIds } from './visViewStyle';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
 import { resolveNavigationSettings } from './visNavigationSettings';
@@ -3668,10 +3669,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             height: this.isGridLayout() && !VisView.isScreenLimited(settings) ? 'auto' : '100%',
         };
 
-        // in the editor the view is at least its screen size, so its background covers what is scrolled to (#560);
-        // the runtime puts the background on the whole document, see below
+        // in the editor the view is at least its screen size and as far as its widgets reach, so its background
+        // covers what is scrolled to (#560); the runtime puts the background on the whole document, see below
         if (this.props.editMode && !VisView.isScreenLimited(settings)) {
-            Object.assign(style, editorViewMinSize(settings?.sizex, settings?.sizey));
+            Object.assign(
+                style,
+                editorViewMinSize(
+                    settings?.sizex,
+                    settings?.sizey,
+                    widgetsExtent(Object.values(contextView.widgets || {})),
+                ),
+            );
         }
 
         if (this.state.loadedjQueryTheme !== this.getJQueryThemeName() && this.props.view) {
@@ -3724,14 +3732,17 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             theme = this.theme[customThemeType];
         }
 
-        if (!style.backgroundColor && !style.background) {
-            if (this.props.customSettings?.viewStyle?.backgroundColor) {
-                backgroundStyle.backgroundColor = this.props.customSettings.viewStyle.backgroundColor;
-            } else if (this.props.customSettings?.themeType === 'dark') {
-                backgroundStyle.backgroundColor = '#000';
-            } else {
-                backgroundStyle.backgroundColor = theme.palette.mode === 'dark' ? '#000' : '#fff';
-            }
+        const defaultBackgroundColor = defaultViewBackgroundColor(
+            style,
+            backgroundClass,
+            {
+                backgroundColor: this.props.customSettings?.viewStyle?.backgroundColor,
+                themeType: this.props.customSettings?.themeType,
+            },
+            theme.palette.mode,
+        );
+        if (defaultBackgroundColor) {
+            backgroundStyle.backgroundColor = defaultBackgroundColor;
         }
 
         if (!style.color) {

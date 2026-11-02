@@ -88,6 +88,27 @@ export function getNavigationBarHeight(settings: ViewSettings): number {
     return Math.min(NAVIGATION_BAR_HEIGHT.max, Math.max(NAVIGATION_BAR_HEIGHT.min, height));
 }
 
+/** How wide the menu at the side is */
+export type MenuWidth = 'full' | 'narrow' | 'hidden';
+
+/**
+ * The width the menu is drawn with on this view.
+ *
+ * Open, narrow or closed is one state for the whole runtime (`vis.menuWidth`), but a view whose menu hides
+ * itself after a selection knows only two of them: closed, or open over the page. It gives its page the whole
+ * width and lays the menu on top. A narrow menu that another view left behind stayed there for good and covered
+ * the left edge of the page - the first column of relative widgets, or whatever stood within 56 px of it.
+ *
+ * @param menuWidth - the state of the menu
+ * @param settings - the resolved settings of the menu
+ */
+export function getMenuWidth(menuWidth: MenuWidth, settings: ViewSettings): MenuWidth {
+    if (settings.navigationHideOnSelection && menuWidth === 'narrow') {
+        return 'hidden';
+    }
+    return menuWidth;
+}
+
 /**
  * The states the menu has to listen to: those the entries of the views are shown by (#592)
  *
