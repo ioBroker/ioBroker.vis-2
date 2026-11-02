@@ -646,6 +646,8 @@
   "jqui_slider_vertical": "垂直滑块",
   "jqui_state_note": "已弃用。使用带有“增量/减量”选项的“状态控制”小部件。保留只是为了与 vis.1 兼容",
   "jqui_states_control": "国家控制",
+  "jqui_states_from_object": "来自对象的值",
+  "jqui_states_from_object_tooltip": "显示页面时，列表的值和文本取自对象的值列表 (common.states)。具有相同值的条目的图标、颜色和提示保持不变。",
   "jqui_stepMinute": "步数分钟",
   "jqui_test": "测试值",
   "jqui_text": "文本",

@@ -48,6 +48,7 @@ import type {
 } from '@iobroker/types-vis-2';
 
 import { getFieldFontStyle, getMenuStyle } from './menuStyle';
+import { applyStatesFromObject } from './statesList';
 
 // Editor-only dialog: lazy-loaded so it is excluded from the runtime bundle (see tasks.js stub)
 const BulkEditor = React.lazy(() => import('./BulkEditor'));
@@ -79,6 +80,7 @@ type RxData = {
     widgetTitle: string;
     timeout: number;
     open: boolean;
+    statesFromObject: boolean;
 
     [key: `value${number}`]: string | number;
     [key: `color${number}`]: string;
@@ -100,6 +102,8 @@ interface JQuiStateState extends VisRxWidgetState {
 
 class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateState> extends VisRxWidget<P, S> {
     private controlTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    private listData: { rxData: RxData; states: unknown; data: RxData } | null = null;
 
     constructor(props: VisBaseWidgetProps) {
         super(props);
@@ -147,6 +151,12 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                                     }
                                 }
                             },
+                        },
+                        {
+                            name: 'statesFromObject',
+                            label: 'jqui_states_from_object',
+                            type: 'checkbox',
+                            tooltip: 'jqui_states_from_object_tooltip',
                         },
                         {
                             name: 'readOnly',
@@ -466,6 +476,20 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         }
     }
 
+    /**
+     * The data the value list is rendered from: that of the widget, or with "Values from the object" the values and
+     * texts of `common.states` of the object (#482). Known limit: the object is read when the widget is shown or its
+     * ID changes, so a list changed in the object while the page is open shows after a reload.
+     */
+    getListData(): RxData {
+        const rxData = this.state.rxData;
+        const states = rxData.statesFromObject && this.state.object ? this.state.object.common.states : undefined;
+        if (this.listData?.rxData !== rxData || this.listData.states !== states) {
+            this.listData = { rxData, states, data: applyStatesFromObject(rxData, states) };
+        }
+        return this.listData.data;
+    }
+
     getControlOid(): string {
         if (this.state.rxData.click_id && this.state.rxData.click_id !== 'nothing_selected') {
             return this.state.rxData.click_id;
@@ -502,13 +526,13 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                 if (typeof this.state.object === 'object' && this.state.object?.common.type === 'number') {
                     this.props.context.setValue(
                         oid,
-                        parseFloat(this.state.rxData[`value${indexOrValue as number}`] as string),
+                        parseFloat(this.getListData()[`value${indexOrValue as number}`] as string),
                     );
                 } else {
-                    this.props.context.setValue(oid, this.state.rxData[`value${indexOrValue as number}`]);
+                    this.props.context.setValue(oid, this.getListData()[`value${indexOrValue as number}`]);
                 }
             }
-            this.setState({ value: this.state.rxData[`value${indexOrValue as number}`] });
+            this.setState({ value: this.getListData()[`value${indexOrValue as number}`] });
         }
     }
 
@@ -518,14 +542,14 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         }
 
         if (this.props.editMode) {
-            for (let i = 1; i <= this.state.rxData.count; i++) {
-                if ((this.state.rxData as unknown as Record<string, boolean>)[`test${i}`]) {
+            for (let i = 1; i <= this.getListData().count; i++) {
+                if ((this.getListData() as unknown as Record<string, boolean>)[`test${i}`]) {
                     return i;
                 }
             }
         }
-        for (let i = 1; i <= this.state.rxData.count; i++) {
-            if ((this.state.rxData as unknown as Record<string, string>)[`value${i}`] === value) {
+        for (let i = 1; i <= this.getListData().count; i++) {
+            if ((this.getListData() as unknown as Record<string, string>)[`value${i}`] === value) {
                 return i;
             }
         }
@@ -534,7 +558,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
 
     renderIcon(i: number, selectedIndex: number): React.JSX.Element | null {
         let color: string | undefined;
-        const rxData = this.state.rxData as unknown as Record<string, string>;
+        const rxData = this.getListData() as unknown as Record<string, string>;
         let icon: string = rxData[`icon${i}`] || rxData[`image${i}`];
         if (icon && rxData[`color${i}`]) {
             color = rxData[`color${i}`];
@@ -566,7 +590,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     }
 
     renderText(i: number, selectedIndex: number): React.JSX.Element | null {
-        const rxData = this.state.rxData as unknown as Record<string, string>;
+        const rxData = this.getListData() as unknown as Record<string, string>;
         if (rxData[`onlyIcon${i}`]) {
             return null;
         }
@@ -582,7 +606,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     }
 
     renderButton(i: number, selectedIndex: number, buttonStyle?: React.CSSProperties): React.JSX.Element | null {
-        const rxData = this.state.rxData as unknown as Record<string, boolean>;
+        const rxData = this.getListData() as unknown as Record<string, boolean>;
         const icon = this.renderIcon(i, selectedIndex);
         const text = this.renderText(i, selectedIndex);
 
@@ -616,7 +640,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     }
 
     renderRadio(i: number, selectedIndex: number, buttonStyle?: React.CSSProperties): React.JSX.Element {
-        const rxData = this.state.rxData as unknown as Record<string, boolean>;
+        const rxData = this.getListData() as unknown as Record<string, boolean>;
         const icon = this.renderIcon(i, selectedIndex);
         let text = this.renderText(i, selectedIndex);
 
@@ -661,7 +685,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     }
 
     renderMenuItem(i: number, selectedIndex: number, buttonStyle?: React.CSSProperties): React.JSX.Element {
-        const rxData = this.state.rxData as unknown as Record<string, string>;
+        const rxData = this.getListData() as unknown as Record<string, string>;
         const icon = this.renderIcon(i, selectedIndex);
         let text = this.renderText(i, selectedIndex);
 
@@ -693,18 +717,22 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
     renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
         super.renderWidgetBody(props);
         const selectedIndex = this.getSelectedIndex();
-        const rxData = this.state.rxData as unknown as Record<string, string>;
+        const listData = this.getListData();
+        const rxData = listData as unknown as Record<string, string>;
 
         if ((this.state.object as ioBroker.StateObject)?._id !== this.state.rxData.oid && this.state.object !== false) {
             this.setState({ object: false });
             setTimeout(async () => {
+                // the value list of the object, for "Values from the object" (#482)
+                let states: ioBroker.StateCommon['states'];
                 if (this.state.rxData.oid && this.state.rxData.oid !== 'nothing_selected') {
                     const obj = await this.props.context.socket.getObject(this.state.rxData.oid);
+                    states = obj?.common?.states;
                     if (obj?.common?.type) {
                         this.setState({
                             object: {
                                 _id: obj._id,
-                                common: { type: obj.common.type } as ioBroker.StateCommon,
+                                common: { type: obj.common.type, states } as ioBroker.StateCommon,
                                 type: 'state',
                                 native: {},
                             },
@@ -715,7 +743,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                 this.setState({
                     object: {
                         _id: this.state.rxData.oid,
-                        common: { type: 'string' } as ioBroker.StateCommon,
+                        common: { type: 'string', states } as ioBroker.StateCommon,
                         type: 'state',
                         native: {},
                     },
@@ -730,8 +758,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
 
         let content;
         if (
-            (!this.state.rxData.count ||
-                (this.state.rxData.count === 1 && !rxData.text0 && !rxData.icon0 && !rxData.image0)) &&
+            (!listData.count || (listData.count === 1 && !rxData.text0 && !rxData.icon0 && !rxData.image0)) &&
             (!this.state.rxData.oid || this.state.rxData.oid === 'nothing_selected')
         ) {
             content = (
@@ -742,7 +769,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
                     {I18n.t('Select object ID')}
                 </Button>
             );
-        } else if (!this.state.rxData.count) {
+        } else if (!listData.count) {
             content = (
                 <Button
                     variant="outlined"
@@ -753,14 +780,14 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
             );
         } else if (this.state.rxData.type === 'radio') {
             const buttons = [];
-            for (let i = 1; i <= this.state.rxData.count; i++) {
+            for (let i = 1; i <= listData.count; i++) {
                 buttons.push(this.renderRadio(i, selectedIndex, buttonStyle));
             }
 
             content = <RadioGroup style={{ width: '100%', height: '100%' }}>{buttons}</RadioGroup>;
         } else if (this.state.rxData.type === 'select') {
             const buttons = [];
-            for (let i = 1; i <= this.state.rxData.count; i++) {
+            for (let i = 1; i <= listData.count; i++) {
                 buttons.push(this.renderMenuItem(i, selectedIndex, buttonStyle));
             }
 
@@ -797,7 +824,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
         } else if (this.state.rxData.type === 'slider') {
             props.style.overflow = 'visible';
             const marks = [];
-            for (let i = 1; i <= this.state.rxData.count; i++) {
+            for (let i = 1; i <= listData.count; i++) {
                 marks.push({
                     value: parseFloat(rxData[`value${i}`]) || 0,
                     label: rxData[`text${i}`] || 0,
@@ -824,7 +851,7 @@ class JQuiState<P extends RxData = RxData, S extends JQuiStateState = JQuiStateS
             );
         } else {
             const buttons = [];
-            for (let i = 1; i <= this.state.rxData.count; i++) {
+            for (let i = 1; i <= listData.count; i++) {
                 buttons.push(this.renderButton(i, selectedIndex, buttonStyle));
             }
 
