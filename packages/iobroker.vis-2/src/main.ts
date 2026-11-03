@@ -65,6 +65,8 @@ interface VisWidgetInstance {
         icon?: string;
         visWidgets?: ioBroker.InstanceCommon['visWidgets'];
         visIconSets?: Record<string, any>;
+        /** PoC: ES modules of web components, relative to the admin folder of the adapter */
+        webComponents?: string[];
     };
 }
 
@@ -74,8 +76,11 @@ interface VisWidgetInstance {
  * @param obj - the instance object
  */
 function toVisWidgetInstance(obj: ioBroker.Object | null | undefined): VisWidgetInstance | null {
-    const common = obj?.type === 'instance' ? (obj.common as ioBroker.InstanceCommon & { visIconSets?: any }) : null;
-    if (!obj || !common || (!common.visWidgets && !common.visIconSets)) {
+    const common =
+        obj?.type === 'instance'
+            ? (obj.common as ioBroker.InstanceCommon & { visIconSets?: any; webComponents?: string[] })
+            : null;
+    if (!obj || !common || (!common.visWidgets && !common.visIconSets && !common.webComponents)) {
         return null;
     }
     return {
@@ -86,6 +91,7 @@ function toVisWidgetInstance(obj: ioBroker.Object | null | undefined): VisWidget
             icon: common.icon,
             visWidgets: common.visWidgets,
             visIconSets: common.visIconSets,
+            webComponents: common.webComponents,
         },
     };
 }
