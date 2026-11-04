@@ -1077,5 +1077,7 @@
   "idle_no_view": "nicht zurückkehren",
   "Seconds without input": "Sekunden ohne Bedienung",
   "Reload if sleep longer than (seconds)": "Neu laden nach Ruhezustand länger als (Sekunden)",
-  "reload_on_sleep_help": "Nur in der Runtime, mindestens 30 Sekunden, leer oder 0 für nie. Z. B. lädt ein Tablet, dessen Bildschirm aus war, neu, statt jede verpasste Änderung nachzuholen."
+  "reload_on_sleep_help": "Nur in der Runtime, mindestens 30 Sekunden, leer oder 0 für nie. Z. B. lädt ein Tablet, dessen Bildschirm aus war, neu, statt jede verpasste Änderung nachzuholen.",
+  "section_value_false": "Aus",
+  "section_value_true": "An"
 }

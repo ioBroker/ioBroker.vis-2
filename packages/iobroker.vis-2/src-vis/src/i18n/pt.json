@@ -1002,5 +1002,7 @@
   "idle_no_view": "não voltar",
   "Seconds without input": "Segundos sem interação",
   "Reload if sleep longer than (seconds)": "Recarregar após suspensão superior a (segundos)",
-  "reload_on_sleep_help": "Apenas no runtime, pelo menos 30 segundos, vazio ou 0 para nunca. Por exemplo, um tablet cujo ecrã esteve desligado recarrega em vez de processar todas as alterações perdidas."
+  "reload_on_sleep_help": "Apenas no runtime, pelo menos 30 segundos, vazio ou 0 para nunca. Por exemplo, um tablet cujo ecrã esteve desligado recarrega em vez de processar todas as alterações perdidas.",
+  "section_value_false": "Desligado",
+  "section_value_true": "Ligado"
 }
