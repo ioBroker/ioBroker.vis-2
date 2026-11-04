@@ -67,6 +67,8 @@
   "off": "aus",
   "on": "an",
   "right": "rechts",
+  "section_value_false": "Aus",
+  "section_value_true": "An",
   "vis_2_widgets_basic_cannot_recursive": "Rekursive Ansichten können nicht verwendet werden",
   "vis_2_widgets_basic_contains_view": "Ansicht verwenden",
   "vis_2_widgets_basic_view_in_widget": "Im Widget anzeigen",

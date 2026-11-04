@@ -7,6 +7,7 @@ import {
     Info as InfoIcon,
     Link as LinkIcon,
     LinkOff as LinkOffIcon,
+    Sensors as SensorsIcon,
     Title as TitleIcon,
     UnfoldMore as UnfoldMoreIcon,
     ViewQuilt as ViewQuiltIcon,
@@ -33,7 +34,7 @@ import type { Field } from './View/Items';
 import getEditField from './View/EditField';
 import FieldHelp, { hasFieldHelp } from './FieldHelp';
 import BindingField from './BindingField';
-import { ConditionSelect, ConditionValueField, StateIdField } from './StateCondition';
+import { ConditionSelect, ConditionValueField, getObjectName, StateIdField } from './StateCondition';
 
 /**
  * The attributes of a section of the grid layout: its header, its look, its layout, when it is shown and whether it
@@ -73,6 +74,7 @@ interface SectionAttributesProps {
  */
 const GROUP_ICONS: Record<string, React.JSX.Element> = {
     header: <TitleIcon fontSize="small" />,
+    values: <SensorsIcon fontSize="small" />,
     appearance: <FormatPaintIcon fontSize="small" />,
     layout: <ViewQuiltIcon fontSize="small" />,
     visibility: <VisibilityIcon fontSize="small" />,
@@ -162,7 +164,7 @@ const styles: Record<string, any> = {
 };
 
 /** The groups of fields, by their key; the header and the look are open at first */
-const GROUPS = ['header', 'appearance', 'layout', 'visibility', 'collapsing'] as const;
+const GROUPS = ['header', 'values', 'appearance', 'layout', 'visibility', 'collapsing'] as const;
 type GroupKey = (typeof GROUPS)[number];
 const OPENED_STORAGE_KEY = 'Attributes.sectionGroups';
 
@@ -275,6 +277,64 @@ function conditionFields(
     ] as Field[];
 }
 
+/**
+ * The fields of a state whose value the header shows: its ID, and the name, the unit and the icon around the value.
+ * The second state is offered once the first one is chosen.
+ *
+ * @param context - the section and how to change it
+ * @param n - the first or the second state
+ */
+function valueFields(context: GroupsContext, n: 1 | 2): Field[] {
+    const { section, socket, theme, editMode, change } = context;
+    const attr = (name: 'Oid' | 'Name' | 'Unit' | 'Icon' | 'IconOnly'): keyof ViewSection => `value${n}${name}`;
+    const noOid = `!data.${attr('Oid')}`;
+    return [
+        {
+            type: 'raw',
+            notStyle: true,
+            label: n === 1 ? 'State 1' : 'State 2',
+            attr: attr('Oid'),
+            title: 'help_section_value',
+            hidden: n === 2 ? '!data.value1Oid && !data.value2Oid' : undefined,
+            Component: (
+                <StateIdField
+                    value={section[attr('Oid')] as string | null | undefined}
+                    socket={socket}
+                    theme={theme}
+                    disabled={!editMode}
+                    onChange={(oid, picked) => {
+                        if (!picked || !oid) {
+                            change({ [attr('Oid')]: oid });
+                            return;
+                        }
+                        // a state picked anew brings its name and its unit
+                        socket.getObject(oid).then(
+                            obj =>
+                                change({
+                                    [attr('Oid')]: oid,
+                                    [attr('Name')]: getObjectName(obj) || null,
+                                    [attr('Unit')]: (obj?.common as ioBroker.StateCommon | undefined)?.unit || null,
+                                }),
+                            () => change({ [attr('Oid')]: oid }),
+                        );
+                    }}
+                />
+            ),
+        },
+        { type: 'text', label: 'Name', attr: attr('Name'), notStyle: true, clearButton: true, hidden: noOid },
+        { type: 'text', label: 'Unit', attr: attr('Unit'), notStyle: true, clearButton: true, hidden: noOid },
+        { type: 'icon64', label: 'Icon', attr: attr('Icon'), notStyle: true, hidden: noOid },
+        {
+            type: 'checkbox',
+            label: 'Only the icon',
+            attr: attr('IconOnly'),
+            notStyle: true,
+            title: 'help_section_value_icon_only',
+            hidden: `${noOid} || !data.${attr('Icon')}`,
+        },
+    ] as Field[];
+}
+
 /** The fields of a section, grouped; the values that depend on the section are filled in here */
 function getGroups(context: GroupsContext): SectionGroup[] {
     const { section, project, view } = context;
@@ -359,6 +419,11 @@ function getGroups(context: GroupsContext): SectionGroup[] {
                     options: [{ label: '', value: '' }, ...views.map(name => ({ label: name, value: name }))],
                 },
             ] as Field[],
+        },
+        {
+            key: 'values',
+            label: 'Values in the header',
+            fields: [...valueFields(context, 1), ...valueFields(context, 2)],
         },
         {
             key: 'appearance',

@@ -1239,6 +1239,24 @@ export interface ViewSection {
     /** The view the header opens when clicked (runtime only) */
     link?: string | null;
 
+    // --- values in the header: up to two states, shown at the right end of the header
+    /** A state whose value the header shows */
+    value1Oid?: string | null;
+    /** Stands in front of the value; filled from the name of the object when the state is picked */
+    value1Name?: string;
+    /** Stands behind the value; filled from `common.unit` when the state is picked */
+    value1Unit?: string;
+    /** Stands in front of the name, as an `icon64` value */
+    value1Icon?: string;
+    /** Shows the icon instead of the name; the name becomes the tooltip */
+    value1IconOnly?: boolean;
+    /** The second state, see `value1Oid` */
+    value2Oid?: string | null;
+    value2Name?: string;
+    value2Unit?: string;
+    value2Icon?: string;
+    value2IconOnly?: boolean;
+
     // --- look
     /** Added to the classes of the section, so the section can be styled by the CSS of the project */
     className?: string;

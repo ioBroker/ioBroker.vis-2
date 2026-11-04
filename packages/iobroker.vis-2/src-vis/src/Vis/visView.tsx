@@ -76,8 +76,10 @@ import {
 } from './visGridLayout';
 import {
     applySectionBindings,
+    formatSectionValue,
     getSectionGrid,
     getSectionHeaderStyle,
+    getSectionHeaderValues,
     getSectionOpenStorageKey,
     getSectionPlacementStyle,
     getSectionStateIds,
@@ -3116,9 +3118,58 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     /**
-     * The header of a section: its icon, its title and subtitle with their bindings, and the arrow of a section
-     * that opens and closes. In the runtime a click on it opens the view of its link, or else opens or closes the
-     * section; with both, the arrow opens and closes. The editor only shows it.
+     * The values of the states a section shows at the right end of its header, see getSectionHeaderValues(). The
+     * name, the unit and the icon come with their bindings already applied.
+     *
+     * @param section - the section with its bindings applied
+     */
+    private renderGridSectionValues(section: ViewSection): React.JSX.Element | null {
+        const values = getSectionHeaderValues(section);
+        if (!values.length) {
+            return null;
+        }
+        const isFloatComma = !!this.props.context.systemConfig?.common?.isFloatComma;
+        const words = { on: I18n.t('section_value_true'), off: I18n.t('section_value_false') };
+        return (
+            <div className="vis-grid-section-header-values">
+                {values.map(value => {
+                    const text = formatSectionValue(
+                        this.state.sectionStates[`${value.oid}.val`],
+                        // the text of the value in `common.states`, if the object has one
+                        this.formatSectionText(section, `{${value.oid};states}`),
+                        isFloatComma,
+                        words,
+                    );
+                    return (
+                        <span
+                            key={value.oid}
+                            className="vis-grid-section-header-value"
+                            title={value.name || undefined}
+                        >
+                            {value.icon ? (
+                                <Icon
+                                    src={value.icon}
+                                    className="vis-grid-section-header-value-icon"
+                                />
+                            ) : null}
+                            {value.name && !value.iconOnly ? (
+                                <span className="vis-grid-section-header-value-name">{value.name}</span>
+                            ) : null}
+                            <span className="vis-grid-section-header-value-text">{text}</span>
+                            {value.unit ? (
+                                <span className="vis-grid-section-header-value-unit">{value.unit}</span>
+                            ) : null}
+                        </span>
+                    );
+                })}
+            </div>
+        );
+    }
+
+    /**
+     * The header of a section: its icon, its title and subtitle with their bindings, the values of up to two
+     * states, and the arrow of a section that opens and closes. In the runtime a click on it opens the view of its
+     * link, or else opens or closes the section; with both, the arrow opens and closes. The editor only shows it.
      *
      * @param section - the section as it is stored
      * @param open - whether the section shows its widgets
@@ -3140,6 +3191,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
                 : undefined;
 
+        const headerStyle = getSectionHeaderStyle(section);
+        const values = this.renderGridSectionValues(section);
+
         return (
             <div
                 className={Utils.clsx(
@@ -3147,7 +3201,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     section.collapsible && 'vis-grid-section-header-collapsible',
                     toggle && !link && 'vis-grid-section-header-clickable',
                 )}
-                style={getSectionHeaderStyle(section)}
+                style={headerStyle}
                 onClick={link ? undefined : toggle}
             >
                 {section.icon || section.title || section.subtitle ? (
@@ -3156,6 +3210,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             'vis-grid-section-header-main',
                             link && 'vis-grid-section-header-clickable',
                         )}
+                        // the values stand at the right end: the title takes the rest and is aligned in it
+                        style={values ? { flex: '1 1 auto', justifyContent: headerStyle.justifyContent } : undefined}
                         onClick={link}
                     >
                         {section.icon ? (
@@ -3181,6 +3237,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         ) : null}
                     </div>
                 ) : null}
+                {values}
                 {section.collapsible ? (
                     <ExpandMoreIcon
                         className="vis-grid-section-chevron"

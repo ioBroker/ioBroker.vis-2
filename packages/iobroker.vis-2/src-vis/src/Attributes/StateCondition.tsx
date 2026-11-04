@@ -51,7 +51,7 @@ export function useConditionValueKind(socket: Connection, oid: string | null | u
 }
 
 /** The name of an object in the language of the editor */
-function getObjectName(object: ioBroker.Object | null): string {
+export function getObjectName(object: ioBroker.Object | null | undefined): string {
     const name = object?.common?.name;
     if (!name) {
         return '';
