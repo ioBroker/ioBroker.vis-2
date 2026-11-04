@@ -1666,6 +1666,7 @@ export interface CanWidgetStore {
 
 export type VisBindingOperationType =
     | 'eval'
+    | 'states'
     | '*'
     | '+'
     | '-'
@@ -1778,6 +1779,13 @@ export interface VisFormatUtils {
         moment: any;
     }): string;
     formatDate(dateObj: string | Date | number, isDuration?: boolean | string, _format?: string): string;
+    /**
+     * Be told when `common.states` of an object came in, which the binding operation `states` shows: until then such
+     * a binding gives the plain value. Optional for contexts that are not made by vis-2, e.g. in tests.
+     *
+     * @returns to call when the listener is not needed anymore
+     */
+    onCommonStates?(listener: (id: string) => void): () => void;
 }
 
 export interface ExTypeText extends TypeText {

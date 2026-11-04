@@ -316,6 +316,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     /** The states the sections of the grid layout and the CSS of the view listen to, see subscribeSectionStates() */
     private sectionStateIds: string[] = [];
 
+    /** Ends the listener for `common.states` of the objects of these bindings, see componentDidMount() */
+    private stopCommonStates: (() => void) | null = null;
+
     /**
      * The press on a section as the gesture has it at this moment, see onSectionMouseDown(): `state.sectionDrag`
      * follows it for rendering, but the gesture reads this, as a quick one is over before React has rendered.
@@ -821,6 +824,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         this.observeRelativeView();
         this.announceAdornerLayer();
         this.subscribeSectionStates();
+        // a binding with `states` in a header or in the CSS shows its text once `common.states` came in
+        this.stopCommonStates =
+            this.props.context.formatUtils?.onCommonStates?.(id => {
+                if (this.sectionStateIds.includes(id)) {
+                    this.forceUpdate();
+                }
+            }) || null;
 
         await this.promiseToCollect;
         this.props.context.linkContext.registerViewRef(this.props.view, this.refView, this.onCommand);
@@ -843,6 +853,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
             this.props.context.socket.unsubscribeState(this.sectionStateIds, this.onSectionStateChange);
             this.sectionStateIds = [];
         }
+        this.stopCommonStates?.();
+        this.stopCommonStates = null;
         window.removeEventListener('pointermove', this.onSectionMouseMove);
         window.removeEventListener('pointerup', this.onSectionMouseUp);
         window.removeEventListener('pointercancel', this.onSectionMouseUp);

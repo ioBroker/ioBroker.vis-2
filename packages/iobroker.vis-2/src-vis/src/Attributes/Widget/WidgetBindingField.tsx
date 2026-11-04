@@ -905,6 +905,37 @@ class WidgetBindingField extends Component<WidgetBindingFieldProps, WidgetBindin
                             &#123;id.ack;array(ack is false,ack is true)&#125;
                         </span>
                     </li>
+                    <li>
+                        <b
+                            style={styles.clickable}
+                            onClick={() =>
+                                this.insertInText('states', {
+                                    oldStyle: true,
+                                    desc: 'the text of the value in common.states of the object',
+                                })
+                            }
+                        >
+                            states
+                        </b>
+                        - the text of the value in common.states of the object, e.g.
+                        <span style={{ ...styles.code, ...styles.space }}>&#123;hm-rpc.0.ABC.STATE;states&#125;</span>
+                        shows &quot;Open&quot; instead of 1.
+                    </li>
+                    <li>
+                        <b
+                            style={styles.clickable}
+                            onClick={() =>
+                                this.insertInText('states', {
+                                    oldStyle: true,
+                                    desc: 'the text of the value in common.states, or this text if it is not in it',
+                                    args: [{ type: 'string', label: 'text' }],
+                                })
+                            }
+                        >
+                            states(text)
+                        </b>
+                        - the same, with a text for a value that is not in the list.
+                    </li>
                 </ul>
 
                 <p>You can use this pattern in any text, like</p>
