@@ -1002,5 +1002,7 @@
   "idle_no_view": "不返回",
   "Seconds without input": "无操作秒数",
   "Reload if sleep longer than (seconds)": "休眠超过此时间后重新加载（秒）",
-  "reload_on_sleep_help": "仅在运行时生效，至少 30 秒，留空或 0 表示从不。例如，屏幕关闭过的平板会重新加载，而不是逐一处理错过的所有更改。"
+  "reload_on_sleep_help": "仅在运行时生效，至少 30 秒，留空或 0 表示从不。例如，屏幕关闭过的平板会重新加载，而不是逐一处理错过的所有更改。",
+  "section_value_false": "关",
+  "section_value_true": "开"
 }
