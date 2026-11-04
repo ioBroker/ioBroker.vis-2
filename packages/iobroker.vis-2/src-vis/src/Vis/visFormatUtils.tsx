@@ -24,11 +24,20 @@ import type {
     VisBindingOperationArgument,
 } from '@iobroker/types-vis-2';
 
+import { getCommonStateText } from './visCommonStates';
 import { extractBinding } from './visUtils';
 
 interface VisFormatUtilsProps {
     vis: VisLegacy;
+    /**
+     * Reads an object, for the operation `states` (its `common.states`). Without it, only the objects in `vis.objects`
+     * are known - in the editor that is all of them.
+     */
+    getObject?: (id: string) => Promise<ioBroker.Object | null | undefined>;
 }
+
+/** Called when `common.states` of an object came in, so that the bindings of its ID are calculated again */
+export type CommonStatesListener = (id: string) => void;
 
 /** Longest piece of a value that is written to the console */
 const MAX_LOG_LENGTH = 200;
@@ -76,8 +85,20 @@ class VisFormatUtils {
 
     private readonly bindingsCache: Record<string, any>;
 
+    private readonly getObject: VisFormatUtilsProps['getObject'];
+
+    /**
+     * `common.states` of the objects a binding with `states` asked for: undefined while the object is read, null if
+     * it has none or cannot be read. Read once per object and page, like "Values from the object" of the jQui
+     * "States control".
+     */
+    private readonly commonStates = new Map<string, unknown>();
+
+    private readonly commonStatesListeners = new Set<CommonStatesListener>();
+
     constructor(props: VisFormatUtilsProps) {
         this.vis = props.vis;
+        this.getObject = props.getObject;
         this.bindingsCache = {};
         // required options in vis
         //      user
@@ -88,6 +109,51 @@ class VisFormatUtils {
         //      _
         //      editMode
         //      states (originally canStates
+    }
+
+    /**
+     * Be told when `common.states` of an object came in: a binding with `states` showed the plain value until then
+     *
+     * @param listener gets the ID of the object
+     * @returns to call when the listener is not needed anymore
+     */
+    onCommonStates(listener: CommonStatesListener): () => void {
+        this.commonStatesListeners.add(listener);
+        return () => this.commonStatesListeners.delete(listener);
+    }
+
+    /**
+     * `common.states` of an object, if it is known; if not, it is read and the listeners are told when it came in
+     *
+     * @param id ID of the object
+     */
+    private getCommonStates(id: string): unknown {
+        if (this.commonStates.has(id)) {
+            return this.commonStates.get(id);
+        }
+        // the editor has all objects
+        const known = this.vis.objects?.[id];
+        if (known) {
+            return known.common?.states;
+        }
+        if (!this.getObject || !id) {
+            return undefined;
+        }
+        this.commonStates.set(id, undefined);
+        this.getObject(id).then(
+            obj => {
+                const states = obj?.common?.states ?? null;
+                this.commonStates.set(id, states);
+                if (states) {
+                    this.commonStatesListeners.forEach(listener => listener(id));
+                }
+            },
+            (e: unknown) => {
+                console.warn(`Cannot read the object ${id} for its states: ${e as Error}`);
+                this.commonStates.set(id, null);
+            },
+        );
+        return undefined;
     }
 
     // get value of Obj property PropPath. PropPath is string like "Prop1" or "Prop1.Prop2" ...
@@ -594,6 +660,20 @@ class VisFormatUtils {
                             case 'ceil':
                                 value = Math.ceil(parseFloat(value));
                                 break;
+                            case 'states': {
+                                const text = getCommonStateText(
+                                    this.getCommonStates(oid.systemOid),
+                                    value,
+                                    this.vis.language,
+                                );
+                                if (text !== undefined) {
+                                    value = text;
+                                } else if (typeof operationArg === 'string' && this.commonStates.get(oid.systemOid)) {
+                                    // the list is there, but the value is not in it
+                                    value = operationArg;
+                                }
+                                break;
+                            }
                             case 'json':
                                 if (value && typeof value === 'string') {
                                     try {

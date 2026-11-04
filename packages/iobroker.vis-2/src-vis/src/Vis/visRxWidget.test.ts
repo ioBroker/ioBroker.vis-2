@@ -146,4 +146,53 @@ describe('VisRxWidget subscriptions', () => {
         expect(handlers['a.0.bool']).toHaveLength(0);
         expect(handlers['a.0.number']).toHaveLength(0);
     });
+
+    // the binding operation `states` shows the plain value until common.states of the object came in
+    it('calculates a binding with states again when the object came in, and stops listening when unmounted', async () => {
+        vi.spyOn(Object.getPrototypeOf(VisRxWidget.prototype), 'componentDidMount').mockImplementation(() => {});
+        vi.spyOn(Object.getPrototypeOf(VisRxWidget.prototype), 'componentWillUnmount').mockImplementation(() => {});
+        const { default: VisFormatUtils } = await import('./visFormatUtils');
+        const { socket } = createSocket();
+        let resolveObject: (obj: any) => void = () => {};
+        const formatUtils = new VisFormatUtils({
+            vis: { editMode: false, states: {}, language: 'de', objects: {} } as any,
+            getObject: () =>
+                new Promise(resolve => {
+                    resolveObject = resolve;
+                }),
+        });
+        const format = 'Fenster: {a.0.window;states}';
+
+        const { widget, setStates, commit } = createWidget();
+        widget.props.view = 'v';
+        widget.props.context = {
+            socket,
+            formatUtils,
+            views: { v: { widgets: { w000001: { tpl: 'tplHtml', data: { html: format }, style: {} } } } },
+        };
+        widget.state = { ...widget.state, data: { html: format }, values: { 'a.0.window.val': 2 } };
+        widget.onStateChangedBind = widget.onStateChanged.bind(widget);
+        widget.linkContext.IDs = ['a.0.window'];
+        widget.linkContext.bindings = { 'a.0.window': [{ format, view: 'v', type: 'data', attr: 'html' }] };
+        widget.subscribeBoundId = () => {};
+
+        vi.useFakeTimers();
+        try {
+            widget.componentDidMount();
+            widget.onStateChanged();
+            vi.advanceTimersByTime(60);
+            expect(setStates[0].rxData.html).toBe('Fenster: 2');
+            commit();
+
+            resolveObject({ common: { states: { 0: 'Zu', 2: { en: 'Open', de: 'Offen' } } } });
+            await vi.advanceTimersByTimeAsync(60);
+            expect(setStates[0].rxData.html).toBe('Fenster: Offen');
+            commit();
+
+            widget.componentWillUnmount();
+            expect((formatUtils as any).commonStatesListeners.size).toBe(0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
 });

@@ -173,6 +173,9 @@ export class VisRxWidget<
     /** true as soon as the widget is mounted and so subscribed to all known IDs */
     private rxMounted = false;
 
+    /** Ends the listener for `common.states` of the bound objects, see componentDidMount */
+    private stopCommonStates: (() => void) | null = null;
+
     /** object IDs that were subscribed because a binding delivered them, by widget attribute */
     private boundIds: Record<string, string> = {};
 
@@ -567,6 +570,14 @@ export class VisRxWidget<
                 .subscribeStateAsync(this.linkContext.IDs, this.onStateChangedBind)
                 .catch(e => console.error(`Cannot subscribe on ${this.linkContext.IDs.join(', ')}: ${e as Error}`));
         }
+
+        // a binding with `states` shows the plain value until `common.states` of its object came in
+        this.stopCommonStates =
+            this.props.context.formatUtils?.onCommonStates?.(id => {
+                if (this.rxMounted && this.linkContext.bindings[id]) {
+                    this.onStateChanged();
+                }
+            }) || null;
     }
 
     onRxDataChanged(_prevRxData: typeof this.state.rxData): void {
@@ -605,6 +616,9 @@ export class VisRxWidget<
         }
         this.stateUpdatedTimers.forEach(t => clearTimeout(t));
         this.stateUpdatedTimers.clear();
+        this.rxMounted = false;
+        this.stopCommonStates?.();
+        this.stopCommonStates = null;
 
         if (this.linkContext.IDs.length) {
             this.props.context.socket.unsubscribeState(this.linkContext.IDs, this.onStateChangedBind);

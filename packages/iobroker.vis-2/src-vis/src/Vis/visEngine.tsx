@@ -413,7 +413,13 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
         window._setInterval = (func, interval, arg1, arg2, arg3, arg4, arg5, arg6) =>
             setInterval(() => func(arg1, arg2, arg3, arg4, arg5, arg6), interval);
 
-        this.formatUtils = new VisFormatUtils({ vis: this.vis });
+        this.formatUtils = new VisFormatUtils({ vis: this.vis, getObject: id => this.props.socket.getObject(id) });
+        // `common.states` of an object came in: the bindings with `states` on it show its text now
+        this.formatUtils.onCommonStates(id =>
+            this.linkContext.bindings[id]?.forEach(item =>
+                this.updateWidget(item.view, item.widget, 'binding', item, id),
+            ),
+        );
 
         void this.loadLegacyObjects()
             .then(() => this.loadEditWords())

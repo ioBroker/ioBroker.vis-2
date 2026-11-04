@@ -346,6 +346,15 @@ export function extractBinding(format: string): VisBinding[] | null {
                             let arg = (parse[2] || '').trim();
                             arg = arg.substring(1, arg.length - 1);
                             operations.push({ op, arg });
+                        } else if (op === 'states') {
+                            // the text of the value in common.states; states(text): what to show if it is not in it
+                            operations ||= [];
+                            if (parse[2] === undefined) {
+                                operations.push({ op });
+                            } else {
+                                const arg = parse[2].trim();
+                                operations.push({ op, arg: arg.substring(1, arg.length - 1) });
+                            }
                         } else {
                             // operators without parameter
                             operations ||= [];
