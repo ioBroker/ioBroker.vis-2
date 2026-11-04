@@ -850,7 +850,8 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         types={
                             field.filter === 'chart' || field.filter === 'channel' || field.filter === 'device'
                                 ? ([field.filter] as ioBroker.ObjectType[])
-                                : undefined
+                                : // the browser shows states only, unless it is told which types to show
+                                  customFilter?.type
                         }
                         filters={filters || undefined}
                         expertMode={field.filter === 'chart' ? true : undefined}

@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { LoadedWebComponent, WebComponentManifest } from '@iobroker/web-components';
+
 import {
-    checkWebComponentManifest,
     getWebComponentSettingTypes,
     getWebComponentWidgetType,
     manifestToWidgetInfo,
@@ -9,8 +10,6 @@ import {
     toSettingValue,
     WEB_COMPONENT_SET,
 } from './webComponentSettings';
-import { getWebComponentSources } from './webComponentSources';
-import type { LoadedWebComponent, WebComponentManifest } from './webComponentTypes';
 
 const MANIFEST: WebComponentManifest = {
     manifestVersion: 1,
@@ -22,7 +21,7 @@ const MANIFEST: WebComponentManifest = {
         type: 'panel',
         items: {
             _header: { type: 'header', text: { en: 'State', de: 'Datenpunkt' } },
-            oid: { type: 'objectId', label: { en: 'State', de: 'Datenpunkt' } },
+            oid: { type: 'objectId', label: { en: 'State', de: 'Datenpunkt' }, types: 'config' },
             decimals: { type: 'number', label: 'Decimals', min: 0, max: 6, default: 1 },
             _line: { type: 'divider' },
             variant: {
@@ -42,7 +41,8 @@ const MANIFEST: WebComponentManifest = {
 
 const COMPONENT: LoadedWebComponent = {
     manifest: MANIFEST,
-    url: 'http://host:8082/adapter/demo/webcomponents/tile.js',
+    url: 'http://host:8082/adapter/demo/webcomponents/tile.json',
+    moduleUrl: 'http://host:8082/adapter/demo/webcomponents/tile.js',
     adapter: 'demo',
     version: '1.0.0',
 };
@@ -55,6 +55,15 @@ describe('manifestToWidgetInfo', () => {
         expect(info.id).toBe(getWebComponentWidgetType('iob-test-tile'));
         expect(info.visSet).toBe(WEB_COMPONENT_SET);
         expect(info.visDefaultStyle).toEqual({ width: 180, height: 110 });
+    });
+
+    it('lets nobody resize a component that works in its own size only', () => {
+        expect(info.visResizable).toBeUndefined();
+        const fixed = manifestToWidgetInfo({
+            ...COMPONENT,
+            manifest: { ...MANIFEST, size: { width: 180, height: 110, noResize: true } },
+        }).info;
+        expect(fixed.visResizable).toBe(false);
     });
 
     it('resolves the icon against the module', () => {
@@ -72,6 +81,8 @@ describe('manifestToWidgetInfo', () => {
             ['textTrue', 'text'],
         ]);
         expect(fields[2]).toMatchObject({ min: 0, max: 6, default: 1 });
+        // the types of objectId become the filter of the object browser
+        expect(fields[1].filter).toEqual({ type: 'config' });
         // the expression is over the values of the settings, which vis-2 calls `data` as well
         expect(fields[6].hidden).toBe('!data.toggle');
     });
@@ -154,53 +165,10 @@ describe('toSettingValue', () => {
     });
 });
 
-describe('checkWebComponentManifest', () => {
-    it('accepts a valid manifest', () => {
-        expect(checkWebComponentManifest(MANIFEST)).toBeNull();
-    });
-
-    it('names what is wrong', () => {
-        expect(checkWebComponentManifest(undefined)).toMatch(/no manifest/);
-        expect(checkWebComponentManifest({ ...MANIFEST, manifestVersion: 2 })).toMatch(/manifestVersion/);
-        expect(checkWebComponentManifest({ ...MANIFEST, tag: 'tile' })).toMatch(/custom element/);
-        expect(checkWebComponentManifest({ ...MANIFEST, tag: 'Iob-Tile' })).toMatch(/custom element/);
-        expect(checkWebComponentManifest({ ...MANIFEST, settings: { type: 'table' } })).toMatch(/JSON-Config/);
-    });
-});
-
 describe('toAllLanguages', () => {
     it('fills every language', () => {
         const texts = toAllLanguages({ en: 'On', de: 'An' });
         expect(Object.keys(texts)).toHaveLength(11);
         expect(texts['zh-cn']).toBe('On');
-    });
-});
-
-describe('getWebComponentSources', () => {
-    const instance = (id: string, webComponents?: unknown): ioBroker.InstanceObject =>
-        ({ _id: id, type: 'instance', common: { version: '1.2.3', webComponents } }) as any;
-
-    it('resolves the modules against the admin folder of the adapter', () => {
-        expect(
-            getWebComponentSources(
-                [
-                    instance('system.adapter.demo.0', ['webcomponents/tile.js', 'https://cdn.example/x.js']),
-                    instance('system.adapter.other.0'),
-                ],
-                'http://host:8082/vis-2/index.html',
-            ),
-        ).toEqual([
-            { url: 'http://host:8082/adapter/demo/webcomponents/tile.js', adapter: 'demo', version: '1.2.3' },
-            { url: 'https://cdn.example/x.js', adapter: 'demo', version: '1.2.3' },
-        ]);
-    });
-
-    it('lists a module of several instances of one adapter once', () => {
-        expect(
-            getWebComponentSources(
-                [instance('system.adapter.demo.0', ['tile.js']), instance('system.adapter.demo.1', ['tile.js'])],
-                'http://localhost:3000/edit.html',
-            ),
-        ).toEqual([{ url: 'http://localhost:3000/adapter/demo/tile.js', adapter: 'demo', version: '1.2.3' }]);
     });
 });

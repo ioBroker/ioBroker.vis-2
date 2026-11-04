@@ -1,17 +1,22 @@
 /**
  * Turns the manifest of a web component into what the palette and the attributes panel of vis-2 render from.
  *
- * Pure functions only, so the mapping can be tested without a browser.
+ * Pure functions only, so the mapping can be tested without a browser. What every host needs - reading and
+ * checking a manifest, the types of the settings - comes from `@iobroker/web-components`.
  */
 import type { RxWidgetInfo, RxWidgetInfoAttributesField, RxWidgetInfoGroup } from '@iobroker/types-vis-2';
-import type {
-    LoadedWebComponent,
-    WebComponentManifest,
-    WebComponentSetting,
-    WebComponentSettingsPanel,
-    WebComponentSettingType,
-    WebComponentText,
-} from './webComponentTypes';
+import {
+    DECORATION_TYPES,
+    getSettingsGroups,
+    getSettingTypes,
+    resolveManifestUrl,
+    toSettingValue as toTypedValue,
+    type LoadedWebComponent,
+    type WebComponentManifest,
+    type WebComponentSetting,
+    type WebComponentSettingType,
+    type WebComponentText,
+} from '@iobroker/web-components';
 
 /** The palette set all web components appear in */
 export const WEB_COMPONENT_SET = 'webcomponents';
@@ -24,9 +29,6 @@ export const WEB_COMPONENT_ICON = `data:image/svg+xml,${encodeURIComponent(
 )}`;
 
 const LANGUAGES: ioBroker.Languages[] = ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it', 'es', 'pl', 'uk', 'zh-cn'];
-
-/** Settings that only show something and carry no value */
-const DECORATION_TYPES = ['header', 'staticText', 'divider'];
 
 /**
  * Names the attributes panel of vis-2 uses itself for every widget. A setting with such a name would overwrite
@@ -58,36 +60,17 @@ export function isReservedSettingName(name: string): boolean {
     return RESERVED_NAMES.includes(name) || RESERVED_PREFIXES.some(prefix => name.startsWith(prefix));
 }
 
-/** The panels of the settings, one for a plain panel, one per tab for tabs */
-function getPanels(
-    manifest: WebComponentManifest,
-): { name: string; label?: WebComponentText; panel: WebComponentSettingsPanel }[] {
-    const settings = manifest.settings;
-    if (!settings || typeof settings !== 'object') {
-        return [];
-    }
-    if (settings.type === 'tabs') {
-        return Object.keys(settings.items || {}).map(name => ({
-            name,
-            label: settings.items[name].label,
-            panel: settings.items[name],
-        }));
-    }
-    return [{ name: 'common', panel: settings }];
-}
-
 /**
- * The settings that carry a value - what the element gets in `settings` - with their types
+ * The settings that carry a value - what the element gets in `settings` - with their types; without those whose
+ * name vis-2 uses itself
  *
  * @param manifest the manifest of the component
  */
 export function getWebComponentSettingTypes(manifest: WebComponentManifest): Record<string, WebComponentSettingType> {
-    const types: Record<string, WebComponentSettingType> = {};
-    for (const { panel } of getPanels(manifest)) {
-        for (const [name, setting] of Object.entries(panel.items || {})) {
-            if (setting && !DECORATION_TYPES.includes(setting.type) && !isReservedSettingName(name)) {
-                types[name] = setting.type;
-            }
+    const types = getSettingTypes(manifest);
+    for (const name of Object.keys(types)) {
+        if (isReservedSettingName(name)) {
+            delete types[name];
         }
     }
     return types;
@@ -102,58 +85,12 @@ export function getWebComponentSettingTypes(manifest: WebComponentManifest): Rec
  * @param type type of the setting
  * @param value the value as vis-2 holds it
  */
-export function toSettingValue(type: WebComponentSettingType, value: unknown): unknown {
-    if (value === undefined || value === null) {
-        return undefined;
+export function toSettingValue(type: WebComponentSettingType, value: unknown): string | number | boolean | undefined {
+    // a new widget gets this in its object fields, see Editor.addWidget()
+    if (type === 'objectId' && value === 'nothing_selected') {
+        return '';
     }
-    const text =
-        typeof value === 'string'
-            ? value
-            : typeof value === 'number' || typeof value === 'boolean'
-              ? value.toString()
-              : JSON.stringify(value);
-    switch (type) {
-        case 'number':
-        case 'slider': {
-            if (value === '') {
-                return undefined;
-            }
-            const num = typeof value === 'number' ? value : parseFloat(text.replace(',', '.'));
-            return Number.isNaN(num) ? undefined : num;
-        }
-        case 'checkbox':
-            return value === true || value === 'true' || value === 1 || value === '1';
-        case 'objectId':
-            // a new widget gets this in its object fields, see Editor.addWidget()
-            return value === 'nothing_selected' ? '' : text;
-        default:
-            return text;
-    }
-}
-
-/**
- * What is wrong with the manifest a module exports, or null if it can be used
- *
- * @param manifest what the module exports as `manifest`
- */
-export function checkWebComponentManifest(manifest: unknown): string | null {
-    if (!manifest || typeof manifest !== 'object') {
-        return 'the module exports no manifest';
-    }
-    const m = manifest as Partial<WebComponentManifest>;
-    if (m.manifestVersion !== 1) {
-        return `unknown manifestVersion ${String(m.manifestVersion)}`;
-    }
-    if (typeof m.tag !== 'string' || !/^[a-z][a-z0-9._]*-[a-z0-9._-]*$/.test(m.tag)) {
-        return `"${String(m.tag)}" is no valid name of a custom element`;
-    }
-    if (!m.name) {
-        return 'name is missing';
-    }
-    if (!m.settings || (m.settings.type !== 'panel' && m.settings.type !== 'tabs')) {
-        return 'settings must be a JSON-Config panel or tabs';
-    }
-    return null;
+    return toTypedValue(type, value);
 }
 
 /**
@@ -222,7 +159,12 @@ function toField(
         case 'color':
             return { ...common, type: 'color' } as RxWidgetInfoAttributesField;
         case 'objectId':
-            return { ...common, type: 'id' } as RxWidgetInfoAttributesField;
+            // `root` has no counterpart in the object browser of vis-2: it only narrows the choice
+            return {
+                ...common,
+                type: 'id',
+                filter: setting.types ? { type: setting.types } : undefined,
+            } as RxWidgetInfoAttributesField;
         case 'instance':
             return { ...common, type: 'instance', adapter: setting.adapter } as RxWidgetInfoAttributesField;
         case 'select':
@@ -242,23 +184,6 @@ function toField(
 }
 
 /**
- * Resolve a URL the manifest gives relative to the module
- *
- * @param url as written in the manifest
- * @param moduleUrl absolute URL of the module
- */
-export function resolveManifestUrl(url: string | undefined, moduleUrl: string): string | undefined {
-    if (!url) {
-        return undefined;
-    }
-    try {
-        return new URL(url, moduleUrl).href;
-    } catch {
-        return url;
-    }
-}
-
-/**
  * The widget info of a web component and the texts it refers to
  *
  * @param component the loaded component
@@ -274,7 +199,7 @@ export function manifestToWidgetInfo(component: LoadedWebComponent): {
         [`${keyPrefix}_name`]: toAllLanguages(manifest.name),
     };
 
-    const visAttrs: RxWidgetInfoGroup[] = getPanels(manifest).map(({ name, label, panel }) => {
+    const visAttrs: RxWidgetInfoGroup[] = getSettingsGroups(manifest).map(({ name, label, panel }) => {
         const fields: RxWidgetInfoAttributesField[] = [];
         for (const [fieldName, setting] of Object.entries(panel.items || {})) {
             if (!setting || typeof setting !== 'object') {
@@ -318,6 +243,8 @@ export function manifestToWidgetInfo(component: LoadedWebComponent): {
             width: manifest.size?.width || 200,
             height: manifest.size?.height || 120,
         },
+        // a component that works in its own size only
+        visResizable: manifest.size?.noResize ? false : undefined,
     } as RxWidgetInfo;
 
     return { info, translations };
