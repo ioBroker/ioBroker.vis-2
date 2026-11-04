@@ -4,9 +4,11 @@ import type { ViewSection } from '@iobroker/types-vis-2';
 
 import {
     applySectionBindings,
+    formatSectionValue,
     getBindingStateIds,
     getSectionGrid,
     getSectionHeaderStyle,
+    getSectionHeaderValues,
     getSectionPlacementStyle,
     getSectionStateIds,
     hasSectionHeader,
@@ -209,5 +211,67 @@ describe('getSectionGrid', () => {
         expect(getSectionGrid(section({}), layout)).toEqual(layout);
         expect(getSectionGrid(section({ rowHeight: 40, gridGap: 0 }), layout)).toEqual({ rowHeight: 40, gridGap: 0 });
         expect(getSectionGrid(section({ rowHeight: 0, gridGap: -2 }), layout)).toEqual(layout);
+    });
+});
+
+describe('header values', () => {
+    it('lists the states with an ID, in their order', () => {
+        expect(getSectionHeaderValues(section({}))).toEqual([]);
+        expect(
+            getSectionHeaderValues(
+                section({
+                    value1Oid: ' hm.0.temp ',
+                    value1Name: 'Temperature',
+                    value1Unit: '°C',
+                    value2Oid: 'hm.0.hum',
+                    value2Icon: 'data:image/svg+xml;base64,AA',
+                    value2IconOnly: true,
+                }),
+            ),
+        ).toEqual([
+            { oid: 'hm.0.temp', name: 'Temperature', unit: '°C', icon: '', iconOnly: false },
+            { oid: 'hm.0.hum', name: '', unit: '', icon: 'data:image/svg+xml;base64,AA', iconOnly: true },
+        ]);
+    });
+
+    it('leaves out a state without ID, and shows the name when there is no icon for it', () => {
+        expect(
+            getSectionHeaderValues(section({ value1Name: 'Alone', value2Oid: 'hm.0.hum', value2IconOnly: true })),
+        ).toEqual([{ oid: 'hm.0.hum', name: '', unit: '', icon: '', iconOnly: false }]);
+    });
+
+    it('listens to the states and gets a header for them', () => {
+        expect(getSectionStateIds(section({ value1Oid: 'hm.0.temp', value2Oid: 'hm.0.hum' }))).toEqual([
+            'hm.0.temp',
+            'hm.0.hum',
+        ]);
+        expect(hasSectionHeader(section({ value2Oid: 'hm.0.hum' }))).toBe(true);
+        expect(hasSectionHeader(section({ value1Name: 'No state' }))).toBe(false);
+    });
+
+    it('reads "only the icon" from a binding as on or off', () => {
+        const bound = applySectionBindings(section({ value1IconOnly: '{x.0.y}' as unknown as boolean }), () => '1');
+        expect(bound?.value1IconOnly).toBe(true);
+    });
+
+    const words = { on: 'On', off: 'Off' };
+
+    it('rounds a number to two places, with the comma of the system', () => {
+        expect(formatSectionValue(21.456, '21.456', false, words)).toBe('21.46');
+        expect(formatSectionValue(21.456, '21.456', true, words)).toBe('21,46');
+        expect(formatSectionValue(20, '20', true, words)).toBe('20');
+    });
+
+    it('shows the text of common.states instead of the value', () => {
+        expect(formatSectionValue(1, 'Open', false, words)).toBe('Open');
+        expect(formatSectionValue(true, 'Present', false, words)).toBe('Present');
+    });
+
+    it('shows a boolean as on or off, and a dash while the value is not known', () => {
+        expect(formatSectionValue(true, 'true', false, words)).toBe('On');
+        expect(formatSectionValue(false, 'false', false, words)).toBe('Off');
+        expect(formatSectionValue(null, '', false, words)).toBe('–');
+        expect(formatSectionValue(undefined, '', false, words)).toBe('–');
+        expect(formatSectionValue('auto', 'auto', false, words)).toBe('auto');
     });
 });

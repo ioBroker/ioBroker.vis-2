@@ -67,6 +67,8 @@
   "off": "off",
   "on": "on",
   "right": "right",
+  "section_value_false": "Вимк.",
+  "section_value_true": "Увімк.",
   "vis_2_widgets_basic_cannot_recursive": "Не можна використовувати рекурсивні перегляди",
   "vis_2_widgets_basic_contains_view": "Використовуйте перегляд",
   "vis_2_widgets_basic_view_in_widget": "Переглянути у віджеті",

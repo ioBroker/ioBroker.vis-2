@@ -67,6 +67,8 @@
   "off": "off",
   "on": "on",
   "right": "right",
+  "section_value_false": "Off",
+  "section_value_true": "On",
   "vis_2_widgets_basic_cannot_recursive": "Cannot use recursive views",
   "vis_2_widgets_basic_contains_view": "Use view",
   "vis_2_widgets_basic_view_in_widget": "View in widget",

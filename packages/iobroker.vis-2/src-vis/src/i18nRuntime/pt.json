@@ -67,6 +67,8 @@
   "off": "off",
   "on": "on",
   "right": "right",
+  "section_value_false": "Desligado",
+  "section_value_true": "Ligado",
   "vis_2_widgets_basic_cannot_recursive": "Não é possível usar exibições recursivas",
   "vis_2_widgets_basic_contains_view": "Usar visualização",
   "vis_2_widgets_basic_view_in_widget": "Ver no widget",

@@ -351,12 +351,13 @@ html {
     outline: 2px solid #0d72b8;
 }
 
-/* Title and icon over the widgets of a section */
+/* Title and icon over the widgets of a section; values that do not fit next to the title go below it */
 .vis-grid-section-header {
     position: relative;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 4px 8px;
     min-height: 28px;
     margin-bottom: 8px;
     font-size: 16px;
@@ -399,6 +400,37 @@ html {
     width: 24px;
     height: 24px;
     flex-shrink: 0;
+}
+
+/* the values of up to two states, at the right end of the header */
+.vis-grid-section-header-values {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px 12px;
+    margin-left: auto;
+    min-width: 0;
+    font-size: 0.875em;
+}
+
+.vis-grid-section-header-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.vis-grid-section-header-value-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.vis-grid-section-header-value-name,
+.vis-grid-section-header-value-unit {
+    font-weight: 400;
+    opacity: 0.7;
 }
 
 .vis-grid-section-chevron {

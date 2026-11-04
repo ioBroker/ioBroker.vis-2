@@ -67,6 +67,8 @@
   "off": "off",
   "on": "on",
   "right": "right",
+  "section_value_false": "Выкл.",
+  "section_value_true": "Вкл.",
   "vis_2_widgets_basic_cannot_recursive": "Невозможно использовать рекурсивные представления",
   "vis_2_widgets_basic_contains_view": "Использовать вид",
   "vis_2_widgets_basic_view_in_widget": "Посмотреть в виджете",

@@ -71,7 +71,15 @@ const NUMBER_ATTRIBUTES = [
 ];
 
 /** The attributes that are on or off */
-const BOOLEAN_ATTRIBUTES = ['divider', 'collapsible', 'collapsed', 'newRow', 'stretch'];
+const BOOLEAN_ATTRIBUTES = [
+    'divider',
+    'collapsible',
+    'collapsed',
+    'newRow',
+    'stretch',
+    'value1IconOnly',
+    'value2IconOnly',
+];
 
 /** Every attribute of a section that may carry a binding, with its value */
 function valueEntries(section: ViewSection): [string, string][] {
@@ -96,6 +104,8 @@ export function getSectionStateIds(section: ViewSection | undefined | null): str
     if (section.collapsible) {
         add(section.expandOid);
     }
+    add(section.value1Oid);
+    add(section.value2Oid);
     valueEntries(section).forEach(([, value]) => getBindingStateIds(value).forEach(add));
     return ids;
 }
@@ -211,12 +221,94 @@ export function isSectionOpen(
     return !section.collapsed;
 }
 
+/** A state whose value the header of a section shows, see getSectionHeaderValues() */
+export interface SectionHeaderValue {
+    oid: string;
+    /** In front of the value, unless the icon stands for it */
+    name: string;
+    unit: string;
+    icon: string;
+    /** The icon stands instead of the name - only if there is an icon */
+    iconOnly: boolean;
+}
+
+/** The states whose values the header of a section shows, in their order: the ones with an ID */
+export function getSectionHeaderValues(section: ViewSection | undefined | null): SectionHeaderValue[] {
+    if (!section || typeof section !== 'object') {
+        return [];
+    }
+    const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+    const values: SectionHeaderValue[] = [];
+    (
+        [
+            [section.value1Oid, section.value1Name, section.value1Unit, section.value1Icon, section.value1IconOnly],
+            [section.value2Oid, section.value2Name, section.value2Unit, section.value2Icon, section.value2IconOnly],
+        ] as const
+    ).forEach(([oid, name, unit, icon, iconOnly]) => {
+        if (isStateId(text(oid))) {
+            values.push({
+                oid: text(oid),
+                name: text(name),
+                unit: text(unit),
+                icon: text(icon),
+                iconOnly: !!iconOnly && !!text(icon),
+            });
+        }
+    });
+    return values;
+}
+
+/**
+ * How the header of a section shows the value of a state.
+ *
+ * @param value - the value of the state; null or undefined while it is not known
+ * @param stateText - the value as the binding operation `states` gives it: the text of `common.states`, or else the
+ *   value as it is
+ * @param isFloatComma - the system writes a comma instead of a point
+ * @param words - what a boolean is shown as
+ * @param words.on - for true
+ * @param words.off - for false
+ */
+export function formatSectionValue(
+    value: string | number | boolean | object | null | undefined,
+    stateText: string,
+    isFloatComma: boolean,
+    words: { on: string; off: string },
+): string {
+    if (value === null || value === undefined) {
+        return '–';
+    }
+    if (typeof value === 'object') {
+        return JSON.stringify(value);
+    }
+    const plain = String(value);
+    // the value list of the object has a text for it
+    if (stateText !== plain) {
+        return stateText;
+    }
+    if (typeof value === 'number') {
+        // like VisRxWidget.formatValue(): at most two places
+        const text = (Math.round(value * 100) / 100).toString();
+        return isFloatComma ? text.replace('.', ',') : text;
+    }
+    if (typeof value === 'boolean') {
+        return value ? words.on : words.off;
+    }
+    return plain;
+}
+
 /** A section has a header when it has something to show in it, or when the header opens and closes it */
 export function hasSectionHeader(section: ViewSection | undefined | null): boolean {
     return (
         !!section &&
         typeof section === 'object' &&
-        !!(section.title || section.icon || section.subtitle || section.collapsible)
+        !!(
+            section.title ||
+            section.icon ||
+            section.subtitle ||
+            section.collapsible ||
+            getSectionHeaderValues(section).length
+        )
     );
 }
 

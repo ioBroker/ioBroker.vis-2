@@ -393,6 +393,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) Web components are sorted into the palette set of their adapter, beside the widgets of the adapter if it has some, instead of all into one set "Web components". The runtime loads them when the project shows one, without the widgets of their adapter
 * (@GermanBluefox) An object setting of a web component with `root` (e.g. `"types": "config", "root": "flow.0.diagrams"`) offers only the objects below it. Widget sets can give an `id` attribute a `root` too
 * (@GermanBluefox) The dev server forwards `/lib/esm/` to ioBroker, where web components written with React import it from
+* (@GermanBluefox) A section of the grid layout can show the values of up to two states at the right end of its header, each with a name, a unit and an icon - or only the icon, with the name as its tooltip. Picking a state fills in its name and unit; a value from `common.states` is shown as its text
 
 ### 2.20.6 (2026-11-02)
 * (@Bernd9000) Fixed: the attributes of the signal images 3 to 5 (object ID, condition, value, image, size, style, text style, classes, blinking, horizontal, vertical, hide by edit) have their names translated in the editor. Only the signals 0 to 2 had translations, so the others showed the raw key, e.g. `signals-oid-3`, once six signals became possible

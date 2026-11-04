@@ -67,6 +67,8 @@
   "off": "off",
   "on": "on",
   "right": "right",
+  "section_value_false": "Uit",
+  "section_value_true": "Aan",
   "vis_2_widgets_basic_cannot_recursive": "Kan geen recursieve weergaven gebruiken",
   "vis_2_widgets_basic_contains_view": "Gebruik weergave",
   "vis_2_widgets_basic_view_in_widget": "Bekijk in widget",
