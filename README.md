@@ -390,6 +390,9 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 ### **WORK IN PROGRESS**
 * (@GermanBluefox) Added the binding operation `states`: `{hm-rpc.0.ABC.STATE;states}` shows the text of the value in `common.states` of the object instead of the value, e.g. "Open" instead of `1`; `states(unknown)` gives a text for a value that is not in the list
 * (@GermanBluefox) Web components of adapters (`common.webComponents`, see [`@iobroker/web-components`](https://github.com/ioBroker/web-components)) are offered as widgets: their settings become the attributes of the widget, the module of a component is loaded when it is shown, and its dialogs open as dialogs of vis. See [packages/iobroker.vis-2/docs/web-components.md](packages/iobroker.vis-2/docs/web-components.md)
+* (@GermanBluefox) Web components are sorted into the palette set of their adapter, beside the widgets of the adapter if it has some, instead of all into one set "Web components". The runtime loads them when the project shows one, without the widgets of their adapter
+* (@GermanBluefox) An object setting of a web component with `root` (e.g. `"types": "config", "root": "flow.0.diagrams"`) offers only the objects below it. Widget sets can give an `id` attribute a `root` too
+* (@GermanBluefox) The dev server forwards `/lib/esm/` to ioBroker, where web components written with React import it from
 
 ### 2.20.6 (2026-11-02)
 * (@Bernd9000) Fixed: the attributes of the signal images 3 to 5 (object ID, condition, value, image, size, style, text style, classes, blinking, horizontal, vertical, hide by edit) have their names translated in the editor. Only the signals 0 to 2 had translations, so the others showed the raw key, e.g. `signals-oid-3`, once six signals became possible

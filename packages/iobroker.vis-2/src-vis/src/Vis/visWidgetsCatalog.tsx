@@ -23,7 +23,7 @@ import { getRemoteWidgets, type VisRxWidgetWithInfo, type VisServiceWithInfo } f
 import type { IncompatibleWidgetSet } from './visWidgetSetCompatibility';
 import WIDGETS from './Widgets';
 import { loadWebComponentWidgets } from './WebComponents/visLoadWebComponents';
-import { WEB_COMPONENT_SET } from './WebComponents/webComponentSettings';
+import { isWebComponentType } from './WebComponents/webComponentSettings';
 
 const DEFAULT_SET_COLORS: Record<string, string> = {
     basic: '#f1f1f1',
@@ -89,6 +89,8 @@ export type RxWidgetInfoAttributesFieldAll = {
         | ioBroker.ObjectType
         | ((data: WidgetData, index: number) => Record<string, any>)
         | string;
+    /** Show only this object and the objects below it, e.g. `flow.0.diagrams` */
+    readonly root?: string;
     /** Additionally, you can provide `adapter` to filter the instances of a specific adapter. With the special adapter name `_dataSources` you can get all adapters with a flag `common.getHistory`. */
     readonly adapter?: string;
     /** Additionally, you can provide `adapters` to filter the instances of specific adapters. */
@@ -429,6 +431,16 @@ export const getWidgetTypes = (usedWidgetSets?: string[]): WidgetType[] => {
                 });
             }
         });
+
+        // A web component goes into the set of its adapter. If the adapter has widgets of its own there, the set
+        // keeps their label, color and icon - the palette takes them from the last widget that brings them.
+        const types: WidgetType[] = (window as any).visWidgetTypes;
+        const ownSets = new Set(types.filter(type => type.setLabel && !isWebComponentType(type.name)).map(t => t.set));
+        (window as any).visWidgetTypes = types.map(type =>
+            isWebComponentType(type.name) && ownSets.has(type.set)
+                ? { ...type, setLabel: undefined, setColor: undefined, setIcon: undefined }
+                : type,
+        );
     }
 
     return (window as any).visWidgetTypes;
@@ -455,6 +467,19 @@ export default class VisWidgetsCatalog {
      */
     static services: VisServiceWithInfo[] = [];
 
+    /**
+     * Whether the project shows a web component. They are in the sets of their adapters, so the sets do not tell.
+     *
+     * @param project - the project
+     */
+    static usesWebComponents(project: Project): boolean {
+        return Object.keys(project).some(
+            view =>
+                view !== '___settings' &&
+                Object.values(project[view].widgets || {}).some(widget => isWebComponentType(widget.tpl)),
+        );
+    }
+
     static getUsedWidgetSets(project: Project): string[] | false {
         let anyWithoutSet = false;
         const widgetSets: string[] = [];
@@ -468,6 +493,11 @@ export default class VisWidgetsCatalog {
             const widgets = project[views[v]].widgets;
             const keys: (GroupWidgetId | SingleWidgetId)[] = Object.keys(widgets) as (GroupWidgetId | SingleWidgetId)[];
             for (let w = 0; w < keys.length; w++) {
+                // a web component shares the set of its adapter, but needs nothing of its widgets, see
+                // usesWebComponents
+                if (isWebComponentType(widgets[keys[w]].tpl)) {
+                    continue;
+                }
                 const widgetSet = widgets[keys[w]].widgetSet;
                 if (!widgetSet || widgets[keys[w]].wSet || widgets[keys[w]].set) {
                     anyWithoutSet = true;
@@ -577,7 +607,7 @@ export default class VisWidgetsCatalog {
     static getWidgetSetsOfViews(project: Project, views: string[]): string[] {
         const sets = new Set<string>();
         VisWidgetsCatalog.getWidgetsOfViews(project, views).forEach(widget => {
-            if (widget.widgetSet) {
+            if (widget.widgetSet && !isWebComponentType(widget.tpl)) {
                 sets.add(widget.widgetSet);
             }
         });
@@ -726,10 +756,9 @@ export default class VisWidgetsCatalog {
             onlyWidgetSets && firstWidgetSets ? onlyWidgetSets.filter(s => firstWidgetSets.includes(s)) : null;
         const later = onlyWidgetSets && first ? onlyWidgetSets.filter(s => !first.includes(s)) : [];
 
-        // PoC: the web components travel side by side with the widget sets, in the runtime only if the project
-        // shows one
+        // the web components travel side by side with the widget sets, in the runtime only if the project shows one
         const webComponents =
-            !onlyWidgetSets || onlyWidgetSets.includes(WEB_COMPONENT_SET)
+            !onlyWidgetSets || (project && VisWidgetsCatalog.usesWebComponents(project))
                 ? loadWebComponentWidgets(socket, !changeProject)
                 : Promise.resolve([]);
 

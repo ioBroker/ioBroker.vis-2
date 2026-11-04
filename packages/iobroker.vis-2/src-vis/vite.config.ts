@@ -138,6 +138,8 @@ export default defineConfig({
             // because the name of the adapter stands in the middle of the path
             '^/[^/]+\\.admin/': BACKEND,
             '/habpanel': BACKEND,
+            // React for web components (`/lib/esm/react-19.js`), served by the web adapter
+            '/lib/esm': BACKEND,
             '/vis-2': BACKEND,
             '/widgets': {
                 target: `${BACKEND}/vis-2`,

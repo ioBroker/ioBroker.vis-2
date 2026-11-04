@@ -63,9 +63,11 @@ interface VisWidgetInstance {
         name: ioBroker.StringOrTranslated;
         version: string;
         icon?: string;
+        /** The title of the adapter - only with web components: their set in the palette is named after it */
+        titleLang?: ioBroker.StringOrTranslated;
         visWidgets?: ioBroker.InstanceCommon['visWidgets'];
         visIconSets?: Record<string, any>;
-        /** PoC: ES modules of web components, relative to the admin folder of the adapter */
+        /** The manifests of web components, relative to the admin folder of the adapter */
         webComponents?: string[];
     };
 }
@@ -89,6 +91,7 @@ function toVisWidgetInstance(obj: ioBroker.Object | null | undefined): VisWidget
             name: common.name,
             version: common.version,
             icon: common.icon,
+            titleLang: common.webComponents ? common.titleLang : undefined,
             visWidgets: common.visWidgets,
             visIconSets: common.visIconSets,
             webComponents: common.webComponents,

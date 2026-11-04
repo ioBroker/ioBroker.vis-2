@@ -18,8 +18,14 @@ import {
     type WebComponentText,
 } from '@iobroker/web-components';
 
-/** The palette set all web components appear in */
+/**
+ * The palette set of a web component that no adapter brings - the demo of the dev server. A component of an adapter
+ * goes into the set of its adapter, see {@link getWebComponentSet}.
+ */
 export const WEB_COMPONENT_SET = 'webcomponents';
+
+/** The prefix of the widget type (`tpl`) under which a web component is stored in a project */
+const WEB_COMPONENT_TYPE_PREFIX = 'tplWc_';
 
 /** Icon of the set, and of a component whose manifest brings none: `</>` in a box */
 export const WEB_COMPONENT_ICON = `data:image/svg+xml,${encodeURIComponent(
@@ -52,7 +58,30 @@ export function toAllLanguages(text: WebComponentText): Record<ioBroker.Language
 
 /** The widget type (`tpl`) under which a web component is stored in a project */
 export function getWebComponentWidgetType(tag: string): string {
-    return `tplWc_${tag}`;
+    return `${WEB_COMPONENT_TYPE_PREFIX}${tag}`;
+}
+
+/** Whether a widget type (`tpl`) is a web component */
+export function isWebComponentType(tpl: string | undefined): boolean {
+    return !!tpl?.startsWith(WEB_COMPONENT_TYPE_PREFIX);
+}
+
+/**
+ * The palette set of a web component: the name of its adapter, so that the components are sorted by adapter like
+ * the widgets - and stand beside the widgets of their adapter, if it has some
+ *
+ * @param component the loaded component
+ */
+export function getWebComponentSet(component: Pick<LoadedWebComponent, 'adapter'>): string {
+    return component.adapter || WEB_COMPONENT_SET;
+}
+
+/** What the set of an adapter is labelled with in the palette */
+export interface WebComponentAdapterInfo {
+    /** `common.titleLang` of the adapter, else its name is taken */
+    title?: WebComponentText;
+    /** Absolute URL of the icon of the adapter */
+    icon?: string;
 }
 
 /** Whether vis-2 itself uses a widget attribute of this name */
@@ -159,11 +188,11 @@ function toField(
         case 'color':
             return { ...common, type: 'color' } as RxWidgetInfoAttributesField;
         case 'objectId':
-            // `root` has no counterpart in the object browser of vis-2: it only narrows the choice
             return {
                 ...common,
                 type: 'id',
                 filter: setting.types ? { type: setting.types } : undefined,
+                root: setting.root,
             } as RxWidgetInfoAttributesField;
         case 'instance':
             return { ...common, type: 'instance', adapter: setting.adapter } as RxWidgetInfoAttributesField;
@@ -187,15 +216,23 @@ function toField(
  * The widget info of a web component and the texts it refers to
  *
  * @param component the loaded component
+ * @param adapter title and icon of the adapter that brings the component
  */
-export function manifestToWidgetInfo(component: LoadedWebComponent): {
+export function manifestToWidgetInfo(
+    component: LoadedWebComponent,
+    adapter?: WebComponentAdapterInfo,
+): {
     info: RxWidgetInfo;
     translations: WebComponentTranslations;
 } {
     const { manifest } = component;
     const keyPrefix = `wc_${manifest.tag}`;
+    const visSet = getWebComponentSet(component);
+    const setLabel = component.adapter ? `wc_set_${component.adapter}` : 'wc_set_label';
     const translations: WebComponentTranslations = {
-        wc_set_label: toAllLanguages({ en: 'Web components', de: 'Web-Komponenten' }),
+        [setLabel]: toAllLanguages(
+            component.adapter ? adapter?.title || component.adapter : { en: 'Web components', de: 'Web-Komponenten' },
+        ),
         [`${keyPrefix}_name`]: toAllLanguages(manifest.name),
     };
 
@@ -230,10 +267,10 @@ export function manifestToWidgetInfo(component: LoadedWebComponent): {
 
     const info = {
         id: getWebComponentWidgetType(manifest.tag),
-        visSet: WEB_COMPONENT_SET,
-        visSetLabel: 'wc_set_label',
+        visSet,
+        visSetLabel: setLabel,
         visSetColor: '#7e57c2',
-        visSetIcon: WEB_COMPONENT_ICON,
+        visSetIcon: (component.adapter && adapter?.icon) || WEB_COMPONENT_ICON,
         visName: typeof manifest.name === 'string' ? manifest.name : manifest.name.en,
         visWidgetLabel: `${keyPrefix}_name`,
         visHelp,

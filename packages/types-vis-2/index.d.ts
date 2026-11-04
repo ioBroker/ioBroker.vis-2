@@ -377,6 +377,8 @@ export type RxWidgetInfoAttributesFieldID = {
         | ioBroker.ObjectType
         | ((data: WidgetData, index: number) => Record<string, any>)
         | string;
+    /** Show only this object and the objects below it, e.g. `flow.0.diagrams` */
+    readonly root?: string;
 
     /** Used by counted fields */
     readonly index?: number;
