@@ -23,7 +23,12 @@ import {
 import VisRxWidget from '@/Vis/visRxWidget';
 import type { VisRxWidgetWithInfo } from '@/Vis/visLoadWidgets';
 
-import { getWebComponentSettingTypes, manifestToWidgetInfo, toSettingValue } from './webComponentSettings';
+import {
+    getWebComponentSettingTypes,
+    manifestToWidgetInfo,
+    toSettingValue,
+    type WebComponentAdapterInfo,
+} from './webComponentSettings';
 import type { OpenWebComponentDialog } from './WebComponentDialogs';
 
 /** The dialogs come with MUI and a form renderer: only fetched when a component asks for one */
@@ -136,9 +141,13 @@ interface WebComponentWidgetState extends VisRxWidgetState {
  * The widget class of one web component
  *
  * @param component the loaded component
+ * @param adapter title and icon of the adapter that brings the component, for its set in the palette
  */
-export function createWebComponentWidget(component: LoadedWebComponent): VisRxWidgetWithInfo<any> {
-    const { info, translations } = manifestToWidgetInfo(component);
+export function createWebComponentWidget(
+    component: LoadedWebComponent,
+    adapter?: WebComponentAdapterInfo,
+): VisRxWidgetWithInfo<any> {
+    const { info, translations } = manifestToWidgetInfo(component, adapter);
     I18n.extendTranslations(translations);
 
     const settingTypes = getWebComponentSettingTypes(component.manifest);

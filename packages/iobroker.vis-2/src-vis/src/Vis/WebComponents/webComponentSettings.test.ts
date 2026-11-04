@@ -5,9 +5,11 @@ import type { LoadedWebComponent, WebComponentManifest } from '@iobroker/web-com
 import {
     getWebComponentSettingTypes,
     getWebComponentWidgetType,
+    isWebComponentType,
     manifestToWidgetInfo,
     toAllLanguages,
     toSettingValue,
+    WEB_COMPONENT_ICON,
     WEB_COMPONENT_SET,
 } from './webComponentSettings';
 
@@ -21,7 +23,12 @@ const MANIFEST: WebComponentManifest = {
         type: 'panel',
         items: {
             _header: { type: 'header', text: { en: 'State', de: 'Datenpunkt' } },
-            oid: { type: 'objectId', label: { en: 'State', de: 'Datenpunkt' }, types: 'config' },
+            oid: {
+                type: 'objectId',
+                label: { en: 'State', de: 'Datenpunkt' },
+                types: 'config',
+                root: 'demo.0.diagrams',
+            },
             decimals: { type: 'number', label: 'Decimals', min: 0, max: 6, default: 1 },
             _line: { type: 'divider' },
             variant: {
@@ -51,10 +58,33 @@ describe('manifestToWidgetInfo', () => {
     const { info, translations } = manifestToWidgetInfo(COMPONENT);
     const fields = info.visAttrs[0].fields as any[];
 
-    it('makes one widget type of the component in the set of the web components', () => {
+    it('makes one widget type of the component in the set of its adapter', () => {
         expect(info.id).toBe(getWebComponentWidgetType('iob-test-tile'));
-        expect(info.visSet).toBe(WEB_COMPONENT_SET);
+        expect(isWebComponentType(info.id)).toBe(true);
+        expect(isWebComponentType('tplMaterial2Switches')).toBe(false);
+        expect(info.visSet).toBe('demo');
         expect(info.visDefaultStyle).toEqual({ width: 180, height: 110 });
+        // without the title of the adapter, its name labels the set
+        expect(translations[info.visSetLabel!].de).toBe('demo');
+        expect(info.visSetIcon).toBe(WEB_COMPONENT_ICON);
+    });
+
+    it('labels the set of the adapter with its title and its icon', () => {
+        const withAdapter = manifestToWidgetInfo(COMPONENT, {
+            title: { en: 'Demo adapter', de: 'Demo-Adapter' },
+            icon: 'http://host:8082/adapter/demo/demo.svg',
+        });
+        expect(withAdapter.info.visSet).toBe('demo');
+        expect(withAdapter.translations[withAdapter.info.visSetLabel!].de).toBe('Demo-Adapter');
+        expect(withAdapter.translations[withAdapter.info.visSetLabel!].fr).toBe('Demo adapter');
+        expect(withAdapter.info.visSetIcon).toBe('http://host:8082/adapter/demo/demo.svg');
+    });
+
+    it('puts a component of no adapter into the set of the web components', () => {
+        const demo = manifestToWidgetInfo({ ...COMPONENT, adapter: '', version: '' });
+        expect(demo.info.visSet).toBe(WEB_COMPONENT_SET);
+        expect(demo.translations[demo.info.visSetLabel!].de).toBe('Web-Komponenten');
+        expect(demo.info.visSetIcon).toBe(WEB_COMPONENT_ICON);
     });
 
     it('lets nobody resize a component that works in its own size only', () => {
@@ -81,8 +111,9 @@ describe('manifestToWidgetInfo', () => {
             ['textTrue', 'text'],
         ]);
         expect(fields[2]).toMatchObject({ min: 0, max: 6, default: 1 });
-        // the types of objectId become the filter of the object browser
+        // the types and the root of objectId narrow the choice of the object browser
         expect(fields[1].filter).toEqual({ type: 'config' });
+        expect(fields[1].root).toBe('demo.0.diagrams');
         // the expression is over the values of the settings, which vis-2 calls `data` as well
         expect(fields[6].hidden).toBe('!data.toggle');
     });

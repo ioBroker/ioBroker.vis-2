@@ -19,6 +19,7 @@ import type { VisRxWidgetWithInfo } from '@/Vis/visLoadWidgets';
 import { readWidgetInstances } from '@/Vis/visLoadWidgets';
 
 import { createWebComponentWidget } from './visWebComponentWidget';
+import type { WebComponentAdapterInfo } from './webComponentSettings';
 
 /**
  * The demo components vis-2 brings itself, relative to the document (`src-vis/public/demo-components`) - on the
@@ -27,6 +28,26 @@ import { createWebComponentWidget } from './visWebComponentWidget';
  * stays tested.
  */
 const DEMO_WEB_COMPONENTS = ['demo-components/iob-state-tile.js'];
+
+/**
+ * Title and icon of every adapter, for the sets of the palette - the components of an adapter are its set
+ *
+ * @param instances the instances that bring web components
+ */
+function getAdapterInfos(instances: ioBroker.InstanceObject[]): Record<string, WebComponentAdapterInfo> {
+    const infos: Record<string, WebComponentAdapterInfo> = {};
+    for (const instance of instances) {
+        const { name, titleLang, icon } = instance.common || {};
+        if (name && !infos[name]) {
+            infos[name] = {
+                title: titleLang || undefined,
+                // `/adapter/<name>/` beside the pages, like the manifests: one level up from the vis-2 folder
+                icon: icon ? new URL(`../adapter/${name}/${icon}`, document.baseURI).href : undefined,
+            };
+        }
+    }
+    return infos;
+}
 
 /**
  * Read the manifests of all web components and make a widget type of each
@@ -54,10 +75,11 @@ export async function loadWebComponentWidgets(
         ...getWebComponentSources(instances, document.baseURI),
     ];
 
+    const adapters = getAdapterInfos(instances);
     const widgets: VisRxWidgetWithInfo<any>[] = [];
     for (const component of await loadWebComponents(sources)) {
         try {
-            widgets.push(createWebComponentWidget(component));
+            widgets.push(createWebComponentWidget(component, adapters[component.adapter]));
         } catch (e) {
             console.error(`Web component ${component.url} ignored: ${(e as Error)?.message || String(e)}`);
         }

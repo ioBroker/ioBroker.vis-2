@@ -41,9 +41,14 @@ A React component does not bundle React: web and admin serve one copy per major 
 
 ## The widget
 
-Every component becomes a widget type `tplWc_<tag>` in the palette set *Web components*, with the size of
-`manifest.size` for a new widget; `size.noResize` makes the widget not resizable. The runtime loads the
-components only when the project uses that set.
+Every component becomes a widget type `tplWc_<tag>` in the palette set of its adapter, with the size of
+`manifest.size` for a new widget; `size.noResize` makes the widget not resizable. If the adapter has vis-2 widgets
+of its own, the components stand beside them in that set; otherwise the set is labelled with `common.titleLang` and
+`common.icon` of the adapter. The runtime loads the components only when the project shows one, and does not load
+the widgets of the adapter for that.
+
+An `objectId` setting with `root` offers only that object and the objects below it, e.g. `"types": "config",
+"root": "flow.0.diagrams"`.
 
 The element gets these properties:
 

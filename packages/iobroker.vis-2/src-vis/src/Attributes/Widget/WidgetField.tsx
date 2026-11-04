@@ -856,6 +856,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         filters={filters || undefined}
                         expertMode={field.filter === 'chart' ? true : undefined}
                         customFilter={customFilter || undefined}
+                        root={field.root}
                     />
                 ) : null}
             </>
