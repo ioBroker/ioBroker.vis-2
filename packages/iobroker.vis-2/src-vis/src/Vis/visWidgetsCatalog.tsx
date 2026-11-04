@@ -22,6 +22,8 @@ import type VisRxWidget from '@/Vis/visRxWidget';
 import { getRemoteWidgets, type VisRxWidgetWithInfo, type VisServiceWithInfo } from './visLoadWidgets';
 import type { IncompatibleWidgetSet } from './visWidgetSetCompatibility';
 import WIDGETS from './Widgets';
+import { loadWebComponentWidgets } from './WebComponents/visLoadWebComponents';
+import { WEB_COMPONENT_SET } from './WebComponents/webComponentSettings';
 
 const DEFAULT_SET_COLORS: Record<string, string> = {
     basic: '#f1f1f1',
@@ -724,11 +726,18 @@ export default class VisWidgetsCatalog {
             onlyWidgetSets && firstWidgetSets ? onlyWidgetSets.filter(s => firstWidgetSets.includes(s)) : null;
         const later = onlyWidgetSets && first ? onlyWidgetSets.filter(s => !first.includes(s)) : [];
 
+        // PoC: the web components travel side by side with the widget sets, in the runtime only if the project
+        // shows one
+        const webComponents =
+            !onlyWidgetSets || onlyWidgetSets.includes(WEB_COMPONENT_SET)
+                ? loadWebComponentWidgets(socket, !changeProject)
+                : Promise.resolve([]);
+
         const result = await getRemoteWidgets(socket, first || onlyWidgetSets, !changeProject);
 
         VisWidgetsCatalog.additionalSets = result?.additionalSets || {};
         VisWidgetsCatalog.incompatibleSets = result?.incompatibleSets || [];
-        VisWidgetsCatalog.addRxWidgets(result?.widgetSets || []);
+        VisWidgetsCatalog.addRxWidgets([...(result?.widgetSets || []), ...(await webComponents)]);
         VisWidgetsCatalog.services = result?.services || [];
 
         // the other sets of the project travel while the first view is built

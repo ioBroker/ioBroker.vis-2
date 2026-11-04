@@ -252,6 +252,9 @@ function getText(text: string | ioBroker.StringOrTranslated): string {
     return (text || '').toString();
 }
 
+/** The instances being read right now, see {@link readWidgetInstances} */
+let instancesReading: Promise<ioBroker.InstanceObject[]> | null = null;
+
 /**
  * The instances that bring widgets or icon sets
  *
@@ -266,14 +269,18 @@ function readWidgetInstances(socket: Connection, fromConfig: boolean): Promise<i
         return Promise.resolve(JSON.parse(JSON.stringify(window.visWidgetInstances)));
     }
 
-    let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
-    if (socket.getObjectViewSystemCached) {
-        getObjectViewSystem = socket.getObjectViewSystemCached.bind(socket);
+    // the widget sets and the web components ask at the same time; the cache of the socket fills only once
+    // the first answer is there, so the second one waits for that instead of reading 1 MB again
+    if (!instancesReading) {
+        let getObjectViewSystem: typeof socket.getObjectViewSystem = socket.getObjectViewSystem.bind(socket);
+        if (socket.getObjectViewSystemCached) {
+            getObjectViewSystem = socket.getObjectViewSystemCached.bind(socket);
+        }
+        instancesReading = getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.香')
+            .then(objects => Object.values(objects))
+            .finally(() => (instancesReading = null));
     }
-
-    return getObjectViewSystem('instance', 'system.adapter.', 'system.adapter.香').then(objects =>
-        Object.values(objects),
-    );
+    return instancesReading;
 }
 
 /**
@@ -599,4 +606,4 @@ function getRemoteWidgets(
         });
 }
 
-export { getRemoteWidgets, registerWidgetsLoadIndicator };
+export { getRemoteWidgets, readWidgetInstances, registerWidgetsLoadIndicator };
