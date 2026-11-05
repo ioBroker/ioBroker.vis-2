@@ -39,7 +39,7 @@ import Widget from './Widget';
 import MarketplacePalette from '../Marketplace/MarketplacePalette';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
 import { getRecentWidgets, onRecentWidgetsChanged } from './recentWidgets';
-import { isHiddenInPalette, ONLY_VIS2_KEY } from './paletteFilter';
+import { getWebComponentsWithNativeWidget, isHiddenInPalette, ONLY_VIS2_KEY } from './paletteFilter';
 import { loadRemote, registerRemotes } from '@module-federation/runtime';
 import { isDevServer } from '@/Utilities/devServer';
 
@@ -348,6 +348,25 @@ class Palette extends Component<PaletteProps, PaletteState> {
         }
     }
 
+    /** The name the palette shows a widget type under */
+    static getTypeTitle(type: WidgetType): string {
+        return type.label ? I18n.t(type.label) : window.vis._(type.title || '') || '';
+    }
+
+    /**
+     * The widget types the palette shows: not the hidden ones, and not a web component whose adapter brings a vis-2
+     * widget of the same name, see getWebComponentsWithNativeWidget()
+     *
+     * @param types - all widget types
+     */
+    getShownTypes(types: WidgetType[]): WidgetType[] {
+        const shown = types.filter(type => !isHiddenInPalette(type, this.state.onlyVis2));
+        const replaced = getWebComponentsWithNativeWidget(
+            shown.map(type => ({ name: type.name, set: type.set, title: Palette.getTypeTitle(type) })),
+        );
+        return replaced.size ? shown.filter(type => !replaced.has(type.name)) : shown;
+    }
+
     buildWidgetList(): void {
         if (!this.props.widgetsLoaded) {
             if (this.state.widgetsList !== null || this.state.widgetSetProps !== null) {
@@ -360,6 +379,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
         const widgetSetProps: Record<string, WidgetSetProps> = {};
 
         const widgetTypes = getWidgetTypes();
+        const shownTypes = new Set(this.getShownTypes(widgetTypes));
         widgetTypes.forEach(widgetType => {
             const widgetTypeName: string = widgetType.set || '';
             if (widgetType.developerMode) {
@@ -392,7 +412,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 widgetSetProps[widgetTypeName].version = widgetType.version;
             }
 
-            const title = widgetType.label ? I18n.t(widgetType.label) : window.vis._(widgetType.title || '') || '';
+            const title = Palette.getTypeTitle(widgetType);
             // The search also looks at the widget set a widget belongs to, by its name and by the label the
             // palette gives it: "metro" is a set, not a widget, and used to find nothing at all.
             const filter = this.state.filter.toLowerCase();
@@ -401,7 +421,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                 title.toLowerCase().includes(filter) ||
                 widgetTypeName.toLowerCase().includes(filter) ||
                 (widgetSetProps[widgetTypeName]?.label || '').toLowerCase().includes(filter);
-            if (isHiddenInPalette(widgetType, this.state.onlyVis2) || !found) {
+            if (!shownTypes.has(widgetType) || !found) {
                 return;
             }
 
@@ -478,11 +498,11 @@ class Palette extends Component<PaletteProps, PaletteState> {
             return null;
         }
 
-        const types = getWidgetTypes();
+        const types = this.getShownTypes(getWidgetTypes());
         // a type of a set that is not installed any more is simply gone
         const recent = this.state.recent
             .map(name => types.find(type => type.name === name))
-            .filter((type): type is WidgetType => !!type && !isHiddenInPalette(type, this.state.onlyVis2));
+            .filter((type): type is WidgetType => !!type);
 
         if (!recent.length) {
             return null;
