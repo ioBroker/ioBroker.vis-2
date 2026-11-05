@@ -47,6 +47,10 @@ of its own, the components stand beside them in that set; otherwise the set is l
 `common.icon` of the adapter. The runtime loads the components only when the project shows one, and does not load
 the widgets of the adapter for that.
 
+If the adapter brings a vis-2 widget of the same name as well - the same set, the same name in the palette, like
+the "Flow diagram" of flow - the palette offers only the vis-2 widget. Widgets of the component already placed stay
+as they are.
+
 An `objectId` setting with `root` offers only that object and the objects below it, e.g. `"types": "config",
 "root": "flow.0.diagrams"`.
 
