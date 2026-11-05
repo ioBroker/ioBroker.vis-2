@@ -60,7 +60,7 @@ The element gets these properties:
 |------------|-------------------------------------------------------------------------------------------------|
 | `socket`   | the connection of vis-2                                                                         |
 | `settings` | the values of the attributes, typed as the manifest declares them; a new object only on a change |
-| `theme`    | `dark` or `light`, after the theme of vis-2                                                      |
+| `theme`    | the colors, the font and the corners of the theme of vis-2 (`getWebComponentTheme`)              |
 | `editMode` | true in the editor - the element then writes nothing and opens no dialogs                       |
 | `dialogs`  | MUI dialogs of vis-2, see below                                                                 |
 

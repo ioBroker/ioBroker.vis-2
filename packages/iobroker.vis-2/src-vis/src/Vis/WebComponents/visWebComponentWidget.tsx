@@ -6,9 +6,10 @@
  */
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { I18n } from '@iobroker/gui-components';
+import { I18n, type IobTheme } from '@iobroker/gui-components';
 import type { RxRenderWidgetProps, RxWidgetInfo, VisRxWidgetState } from '@iobroker/types-vis-2';
 import {
+    getWebComponentTheme,
     importWebComponent,
     NAVIGATE_EVENT,
     type LoadedWebComponent,
@@ -45,6 +46,23 @@ interface WebComponentHostProps {
 }
 
 const FILL: React.CSSProperties = { display: 'block', width: '100%', height: '100%' };
+
+/** The theme of vis-2 as the components get it, made once per MUI theme */
+const componentThemes = new WeakMap<IobTheme, WebComponentTheme>();
+
+/**
+ * The colors, the font and the corners of vis-2 for the components
+ *
+ * @param theme the MUI theme of vis-2
+ */
+function toComponentTheme(theme: IobTheme): WebComponentTheme {
+    let result = componentThemes.get(theme);
+    if (!result) {
+        result = getWebComponentTheme(theme);
+        componentThemes.set(theme, result);
+    }
+    return result;
+}
 
 /**
  * Imports the module of the component, then renders the custom element and hands it its properties
@@ -229,7 +247,7 @@ export function createWebComponentWidget(
                         component={component}
                         socket={this.props.context.socket}
                         settings={this.getSettings()}
-                        theme={this.props.context.themeType === 'dark' ? 'dark' : 'light'}
+                        theme={toComponentTheme(this.props.context.theme)}
                         editMode={!!this.props.editMode}
                         dialogs={this.wcDialogs}
                         onNavigate={this.onNavigate}
