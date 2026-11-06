@@ -1,4 +1,6 @@
 const assert = require('node:assert');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // The controller hands an object change only to `options.objectChange` (or the `objectChange` event), never to a
 // method of the adapter class with that name. These tests load build/main.js with a stand-in for the Adapter class
@@ -101,5 +103,42 @@ describe('objectChange', () => {
         assert.deepStrictEqual(adapter.errors, [
             'Cannot process the change of "system.adapter.vis-metro.0": disk full',
         ]);
+    });
+});
+
+describe('objectChange of a widget adapter for vis-1 only', () => {
+    // a widget adapter as npm puts it next to vis-2 (POSSIBLE_WIDGET_SETS_LOCATIONS), whose set vis-2 leaves out
+    const adapterDir = path.join(__dirname, '../node_modules/iobroker.vis-onlyv1');
+    const instance = {
+        type: 'instance',
+        common: { name: 'vis-onlyv1', version: '1.0.0', visWidgets: { onlyv1: { ignoreInVersions: [2] } } },
+        native: {},
+    };
+
+    before(() => fs.mkdirSync(path.join(adapterDir, 'widgets'), { recursive: true }));
+    after(() => fs.rmSync(adapterDir, { recursive: true, force: true }));
+
+    it('starts no rebuild for a change of its instance', async () => {
+        const adapter = createAdapter();
+        const builds = countBuilds(adapter);
+        adapter.widgetInstances = {};
+
+        adapter.options.objectChange('system.adapter.vis-onlyv1.0', instance);
+        await flush();
+
+        assert.deepStrictEqual(builds, []);
+        assert.deepStrictEqual(adapter.widgetInstances, {});
+    });
+
+    it('takes out the set of an adapter whose update made it vis-1 only', async () => {
+        const adapter = createAdapter();
+        const builds = countBuilds(adapter);
+        adapter.widgetInstances = { 'vis-onlyv1': '1.0.0' };
+
+        adapter.options.objectChange('system.adapter.vis-onlyv1.0', instance);
+        await flush();
+
+        assert.deepStrictEqual(builds, [false]);
+        assert.deepStrictEqual(adapter.widgetInstances, {});
     });
 });
