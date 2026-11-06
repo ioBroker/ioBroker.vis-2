@@ -7,13 +7,14 @@
  *      CC-NC-BY 4.0 License
  *
  */
-import { Adapter, type AdapterOptions } from '@iobroker/adapter-core';
+import { Adapter, type AdapterOptions, getAbsoluteInstanceDataDir } from '@iobroker/adapter-core';
 import { AiBackend, readAdapterAiSettings } from '@iobroker/ai-core';
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
-import { normalize } from 'node:path';
+import { join, normalize } from 'node:path';
 import https from 'node:https';
 import { verify } from 'jsonwebtoken';
 import { filesFingerprint, syncWidgetSets, widgetFilesToCheck } from './lib/install';
+import { RemoteWidgetCache, bringsWidgets, findRemoteWidgetAdapters, type FetchAdapterDir } from './lib/remoteWidgets';
 import { VIS_AI_FIELDS, type AiConfigSlice } from './lib/ai';
 
 function loadIoPack(): ioBroker.AdapterObject {
@@ -126,6 +127,8 @@ class VisAdapter extends Adapter {
     private synchronizing = false;
     private synchronizingQueued: { forceBuild: boolean } | null = null;
     private vendorPrefix = '';
+    /** The copies of the widgets of adapters that are installed on other hosts only */
+    private remoteWidgets: RemoteWidgetCache | null = null;
     /** The AI assistant of the editor: providers, keys and the pushed answers, see `@iobroker/ai-core` */
     private ai = new AiBackend(this, {
         // the own keys, or the AI settings of the system (`system.ai`) that are set up once in admin
@@ -192,7 +195,10 @@ class VisAdapter extends Adapter {
                     delete this.widgetInstances[id];
                     rebuild = true;
                 }
-            } else if (POSSIBLE_WIDGET_SETS_LOCATIONS.find(dir => existsSync(`${dir}/iobroker.${id}/widgets/`))) {
+            } else if (
+                POSSIBLE_WIDGET_SETS_LOCATIONS.find(dir => existsSync(`${dir}/iobroker.${id}/widgets/`)) ||
+                this.isRemoteWidgetInstance(id, obj)
+            ) {
                 // Check if the widgets folder exists
                 // still exists
                 if (!this.widgetInstances[id] || this.widgetInstances[id] !== obj.common.version) {
@@ -324,7 +330,56 @@ class VisAdapter extends Adapter {
         POSSIBLE_WIDGET_SETS_LOCATIONS.forEach(dir => VisAdapter.collectWidgetSets(dir, sets));
         sets = sets.filter(s => instances.includes(s.name.substring('iobroker.'.length)));
 
+        // the widgets of adapters that are installed on other hosts only are fetched from there
+        try {
+            const remote = findRemoteWidgetAdapters(
+                res.rows.map(item => item.value).filter(obj => !isForVis1Only(obj)),
+                this.host || '',
+                adapter => sets.some(set => set.name === `iobroker.${adapter}`),
+            );
+            sets.push(...(await this.getRemoteWidgets().collect(remote)));
+        } catch (e) {
+            this.log.warn(`Cannot collect the widgets of adapters on other hosts: ${(e as Error).message}`);
+        }
+
         return sets;
+    }
+
+    /**
+     * `fetchAdapterDir` of the js-controller, which fetches a directory of an adapter from another host
+     *
+     * @returns the method, or undefined if the js-controller is older than 8.0
+     */
+    getFetchAdapterDir(): FetchAdapterDir | undefined {
+        const fetchAdapterDir = (this as unknown as { fetchAdapterDir?: FetchAdapterDir }).fetchAdapterDir;
+        return typeof fetchAdapterDir === 'function' ? fetchAdapterDir.bind(this) : undefined;
+    }
+
+    /** The copies of the widgets of adapters on other hosts, in the data directory of this instance */
+    getRemoteWidgets(): RemoteWidgetCache {
+        this.remoteWidgets ||= new RemoteWidgetCache(
+            join(getAbsoluteInstanceDataDir(this), 'remote-widgets'),
+            this.getFetchAdapterDir(),
+            async host => !!(await this.getForeignStateAsync(`system.host.${host}.alive`))?.val,
+            this.log,
+        );
+        return this.remoteWidgets;
+    }
+
+    /**
+     * Whether an instance on another host brings widgets that can be fetched from there
+     *
+     * @param adapter - name of the adapter
+     * @param obj - the instance object
+     */
+    isRemoteWidgetInstance(adapter: string, obj: ioBroker.Object | null | undefined): boolean {
+        return (
+            obj?.type === 'instance' &&
+            !!obj.common.host &&
+            obj.common.host !== this.host &&
+            bringsWidgets(adapter, obj.common) &&
+            !!this.getFetchAdapterDir()
+        );
     }
 
     async buildHtmlPages(forceBuild: boolean): Promise<void> {
