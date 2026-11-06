@@ -99,6 +99,16 @@ function toVisWidgetInstance(obj: ioBroker.Object | null | undefined): VisWidget
     };
 }
 
+/**
+ * Whether the widgets of an instance are for vis-1 only: vis-2 leaves its sets out
+ *
+ * @param obj - the instance object
+ */
+function isForVis1Only(obj: ioBroker.Object | null | undefined): boolean {
+    const visWidgets = obj?.type === 'instance' ? obj.common.visWidgets : undefined;
+    return !!visWidgets && Object.values(visWidgets).some(w => w?.ignoreInVersions?.includes(2));
+}
+
 class VisAdapter extends Adapter {
     declare public visConfig: VisAdapterConfig;
     private widgetInstances: Record<string, string> = {};
@@ -140,6 +150,13 @@ class VisAdapter extends Adapter {
                 }
             },
             ready: () => void this.main(),
+            // A widget adapter that is installed, updated or deleted does not always restart vis-2: many vis-1 widget
+            // sets name only `vis` in `restartAdapters`, and a deletion restarts nothing. Without this handler the
+            // palette kept a deleted set and missed a new one up to the next start of vis-2.
+            objectChange: (id, obj) =>
+                void this.objectChange(id, obj).catch(e =>
+                    this.log.error(`Cannot take over the change of "${id}": ${(e as Error).message}`),
+                ),
             uiClientSubscribe: info =>
                 this.ai.onUiClientSubscribe(info) ?? {
                     accepted: false,
@@ -170,7 +187,8 @@ class VisAdapter extends Adapter {
             const instanceId = id;
             id = id.substring('system.adapter.'.length).replace(/\.\d+$/, '');
             let rebuild = false;
-            if (!obj?.common?.version) {
+            // a set for vis-1 only is no set of vis-2, as in readAdapterList
+            if (!obj?.common?.version || isForVis1Only(obj)) {
                 if (this.widgetInstances[id]) {
                     delete this.widgetInstances[id];
                     rebuild = true;
@@ -292,11 +310,7 @@ class VisAdapter extends Adapter {
         const instances: string[] = [];
         res.rows.forEach(item => {
             const obj = item.value;
-            // ignore widgets for V1 only
-            if (
-                obj?.common?.visWidgets &&
-                Object.values(obj?.common?.visWidgets).find(w => w?.ignoreInVersions?.includes(2))
-            ) {
+            if (isForVis1Only(obj)) {
                 return;
             }
             const name = obj?._id?.replace('system.adapter.', '').replace(/\.\d+$/, '');

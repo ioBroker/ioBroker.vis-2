@@ -145,6 +145,50 @@ describe(`Test ${adapterShortName} adapter`, function () {
         );
     });
 
+    it(`Test ${adapterShortName} adapter: takes in a widget set with its instance and drops it with it`, async function () {
+        this.timeout(600000);
+        let lastUpload = await waitForUpload(0, 300);
+
+        // a vis-1 widget adapter as npm puts it next to vis-2
+        const adapterDir = path.join(__dirname, '../tmp/node_modules/iobroker.vis-testset');
+        fs.mkdirSync(path.join(adapterDir, 'widgets/testset'), { recursive: true });
+        fs.writeFileSync(
+            path.join(adapterDir, 'io-package.json'),
+            JSON.stringify({ common: { name: 'vis-testset', version: '1.0.0', onlyWWW: true }, native: {} }),
+        );
+        fs.writeFileSync(
+            path.join(adapterDir, 'widgets/testset.html'),
+            '<script id="tplTestSet" type="text/ejs" class="vis-tpl" data-vis-set="testset"></script>\n',
+        );
+        fs.writeFileSync(path.join(adapterDir, 'widgets/testset/style.css'), '.vis-testset {}\n');
+
+        const readWidgetsHtml = async () => (await objects.readFile('vis-2', 'widgets.html')).file.toString();
+
+        try {
+            // what the installation of the adapter creates; vis-2 is not restarted for it
+            await objects.setObjectAsync('system.adapter.vis-testset.0', {
+                type: 'instance',
+                common: { name: 'vis-testset', version: '1.0.0', enabled: false, mode: 'none', onlyWWW: true },
+                native: {},
+            });
+            lastUpload = await waitForUpload(lastUpload, 120);
+            assert((await readWidgetsHtml()).includes('testset.html--- START'), 'the set is not in widgets.html');
+            assert(await objects.fileExists('vis-2', 'widgets/testset.html'), 'widgets/testset.html was not uploaded');
+
+            // what the deletion of the adapter or of its instance does
+            await objects.delObjectAsync('system.adapter.vis-testset.0');
+            await waitForUpload(lastUpload, 120);
+            assert(!(await readWidgetsHtml()).includes('testset.html--- START'), 'the set is still in widgets.html');
+            assert(
+                !(await objects.fileExists('vis-2', 'widgets/testset.html')),
+                'widgets/testset.html is still in the file storage',
+            );
+        } finally {
+            fs.rmSync(adapterDir, { recursive: true, force: true });
+            await objects.delObjectAsync('system.adapter.vis-testset.0').catch(() => {});
+        }
+    });
+
     /*
     PUT YOUR OWN TESTS HERE USING
     it('Testname', function ( done) {
