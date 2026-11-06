@@ -140,6 +140,11 @@ class VisAdapter extends Adapter {
                 }
             },
             ready: () => void this.main(),
+            // the controller calls only this option (or the event), never a method of the same name
+            objectChange: (id, obj) =>
+                void this.objectChange(id, obj).catch(e =>
+                    this.log.error(`Cannot process the change of "${id}": ${(e as Error).message}`),
+                ),
             uiClientSubscribe: info =>
                 this.ai.onUiClientSubscribe(info) ?? {
                     accepted: false,

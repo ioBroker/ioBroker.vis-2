@@ -145,6 +145,43 @@ describe(`Test ${adapterShortName} adapter`, function () {
         );
     });
 
+    it(`Test ${adapterShortName} adapter: follows a widget adapter that is installed and deleted while it runs`, async function () {
+        this.timeout(600000);
+        // a vis-1 widget adapter as the controller leaves it in node_modules, next to vis-2
+        const adapterDir = path.join(__dirname, '../tmp/node_modules/iobroker.vis-issue726');
+        fs.mkdirSync(path.join(adapterDir, 'widgets'), { recursive: true });
+        fs.writeFileSync(path.join(adapterDir, 'widgets/issue726.html'), '<!-- issue726 -->\n');
+        fs.writeFileSync(
+            path.join(adapterDir, 'io-package.json'),
+            JSON.stringify({ common: { name: 'vis-issue726', version: '1.0.0' }, native: {} }),
+        );
+        const instanceId = 'system.adapter.vis-issue726.0';
+
+        try {
+            let lastUpload = await waitForUpload(0, 300);
+            await objects.setObjectAsync(instanceId, {
+                type: 'instance',
+                common: { name: 'vis-issue726', version: '1.0.0', enabled: false, onlyWWW: true, mode: 'none' },
+                native: {},
+            });
+            lastUpload = await waitForUpload(lastUpload, 300);
+            assert(
+                await objects.fileExists('vis-2', 'widgets/issue726.html'),
+                'the widget set of the new instance was not uploaded',
+            );
+
+            await objects.delObjectAsync(instanceId);
+            await waitForUpload(lastUpload, 300);
+            assert(
+                !(await objects.fileExists('vis-2', 'widgets/issue726.html')),
+                'the widget set of the deleted instance is still in the file storage',
+            );
+        } finally {
+            await objects.delObjectAsync(instanceId).catch(() => {});
+            fs.rmSync(adapterDir, { recursive: true, force: true });
+        }
+    });
+
     /*
     PUT YOUR OWN TESTS HERE USING
     it('Testname', function ( done) {
