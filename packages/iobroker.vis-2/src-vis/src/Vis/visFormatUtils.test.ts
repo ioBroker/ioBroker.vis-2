@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import VisFormatUtils, { getArrayIndex } from './visFormatUtils';
 
@@ -148,5 +148,53 @@ describe('the formula of a binding', () => {
     // vis-1 wrote the quotes of a formula in HTML attributes as \" - they are still meant as quotes
     it('takes \\" in the formula as a quote', () => {
         expect(format('{s:a.0.x;s == \\"on\\" ? \\"An\\" : \\"Aus\\"}', 'on')).toBe('An');
+    });
+});
+
+/**
+ * A widget is rendered again with every value that changes. A formula that fails, failed again each time and wrote
+ * three lines into the console each time - and a formula like `v.toFixed(2)` fails as long as its value has not
+ * been received, which is no error at all.
+ */
+describe('a formula of a binding that fails', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    const render = (utils: VisFormatUtils, binding: string, values: Record<string, unknown>): string =>
+        utils.formatBinding({
+            format: binding,
+            view: 'v',
+            wid: 'w000001',
+            widget: { tpl: '', data: {}, style: {} } as any,
+            widgetData: {},
+            values: values as any,
+            moment: undefined,
+        });
+
+    it('is no error while its value has not been received', () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
+        const utils = new VisFormatUtils({ vis: { editMode: false, states: {} } } as any);
+
+        render(utils, "{v:a.0.x;v.toFixed(2).replace('.',',')}", {});
+        render(utils, "{v:a.0.x;v.toFixed(2).replace('.',',')}", {});
+
+        expect(error).not.toHaveBeenCalled();
+        expect(debug).toHaveBeenCalledTimes(1);
+        expect(render(utils, "{v:a.0.x;v.toFixed(2).replace('.',',')}", { 'a.0.x.val': 13.2 })).toBe('13,20');
+    });
+
+    it('is reported once, in one line, however often the widget is rendered', () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const utils = new VisFormatUtils({ vis: { editMode: false, states: {} } } as any);
+
+        for (let i = 0; i < 5; i++) {
+            render(utils, '{v:a.0.x;v.notThere.length}', { 'a.0.x.val': i });
+        }
+
+        expect(error).toHaveBeenCalledTimes(1);
+        expect(error.mock.calls[0][0]).toContain('{v:a.0.x;v.notThere.length}');
+        expect(error.mock.calls[0][0]).toContain('TypeError');
     });
 });

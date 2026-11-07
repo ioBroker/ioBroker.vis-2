@@ -96,6 +96,13 @@ class VisFormatUtils {
 
     private readonly commonStatesListeners = new Set<CommonStatesListener>();
 
+    /**
+     * The formulas of bindings that failed, with their error. A widget is rendered again with every value that
+     * changes, and its failing formula failed again each time: the same error filled the console. It is reported
+     * once now.
+     */
+    private readonly reportedEvalErrors = new Set<string>();
+
     constructor(props: VisFormatUtilsProps) {
         this.vis = props.vis;
         this.getObject = props.getObject;
@@ -479,6 +486,8 @@ class VisFormatUtils {
                 for (const operation of oid.operations) {
                     if (operation.op === 'eval') {
                         let string = ''; // '(function() {';
+                        // whether a value of the formula is not there (yet): the values are still being read
+                        let valueMissing = false;
                         const evalArgs: VisBindingOperationArgument[] = operation.arg as VisBindingOperationArgument[];
                         for (let a = 0; a < evalArgs.length; a++) {
                             if (!evalArgs[a].name) {
@@ -494,6 +503,7 @@ class VisFormatUtils {
                             if (value === null) {
                                 string += `const ${evalArgs[a].name} = null;`;
                             } else if (value === undefined) {
+                                valueMissing = true;
                                 string += `const ${evalArgs[a].name} = undefined;`;
                             } else {
                                 const type = typeof value;
@@ -542,9 +552,19 @@ class VisFormatUtils {
                                 value = JSON.stringify(value);
                             }
                         } catch (e) {
-                            console.error(`Error in eval[value]: ${shortenForLog(format)}`);
-                            console.error(`Error in eval[script]: ${shortenForLog(string)}`);
-                            console.error(`Error in eval[error]: ${e as Error}`);
+                            // While a value is not there yet, many formulas fail, e.g. `v.toFixed(2)` with v
+                            // undefined. That is no error: the binding is calculated again when the value arrives.
+                            // Only a debug line tells about it, for a state that does not exist at all.
+                            const key = `${valueMissing ? 'missing' : 'error'}\n${oid.token}\n${e as Error}`;
+                            if (!this.reportedEvalErrors.has(key)) {
+                                this.reportedEvalErrors.add(key);
+                                const text = `binding ${shortenForLog(oid.token)}: ${e as Error}. Script: ${shortenForLog(string)}`;
+                                if (valueMissing) {
+                                    console.debug(`Value missing (not yet received?) in the ${text}`);
+                                } else {
+                                    console.error(`Error in the ${text}`);
+                                }
+                            }
                             value = 0;
                         }
                     } else {
