@@ -359,6 +359,7 @@ class VisAdapter extends Adapter {
     getRemoteWidgets(): RemoteWidgetCache {
         this.remoteWidgets ||= new RemoteWidgetCache(
             join(getAbsoluteInstanceDataDir(this), 'remote-widgets'),
+            this.host || '',
             this.getFetchAdapterDir(),
             async host => !!(await this.getForeignStateAsync(`system.host.${host}.alive`))?.val,
             this.log,

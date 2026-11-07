@@ -51,22 +51,22 @@ describe('remote widget sets', () => {
             const widgets = { visWidgets: { set: { url: 'x/customWidgets.js' } } };
             const result = findRemoteWidgetAdapters(
                 [
-                    instance('wattcycle.0', 'zeus', '2.0.4', widgets),
-                    instance('wattcycle.1', 'frigate', '2.0.4', widgets),
-                    instance('wattcycle.2', 'frigate', '2.0.4', widgets),
-                    instance('material.0', 'frigate', '1.0.0', widgets), // installed here as well
-                    instance('local.0', 'vitanova', '1.0.0', widgets), // runs on this host
-                    instance('admin.0', 'frigate', '7.0.0', {}), // no widgets
-                    { _id: 'system.adapter.broken.0', type: 'instance', common: { host: 'frigate' } }, // no version
+                    instance('wattcycle.0', 'second-host', '2.0.4', widgets),
+                    instance('wattcycle.1', 'remote-host', '2.0.4', widgets),
+                    instance('wattcycle.2', 'remote-host', '2.0.4', widgets),
+                    instance('material.0', 'remote-host', '1.0.0', widgets), // installed here as well
+                    instance('local.0', 'vis-host', '1.0.0', widgets), // runs on this host
+                    instance('admin.0', 'remote-host', '7.0.0', {}), // no widgets
+                    { _id: 'system.adapter.broken.0', type: 'instance', common: { host: 'remote-host' } }, // no version
                     null,
                 ],
-                'vitanova',
+                'vis-host',
                 adapter => adapter === 'material',
             );
 
             assert.deepStrictEqual(
                 result.map(({ adapter, instances }) => ({ adapter, hosts: instances.map(i => i.host) })),
-                [{ adapter: 'wattcycle', hosts: ['frigate', 'zeus'] }],
+                [{ adapter: 'wattcycle', hosts: ['remote-host', 'second-host'] }],
             );
         });
     });
@@ -78,7 +78,7 @@ describe('remote widget sets', () => {
 
         beforeEach(() => {
             dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'vis-2-remote-')), 'remote-widgets');
-            alive = new Set(['frigate']);
+            alive = new Set(['remote-host']);
             log = logger();
         });
 
@@ -86,7 +86,7 @@ describe('remote widget sets', () => {
             fs.rmSync(path.dirname(dir), { recursive: true, force: true });
         });
 
-        function adapters(version, hosts = ['frigate']) {
+        function adapters(version, hosts = ['remote-host']) {
             return [
                 {
                     adapter: 'wattcycle',
@@ -100,7 +100,7 @@ describe('remote widget sets', () => {
         }
 
         function cache(fetchAdapterDir) {
-            return new RemoteWidgetCache(dir, fetchAdapterDir, async host => alive.has(host), log);
+            return new RemoteWidgetCache(dir, 'vis-host', fetchAdapterDir, async host => alive.has(host), log);
         }
 
         it('fetches the widgets once per version and keeps the copy', async () => {
@@ -128,7 +128,7 @@ describe('remote widget sets', () => {
                     adapter: 'wattcycle',
                     path: 'widgets',
                     target: path.join(dir, 'iobroker.wattcycle.new', 'widgets'),
-                    host: 'frigate',
+                    host: 'remote-host',
                 },
             ]);
 
@@ -148,9 +148,9 @@ describe('remote widget sets', () => {
 
         it('fetches from the first running host', async () => {
             const fake = fakeFetch(() => ({ 'a.js': '' }));
-            alive = new Set(['zeus']);
-            await cache(fake.fetchAdapterDir).collect(adapters('1.0.0', ['frigate', 'zeus']));
-            assert.strictEqual(fake.calls[0].host, 'zeus');
+            alive = new Set(['second-host']);
+            await cache(fake.fetchAdapterDir).collect(adapters('1.0.0', ['remote-host', 'second-host']));
+            assert.strictEqual(fake.calls[0].host, 'second-host');
         });
 
         it('keeps the old copy if fetching fails, and warns once', async () => {
@@ -158,7 +158,7 @@ describe('remote widget sets', () => {
             await cache(good.fetchAdapterDir).collect(adapters('1.0.0'));
 
             const failing = cache(async () => {
-                throw new Error('host "frigate" does not answer');
+                throw new Error('host "remote-host" does not answer');
             });
             const first = await failing.collect(adapters('1.0.1'));
             await failing.collect(adapters('1.0.1'));
@@ -192,7 +192,7 @@ describe('remote widget sets', () => {
         it('leaves the adapter out without a copy and without a way to fetch it', async () => {
             const old = cache(undefined);
             assert.deepStrictEqual(await old.collect(adapters('1.0.0')), []);
-            assert.match(log.lines.info[0], /js-controller of this host is too old/);
+            assert.match(log.lines.info[0], /js-controller on host "vis-host", where vis-2 runs, is too old/);
 
             alive.clear();
             assert.deepStrictEqual(await cache(fakeFetch(() => ({})).fetchAdapterDir).collect(adapters('1.0.0')), []);

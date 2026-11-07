@@ -125,12 +125,14 @@ export class RemoteWidgetCache {
 
     /**
      * @param dir - directory of the cache, e.g. `iobroker-data/vis-2.0/remote-widgets`
+     * @param ownHost - the host vis-2 runs on, whose js-controller fetches the widgets
      * @param fetchAdapterDir - the method of the js-controller, undefined if it is too old to have one
      * @param isAlive - whether a host is running
      * @param log - where to report to
      */
     constructor(
         private readonly dir: string,
+        private readonly ownHost: string,
         private readonly fetchAdapterDir: FetchAdapterDir | undefined,
         private readonly isAlive: (host: string) => Promise<boolean>,
         private readonly log: CacheLogger,
@@ -226,7 +228,7 @@ export class RemoteWidgetCache {
                     this.once(
                         'info',
                         `old:${adapter}`,
-                        `The widgets of ${adapter} on host "${source.host}" cannot be shown: the js-controller of this host is too old to fetch them (8.0 or newer is needed)`,
+                        `The widgets of ${adapter} on host "${source.host}" cannot be shown: the js-controller on host "${this.ownHost}", where vis-2 runs, is too old to fetch them (8.0 or newer is needed)`,
                     );
                 } else {
                     try {
