@@ -356,6 +356,16 @@
 
 ### 2.0.0 (2022-10-21)
 * (bluefox) Completely new visualization, but partly compatible with the previous version
+## 2.20.3 (2026-10-19)
+* (@typhosj) The editor loads the widgets again when it starts with the CSS or the scripts tab open. The code editor of these tabs brings a module loader, and jQuery UI and the jQuery plugins of some widget sets registered with that loader instead of with jQuery, so `$.ui` was missing (#693)
+* (@GermanBluefox) Show all unloaded widget-sets in warning dialog
+* (@GermanBluefox) Editor: on narrow screens, or when the resolution of the view does not fit between the side panels, the palette and the attributes open as floating panels
+* (@GermanBluefox) Editor: the toolbar switches to a narrower form on low windows and stays in one row; groups that do not fit open as a menu and expand again when there is room
+* (@GermanBluefox) The runtime no longer shows an old project when the web adapter serves it from its file cache
+* (@GermanBluefox) The defaults of the groups that a count opens are taken from the type of each selected widget, not of the last one
+* (@typhosj) The editor writes the default values of an attribute group that repeats as often as another attribute says, like `count`: when the widget is added and when that attribute grows later. Before, the fields of these groups had no value until they were edited by hand (#509)
+* (@GermanBluefox) The device wizard names a device after its channel again when the devices of a room sit in a folder named like the room, e.g. `0_userdata.0.Bathroom.Light.on`: the folder replaced the name of the channel, the room was then cut out of it, and the device was listed under its object ID
+
 ## 2.20.2 (2026-10-16)
 * (@GermanBluefox) Many, many updates: wizard, new widgets, load optimizations, AI assistant, and more. See the 2.20.1 for details.
 
