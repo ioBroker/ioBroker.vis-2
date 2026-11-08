@@ -775,7 +775,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         if (!this.state.editMode) {
             return;
         }
-        const controlKey = e.ctrlKey || (e as any).cmdKey;
+        const controlKey = e.ctrlKey || e.metaKey;
         if (document.activeElement?.tagName === 'BODY') {
             if (controlKey && e.key === 'z' && this.state.historyCursor !== 0) {
                 e.preventDefault();

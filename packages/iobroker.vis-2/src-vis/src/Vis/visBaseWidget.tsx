@@ -776,7 +776,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             }
         }
 
-        if (e.shiftKey || e.ctrlKey) {
+        if (e.shiftKey || e.ctrlKey || e.metaKey) {
             // add or remove
             const pos = this.props.selectedWidgets.indexOf(this.props.id);
             if (pos === -1) {

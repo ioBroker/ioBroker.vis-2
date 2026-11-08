@@ -2662,21 +2662,23 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         }
         if (document.activeElement?.tagName === 'BODY') {
             if (this.selectedWidgets.length) {
+                // on a Mac Ctrl with an arrow belongs to the system, which switches desktops with it
+                const step = e.ctrlKey || e.metaKey ? 10 : 1;
                 if (e.key === 'ArrowLeft') {
                     e.preventDefault();
-                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](e.ctrlKey ? -10 : -1, 0);
+                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](-step, 0);
                 }
                 if (e.key === 'ArrowRight') {
                     e.preventDefault();
-                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](e.ctrlKey ? 10 : 1, 0);
+                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](step, 0);
                 }
                 if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](0, e.ctrlKey ? -10 : -1);
+                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](0, -step);
                 }
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](0, e.ctrlKey ? 10 : 1);
+                    this[e.shiftKey ? 'resizeWidgets' : 'moveWidgets'](0, step);
                 }
             }
         }
