@@ -20,7 +20,6 @@ import {
     Colorize as ColorizeIcon,
     Code as CodeIcon,
     Info as InfoIcon,
-    Delete,
     Add,
     LinkOff,
     Link as LinkIcon,
@@ -36,7 +35,7 @@ import {
     AddAlert as AddAlertIcon,
 } from '@mui/icons-material';
 
-import { I18n, Icon, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
+import { IconTrash, I18n, Icon, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import { store, recalculateFields, updateWidget, selectWidget } from '@/Store';
 
@@ -1689,7 +1688,7 @@ class Widget extends Component<WidgetProps, WidgetState> {
                                         size="small"
                                         onClick={e => this.onGroupMove(e, groupIndex, iterable, 'delete')}
                                     >
-                                        <Delete />
+                                        <IconTrash />
                                     </IconButton>
                                 </Tooltip>
                             ) : null}

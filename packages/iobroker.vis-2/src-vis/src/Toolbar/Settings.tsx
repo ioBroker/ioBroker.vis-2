@@ -16,9 +16,17 @@ import {
     Divider,
 } from '@mui/material';
 
-import { ContentCopy, Save as SaveIcon, Refresh } from '@mui/icons-material';
+import { Save as SaveIcon } from '@mui/icons-material';
 
-import { ColorPicker, I18n, Utils, type Connection, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
+import {
+    IconRefresh,
+    IconCopyToClipboard,
+    ColorPicker,
+    I18n,
+    Utils,
+    type Connection,
+    SelectFile as SelectFileDialog,
+} from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -111,6 +119,7 @@ interface SettingsProps {
 
 export function Settings(props: SettingsProps): React.JSX.Element {
     const [projectMode, setProjectMode] = useState(0);
+    const [rebuilding, setRebuilding] = useState(false);
     const [imageDialog, setImageDialog] = useState(false);
 
     const [settings, setSettings] = useState<ProjectSettings>({} as ProjectSettings);
@@ -177,7 +186,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                             input: {
                                 endAdornment: browserInstance ? (
                                     <IconButton onClick={() => Utils.copyToClipboard(browserInstance)}>
-                                        <ContentCopy />
+                                        <IconCopyToClipboard />
                                     </IconButton>
                                 ) : null,
                                 sx: { ...commonStyles.clearPadding, ...commonStyles.fieldContent },
@@ -198,7 +207,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                             window.vis.instance = newInstance;
                             setBrowserInstance(newInstance);
                         }}
-                        startIcon={<Refresh />}
+                        startIcon={<IconRefresh showDone={false} />}
                     >
                         {I18n.t('Create instance')}
                     </Button>
@@ -539,16 +548,18 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                     }}
                     color="grey"
                     variant="contained"
-                    onClick={() =>
-                        props.socket
+                    onClick={() => {
+                        setRebuilding(true);
+                        void props.socket
                             .sendTo(`${props.adapterName}.${props.adapterInstance}`, 'rebuild', null)
                             .then(() => {
                                 window.alert(I18n.t('Rebuild of HTML pages was started'));
                                 props.onClose();
                             })
                             .catch(e => window.alert(`Cannot rebuild: ${e}`))
-                    }
-                    startIcon={<Refresh />}
+                            .finally(() => setRebuilding(false));
+                    }}
+                    startIcon={<IconRefresh loading={rebuilding} />}
                 >
                     {I18n.t('Rebuild HTML pages')}
                 </Button>

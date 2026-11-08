@@ -16,7 +16,9 @@ import { Icon } from '@iobroker/gui-components';
 
 import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
 
-import { fillFromInstance, weatherDayName } from '../Base/weatherStates';
+import { fillFromInstance, weatherDayName, weatherSymbolOf } from '../Base/weatherStates';
+
+import WeatherGlyph from '../Base/controls/WeatherGlyph';
 
 import { asNumber, asText } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
@@ -41,6 +43,12 @@ interface WeatherRxData extends StandardRxData {
     plain?: boolean | 'true';
     /** The instance the states are taken from, like `accuweather.0` */
     instance?: string;
+    /** The colour of the day that is coming next and of the marker; without it the colour of the theme */
+    accentColor?: string;
+    /** The colour the sun is drawn in, on the symbols the widget draws itself */
+    sunColor?: string;
+    /** Show the pictures of the adapter even where the widget could draw them itself */
+    adapterIcons?: boolean | 'true';
     [key: string]: any;
 }
 
@@ -125,8 +133,9 @@ function forecastOf(context: DeviceContext<WeatherRxData>): ForecastDay[] {
  *
  * Every weather adapter serves the same handful of readings under a different name, so each one is a
  * field and the card shows what it was given: a card with only a temperature is a thermometer, one
- * with everything is a weather station. The icons are the ones the adapter serves, because a widget
- * that draws its own would disagree with the forecast that comes with them.
+ * with everything is a weather station. A picture whose address says what it shows is drawn by the widget
+ * itself, because that one can have a yellow sun and any size; every other picture stays the one the adapter
+ * serves, because a widget that guesses would disagree with the forecast that comes with it.
  */
 const weatherDevice = defineDeviceWidget<WeatherRxData>({
     name: 'Weather',
@@ -215,6 +224,19 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
         { name: 'windUnit', label: 'wind_unit' },
         { name: 'days', type: 'number', label: 'forecast_days', min: 0, max: 7, default: 0 },
         { name: 'plain', type: 'checkbox', label: 'weather_plain', tooltip: 'weather_plain_tooltip' },
+        { name: 'accentColor', type: 'color', label: 'weather_accent' },
+        {
+            name: 'sunColor',
+            type: 'color',
+            label: 'weather_sun_color',
+            hidden: 'data.adapterIcons === true || data.adapterIcons === "true"',
+        },
+        {
+            name: 'adapterIcons',
+            type: 'checkbox',
+            label: 'weather_adapter_icons',
+            tooltip: 'weather_adapter_icons_tooltip',
+        },
     ] as RxWidgetInfoAttributesField[],
     groups: [
         {
@@ -235,13 +257,13 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
     // a forecast of five days does not fit on a coin
     popup: true,
     render: context => {
-        const { data, accents, theme, isFloatComma } = context;
+        const { data, accents, theme, isFloatComma, css } = context;
 
         const temperature = asNumber(context.valueOf('oid'));
         const unit = data.unit || context.commonOf('oid')?.unit || '°C';
         const text = asText(context.valueOf('oidText'));
         const icon = asText(context.valueOf('oidIcon'));
-        const accent = temperature === null ? accents.off : accents.blue;
+        const accent = temperature === null ? accents.off : data.accentColor || accents.blue;
         const quiet = theme.palette.text.secondary;
 
         /*
@@ -298,11 +320,34 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
         const reading = isFloatComma ? written.replace('.', ',') : written;
         const days = forecastOf(context);
 
+        /**
+         * The picture of the sky: drawn by the widget where it knows what the adapter means by it.
+         *
+         * @param src - the address the adapter gives
+         * @param style - how large it stands
+         * @param animated - it is the one picture that is looked at, so it may move
+         */
+        const picture = (src: string, style: React.CSSProperties, animated?: boolean): React.JSX.Element => {
+            const known = data.adapterIcons === true || data.adapterIcons === 'true' ? null : weatherSymbolOf(src);
+            return known ? (
+                <WeatherGlyph
+                    symbol={known.symbol}
+                    night={known.night}
+                    sun={data.sunColor}
+                    dark={context.themeType === 'dark'}
+                    animated={animated}
+                    style={style}
+                />
+            ) : (
+                <Icon
+                    src={src}
+                    style={style}
+                />
+            );
+        };
+
         const iconNode = icon ? (
-            <Icon
-                src={icon}
-                style={{ width: '100%', height: '100%' }}
-            />
+            picture(icon, { width: '100%', height: '100%' }, true)
         ) : (
             <WeatherIcon style={{ width: '100%', height: '100%' }} />
         );
@@ -360,7 +405,10 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                                       borderRadius: 'min(2.4cqw, 20px)',
                                       // the day that is coming next is the one being planned around
                                       border: `1px solid ${index ? theme.palette.divider : accent}`,
-                                      background: alpha(index ? theme.palette.text.primary : accent, 0.06),
+                                      // a colour that was typed may be a word, which `alpha` does not understand
+                                      background: index
+                                          ? alpha(theme.palette.text.primary, 0.06)
+                                          : `color-mix(in srgb, ${accent} 10%, transparent)`,
                                   }
                                 : undefined),
                         }}
@@ -374,12 +422,7 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                         >
                             {day.name}
                         </span>
-                        {day.icon ? (
-                            <Icon
-                                src={day.icon}
-                                style={{ width: DAY_ICON_SIZE, height: DAY_ICON_SIZE }}
-                            />
-                        ) : null}
+                        {day.icon ? picture(day.icon, { width: DAY_ICON_SIZE, height: DAY_ICON_SIZE }) : null}
                         <span style={{ fontSize: DAY_TEMP_SIZE, whiteSpace: 'nowrap' }}>
                             {day.max === null ? '' : `${Math.round(day.max)}${rich ? '°' : ''}`}
                             {day.min === null ? (
@@ -437,6 +480,7 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                         fontWeight: 700,
                         lineHeight: 1,
                         whiteSpace: 'nowrap',
+                        ...css.text,
                     }}
                 >
                     {`${reading}${unit}`}
@@ -458,7 +502,8 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
             // the width and the height of the card itself, which the frame makes a container for exactly this.
             container: true,
             valueOnTop: true,
-            // the picture of the sky, blown up and blurred into the right edge, the way a weather app does it
+            // the picture of the sky, large in the right corner and fading out into the card, the way a weather app
+            // does it - large enough to read as the sky and not as a stain in the corner
             background:
                 rich && icon ? (
                     <div
@@ -469,21 +514,18 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                             pointerEvents: 'none',
                             // it belongs to the corner above the reading and has to fade out before it
                             // reaches the days, which are read and not looked at
-                            maskImage: 'linear-gradient(to bottom left, #000 5%, transparent 55%)',
-                            WebkitMaskImage: 'linear-gradient(to bottom left, #000 5%, transparent 55%)',
+                            maskImage: 'linear-gradient(to bottom left, #000 15%, transparent 62%)',
+                            WebkitMaskImage: 'linear-gradient(to bottom left, #000 15%, transparent 62%)',
                         }}
                     >
-                        <Icon
-                            src={icon}
-                            style={{
-                                position: 'absolute',
-                                right: '-4%',
-                                top: '-30%',
-                                width: 'min(85cqh, 32cqw)',
-                                opacity: context.themeType === 'dark' ? 0.22 : 0.15,
-                                filter: 'blur(3px)',
-                            }}
-                        />
+                        {picture(icon, {
+                            position: 'absolute',
+                            right: '-3%',
+                            top: '-22%',
+                            width: 'min(120cqh, 46cqw)',
+                            height: 'min(120cqh, 46cqw)',
+                            opacity: context.themeType === 'dark' ? 0.3 : 0.22,
+                        })}
                     </div>
                 ) : null,
             body:

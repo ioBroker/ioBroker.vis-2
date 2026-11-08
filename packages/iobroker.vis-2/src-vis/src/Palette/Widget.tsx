@@ -2,9 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
-import { Delete as DeleteIcon, Update as UpdateIcon, Block as DeletedIcon } from '@mui/icons-material';
+import { Update as UpdateIcon, Block as DeletedIcon } from '@mui/icons-material';
 
-import { I18n, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
+import { IconTrash, I18n, Utils, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { MarketplaceWidgetRevision, Project } from '@iobroker/types-vis-2';
 
@@ -360,7 +360,7 @@ const Widget = (props: WidgetProps): React.JSX.Element | null => {
                                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
                             >
                                 <IconButton onClick={() => props.uninstallWidget?.(props.widgetType.name)}>
-                                    <DeleteIcon />
+                                    <IconTrash />
                                 </IconButton>
                             </Tooltip>
                             {marketplaceUpdate && (

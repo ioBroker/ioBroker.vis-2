@@ -8,6 +8,7 @@ import FatSlider from '../Base/controls/FatSlider';
 import SlideToggle from '../Base/controls/SlideToggle';
 import { asNumber, asText, statesOf, typedValue } from '../Base/controls/stateValue';
 import { describeObject } from '../Base/adoptObject';
+import { cssPixels } from '../Base/widgetCss';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { limitsOf } from '../Base/limits';
 
@@ -316,7 +317,12 @@ const listDevice = defineDeviceWidget<ListRxData>({
     popup: true,
     confirmable: true,
     render: context => {
-        const { data, accents, theme, tokens, t } = context;
+        const { data, accents, theme, t } = context;
+        // the rows calculate with the size of their writing, so one that was set in pixels takes its place
+        const tokens = {
+            ...context.tokens,
+            smallSize: cssPixels(context.css.text.fontSize) ?? context.tokens.smallSize,
+        };
 
         const rows = rowsOf(context);
         const switches = rows.filter(row => row.kind === 'switch');
@@ -410,7 +416,7 @@ const listDevice = defineDeviceWidget<ListRxData>({
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             fontSize: tokens.smallSize,
-                            color: theme.palette.text.secondary,
+                            color: context.css.text.color ?? theme.palette.text.secondary,
                         }}
                     >
                         {row.name || id || ''}
@@ -435,7 +441,7 @@ const listDevice = defineDeviceWidget<ListRxData>({
                             style={{
                                 fontSize: tokens.smallSize,
                                 fontWeight: 700,
-                                color: ownColor || theme.palette.text.primary,
+                                color: ownColor || context.css.text.color || theme.palette.text.primary,
                             }}
                         >
                             {reading}

@@ -4,6 +4,8 @@ import { BOX, RADIUS, SWEEP, angleOf, arcPath, point, valueAt } from './dialGeom
 
 export interface KnobDialProps {
     /** Where it stands, or null while nobody has said */
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     value: number | null;
     min: number;
     max: number;
@@ -164,6 +166,7 @@ export default function KnobDial(props: KnobDialProps): React.JSX.Element {
                     stroke={props.accentTo ? 'url(#vis-knob-scale)' : props.accent}
                     strokeWidth="12"
                     strokeLinecap="round"
+                    style={{ transition: 'stroke 0.3s' }}
                 />
             ) : null}
 
@@ -184,6 +187,7 @@ export default function KnobDial(props: KnobDialProps): React.JSX.Element {
                 fontSize="42"
                 fontWeight="700"
                 fill={props.ink}
+                style={{ transition: 'fill 0.3s', ...props.textStyle }}
             >
                 {shown}
                 {props.unit ? (

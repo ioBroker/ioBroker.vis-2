@@ -1,9 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { dayOfState, pickWeatherStates, type WeatherStateObject } from './weatherStates';
+import { dayOfState, pickWeatherStates, weatherSymbolOf, type WeatherStateObject } from './weatherStates';
 
 /** As many states as it takes to look like the adapter in question */
 const state = (id: string, role: string): WeatherStateObject => ({ _id: id, common: { role } });
+
+describe('weatherSymbolOf', () => {
+    it('reads what a picture of OpenWeatherMap shows out of its address', () => {
+        expect(weatherSymbolOf('https://openweathermap.org/img/wn/01d@2x.png')).toEqual({
+            symbol: 'clear',
+            night: false,
+        });
+        expect(weatherSymbolOf('https://openweathermap.org/img/wn/11n@4x.png')).toEqual({
+            symbol: 'storm',
+            night: true,
+        });
+        expect(weatherSymbolOf('http://openweathermap.org/img/w/10d.png')?.symbol).toBe('rain');
+    });
+
+    it('leaves every other picture alone', () => {
+        expect(weatherSymbolOf('/adapter/accuweather/icons/07.png')).toBeNull();
+        expect(weatherSymbolOf('https://openweathermap.org/img/wn/77d@2x.png')).toBeNull();
+        expect(weatherSymbolOf('')).toBeNull();
+    });
+});
 
 describe('dayOfState', () => {
     it('reads the day out of the role, which is where the convention puts it', () => {

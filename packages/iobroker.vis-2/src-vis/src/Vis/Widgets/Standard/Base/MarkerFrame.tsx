@@ -4,6 +4,7 @@ import type { VisTheme } from '@iobroker/types-vis-2';
 
 import LiquidFill from './controls/LiquidFill';
 import type { Liquid } from './controls/liquid';
+import { mergeFrame, NO_CSS, withoutPadding, type WidgetCss } from './widgetCss';
 
 /**
  * How much a marker of the set `absolute` says about itself.
@@ -54,6 +55,12 @@ export interface MarkerFrameProps {
      */
     fill?: Liquid;
     theme: VisTheme;
+    /** The size of the name in px, where one was set; otherwise it follows the box */
+    titleSize?: number;
+    /** The size of the icon in px, where one was set; otherwise it follows the marker */
+    iconSize?: number;
+    /** What was set in the CSS attributes of the widget, which wins over what is drawn here by default */
+    css?: WidgetCss;
     onClick?: () => void;
 }
 
@@ -106,6 +113,7 @@ const CAPTION_SIZE = {
  */
 export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element {
     const { theme, accent } = props;
+    const css = props.css || NO_CSS;
     const active = !!props.active;
     // the whole marker in its colour, which a marker that draws a level does not do
     const solid = active && !props.fill;
@@ -136,14 +144,21 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 gap: withValue ? times(0.08) : 0,
                 // the padding only keeps the contents off the ring; what is in it stands in the middle
                 padding: withValue ? `0 ${times(0.14)}` : 0,
-                background: solid ? accent : scrim,
-                border: `${times(0.055)} solid ${accent}`,
                 color: solid ? '#fff' : accent,
-                boxShadow: active
-                    ? `0 0 14px ${accent}, 0 2px 6px rgba(0, 0, 0, 0.4)`
-                    : `0 0 10px ${accent}55, 0 2px 6px rgba(0, 0, 0, 0.4)`,
-                transition: 'background 0.3s, box-shadow 0.3s, border-color 0.3s',
+                transition: 'background 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s',
                 cursor: props.onClick ? 'pointer' : undefined,
+                ...mergeFrame(
+                    {
+                        background: solid ? accent : scrim,
+                        borderWidth: times(0.055),
+                        borderStyle: 'solid',
+                        borderColor: accent,
+                        boxShadow: active
+                            ? `0 0 14px ${accent}, 0 2px 6px rgba(0, 0, 0, 0.4)`
+                            : `0 0 10px ${accent}55, 0 2px 6px rgba(0, 0, 0, 0.4)`,
+                    },
+                    withoutPadding(css.frame),
+                ),
             }}
         >
             {props.fill ? (
@@ -172,10 +187,10 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 <div
                     className="vis-marker-icon"
                     style={{
-                        width: times(iconShare),
-                        height: times(iconShare),
+                        width: props.iconSize ?? times(iconShare),
+                        height: props.iconSize ?? times(iconShare),
                         // an MUI icon takes its size from the font, so it is told one that is not `1em`
-                        fontSize: times(iconShare),
+                        fontSize: props.iconSize ?? times(iconShare),
                         // over the level, which is drawn into the same box
                         position: 'relative',
                         zIndex: 1,
@@ -187,7 +202,13 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
             {props.marker && !props.face ? (
                 <div
                     className="vis-marker-value"
-                    style={{ color: solid ? '#fff' : ink, position: 'relative', zIndex: 1 }}
+                    style={{
+                        color: solid ? '#fff' : ink,
+                        transition: 'color 0.3s',
+                        position: 'relative',
+                        zIndex: 1,
+                        ...css.text,
+                    }}
                 >
                     {/*
                      * A box of its own, not a line of text.
@@ -197,11 +218,25 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                      * it has to keep running - brings its own size, and a smaller size sitting on the
                      * baseline of this one hangs below the middle of the marker. As a box it is centred.
                      */}
-                    <span style={{ fontSize: times(0.36), display: 'flex', alignItems: 'center' }}>
+                    <span
+                        style={{
+                            // a size that was set stands on the row around it, and the unit is measured against it
+                            fontSize: css.text.fontSize === undefined ? times(0.36) : undefined,
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                    >
                         {props.marker.text}
                     </span>
                     {props.marker.unit ? (
-                        <span style={{ fontSize: times(0.22), opacity: 0.8 }}>{props.marker.unit}</span>
+                        <span
+                            style={{
+                                fontSize: css.text.fontSize === undefined ? times(0.22) : '0.65em',
+                                opacity: 0.8,
+                            }}
+                        >
+                            {props.marker.unit}
+                        </span>
                     ) : null}
                     {props.trend ? (
                         <div
@@ -246,9 +281,9 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                     {withName ? (
                         <div
                             style={{
-                                fontSize: `max(8px, ${caption.name}cqh)`,
-                                fontWeight: 600,
-                                color: theme.palette.text.primary,
+                                fontSize: props.titleSize ?? `max(8px, ${caption.name}cqh)`,
+                                fontWeight: css.text.fontWeight ?? 600,
+                                color: css.text.color ?? theme.palette.text.primary,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -261,7 +296,7 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                         <div
                             style={{
                                 fontSize: `max(7px, ${caption.state}cqh)`,
-                                color: theme.palette.text.secondary,
+                                color: css.text.color ?? theme.palette.text.secondary,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',

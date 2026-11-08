@@ -18,9 +18,9 @@ import {
 } from '@mui/material';
 
 import { Add as IconAdd, Close as IconClose, FileCopy as IconDocument } from '@mui/icons-material';
-import { BiImport } from 'react-icons/bi';
 
 import {
+    IconUpload,
     I18n,
     Loader,
     Connection,
@@ -1475,7 +1475,7 @@ export default class Runtime<
                                         style={{ backgroundColor: '#112233', color: '#4b9ed3' }}
                                     >
                                         <ListItemIcon>
-                                            <BiImport fontSize="small" />
+                                            <IconUpload fontSize="inherit" />
                                         </ListItemIcon>
                                         <ListItemText>{I18n.t('Import project')}</ListItemText>
                                     </ListItemButton>

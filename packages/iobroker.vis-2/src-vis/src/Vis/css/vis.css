@@ -846,6 +846,13 @@ html {
  * A marker of the widget set `absolute` glows in the colour of its state, and that glow lies outside its box.
  * `.vis-widget` clips by default - which is right for a widget that draws to its edges and wrong for this one.
  */
+/* The colours and sizes of the standard widgets run into each other, unless the system was asked for less motion */
+@media (prefers-reduced-motion: reduce) {
+    .vis-standard-widget * {
+        transition: none !important;
+    }
+}
+
 .vis-widget.vis-marker-widget {
     overflow: visible;
 }

@@ -20,6 +20,8 @@ export interface ThermostatDialProps {
     warm: string;
     /** The rail behind the scale */
     track: string;
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     /** The colour of the big number */
     ink: string;
     /** The colour of the quiet line under it */
@@ -167,6 +169,7 @@ export default function ThermostatDial(props: ThermostatDialProps): React.JSX.El
                 fontSize="40"
                 fontWeight="700"
                 fill={props.ink}
+                style={{ transition: 'fill 0.3s', ...props.textStyle }}
             >
                 {props.actual === null ? '--' : format(props.actual, props.isFloatComma)}
                 <tspan

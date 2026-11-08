@@ -28,9 +28,9 @@ import 'moment/locale/uk';
 import 'moment/locale/zh-cn';
 
 import { Button, Dialog, DialogContent, DialogTitle, DialogActions, LinearProgress } from '@mui/material';
-import { Close as CloseIcon, Check as CheckIcon, Warning as AlertIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Check as CheckIcon } from '@mui/icons-material';
 
-import { I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
+import { IconResult, I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import './css/vis.css';
 import './css/backgrounds.css';
@@ -1313,7 +1313,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             >
                 <DialogTitle>{showMessage.title || I18n.t('Message')}</DialogTitle>
                 <DialogContent>
-                    {showMessage.icon === 'alert' ? <AlertIcon /> : null}
+                    {showMessage.icon === 'alert' ? <IconResult type="warning" /> : null}
                     {showMessage.message}
                 </DialogContent>
                 <DialogActions>

@@ -10,10 +10,9 @@ import {
 } from 'react-icons/md';
 import { CgArrowAlignH, CgArrowAlignV } from 'react-icons/cg';
 import { AiOutlineColumnWidth, AiOutlineColumnHeight } from 'react-icons/ai';
-import { BiImport, BiExport, BiCut, BiCopy, BiPaste } from 'react-icons/bi';
+import { BiExport, BiCut, BiPaste } from 'react-icons/bi';
 import { RiBringToFront, RiSendToBack } from 'react-icons/ri';
 import {
-    Delete as DeleteIcon,
     FilterAlt as FilterIcon,
     FileCopy as FileCopyIcon,
     OpenInNew as OpenInNewIcon,
@@ -23,7 +22,7 @@ import {
     VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
 
-import { I18n, type ThemeType } from '@iobroker/gui-components';
+import { IconUpload, IconCopyToClipboard, IconTrash, I18n, type ThemeType } from '@iobroker/gui-components';
 import type { AnyWidgetId, GroupWidgetId, VisTheme } from '@iobroker/types-vis-2';
 import type Editor from '@/Editor';
 import { store } from '../Store';
@@ -289,7 +288,7 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     [
                         {
                             type: 'icon-button',
-                            Icon: DeleteIcon,
+                            Icon: IconTrash,
                             name: 'Delete widgets',
                             disabled:
                                 !props.selectedWidgets.length ||
@@ -326,9 +325,9 @@ const Widgets: React.FC<WidgetsProps> = props => {
                         },
                         {
                             type: 'icon-button',
-                            Icon: BiCopy,
+                            Icon: IconCopyToClipboard,
                             name: 'Copy',
-                            size: 'normal',
+                            size: 'inherit',
                             disabled:
                                 !props.selectedWidgets.length ||
                                 (props.selectedGroup && props.selectedWidgets.includes(props.selectedGroup)),
@@ -399,9 +398,9 @@ const Widgets: React.FC<WidgetsProps> = props => {
                     [
                         {
                             type: 'icon-button',
-                            Icon: BiImport,
+                            Icon: IconUpload,
                             name: 'Import widgets',
-                            size: 'normal',
+                            size: 'inherit',
                             disabled: !props.editMode,
                             onAction: () => setImportDialog(true),
                         },

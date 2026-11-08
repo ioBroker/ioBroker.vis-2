@@ -26,6 +26,7 @@ import { absolutePicture, relativePicture, type DevicePicture } from './pictures
 import { historyInstanceIn } from './controls/history';
 import { STANDARD_I18N_PREFIX } from './prefix';
 import { TOKENS, accents, scaleTokens, type StandardTokens } from './tokens';
+import { readWidgetCss, typedSize, withoutPadding, type WidgetCss } from './widgetCss';
 
 /**
  * The chart behind a click on a widget.
@@ -66,6 +67,10 @@ export interface StandardRxData {
     oid: string;
     /** The name in the header; without it and without an icon the widget has no header */
     widgetTitle?: string;
+    /** How large the name is written, in px; without it the layout decides */
+    titleSize?: number | string;
+    /** How large the icon is drawn, in px; without it the layout decides */
+    iconSize?: number | string;
     /** How the widget arranges what it shows: `StandardWidgetLayout` in a section, `MarkerLayout` on a plan */
     layout?: StandardWidgetLayout | MarkerLayout;
     /** Only the control, without the card around it */
@@ -106,6 +111,13 @@ export interface DeviceContext<RxData extends StandardRxData> {
     isFloatComma: boolean;
     /** The sizes to draw with, already scaled for the set this widget belongs to */
     tokens: StandardTokens;
+    /**
+     * What was set in the CSS attributes of the widget.
+     *
+     * The frames apply it to what goes through them. A device that writes its reading itself - into a dial, a
+     * gauge, a row of a list - has to take it over, since a size or a colour of its own would hide it.
+     */
+    css: WidgetCss;
     /** The four colours a device can be in, and the one it takes at rest */
     accents: ReturnType<typeof accents>;
     /** Which of the two sets this widget belongs to */
@@ -542,7 +554,19 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                           ? "data.layout !== 'name' && data.layout !== 'state' && data.layout !== 'badge'"
                                           : undefined,
                               },
+                              {
+                                  name: 'titleSize',
+                                  type: 'number',
+                                  label: 'title_size',
+                                  min: 6,
+                                  max: 200,
+                                  hidden:
+                                      which === 'absolute'
+                                          ? "data.layout !== 'name' && data.layout !== 'state' && data.layout !== 'badge'"
+                                          : undefined,
+                              },
                               { name: 'icon', type: 'icon-image', label: 'icon' },
+                              { name: 'iconSize', type: 'number', label: 'icon_size', min: 6, max: 400 },
                               ...(which === 'relative'
                                   ? ([
                                         {
@@ -697,7 +721,9 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
              * @param icon - the icon of the marker, already chosen between the object and the device type
              */
             private renderPopup(context: DeviceContext<RxData>, icon: React.ReactNode): React.JSX.Element {
-                const card = definition.render({ ...context, set: 'relative', tokens: TOKENS, layout: 'default' });
+                // the writing as it was set; the dialog paints itself, so the background of the widget stays out
+                const css: WidgetCss = { ...context.css, frame: {} };
+                const card = definition.render({ ...context, css, set: 'relative', tokens: TOKENS, layout: 'default' });
                 // as high as this device stands in a section, where it was laid out to be operated - but only
                 // where it draws something. A dimmer is a name, a number and a slider; stretched to the height
                 // of a blind it becomes three things with a hole in the middle.
@@ -730,6 +756,9 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 noCard
                                 tokens={TOKENS}
                                 theme={context.theme}
+                                titleSize={typedSize(this.state.rxData.titleSize)}
+                                iconSize={typedSize(this.state.rxData.iconSize)}
+                                css={css}
                             />
                         </CardDialog>
                     </React.Suspense>
@@ -768,9 +797,24 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
             renderWidgetBody(props: RxRenderWidgetProps): React.JSX.Element {
                 super.renderWidgetBody(props);
 
+                // less motion for whoever asked for it is decided in one place, see `vis.css`
+                props.className = `${props.className || ''} vis-standard-widget`;
+
                 // the glow of a marker lies outside its box, and `.vis-widget` clips by default
                 if (which === 'absolute') {
                     props.className = `${props.className || ''} vis-marker-widget`;
+                }
+
+                /*
+                 * The base class put the CSS settings on the outer box. What a card paints has to move to the card:
+                 * left where it is, a background would disappear behind the card and a frame would be drawn twice.
+                 * A heading and a web page have no card, so for them the outer box is the right place.
+                 */
+                const css = readWidgetCss(this.state.rxStyle);
+                if (!definition.bare) {
+                    Object.keys(which === 'absolute' ? withoutPadding(css.frame) : css.frame).forEach(name => {
+                        delete (props.style as Record<string, unknown>)[name];
+                    });
                 }
 
                 // how large this widget is, out of its own style - nothing here measures the box it sits in
@@ -807,6 +851,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                     // the tiles of a section are all about one size; a widget placed by hand is as large as it
                     // was dragged, and its type grows with it
                     tokens: which === 'absolute' ? scaleTokens(box) : TOKENS,
+                    css,
                     accents: accents(this.props.context.theme),
                     set: which,
                     act: (kind, action) => {
@@ -936,6 +981,9 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 accent={result.accent}
                                 active={result.active}
                                 theme={context.theme}
+                                titleSize={typedSize(this.state.rxData.titleSize)}
+                                iconSize={typedSize(this.state.rxData.iconSize)}
+                                css={css}
                                 onClick={onClick}
                             />
                             {this.state.popupOpen ? this.renderPopup(context, icon) : null}
@@ -970,6 +1018,9 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             noCard={this.state.rxData.noCard === true || this.state.rxData.noCard === 'true'}
                             tokens={context.tokens}
                             theme={context.theme}
+                            titleSize={typedSize(this.state.rxData.titleSize)}
+                            iconSize={typedSize(this.state.rxData.iconSize)}
+                            css={css}
                             onClick={onClick}
                         />
                         {result.effect}

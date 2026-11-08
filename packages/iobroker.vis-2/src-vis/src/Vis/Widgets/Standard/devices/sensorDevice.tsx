@@ -4,7 +4,6 @@ import {
     DirectionsRun as MotionIcon,
     DoorFront as DoorIcon,
     LocalFireDepartment as SmokeIcon,
-    NotificationsActive as AlarmIcon,
     Sensors as GenericIcon,
     Water as WaterIcon,
     WbSunny as BrightIcon,
@@ -13,12 +12,29 @@ import {
 
 import { Types } from '../Base/deviceTypes';
 
-import { Icon } from '@iobroker/gui-components';
+import { IconBell, Icon } from '@iobroker/gui-components';
 
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
 
 /** What kind of thing the sensor watches, which decides its symbol and its two words */
 type SensorKind = 'contact' | 'window' | 'door' | 'motion' | 'smoke' | 'water' | 'light' | 'generic';
+
+/**
+ * The bell of an alarm. It stands there only for as long as the alarm does, and a bell rings on a change and not
+ * when it appears, so it gives itself that change.
+ */
+function AlarmBell(): React.JSX.Element {
+    const [ring, setRing] = React.useState(false);
+
+    React.useEffect(() => setRing(true), []);
+
+    return (
+        <IconBell
+            ring={ring}
+            style={{ width: '100%', height: '100%' }}
+        />
+    );
+}
 
 interface SensorRxData extends StandardRxData {
     kind?: SensorKind;
@@ -173,7 +189,7 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
                     style={{ width: '100%', height: '100%' }}
                 />
             ) : alarming ? (
-                <AlarmIcon style={{ width: '100%', height: '100%' }} />
+                <AlarmBell />
             ) : (
                 ICONS[kind]
             ),

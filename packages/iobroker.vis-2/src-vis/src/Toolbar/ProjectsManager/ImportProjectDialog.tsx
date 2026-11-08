@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { TextField } from '@mui/material';
 
-import { BiImport } from 'react-icons/bi';
-
-import { I18n, Confirm as ConfirmDialog, type ThemeType, type Connection } from '@iobroker/gui-components';
+import { IconUpload, I18n, Confirm as ConfirmDialog, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import UploadFile from '../../Components/UploadFile';
@@ -136,7 +134,7 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
             actionNoClose
             action={importProject}
             actionTitle="Import"
-            ActionIcon={BiImport}
+            ActionIcon={IconUpload}
             actionDisabled={!projectName?.length || !projectData || working}
             closeDisabled={working}
         >

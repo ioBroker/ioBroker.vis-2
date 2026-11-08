@@ -3,6 +3,7 @@ import React from 'react';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 import { cardFill, type StandardTokens } from './tokens';
+import { mergeFrame, NO_CSS, type WidgetCss } from './widgetCss';
 
 /**
  * How a widget arranges what it shows.
@@ -67,6 +68,12 @@ export interface StandardFrameProps {
     container?: boolean;
     tokens: StandardTokens;
     theme: VisTheme;
+    /** The size of the name in px, where one was set; otherwise the layout decides */
+    titleSize?: number;
+    /** The size of the icon in px, where one was set; otherwise the layout decides */
+    iconSize?: number;
+    /** What was set in the CSS attributes of the widget, which wins over what is drawn here by default */
+    css?: WidgetCss;
     onClick?: () => void;
 }
 
@@ -83,18 +90,20 @@ export interface StandardFrameProps {
  */
 export default function StandardFrame(props: StandardFrameProps): React.JSX.Element {
     const { tokens, theme, accent, layout } = props;
+    const css = props.css || NO_CSS;
 
     const iconBox = (color: string, glow?: boolean): React.JSX.Element | null =>
         props.icon ? (
             <div
                 style={{
-                    width: tokens.iconSize,
-                    height: tokens.iconSize,
+                    width: props.iconSize ?? tokens.iconSize,
+                    height: props.iconSize ?? tokens.iconSize,
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color,
+                    transition: 'color 0.3s',
                     filter: glow ? 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))' : undefined,
                 }}
             >
@@ -103,7 +112,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
         ) : null;
 
     // the arrow is drawn as large as the box it is given, so its size is decided here and not by the device
-    const trendBox = (size: number): React.JSX.Element | null =>
+    const trendBox = (size: number | string): React.JSX.Element | null =>
         props.trend ? (
             <div
                 style={{
@@ -123,9 +132,9 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
         props.title ? (
             <div
                 style={{
-                    fontSize: size,
-                    fontWeight: weight,
-                    color,
+                    fontSize: props.titleSize ?? size,
+                    fontWeight: css.text.fontWeight ?? weight,
+                    color: css.text.color ?? color,
                     flex: 1,
                     minWidth: 0,
                     whiteSpace: 'nowrap',
@@ -150,19 +159,19 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                     boxSizing: 'border-box',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
+                    alignItems: css.align ?? 'center',
                     justifyContent: 'center',
                     gap: tokens.gap,
-                    borderRadius: tokens.radius,
-                    transition: 'background 0.3s, border-color 0.3s',
-                    ...fill,
+                    transition: 'background 0.3s, border-color 0.3s, color 0.3s',
+                    ...mergeFrame({ ...fill, borderRadius: tokens.radius }, css.frame),
+                    color: css.text.color ?? fill.color,
                 }}
             >
                 {props.icon ? (
                     <div
                         style={{
-                            width: tokens.iconSize * 1.6,
-                            height: tokens.iconSize * 1.6,
+                            width: props.iconSize ?? tokens.iconSize * 1.6,
+                            height: props.iconSize ?? tokens.iconSize * 1.6,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -175,8 +184,8 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 {props.title ? (
                     <div
                         style={{
-                            fontSize: tokens.smallSize,
-                            fontWeight: 700,
+                            fontSize: props.titleSize ?? tokens.smallSize,
+                            fontWeight: css.text.fontWeight ?? 700,
                             maxWidth: '100%',
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
@@ -194,10 +203,11 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
+                            ...css.text,
                         }}
                     >
                         {props.value}
-                        {trendBox(tokens.titleSize)}
+                        {trendBox('1em')}
                     </div>
                 ) : null}
             </div>
@@ -223,13 +233,15 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                             fontSize: tokens.smallSize,
                             fontWeight: 600,
                             color: props.valueColor || accent,
+                            transition: 'color 0.3s',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 4,
+                            ...css.text,
                         }}
                     >
                         {props.value}
-                        {trendBox(tokens.smallSize)}
+                        {trendBox('1em')}
                     </div>
                 ) : null}
                 {props.control ? <div style={{ flexShrink: 0 }}>{props.control}</div> : null}
@@ -260,13 +272,20 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    // with a word or a control in the row the value has its place already
+                    justifyContent: (!props.label && !props.control && css.align) || 'space-between',
                     gap: tokens.gap,
                     flexShrink: 0,
                 }}
             >
                 {props.label ? (
-                    <div style={{ fontSize: tokens.smallSize, color: theme.palette.text.secondary, minWidth: 0 }}>
+                    <div
+                        style={{
+                            fontSize: tokens.smallSize,
+                            color: css.text.color ?? theme.palette.text.secondary,
+                            minWidth: 0,
+                        }}
+                    >
                         {props.label}
                     </div>
                 ) : null}
@@ -279,13 +298,15 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                         // a word in front of it means the value belongs to the right, as on a blind
                         marginLeft: props.label ? 'auto' : undefined,
                         color: props.valueColor || theme.palette.text.primary,
+                        transition: 'color 0.3s',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 6,
+                        ...css.text,
                     }}
                 >
                     {props.value}
-                    {trendBox(Math.round(tokens.valueSize * 0.85))}
+                    {trendBox('0.85em')}
                 </div>
                 {props.control ? <div style={{ flexShrink: 0 }}>{props.control}</div> : null}
             </div>
@@ -335,17 +356,29 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 boxSizing: 'border-box',
                 position: 'relative',
                 cursor: props.onClick ? 'pointer' : undefined,
-                // the `card` layout paints itself, and a widget without a card carries nothing of its own
-                ...(props.noCard || layout === 'card'
+                // the `card` layout paints itself, and a widget without a card carries nothing of its own but what
+                // it was told to carry
+                ...(layout === 'card'
                     ? undefined
-                    : {
-                          background: theme.palette.background.paper,
-                          border: `1px solid ${theme.palette.divider}`,
-                          borderRadius: tokens.radius,
-                          // a light theme lifts its cards off the page, a dark one draws them flat
-                          boxShadow: theme.palette.mode === 'light' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
-                          padding: tokens.padding,
-                      }),
+                    : mergeFrame(
+                          props.noCard
+                              ? {}
+                              : {
+                                    background: theme.palette.background.paper,
+                                    borderWidth: 1,
+                                    borderStyle: 'solid',
+                                    borderColor: theme.palette.divider,
+                                    borderRadius: tokens.radius,
+                                    // a light theme lifts its cards off the page, a dark one draws them flat
+                                    boxShadow:
+                                        theme.palette.mode === 'light' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
+                                    paddingTop: tokens.padding,
+                                    paddingRight: tokens.padding,
+                                    paddingBottom: tokens.padding,
+                                    paddingLeft: tokens.padding,
+                                },
+                          css.frame,
+                      )),
             }}
         >
             {props.background ? (
@@ -353,7 +386,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                     style={{
                         position: 'absolute',
                         inset: 0,
-                        borderRadius: props.noCard ? undefined : tokens.radius,
+                        borderRadius: css.frame.borderRadius ?? (props.noCard ? undefined : tokens.radius),
                         overflow: 'hidden',
                         pointerEvents: 'none',
                     }}

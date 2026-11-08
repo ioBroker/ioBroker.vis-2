@@ -254,6 +254,7 @@ const inputDevice = defineDeviceWidget<InputRxData>({
                             fontSize: 15,
                             fontWeight: 700,
                             cursor: context.editMode ? undefined : 'pointer',
+                            ...context.css.text,
                         }}
                     >
                         {/* what the state carries now, even where nobody listed it */}
@@ -287,6 +288,7 @@ const inputDevice = defineDeviceWidget<InputRxData>({
                     disabled={context.editMode || !data.oid}
                     accent={accent}
                     theme={theme}
+                    textStyle={context.css.text}
                     onChange={value => write(kind === 'number' ? (asNumber(value) ?? 0) : value)}
                 />
             ),

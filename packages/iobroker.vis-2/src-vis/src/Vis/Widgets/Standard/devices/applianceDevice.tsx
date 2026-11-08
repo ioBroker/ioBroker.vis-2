@@ -65,6 +65,8 @@ interface LiveDrumProps {
     idle: string;
     /** What stands under it: the programme, or the time of day it will be done at */
     note?: string;
+    /** What was set in the CSS attributes of the widget for how the time is written */
+    textStyle?: React.CSSProperties;
     accent: string;
     track: string;
     ink: string;
@@ -110,6 +112,7 @@ function LiveDrum(props: LiveDrumProps): React.JSX.Element {
             track={props.track}
             ink={props.ink}
             quiet={props.quiet}
+            textStyle={props.textStyle}
         />
     );
 }
@@ -252,8 +255,9 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
                         note={program || note}
                         accent={accent}
                         track={theme.palette.divider}
-                        ink={theme.palette.text.primary}
-                        quiet={theme.palette.text.secondary}
+                        ink={context.css.text.color ?? theme.palette.text.primary}
+                        quiet={context.css.text.color ?? theme.palette.text.secondary}
+                        textStyle={context.css.text}
                     />
                 ) : null,
             chart: { attrs: ['oidRemaining'] },

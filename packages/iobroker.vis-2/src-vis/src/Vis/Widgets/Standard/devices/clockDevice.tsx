@@ -124,8 +124,9 @@ function LiveClock(props: {
                     : undefined
             }
             language={language}
-            ink={props.data.color || props.context.theme.palette.text.primary}
-            quiet={props.context.theme.palette.text.secondary}
+            ink={props.context.css.text.color ?? (props.data.color || props.context.theme.palette.text.primary)}
+            quiet={props.context.css.text.color ?? props.context.theme.palette.text.secondary}
+            textStyle={props.context.css.text}
             accent={props.data.color || props.context.accents.red}
         />
     );

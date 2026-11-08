@@ -21,9 +21,9 @@ import {
     Checkbox,
 } from '@mui/material';
 
-import { Add, Check, Clear as ClearIcon, Close, Delete, DragHandle } from '@mui/icons-material';
+import { Add, Check, Clear as ClearIcon, Close, DragHandle } from '@mui/icons-material';
 
-import { ColorPicker, I18n, Icon, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
+import { IconTrash, ColorPicker, I18n, Icon, SelectFile as SelectFileDialog } from '@iobroker/gui-components';
 
 import type { RxWidgetInfoCustomComponentContext, VisTheme } from '@iobroker/types-vis-2';
 
@@ -454,7 +454,7 @@ class FiltersEditorDialog extends Component<FiltersEditorDialogProps, FiltersEdi
                                     this.updateItems(items);
                                 }}
                             >
-                                <Delete />
+                                <IconTrash />
                             </IconButton>
                         </TableCell>
                     </TableRow>

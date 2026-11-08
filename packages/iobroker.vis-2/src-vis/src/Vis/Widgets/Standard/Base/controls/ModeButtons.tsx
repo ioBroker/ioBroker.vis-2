@@ -64,6 +64,7 @@ export default function ModeButtons(props: ModeButtonsProps): React.JSX.Element 
                             // the one it is in carries the colour, the others only their outline
                             border: `1px solid ${on ? props.accent : props.theme.palette.divider}`,
                             background: on ? `${props.accent}22` : 'transparent',
+                            transition: 'background 0.2s, border-color 0.2s, color 0.2s',
                             color: on ? props.accent : props.theme.palette.text.secondary,
                             font: 'inherit',
                             fontSize: 11,

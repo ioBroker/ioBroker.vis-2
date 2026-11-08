@@ -3,13 +3,12 @@ import {
     Add as AddIcon,
     AutoAwesome as WizardIcon,
     Edit as EditIcon,
-    Delete as DeleteIcon,
     FileCopy as FileCopyIcon,
 } from '@mui/icons-material';
 
 import { Button, TextField } from '@mui/material';
 
-import { I18n } from '@iobroker/gui-components';
+import { IconTrash, I18n } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
 import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
@@ -176,7 +175,7 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
     };
 
     const dialogIcons: Record<string, unknown> = {
-        delete: DeleteIcon,
+        delete: IconTrash,
         copy: FileCopyIcon,
         rename: EditIcon,
         add: AddIcon,

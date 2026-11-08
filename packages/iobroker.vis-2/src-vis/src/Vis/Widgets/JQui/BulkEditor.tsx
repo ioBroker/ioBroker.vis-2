@@ -25,9 +25,10 @@ import {
     Radio,
 } from '@mui/material';
 
-import { Clear, Close, Check, Delete, Clear as ClearIcon, Add, Edit } from '@mui/icons-material';
+import { Clear, Close, Check, Clear as ClearIcon, Add, Edit } from '@mui/icons-material';
 
 import {
+    IconTrash,
     ColorPicker,
     I18n,
     Icon,
@@ -337,7 +338,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                     <Button
                         variant="contained"
                         color="primary"
-                        startIcon={<Delete />}
+                        startIcon={<IconTrash />}
                         onClick={() => {
                             const values = [...this.state.values];
                             const texts = [...this.state.texts];
@@ -855,7 +856,7 @@ class BulkEditor extends React.Component<BulkEditorProps, BulkEditorState> {
                 </TableCell>
                 <TableCell>
                     <IconButton onClick={() => this.setState({ dialogDelete: i })}>
-                        <Delete />
+                        <IconTrash />
                     </IconButton>
                 </TableCell>
                 <TableCell>{button}</TableCell>

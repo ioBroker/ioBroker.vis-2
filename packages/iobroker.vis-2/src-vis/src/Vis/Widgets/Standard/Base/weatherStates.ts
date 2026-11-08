@@ -69,6 +69,36 @@ const FORECAST: [keyof WeatherDay, RegExp][] = [
 /** How far a forecast is read; a card has no room for more and no adapter promises it */
 export const MAX_FORECAST_DAYS = 7;
 
+/** What the sky is doing, as far as the widget can draw it itself */
+export type WeatherSymbol = 'clear' | 'few' | 'scattered' | 'broken' | 'showers' | 'rain' | 'storm' | 'snow' | 'mist';
+
+const OPEN_WEATHER_SYMBOLS: Record<string, WeatherSymbol> = {
+    '01': 'clear',
+    '02': 'few',
+    '03': 'scattered',
+    '04': 'broken',
+    '09': 'showers',
+    10: 'rain',
+    11: 'storm',
+    13: 'snow',
+    50: 'mist',
+};
+
+/**
+ * What a picture of a weather adapter shows, where its address gives that away.
+ *
+ * The pictures of OpenWeatherMap are small PNG files in a colour of their own: a sun cannot be turned yellow, and
+ * blown up to the size of a card they turn to mush. Their address names what they show, though, so the widget can
+ * draw the same thing itself at any size. Whatever does not say what it is stays the picture it is.
+ *
+ * @param src - the address of the picture
+ */
+export function weatherSymbolOf(src: string): { symbol: WeatherSymbol; night: boolean } | null {
+    const match = src.match(/\/img\/wn?\/(\d{2})([dn])(?:@\dx)?\.png(?:[?#].*)?$/i);
+    const symbol = match ? OPEN_WEATHER_SYMBOLS[match[1]] : undefined;
+    return symbol ? { symbol, night: match![2].toLowerCase() === 'n' } : null;
+}
+
 /**
  * Which day of the forecast a state belongs to, and its role without that day.
  *

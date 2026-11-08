@@ -1,6 +1,4 @@
-import { FileCopy as FileCopyIcon } from '@mui/icons-material';
-
-import { Utils, I18n, type ThemeType } from '@iobroker/gui-components';
+import { IconCopyToClipboard, Utils, I18n, type ThemeType } from '@iobroker/gui-components';
 
 import React from 'react';
 import IODialog from '../../Components/IODialog';
@@ -21,7 +19,7 @@ const ExportDialog: React.FC<ExportDialogProps> = props => (
         action={() => Utils.copyToClipboard(JSON.stringify(store.getState().visProject[props.view], null, 2))}
         actionTitle="Copy to clipboard"
         actionNoClose
-        ActionIcon={FileCopyIcon}
+        ActionIcon={IconCopyToClipboard}
     >
         <CustomEditor
             type="json"

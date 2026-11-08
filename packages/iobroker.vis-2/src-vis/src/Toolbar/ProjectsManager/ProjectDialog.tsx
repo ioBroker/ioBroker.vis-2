@@ -2,9 +2,9 @@ import React from 'react';
 
 import { TextField } from '@mui/material';
 
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 
-import { I18n } from '@iobroker/gui-components';
+import { IconTrash, I18n } from '@iobroker/gui-components';
 
 import IODialog from '../../Components/IODialog';
 import { useFocus } from '../../Utils';
@@ -59,7 +59,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = (props: ProjectDialogProps):
     };
 
     const dialogIcons = {
-        delete: DeleteIcon,
+        delete: IconTrash,
         rename: EditIcon,
         add: AddIcon,
     };

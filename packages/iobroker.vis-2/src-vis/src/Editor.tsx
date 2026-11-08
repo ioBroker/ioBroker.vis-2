@@ -34,8 +34,6 @@ import {
     Close as CloseIcon,
     Code as CodeIcon,
     CodeOff as CodeOffIcon,
-    PlayArrow as PlayIcon,
-    Stop as StopIcon,
     Palette as IconPalette,
     ListAlt as IconAttributes,
     ClearAll as ClearAllIcon,
@@ -44,6 +42,7 @@ import {
 } from '@mui/icons-material';
 
 import {
+    IconPlayPause,
     I18n,
     Utils,
     Confirm as ConfirmDialog,
@@ -794,7 +793,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     await this.setSelectedWidgets([]);
-                } else if (e.key === 'Delete') {
+                } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                    // the key that says "delete" on the keyboard of a Mac is the one the browser calls Backspace
                     e.preventDefault();
                     this.deleteWidgets();
                 }
@@ -2271,11 +2271,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                 disabled={!!this.state.selectedGroup}
                                 style={this.state.selectedGroup ? { opacity: 0.5 } : undefined}
                             >
-                                {this.state.editMode ? (
-                                    <PlayIcon style={{ color: 'green' }} />
-                                ) : (
-                                    <StopIcon style={{ color: 'red' }} />
-                                )}
+                                <IconPlayPause
+                                    running={!this.state.editMode}
+                                    style={{ color: this.state.editMode ? 'green' : 'red' }}
+                                />
                             </IconButton>
                         </div>
                     </Tooltip>

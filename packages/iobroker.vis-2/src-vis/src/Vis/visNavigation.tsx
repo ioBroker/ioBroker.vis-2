@@ -24,10 +24,9 @@ import {
     Dashboard as DashboardIcon,
     ExpandLess as CollapseIcon,
     ExpandMore as ExpandIcon,
-    Folder as FolderIcon,
 } from '@mui/icons-material';
 
-import { I18n, Utils, Icon } from '@iobroker/gui-components';
+import { IconFolder, I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
 import {
@@ -629,7 +628,8 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                     >
                         <ListItemButton sx={styles.menuButton}>
                             <ListItemIcon sx={styles.menuIcon}>
-                                <FolderIcon
+                                <IconFolder
+                                    open={open}
                                     style={{ color: settings.navigationColor, backgroundColor: 'rgba(1,1,1,0)' }}
                                 />
                             </ListItemIcon>

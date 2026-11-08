@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 
 import { Dialog, Button, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 
-import { ContentCopy as IconCopy, Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 
-import { I18n, type ThemeType, Utils } from '@iobroker/gui-components';
+import { IconCopyToClipboard, I18n, type ThemeType, Utils } from '@iobroker/gui-components';
 
 import CustomEditor from './CustomEditor';
 
@@ -41,7 +41,7 @@ class CodeDialog extends Component<CodeDialogProps> {
                             Utils.copyToClipboard(this.props.code);
                             window.alert(I18n.t('Copied to clipboard'));
                         }}
-                        startIcon={<IconCopy />}
+                        startIcon={<IconCopyToClipboard />}
                         color="primary"
                     >
                         {I18n.t('Copy to clipboard')}

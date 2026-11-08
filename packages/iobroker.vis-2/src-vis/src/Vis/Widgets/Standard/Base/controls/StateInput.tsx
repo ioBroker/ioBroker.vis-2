@@ -3,6 +3,8 @@ import React from 'react';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 export interface StateInputProps {
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     /** What the state holds, as text */
     value: string;
     /** Whether a number or anything else is typed here */
@@ -140,6 +142,7 @@ export default function StateInput(props: StateInputProps): React.JSX.Element {
                     fontSize: 15,
                     fontWeight: 700,
                     textAlign: props.withButtons ? 'center' : 'left',
+                    ...props.textStyle,
                 }}
             />
             {props.unit ? (

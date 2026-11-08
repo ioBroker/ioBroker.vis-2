@@ -15,13 +15,12 @@ import type JQuery from 'jquery';
 import {
     Add as AddIcon,
     Edit as EditIcon,
-    Delete as DeleteIcon,
     FileCopy as IconDocument,
     Person as PermissionsIcon,
 } from '@mui/icons-material';
-import { BiImport, BiExport } from 'react-icons/bi';
+import { BiExport } from 'react-icons/bi';
 
-import { I18n, type ThemeType, type Connection } from '@iobroker/gui-components';
+import { IconUpload, IconTrash, I18n, type ThemeType, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import type { VisTheme } from '@iobroker/types-vis-2';
@@ -228,7 +227,7 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
                             size="small"
                             style={{ ...styles.button, width: 34 }}
                         >
-                            <BiImport fontSize="medium" />
+                            <IconUpload fontSize="inherit" />
                         </IconButton>
                     </Tooltip>
                 </AppBar>
@@ -313,7 +312,7 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
                                             size="small"
                                             disabled={!!working}
                                         >
-                                            <DeleteIcon />
+                                            <IconTrash />
                                         </IconButton>
                                     </span>
                                 </Tooltip>

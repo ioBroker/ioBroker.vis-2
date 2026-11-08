@@ -79,7 +79,7 @@ const textDevice = defineDeviceWidget<TextRxData>({
     ],
     tile: { columns: 'full', rows: 1 },
     render: context => {
-        const { data, theme, tokens } = context;
+        const { data, theme, tokens, css } = context;
         const raw = data.oid ? context.valueOf('oid') : undefined;
         // a measured value with six places after the point is a wall of digits; one place is a reading
         const written0 = typeof raw === 'number' && !Number.isInteger(raw) ? raw.toFixed(1) : asText(raw);
@@ -99,6 +99,7 @@ const textDevice = defineDeviceWidget<TextRxData>({
             fontSize: size,
             fontWeight: data.bold === false || data.bold === 'false' ? 400 : 700,
             lineHeight: 1.25,
+            ...css.text,
         };
 
         return {
@@ -121,11 +122,13 @@ const textDevice = defineDeviceWidget<TextRxData>({
                         gap: Math.round(size * 0.45),
                         justifyContent: spread
                             ? 'space-between'
-                            : align === 'center'
-                              ? 'center'
-                              : align === 'right'
-                                ? 'flex-end'
-                                : 'flex-start',
+                            : css.align
+                              ? css.align
+                              : align === 'center'
+                                ? 'center'
+                                : align === 'right'
+                                  ? 'flex-end'
+                                  : 'flex-start',
                         color: data.color || theme.palette.text.primary,
                         overflow: 'hidden',
                     }}
@@ -160,7 +163,7 @@ const textDevice = defineDeviceWidget<TextRxData>({
                                 minWidth: 0,
                                 ...text,
                                 // a heading that is longer than its box wraps rather than disappearing
-                                textAlign: align,
+                                textAlign: css.textAlign ?? align,
                             }}
                         >
                             {line}

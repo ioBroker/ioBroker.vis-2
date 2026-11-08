@@ -4,6 +4,8 @@ import LiquidFill from './LiquidFill';
 
 export interface TankGaugeProps {
     /** How full it is, or null while nobody has said */
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     value: number | null;
     /** What an empty tank reads */
     min: number;
@@ -83,6 +85,7 @@ export default function TankGauge(props: TankGaugeProps): React.JSX.Element {
                 color: props.ink,
                 // a number standing on the bar has the filled part behind it, so it carries a shadow
                 textShadow: shadow ? '0 1px 3px rgba(0, 0, 0, 0.45)' : undefined,
+                ...props.textStyle,
             }}
         >
             {shown}

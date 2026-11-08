@@ -193,7 +193,7 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
     tile: { columns: 6, rows: 2, minColumns: 3 },
     markerShape: 'value',
     render: context => {
-        const { data, tokens, theme, isFloatComma, accents } = context;
+        const { data, tokens, theme, isFloatComma, accents, css } = context;
         /*
          * The unit the widget was told, and otherwise the one the object carries.
          *
@@ -220,16 +220,21 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
         // logs gets no line, no arrow and no chart, whatever the widget was told
         const history = context.historyOf('oid');
 
-        /** The number big, the unit behind it on the same baseline */
-        const withUnit = (text: string, unit: string | undefined, size: number): React.JSX.Element => (
-            <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4 }}>
-                <span style={{ fontSize: size, lineHeight: 1 }}>{text}</span>
+        /**
+         * The number big, the unit behind it on the same baseline.
+         *
+         * The first value has no size of its own: the frame gives it one, and that is where a size set in the CSS
+         * of the widget arrives. The unit is measured against whatever that turns out to be.
+         */
+        const withUnit = (text: string, unit: string | undefined, size?: number): React.JSX.Element => (
+            <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: 4, fontSize: size }}>
+                <span style={{ lineHeight: css.text.lineHeight ?? 1 }}>{text}</span>
                 {unit ? (
                     <span
                         style={{
-                            fontSize: Math.round(size * 0.65),
+                            fontSize: '0.65em',
                             fontWeight: 400,
-                            color: theme.palette.text.secondary,
+                            color: css.text.color ?? theme.palette.text.secondary,
                             lineHeight: 1.4,
                         }}
                     >
@@ -256,7 +261,7 @@ const valueDevice = defineDeviceWidget<ValueRxData>({
                         color={accent}
                     />
                 ) : null,
-            value: withUnit(format(raw, digits, isFloatComma), unit, tokens.valueSize),
+            value: withUnit(format(raw, digits, isFloatComma), unit),
             // how large the arrow is drawn is the frame's business: a card gives it the size of its value, a
             // marker a share of its own
             trend:

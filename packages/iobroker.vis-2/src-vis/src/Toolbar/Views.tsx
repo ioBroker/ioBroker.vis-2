@@ -2,15 +2,9 @@ import React, { Suspense, useState } from 'react';
 
 import { Tooltip } from '@mui/material';
 
-import {
-    Add as AddIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon,
-    Menu as MenuIcon,
-    AutoFixHigh as WizardIcon,
-} from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Menu as MenuIcon, AutoFixHigh as WizardIcon } from '@mui/icons-material';
 
-import { I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
+import { IconTrash, I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -130,7 +124,7 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                 [
                     {
                         type: 'icon-button',
-                        Icon: DeleteIcon,
+                        Icon: IconTrash,
                         name: 'Delete actual view',
                         onAction: () => showDialog('delete'),
                         disabled: !!props.selectedGroup || !props.editMode,

@@ -23,11 +23,9 @@ import {
     Palette as IconPalette,
     History as HistoryIcon,
     Widgets as WidgetSetIcon,
-    FilterAlt as FilterIcon,
-    FilterAltOff as FilterOffIcon,
 } from '@mui/icons-material';
 
-import { I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
+import { IconFilter, I18n, Utils, Icon, type Connection, type ThemeType } from '@iobroker/gui-components';
 
 import type { Marketplace, MarketplaceWidgetRevision, VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
@@ -807,7 +805,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                                 this.setState({ onlyVis2 }, () => this.buildListTrigger());
                             }}
                         >
-                            {this.state.onlyVis2 ? <FilterOffIcon /> : <FilterIcon />}
+                            <IconFilter active={this.state.onlyVis2} />
                         </IconButton>
                     </Tooltip>
                     {!allOpened ? (

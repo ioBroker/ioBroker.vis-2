@@ -15,8 +15,8 @@ import { limitsOf } from '../Base/limits';
 interface KnobRxData extends StandardRxData {
     /** Where it stands, when that is not the state it is set by */
     oidActual?: string;
-    /** `dial` or `slider` */
-    shape?: 'dial' | 'slider';
+    /** `dial`, `slider` for one across the card, or `vertical` for one standing upright */
+    shape?: 'dial' | 'slider' | 'vertical';
     unit?: string;
     min?: number | string;
     max?: number | string;
@@ -40,7 +40,8 @@ interface KnobRxData extends StandardRxData {
  *
  * The volume of an amplifier, the speed of a fan, how far a valve is open, the setpoint of something that has
  * no widget of its own - all the same thing, a number between two ends. `shape` says whether it is turned or
- * pushed: the dial reads better from across a room, the slider takes less height in a list.
+ * pushed: the dial reads better from across a room, the slider takes less height in a list, and the upright one
+ * suits a narrow column.
  *
  * What the state counts in comes from the object, `min` and `max` are there to overrule it.
  */
@@ -72,6 +73,7 @@ const knobDevice = defineDeviceWidget<KnobRxData>({
             options: [
                 { value: 'dial', label: 'knob_shape_dial' },
                 { value: 'slider', label: 'knob_shape_slider' },
+                { value: 'vertical', label: 'knob_shape_vertical' },
             ],
         },
         { name: 'unit', label: 'unit' },
@@ -109,6 +111,7 @@ const knobDevice = defineDeviceWidget<KnobRxData>({
         const unit = data.unit || context.commonOf('oid')?.unit || '';
         const digits = asNumber(data.digits);
         const asSlider = data.shape === 'slider';
+        const upright = data.shape === 'vertical';
         const accent = known ? data.color || accents.blue : accents.off;
 
         // a few values one actually wants are often better than a scale with every value on it
@@ -143,7 +146,23 @@ const knobDevice = defineDeviceWidget<KnobRxData>({
             icon: <KnobIcon style={{ width: '100%', height: '100%' }} />,
             // the dial says the number itself; beside a slider it has to be written out
             body:
-                asSlider || !withControl || context.layout !== 'default' ? null : (
+                asSlider || !withControl || context.layout !== 'default' ? null : upright ? (
+                    data.oid ? (
+                        <div style={{ height: '100%', display: 'flex', justifyContent: 'center' }}>
+                            <FatSlider
+                                vertical
+                                value={value ?? limits.min}
+                                min={limits.min}
+                                max={limits.max}
+                                step={limits.step}
+                                color={accent}
+                                disabled={context.editMode}
+                                onChange={wanted => set(wanted, false)}
+                                onChangeCommitted={wanted => set(wanted, true)}
+                            />
+                        </div>
+                    ) : null
+                ) : (
                     <KnobDial
                         value={value}
                         min={limits.min}
@@ -155,14 +174,15 @@ const knobDevice = defineDeviceWidget<KnobRxData>({
                         accentTo={known ? data.colorTo : undefined}
                         ticks={asNumber(data.ticks) ?? undefined}
                         track={theme.palette.divider}
-                        ink={theme.palette.text.primary}
-                        quiet={theme.palette.text.secondary}
+                        ink={context.css.text.color ?? theme.palette.text.primary}
+                        quiet={context.css.text.color ?? theme.palette.text.secondary}
+                        textStyle={context.css.text}
                         isFloatComma={context.isFloatComma}
                         onChange={context.editMode || !data.oid ? undefined : set}
                     />
                 ),
             value:
-                asSlider || !withControl || context.layout !== 'default'
+                asSlider || upright || !withControl || context.layout !== 'default'
                     ? `${written}${unit ? ` ${unit}` : ''}`
                     : undefined,
             valueColor: accent,

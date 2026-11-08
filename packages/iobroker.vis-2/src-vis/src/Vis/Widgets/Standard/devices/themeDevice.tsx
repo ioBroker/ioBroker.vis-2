@@ -1,8 +1,6 @@
 import React from 'react';
 
-import { DarkMode as DarkIcon, LightMode as LightIcon } from '@mui/icons-material';
-
-import type { ThemeName } from '@iobroker/gui-components';
+import { IconThemeMode, type ThemeName } from '@iobroker/gui-components';
 
 import SlideToggle from '../Base/controls/SlideToggle';
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
@@ -164,10 +162,11 @@ const themeDevice = defineDeviceWidget<ThemeRxData>({
         return {
             accent: dark ? accents.blue : accents.yellow,
             active: false,
-            icon: dark ? (
-                <DarkIcon style={{ width: '100%', height: '100%' }} />
-            ) : (
-                <LightIcon style={{ width: '100%', height: '100%' }} />
+            icon: (
+                <IconThemeMode
+                    mode={dark ? 'dark' : 'light'}
+                    style={{ width: '100%', height: '100%' }}
+                />
             ),
             value: word,
             valueColor: theme.palette.text.primary,

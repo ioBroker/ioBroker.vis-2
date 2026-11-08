@@ -5,15 +5,14 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 
 import {
     Edit as EditIcon,
-    Delete as DeleteIcon,
     FileCopy as FileCopyIcon,
     InsertDriveFile as FileIcon,
     Visibility as VisibilityIcon,
     VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import { BiImport, BiExport } from 'react-icons/bi';
+import { BiExport } from 'react-icons/bi';
 
-import { I18n, Utils } from '@iobroker/gui-components';
+import { IconUpload, IconTrash, I18n, Utils } from '@iobroker/gui-components';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 import type { ViewDragData } from './viewsDnd';
@@ -179,7 +178,7 @@ const View = (props: ViewProps): React.JSX.Element => {
                                 onClick={() => props.setImportDialog(props.name)}
                                 size="small"
                             >
-                                <BiImport />
+                                <IconUpload fontSize="inherit" />
                             </IconButton>
                         </Tooltip>
                     ) : null}
@@ -229,7 +228,7 @@ const View = (props: ViewProps): React.JSX.Element => {
                                 onClick={() => props.showDialog('delete', props.name)}
                                 size="small"
                             >
-                                <DeleteIcon />
+                                <IconTrash />
                             </IconButton>
                         </Tooltip>
                     ) : null}

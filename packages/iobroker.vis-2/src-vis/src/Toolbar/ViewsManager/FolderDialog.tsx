@@ -4,9 +4,8 @@ import { TextField } from '@mui/material';
 
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 
-import { I18n } from '@iobroker/gui-components';
+import { IconTrash, I18n } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import React from 'react';
@@ -89,7 +88,7 @@ const FolderDialog: React.FC<FolderDialogProps> = (props: FolderDialogProps): Re
     };
 
     const dialogIcons = {
-        delete: DeleteIcon,
+        delete: IconTrash,
         rename: EditIcon,
         add: AddIcon,
     };

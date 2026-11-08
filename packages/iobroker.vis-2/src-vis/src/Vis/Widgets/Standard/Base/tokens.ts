@@ -112,18 +112,22 @@ export function cardFill(
     color: string,
     active: boolean,
     theme: VisTheme,
-): { background: string; border: string; color: string } {
+): { background: string; borderWidth: number; borderStyle: 'solid'; borderColor: string; color: string } {
     if (!active) {
         return {
             background: theme.palette.background.default,
-            border: `2px solid ${theme.palette.divider}`,
+            borderWidth: 2,
+            borderStyle: 'solid',
+            borderColor: theme.palette.divider,
             color: theme.palette.text.secondary,
         };
     }
 
     return {
         background: `linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 60%, black))`,
-        border: `2px solid ${color}`,
+        borderWidth: 2,
+        borderStyle: 'solid',
+        borderColor: color,
         color: '#fff',
     };
 }

@@ -3,6 +3,8 @@ import React from 'react';
 export interface ClockFaceProps {
     /** `analog` is a face with hands, `digital` is the time written out */
     mode: 'analog' | 'digital';
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     /** The moment to show */
     now: Date;
     /** The seconds as well: the second hand, or the seconds in the digits */
@@ -69,6 +71,7 @@ export default function ClockFace(props: ClockFaceProps): React.JSX.Element {
                     fontSize={size}
                     fontWeight="700"
                     fill={props.ink}
+                    style={props.textStyle}
                 >
                     {time}
                 </text>

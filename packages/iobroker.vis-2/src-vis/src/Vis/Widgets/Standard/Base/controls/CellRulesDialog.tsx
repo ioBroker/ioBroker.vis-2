@@ -14,9 +14,9 @@ import {
     Typography,
 } from '@mui/material';
 
-import { Add as AddIcon, Close as CloseIcon, Delete as DeleteIcon, Palette as RulesIcon } from '@mui/icons-material';
+import { Add as AddIcon, Close as CloseIcon, Palette as RulesIcon } from '@mui/icons-material';
 
-import { ColorPicker, I18n, type ThemeType } from '@iobroker/gui-components';
+import { IconTrash, ColorPicker, I18n, type ThemeType } from '@iobroker/gui-components';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 
@@ -121,7 +121,7 @@ export default function CellRulesDialog(props: CellRulesDialogProps): React.JSX.
                 size="small"
                 onClick={() => setRules(rules.filter((_, at) => at !== index))}
             >
-                <DeleteIcon fontSize="small" />
+                <IconTrash fontSize="small" />
             </IconButton>
         </div>
     );

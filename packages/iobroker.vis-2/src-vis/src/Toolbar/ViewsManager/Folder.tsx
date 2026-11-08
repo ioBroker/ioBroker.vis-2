@@ -3,15 +3,9 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { Box, IconButton, Tooltip } from '@mui/material';
 
-import {
-    Add as AddIcon,
-    Edit as EditIcon,
-    Delete as DeleteIcon,
-    CreateNewFolder as CreateNewFolderClosedIcon,
-} from '@mui/icons-material';
-import { FaFolder as FolderClosedIcon, FaFolderOpen as FolderOpenedIcon } from 'react-icons/fa';
+import { Add as AddIcon, Edit as EditIcon, CreateNewFolder as CreateNewFolderClosedIcon } from '@mui/icons-material';
 
-import { Utils, I18n } from '@iobroker/gui-components';
+import { IconFolder, IconTrash, Utils, I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 import { store } from '@/Store';
 import { canDropInto, useDraggedItem, type FolderDragData, type ViewsDropData } from './viewsDnd';
@@ -74,11 +68,10 @@ const Folder: React.FC<FolderProps> = props => {
             component="div"
             sx={styles.viewManageBlock}
         >
-            {props.foldersCollapsed.includes(props.folder.id) ? (
-                <FolderClosedIcon fontSize="small" />
-            ) : (
-                <FolderOpenedIcon fontSize="small" />
-            )}
+            <IconFolder
+                open={!props.foldersCollapsed.includes(props.folder.id)}
+                fontSize="inherit"
+            />
             <span style={styles.folderName}>{props.folder.name}</span>
         </Box>
     );
@@ -132,33 +125,17 @@ const Folder: React.FC<FolderProps> = props => {
                 {...listeners}
                 {...attributes}
             >
-                {props.foldersCollapsed.includes(props.folder.id) ? (
-                    <FolderClosedIcon
-                        fontSize="large"
-                        onClick={() => {
-                            const foldersCollapsed: string[] = JSON.parse(JSON.stringify(props.foldersCollapsed));
-                            foldersCollapsed.splice(foldersCollapsed.indexOf(props.folder.id), 1);
-                            props.setFoldersCollapsed(foldersCollapsed);
-                            window.localStorage.setItem(
-                                'ViewsManager.foldersCollapsed',
-                                JSON.stringify(foldersCollapsed),
-                            );
-                        }}
-                    />
-                ) : (
-                    <FolderOpenedIcon
-                        fontSize="large"
-                        onClick={() => {
-                            const foldersCollapsed: string[] = JSON.parse(JSON.stringify(props.foldersCollapsed));
-                            foldersCollapsed.push(props.folder.id);
-                            props.setFoldersCollapsed(foldersCollapsed);
-                            window.localStorage.setItem(
-                                'ViewsManager.foldersCollapsed',
-                                JSON.stringify(foldersCollapsed),
-                            );
-                        }}
-                    />
-                )}
+                <IconFolder
+                    open={!props.foldersCollapsed.includes(props.folder.id)}
+                    fontSize="inherit"
+                    onClick={() => {
+                        const foldersCollapsed = props.foldersCollapsed.includes(props.folder.id)
+                            ? props.foldersCollapsed.filter(id => id !== props.folder.id)
+                            : [...props.foldersCollapsed, props.folder.id];
+                        props.setFoldersCollapsed(foldersCollapsed);
+                        window.localStorage.setItem('ViewsManager.foldersCollapsed', JSON.stringify(foldersCollapsed));
+                    }}
+                />
             </Box>
             <span
                 style={styles.folderName}
@@ -252,7 +229,7 @@ const Folder: React.FC<FolderProps> = props => {
                                     )
                                 }
                             >
-                                <DeleteIcon />
+                                <IconTrash />
                             </IconButton>
                         </span>
                     </Tooltip>

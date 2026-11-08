@@ -29,7 +29,7 @@ import {
 
 import { Close, Check } from '@mui/icons-material';
 
-import { I18n, Icon, Utils, IconCopy } from '@iobroker/gui-components';
+import { I18n, Icon, Utils, IconCopyToClipboard } from '@iobroker/gui-components';
 
 import type {
     RxRenderWidgetProps,
@@ -968,7 +968,7 @@ class JQuiButton<
                             Utils.copyToClipboard(text);
                         }}
                     >
-                        <IconCopy />
+                        <IconCopyToClipboard />
                     </IconButton>
                     <div>{I18n.t('External dialog')}</div>
                     <div>{this.state.rxData.html_dialog ? 'HTML' : `View: ${this.state.rxData.contains_view}`}</div>

@@ -11,6 +11,7 @@ import {
 
 import { Types } from '../Base/deviceTypes';
 
+import FatSlider from '../Base/controls/FatSlider';
 import ModeButtons, { type Mode } from '../Base/controls/ModeButtons';
 import { parsePresets, presetModes } from '../Base/presets';
 import SlideToggle from '../Base/controls/SlideToggle';
@@ -32,6 +33,8 @@ interface ThermostatRxData extends StandardRxData {
     presets?: string;
     /** `dial`, `presets` or `both` */
     controls?: 'dial' | 'presets' | 'both';
+    /** `dial`, `slider` for one across the card, or `vertical` for one standing upright */
+    shape?: 'dial' | 'slider' | 'vertical';
     min?: number | string;
     max?: number | string;
     step?: number | string;
@@ -129,6 +132,18 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
                 { value: 'both', label: 'controls_both' },
             ],
         },
+        {
+            name: 'shape',
+            type: 'select',
+            label: 'knob_shape',
+            default: 'dial',
+            hidden: "!!data.presets && data.controls === 'presets'",
+            options: [
+                { value: 'dial', label: 'knob_shape_dial' },
+                { value: 'slider', label: 'knob_shape_slider' },
+                { value: 'vertical', label: 'knob_shape_vertical' },
+            ],
+        },
         { name: 'min', type: 'number', label: 'min' },
         { name: 'max', type: 'number', label: 'max' },
         { name: 'step', type: 'number', label: 'step' },
@@ -156,7 +171,11 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
          */
         const presets = parsePresets(data.presets);
         const shown = presets.length ? data.controls || 'dial' : 'dial';
-        const withDial = shown !== 'presets';
+        // what sets the temperature, if the buttons are not all there is: the dial or one of the two sliders
+        const withControl = shown !== 'presets' && context.layout === 'default';
+        const asSlider = withControl && data.shape === 'slider';
+        const upright = withControl && data.shape === 'vertical';
+        const withDial = withControl && !asSlider && !upright;
         const withPresets = shown !== 'dial' && presets.length > 0;
 
         const powered = data.oidPower ? !!context.valueOf('oidPower') : true;
@@ -191,8 +210,9 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
                 cold={accents.blue}
                 warm={accents.red}
                 track={theme.palette.divider}
-                ink={powered ? theme.palette.text.primary : theme.palette.text.disabled}
-                quiet={theme.palette.text.secondary}
+                ink={context.css.text.color ?? (powered ? theme.palette.text.primary : theme.palette.text.disabled)}
+                quiet={context.css.text.color ?? theme.palette.text.secondary}
+                textStyle={context.css.text}
                 isFloatComma={context.isFloatComma}
                 // in the editor the pointer belongs to the editor: a drag there moves the widget
                 onChange={context.editMode || !data.oid ? undefined : setTarget}
@@ -202,15 +222,37 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
         const written = actual !== null ? actual.toFixed(1) : target !== null ? target.toFixed(1) : '--';
         const reading = context.isFloatComma ? written.replace('.', ',') : written;
 
+        const slider = (vertical: boolean): React.JSX.Element => (
+            <FatSlider
+                vertical={vertical}
+                value={target ?? limits.min}
+                min={limits.min}
+                max={limits.max}
+                step={asNumber(data.step) ?? 0.5}
+                color={accent}
+                disabled={context.editMode || !data.oid}
+                onChange={wanted => setTarget(wanted, false)}
+                onChangeCommitted={wanted => setTarget(wanted, true)}
+            />
+        );
+        // a slider says nothing in numbers, so what it is set to is written out beside what the room is
+        const setText = target === null ? '--' : target.toFixed(1);
+        const setLine = `${t('set_to')} ${context.isFloatComma ? setText.replace('.', ',') : setText}${unit}`;
+
         return {
             accent,
             active: heating || cooling,
             icon: <ThermostatIcon style={{ width: '100%', height: '100%' }} />,
             // the dial says both temperatures itself, so the value row would only repeat it; the other two
             // layouts have no room for a dial and show the number instead
-            body: context.layout === 'default' && withDial ? dial : null,
+            body: withDial ? (
+                dial
+            ) : upright ? (
+                <div style={{ height: '100%', display: 'flex', justifyContent: 'center' }}>{slider(true)}</div>
+            ) : null,
             // without the dial the card says the temperature itself, as the other two layouts do
-            value: context.layout === 'default' && withDial ? undefined : `${reading}${unit}`,
+            value: withDial ? undefined : `${reading}${unit}`,
+            label: asSlider || upright ? setLine : undefined,
             valueColor: accent,
             stateText: modeLabel ? `${reading}${unit} · ${modeLabel}` : `${reading}${unit}`,
             marker: { text: reading, unit },
@@ -226,8 +268,9 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
                 />
             ) : null,
             footer:
-                context.layout === 'default' && (withPresets || modes.length) ? (
+                context.layout === 'default' && (asSlider || withPresets || modes.length) ? (
                     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {asSlider ? slider(false) : null}
                         {withPresets ? (
                             <ModeButtons
                                 modes={presetModes(presets, unit, context.isFloatComma)}

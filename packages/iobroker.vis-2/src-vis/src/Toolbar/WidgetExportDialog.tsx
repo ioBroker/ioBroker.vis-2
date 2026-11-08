@@ -1,6 +1,4 @@
-import { FileCopy as FileCopyIcon } from '@mui/icons-material';
-
-import { Utils, I18n, type ThemeType } from '@iobroker/gui-components';
+import { IconCopyToClipboard, Utils, I18n, type ThemeType } from '@iobroker/gui-components';
 
 import type { AnyWidgetId, GroupWidgetId, Widget } from '@iobroker/types-vis-2';
 import React from 'react';
@@ -77,7 +75,7 @@ const WidgetExportDialog: React.FC<WidgetExportDialogProps> = props => {
             }}
             actionTitle="Copy to clipboard"
             actionNoClose
-            ActionIcon={FileCopyIcon}
+            ActionIcon={IconCopyToClipboard}
         >
             <CustomEditor
                 type="json"

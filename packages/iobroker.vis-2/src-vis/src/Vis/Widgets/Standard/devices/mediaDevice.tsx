@@ -1,9 +1,9 @@
 import React from 'react';
 
+import { IconPlayPause } from '@iobroker/gui-components';
+
 import {
     MusicNote as MediaIcon,
-    Pause as PauseIcon,
-    PlayArrow as PlayIcon,
     SkipNext as NextIcon,
     SkipPrevious as PreviousIcon,
     VolumeOff as MutedIcon,
@@ -168,6 +168,7 @@ const mediaDevice = defineDeviceWidget<MediaRxData>({
                     borderRadius: '50%',
                     border: `1px solid ${big ? accent : theme.palette.divider}`,
                     background: big ? `${accent}22` : 'transparent',
+                    transition: 'background 0.3s, border-color 0.3s, color 0.3s',
                     color: big ? accent : theme.palette.text.secondary,
                     cursor: context.editMode ? undefined : 'pointer',
                     padding: 0,
@@ -241,7 +242,14 @@ const mediaDevice = defineDeviceWidget<MediaRxData>({
                             {data.oidPrev
                                 ? round(<PreviousIcon />, () => context.setValue(data.oidPrev as string, true))
                                 : null}
-                            {round(playing ? <PauseIcon /> : <PlayIcon />, togglePlay, true)}
+                            {round(
+                                <IconPlayPause
+                                    running={playing}
+                                    fontSize={24}
+                                />,
+                                togglePlay,
+                                true,
+                            )}
                             {data.oidNext
                                 ? round(<NextIcon />, () => context.setValue(data.oidNext as string, true))
                                 : null}

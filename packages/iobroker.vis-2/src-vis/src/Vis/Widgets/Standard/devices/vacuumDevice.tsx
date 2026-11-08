@@ -1,11 +1,11 @@
 import React from 'react';
 
+import { IconPlayPause } from '@iobroker/gui-components';
+
 import {
     BatteryChargingFull as ChargingIcon,
     BatteryStd as BatteryIcon,
     Home as HomeIcon,
-    Pause as PauseIcon,
-    PlayArrow as StartIcon,
     CleaningServices as VacuumIcon,
 } from '@mui/icons-material';
 
@@ -167,6 +167,7 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                     borderRadius: 10,
                     border: `1px solid ${color}`,
                     background: `${color}22`,
+                    transition: 'background 0.3s, border-color 0.3s, color 0.3s',
                     color,
                     font: 'inherit',
                     fontSize: 12,
@@ -226,7 +227,10 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
                         <div style={{ display: 'flex', gap: 6, width: '100%' }}>
                             {button(
-                                running ? <PauseIcon style={ICON} /> : <StartIcon style={ICON} />,
+                                <IconPlayPause
+                                    running={running}
+                                    style={ICON}
+                                />,
                                 t(running ? 'vacuum_pause' : 'vacuum_start'),
                                 toggle,
                                 running ? accents.yellow : accents.green,

@@ -1,7 +1,9 @@
 import React from 'react';
 
+import { IconTrash } from '@iobroker/gui-components';
+
 import { Button, Dialog, DialogActions, DialogContent, IconButton, TextareaAutosize } from '@mui/material';
-import { Check, Close, Delete } from '@mui/icons-material';
+import { Check, Close } from '@mui/icons-material';
 
 import type { RxRenderWidgetProps, RxWidgetInfo, VisBaseWidgetProps } from '@iobroker/types-vis-2';
 import VisRxWidget, { type VisRxWidgetState } from '@/Vis/visRxWidget';
@@ -124,7 +126,7 @@ export default class BasicNote extends VisRxWidget<RxData, BasicNoteState> {
                                 this.setState({ text: '' });
                             }}
                         >
-                            {<Delete />}
+                            {<IconTrash />}
                         </IconButton>
                     ) : null}
                     <div style={{ flex: 1 }} />

@@ -18,6 +18,8 @@ export interface FatSliderProps {
      * as a bar chart rather than as a control.
      */
     slim?: boolean;
+    /** It stands upright and takes the height of what is around it, rather than lying across the width */
+    vertical?: boolean;
     /** Called while the knob is dragged, so the widget can follow along */
     onChange?: (value: number) => void;
     /** Called once, when the knob is let go */
@@ -36,9 +38,11 @@ export interface FatSliderProps {
 export default function FatSlider(props: FatSliderProps): React.JSX.Element {
     const rail = props.slim ? 6 : 10;
     const thumb = props.slim ? 14 : 20;
+    const halo = Math.round(thumb * 0.65);
 
     return (
         <Slider
+            orientation={props.vertical ? 'vertical' : 'horizontal'}
             value={props.value}
             min={props.min}
             max={props.max}
@@ -47,18 +51,29 @@ export default function FatSlider(props: FatSliderProps): React.JSX.Element {
             onChange={(_e, value) => props.onChange?.(value)}
             onChangeCommitted={(_e, value) => props.onChangeCommitted(value)}
             sx={{
-                width: '100%',
-                height: rail,
-                padding: `${Math.round(thumb * 0.65)}px 0`,
+                ...(props.vertical
+                    ? {
+                          width: rail,
+                          // the knob reaches half its size past either end of the rail, and has to stay in the box
+                          height: `calc(100% - ${thumb}px)`,
+                          margin: `${thumb / 2}px 0`,
+                          padding: `0 ${halo}px`,
+                          '& .MuiSlider-rail, & .MuiSlider-track': { width: rail },
+                      }
+                    : {
+                          width: '100%',
+                          height: rail,
+                          padding: `${halo}px 0`,
+                          '& .MuiSlider-rail, & .MuiSlider-track': { height: rail },
+                      }),
                 color: props.color,
+                transition: 'color 0.3s',
                 '& .MuiSlider-rail': {
-                    height: rail,
                     borderRadius: rail / 2,
                     opacity: 0.35,
                     backgroundColor: 'text.disabled',
                 },
                 '& .MuiSlider-track': {
-                    height: rail,
                     border: 'none',
                     borderRadius: rail / 2,
                 },

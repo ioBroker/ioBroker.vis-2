@@ -2,6 +2,8 @@ import React from 'react';
 
 export interface ApplianceDrumProps {
     /** A programme is running, so the drum turns where nothing says how far it has got */
+    /** What was set in the CSS attributes of the widget for how the reading is written */
+    textStyle?: React.CSSProperties;
     running: boolean;
     /** How far the programme has got, 0..1, or null where that cannot be worked out */
     share: number | null;
@@ -96,6 +98,7 @@ export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Elem
                 fontSize={props.unit ? 26 : 15}
                 fontWeight="700"
                 fill={props.ink}
+                style={{ transition: 'fill 0.3s', ...props.textStyle }}
             >
                 {props.text}
                 {props.unit ? (

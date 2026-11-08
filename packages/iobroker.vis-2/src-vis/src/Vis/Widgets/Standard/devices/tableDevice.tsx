@@ -9,6 +9,7 @@ import ColumnKeyField from '../Base/controls/ColumnKeyField';
 import { cellLook, cellRules, type CellRule } from '../Base/controls/cellLook';
 import { asNumber } from '../Base/controls/stateValue';
 import { tableCell, tableColumns, tableRows, type TableRow } from '../Base/controls/tableRows';
+import { cssPixels } from '../Base/widgetCss';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { STANDARD_I18N_PREFIX } from '../Base/prefix';
 
@@ -228,7 +229,12 @@ const tableDevice = defineDeviceWidget<TableRxData>({
     // a table on a coin is a grey block; the click brings up the card that can actually be read
     popup: true,
     render: context => {
-        const { data, accents, theme, tokens, t } = context;
+        const { data, accents, theme, t } = context;
+        // the rows calculate with the size of their writing, so one that was set in pixels takes its place
+        const tokens = {
+            ...context.tokens,
+            smallSize: cssPixels(context.css.text.fontSize) ?? context.tokens.smallSize,
+        };
 
         const all = tableRows(context.valueOf('oid'));
         const limit = asNumber(data.maxRows);

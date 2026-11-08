@@ -18,9 +18,9 @@ import {
     Box,
 } from '@mui/material';
 
-import { Search as SearchIcon, Close as ClearIcon, Check as CheckIcon, Delete as EraseIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Close as ClearIcon, Check as CheckIcon } from '@mui/icons-material';
 
-import { I18n, Utils, Icon } from '@iobroker/gui-components';
+import { IconTrash, I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { MaterialIconSelectorProps, VisTheme } from '@iobroker/types-vis-2';
 
 import UploadFile from './UploadFile';
@@ -628,7 +628,7 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                             variant="outlined"
                             color="grey"
                             onClick={() => this.props.onClose('')}
-                            startIcon={<EraseIcon />}
+                            startIcon={<IconTrash />}
                         >
                             {I18n.t('Delete')}
                         </Button>

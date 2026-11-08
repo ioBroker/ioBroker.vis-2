@@ -104,8 +104,9 @@ const tankDevice = defineDeviceWidget<TankRxData>({
                         digits={digits ?? undefined}
                         accent={accent}
                         track={theme.palette.divider}
-                        ink={theme.palette.text.primary}
-                        quiet={theme.palette.text.secondary}
+                        ink={context.css.text.color ?? theme.palette.text.primary}
+                        quiet={context.css.text.color ?? theme.palette.text.secondary}
+                        textStyle={context.css.text}
                         isFloatComma={context.isFloatComma}
                         valuePosition={data.valuePosition}
                     />
