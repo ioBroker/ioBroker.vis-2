@@ -130,6 +130,7 @@ import plLang from './i18n/pl.json';
 import ukLang from './i18n/uk.json';
 import zhLang from './i18n/zh-cn.json';
 import { isDevServer } from '@/Utilities/devServer';
+import { canAutoScrollDuringDrop, pointerInViewPane, type ViewDropData } from '@/Utilities/viewDrop';
 
 /**
  * Below this width of the work area palette and attributes no longer stand in columns beside the view but
@@ -267,14 +268,10 @@ const styles: Record<string, any> = {
     }),
 };
 
-/** What `ViewDrop` puts on its droppable, so that the drop handler can work out where the pointer was */
-interface ViewDropData {
-    kind: 'view';
-    getRect: () => DOMRect | undefined;
-}
-
 interface ViewDropProps {
     editMode: boolean;
+    /** The pane the view scrolls in */
+    paneRef: React.RefObject<HTMLDivElement | null>;
     children: React.JSX.Element;
 }
 
@@ -288,6 +285,7 @@ const ViewDrop: React.FC<ViewDropProps> = props => {
         data: {
             kind: 'view',
             getRect: () => targetRef.current?.getBoundingClientRect(),
+            getPaneRect: () => props.paneRef.current?.getBoundingClientRect(),
         } satisfies ViewDropData,
     });
 
@@ -436,6 +434,8 @@ const EditorDnd: React.FC<EditorDndProps> = props => {
     return (
         <DndContext
             sensors={sensors}
+            collisionDetection={pointerInViewPane}
+            autoScroll={{ canScroll: canAutoScrollDuringDrop }}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             // a drag that is called off - the escape key - has to take the watcher and the mark with it as well
@@ -529,6 +529,9 @@ registerBasicWords();
 registerJqPlotWords();
 
 export default class Editor extends Runtime<EditorProps, EditorState> {
+    /** The pane the view scrolls in, which is what a widget from the palette is dropped on */
+    private readonly canvasRef = React.createRef<HTMLDivElement>();
+
     /**
      * Everything the editor says, which is far more than the runtime needs - see `Runtime.translations`, whose
      * catalog holds only the words a dashboard can show. The runtime does not carry these.
@@ -2588,6 +2591,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             >
                 {this.renderTabs()}
                 <div
+                    ref={this.canvasRef}
                     style={{
                         ...styles.canvas,
                         overflow: this.state.editMode
@@ -2602,7 +2606,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     }}
                 >
                     {this.state.showCode ? <pre>{JSON.stringify(store.getState().visProject, null, 2)}</pre> : null}
-                    <ViewDrop editMode={this.state.editMode}>
+                    <ViewDrop
+                        editMode={this.state.editMode}
+                        paneRef={this.canvasRef}
+                    >
                         <div
                             id="vis-react-container"
                             style={{
