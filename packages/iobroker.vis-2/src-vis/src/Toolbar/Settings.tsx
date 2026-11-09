@@ -21,7 +21,6 @@ import { Save as SaveIcon } from '@mui/icons-material';
 import {
     IconRefresh,
     IconCopyToClipboard,
-    ColorPicker,
     I18n,
     Utils,
     type Connection,
@@ -34,6 +33,7 @@ import { deepClone } from '@/Utilities/utils';
 import type { ProjectSettings, VisTheme } from '@iobroker/types-vis-2';
 import commonStyles from '@/Utilities/styles';
 import IODialog from '../Components/IODialog';
+import EditorColorPicker from '../Components/EditorColorPicker';
 import { applyTitleAndIcon } from '@/Vis/visUtils';
 
 const styles: { dialog: React.CSSProperties; field: React.CSSProperties } = {
@@ -436,7 +436,7 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                         );
                     } else if (field.type === 'color') {
                         result = (
-                            <ColorPicker
+                            <EditorColorPicker
                                 value={(value as string) || ''}
                                 label={I18n.t(field.name || '')}
                                 onChange={color => change(color)}

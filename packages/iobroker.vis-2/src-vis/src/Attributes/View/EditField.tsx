@@ -12,7 +12,8 @@ import {
     TextField,
 } from '@mui/material';
 
-import { ColorPicker, I18n, IconPicker, TextWithIcon, type Connection, type ThemeType } from '@iobroker/gui-components';
+import { I18n, IconPicker, TextWithIcon, type Connection, type ThemeType } from '@iobroker/gui-components';
+import EditorColorPicker from '../../Components/EditorColorPicker';
 
 import { Clear as ClearIcon } from '@mui/icons-material';
 
@@ -244,7 +245,7 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
     }
     if (field.type === 'color') {
         return (
-            <ColorPicker
+            <EditorColorPicker
                 value={value}
                 style={commonStyles.fieldContentColor}
                 disabled={!editMode || disabled}

@@ -44,7 +44,6 @@ import {
     IconPicker,
     Icon,
     TextWithIcon,
-    ColorPicker,
     SelectID,
     SelectFile as SelectFileDialog,
     type ObjectBrowserCustomFilter,
@@ -80,6 +79,7 @@ import {
 import commonStyles from '@/Utilities/styles';
 import TextDialog from './TextDialog';
 import MaterialIconSelector from '../../Components/MaterialIconSelector';
+import EditorColorPicker from '../../Components/EditorColorPicker';
 
 const POSSIBLE_UNITS = ['px', '%', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ex', 'ch', 'cm', 'mm', 'in', 'pt', 'pc'];
 
@@ -403,7 +403,18 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         }
     }
 
-    const [cachedValue, setCachedValue] = useState<string | number | boolean | null>('');
+    const [cachedValue, setCachedValueState] = useState<string | number | boolean | null>('');
+    /**
+     * The value last set, also before the next render. A picker that is dragged sends faster than this component
+     * renders: compared with `cachedValue` of the last render, a value that was set a moment ago looks unchanged and is
+     * dropped. The field then hands an older value back to the picker, which takes it for a change from outside, jumps
+     * back, and the two of them push each other until React stops with "Maximum update depth exceeded".
+     */
+    const latestValue = useRef<string | number | boolean | null>('');
+    const setCachedValue = (newValue: string | number | boolean | null): void => {
+        latestValue.current = newValue;
+        setCachedValueState(newValue);
+    };
     const [instances, setInstances] = useState<
         {
             id: string;
@@ -501,7 +512,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         if (Array.isArray(changeValue) || field.immediateChange) {
             // apply immediately
             applyValue(changeValue);
-        } else if (changeValue !== cachedValue) {
+        } else if (changeValue !== latestValue.current) {
             setCachedValue(changeValue);
             cacheTimer.current && clearTimeout(cacheTimer.current);
             pendingChange.current = () => applyValue(changeValue);
@@ -1101,7 +1112,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
 
     if (field.type === 'color') {
         return (
-            <ColorPicker
+            <EditorColorPicker
                 theme={props.theme}
                 disabled={disabled}
                 value={(value as string) || ''}
