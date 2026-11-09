@@ -31,6 +31,9 @@ const ioPack: ioBroker.AdapterObject = loadIoPack();
 
 const cert = readFileSync(`${__dirname}/lib/cloudCert.crt`);
 
+/** How long the answer about a license is given again without asking iobroker.net: every page asks once it opens */
+const LICENSE_CHECK_TIME = 5 * 60_000;
+
 const POSSIBLE_WIDGET_SETS_LOCATIONS = [
     normalize(`${__dirname}/../../`),
     normalize(`${__dirname}/../node_modules/`),
@@ -123,6 +126,8 @@ class VisAdapter extends Adapter {
     private repairFailedFor: string | null = null;
     private stoppingPromise: null | (() => void) = null;
     private isLicenseError = false;
+    /** The answers about licenses of widget adapters, see `checkWidgetLicense` */
+    private readonly licenseChecks = new Map<string, { until: number; result: Promise<boolean> }>();
     private lastProgressUpdate: number = 0;
     private synchronizing = false;
     private synchronizingQueued: { forceBuild: boolean } | null = null;
@@ -254,12 +259,21 @@ class VisAdapter extends Adapter {
             return;
         }
         if (msg?.command === 'checkLicense' && msg.message && msg.callback) {
+            // the socket lets this message through for users who may send nothing else, so it is not trusted
+            if (typeof msg.message !== 'string' || !/^[a-z0-9_-]+$/i.test(msg.message)) {
+                this.sendTo(msg.from, msg.command, { error: 'Invalid adapter name' }, msg.callback);
+                return;
+            }
             const obj = await this.getForeignObjectAsync(`system.adapter.${msg.message}.0`);
             if (!obj?.native || (!obj.native.license && !obj.native.useLicenseManager)) {
                 console.log(`[${msg.message}] License not found`);
                 this.sendTo(msg.from, msg.command, { error: 'License not found' }, msg.callback);
             } else {
-                const result = await this.checkL(obj.native.license, obj.native.useLicenseManager, msg.message);
+                const result = await this.checkWidgetLicense(
+                    obj.native.license,
+                    obj.native.useLicenseManager,
+                    msg.message,
+                );
                 this.sendTo(msg.from, msg.command, { result }, msg.callback);
             }
         } else if (msg?.command === 'rebuild' && msg.callback) {
@@ -1402,6 +1416,30 @@ if (typeof exports !== 'undefined') {
         } catch (err: unknown) {
             return !(await this.check(license, uuidObj.native.uuid, (err as Error) || null, name));
         }
+    }
+
+    /**
+     * The license of a widget adapter, as `checkL` says it, but not more often than `LICENSE_CHECK_TIME`.
+     *
+     * Every check posts the license to iobroker.net and writes into the log when something is wrong with it, and
+     * the browsers can ask as often as they like. A license that was changed is another key, so it counts at once;
+     * only what the license manager finds is seen with a delay. Pages that ask at the same time share one check.
+     *
+     * @param license the license from the configuration of the instance
+     * @param useLicenseManager take the license from the license manager instead
+     * @param name the name of the adapter
+     */
+    private checkWidgetLicense(license: string, useLicenseManager: boolean, name: string): Promise<boolean> {
+        const key = JSON.stringify([name, useLicenseManager, license]);
+        const known = this.licenseChecks.get(key);
+        if (known && known.until > Date.now()) {
+            return known.result;
+        }
+        const result = this.checkL(license, useLicenseManager, name);
+        this.licenseChecks.set(key, { until: Date.now() + LICENSE_CHECK_TIME, result });
+        // a check that broke says nothing about the license: the next page asks again
+        result.catch(() => this.licenseChecks.delete(key));
+        return result;
     }
 
     async exportFormOlderVersions(): Promise<void> {
