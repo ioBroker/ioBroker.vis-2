@@ -20,6 +20,13 @@ export interface FatSliderProps {
     slim?: boolean;
     /** It stands upright and takes the height of what is around it, rather than lying across the width */
     vertical?: boolean;
+    /**
+     * The colours of a scale, from the minimum to the maximum.
+     *
+     * With them the whole rail shows what the values mean, so there is no filled part, and the knob is white:
+     * in the colour of the device it would disappear on the part of the scale that has the same colour.
+     */
+    scale?: string[];
     /** Called while the knob is dragged, so the widget can follow along */
     onChange?: (value: number) => void;
     /** Called once, when the knob is let go */
@@ -48,6 +55,7 @@ export default function FatSlider(props: FatSliderProps): React.JSX.Element {
             max={props.max}
             step={props.step}
             disabled={props.disabled}
+            track={props.scale ? false : 'normal'}
             onChange={(_e, value) => props.onChange?.(value)}
             onChangeCommitted={(_e, value) => props.onChangeCommitted(value)}
             sx={{
@@ -70,8 +78,13 @@ export default function FatSlider(props: FatSliderProps): React.JSX.Element {
                 transition: 'color 0.3s',
                 '& .MuiSlider-rail': {
                     borderRadius: rail / 2,
-                    opacity: 0.35,
-                    backgroundColor: 'text.disabled',
+                    ...(props.scale
+                        ? {
+                              opacity: 1,
+                              // the minimum of an upright slider is at the bottom
+                              background: `linear-gradient(to ${props.vertical ? 'top' : 'right'}, ${props.scale.join(', ')})`,
+                          }
+                        : { opacity: 0.35, backgroundColor: 'text.disabled' }),
                 },
                 '& .MuiSlider-track': {
                     border: 'none',
@@ -80,6 +93,7 @@ export default function FatSlider(props: FatSliderProps): React.JSX.Element {
                 '& .MuiSlider-thumb': {
                     width: thumb,
                     height: thumb,
+                    ...(props.scale ? { backgroundColor: '#fff' } : null),
                     boxShadow: '0 1px 4px rgba(0, 0, 0, 0.4)',
                     '&::before': { boxShadow: 'none' },
                     // the halo of MUI sits under the finger on a touch screen and hides the knob

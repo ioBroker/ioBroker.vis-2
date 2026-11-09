@@ -230,6 +230,8 @@ const thermostatDevice = defineDeviceWidget<ThermostatRxData>({
                 max={limits.max}
                 step={asNumber(data.step) ?? 0.5}
                 color={accent}
+                // the same scale from cold to warm as on the dial
+                scale={[accents.blue, `color-mix(in srgb, ${accents.blue} 55%, transparent)`, accents.red]}
                 disabled={context.editMode || !data.oid}
                 onChange={wanted => setTarget(wanted, false)}
                 onChangeCommitted={wanted => setTarget(wanted, true)}
