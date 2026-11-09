@@ -35,7 +35,7 @@ import 'dayjs/locale/pl';
 import 'dayjs/locale/pt';
 import 'dayjs/locale/nl';
 
-import type { TextFieldVariants } from '@mui/material';
+import { type TextFieldVariants, useMediaQuery } from '@mui/material';
 
 import { formatDateTime, parseDateTime } from './dateTimeValue';
 import { WrittenValues } from './writtenValues';
@@ -106,6 +106,62 @@ function useTypedValue(
     ];
 }
 
+/**
+ * What makes a picker work with a finger: a touch on the value opens the picker, as a touch on the symbol does.
+ *
+ * By itself the field takes the touch for the start of typing: it marks the first number and brings up the keyboard
+ * of the device, and only the small symbol opens the picker. So on a touch screen the field is only read and shown.
+ * The question is the one the pickers ask to choose between their desktop and their mobile variant. With a mouse
+ * or a touchpad nothing changes, the numbers can be typed there.
+ *
+ * @param clearable the value may be emptied. A field that is only read has no cross, so the picker offers it
+ * @param onClear empties the value
+ */
+function useTouchOpening(
+    clearable: boolean,
+    onClear: () => void,
+): {
+    picker: {
+        open: boolean;
+        onOpen: () => void;
+        onClose: () => void;
+        onAccept?: (value: Dayjs | null) => void;
+    };
+    textField: { onClick?: () => void };
+    field: { readOnly?: boolean };
+    slotProps: {
+        dialog?: { disableRestoreFocus: boolean };
+        actionBar?: { actions: ('clear' | 'cancel' | 'accept')[] };
+    };
+} {
+    const isDesktop = useMediaQuery('@media (pointer: fine)', { defaultMatches: true });
+    const [open, setOpen] = React.useState(false);
+    const picker = { open, onOpen: () => setOpen(true), onClose: () => setOpen(false) };
+
+    if (isDesktop) {
+        return { picker, textField: {}, field: {}, slotProps: {} };
+    }
+
+    return {
+        picker: {
+            ...picker,
+            // only the button of the picker accepts nothing as a value
+            onAccept: value => {
+                if (value === null) {
+                    onClear();
+                }
+            },
+        },
+        textField: { onClick: () => setOpen(true) },
+        field: { readOnly: true },
+        slotProps: {
+            // the focus would go back to the number the finger touched, which stays marked after the picker is closed
+            dialog: { disableRestoreFocus: true },
+            actionBar: { actions: clearable ? ['clear', 'cancel', 'accept'] : ['cancel', 'accept'] },
+        },
+    };
+}
+
 export interface VisDatePickerProps extends PickerProps {
     asFullDate: boolean;
     disableFuture: boolean;
@@ -121,6 +177,7 @@ export function VisDatePicker(props: VisDatePickerProps): React.JSX.Element {
         props.onChange,
         String(props.asFullDate),
     );
+    const touch = useTouchOpening(props.clearable, () => change(null, ''));
 
     return (
         <LocalizationProvider
@@ -128,6 +185,7 @@ export function VisDatePicker(props: VisDatePickerProps): React.JSX.Element {
             adapterLocale={props.lang}
         >
             <DatePicker
+                {...touch.picker}
                 value={value}
                 label={props.widgetTitle || null}
                 autoFocus={props.autoFocus || false}
@@ -151,11 +209,14 @@ export function VisDatePicker(props: VisDatePickerProps): React.JSX.Element {
                             height: '100%',
                         },
                         sx: styles.textRoot,
+                        ...touch.textField,
                     },
                     field: {
                         clearable: props.clearable,
                         onClear: () => change(null, ''),
+                        ...touch.field,
                     },
+                    ...touch.slotProps,
                 }}
                 disableFuture={props.disableFuture || false}
                 disablePast={props.disablePast || false}
@@ -180,6 +241,7 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
         props.onChange,
         String(asDate),
     );
+    const touch = useTouchOpening(props.clearable, () => change(null, ''));
 
     return (
         <LocalizationProvider
@@ -187,6 +249,7 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
             adapterLocale={props.lang}
         >
             <TimePicker
+                {...touch.picker}
                 value={value}
                 ampm={props.ampm || false}
                 minutesStep={parseInt(props.stepMinute as unknown as string, 10) || 1}
@@ -213,11 +276,14 @@ export function VisTimePicker(props: VisTimePickerProps): React.JSX.Element {
                             height: '100%',
                         },
                         sx: styles.textRoot,
+                        ...touch.textField,
                     },
                     field: {
                         clearable: props.clearable,
                         onClear: () => change(null, ''),
+                        ...touch.field,
                     },
+                    ...touch.slotProps,
                 }}
             />
         </LocalizationProvider>
@@ -241,6 +307,7 @@ export function VisDateTimePicker(props: VisDateTimePickerProps): React.JSX.Elem
         props.onChange,
         `${asDate}|${dateTimeFormat}`,
     );
+    const touch = useTouchOpening(props.clearable, () => change(null, ''));
 
     return (
         <LocalizationProvider
@@ -248,6 +315,7 @@ export function VisDateTimePicker(props: VisDateTimePickerProps): React.JSX.Elem
             adapterLocale={props.lang}
         >
             <DateTimePicker
+                {...touch.picker}
                 value={value}
                 ampm={props.ampm || false}
                 minutesStep={parseInt(props.stepMinute as unknown as string, 10) || 1}
@@ -266,11 +334,14 @@ export function VisDateTimePicker(props: VisDateTimePickerProps): React.JSX.Elem
                             height: '100%',
                         },
                         sx: styles.textRoot,
+                        ...touch.textField,
                     },
                     field: {
                         clearable: props.clearable,
                         onClear: () => change(null, ''),
+                        ...touch.field,
                     },
+                    ...touch.slotProps,
                 }}
             />
         </LocalizationProvider>
