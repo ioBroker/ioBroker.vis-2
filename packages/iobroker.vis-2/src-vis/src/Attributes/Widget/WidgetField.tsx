@@ -1211,6 +1211,11 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         if (field.type === 'widget') {
             // take widgets from all views
             let wOptions: { wid: string; view: string; tpl: string; name: string }[] = [];
+            // The name entered in the "General" group is stored in data.name
+            const getWidgetName = (view: string, wid: AnyWidgetId): string => {
+                const widget = store.getState().visProject[view].widgets[wid];
+                return widget.data?.name || widget.name || '';
+            };
             if (field.all) {
                 Object.keys(store.getState().visProject).forEach(
                     view =>
@@ -1227,7 +1232,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                                     wid,
                                     view,
                                     tpl: store.getState().visProject[view].widgets[wid].tpl,
-                                    name: store.getState().visProject[view].widgets[wid].name || '',
+                                    name: getWidgetName(view, wid),
                                 }),
                             ),
                 );
@@ -1245,7 +1250,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                         wid,
                         view: props.selectedView,
                         tpl: store.getState().visProject[props.selectedView].widgets[wid].tpl,
-                        name: store.getState().visProject[props.selectedView].widgets[wid].name || '',
+                        name: getWidgetName(props.selectedView, wid),
                     }));
             }
             if (field.tpl) {
