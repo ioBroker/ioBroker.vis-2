@@ -2817,9 +2817,9 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
     }
 
     /**
-     * The controls the editor shows under a section: narrower, wider and remove. The widgets of a removed section
-     * stay relative and go to the section of the widgets no section lists. A section is selected by a click on it
-     * and moved by dragging it, see onSectionMouseDown().
+     * The controls the editor shows under a section: narrower, wider, duplicate and remove. The widgets of a removed
+     * section stay relative and go to the section of the widgets no section lists; a duplicated one gets copies of
+     * them. A section is selected by a click on it and moved by dragging it, see onSectionMouseDown().
      *
      * @param index - where the section is in the view settings
      * @param maxSections - the most section columns the view has
@@ -2855,6 +2855,15 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 >
                     +
                 </button>
+                {stored?.id && this.props.context.duplicateSection ? (
+                    <button
+                        type="button"
+                        title={I18n.t('Duplicate section')}
+                        onClick={() => void this.props.context.duplicateSection?.(stored.id)}
+                    >
+                        ⧉
+                    </button>
+                ) : null}
                 <button
                     type="button"
                     title={I18n.t('Remove section')}

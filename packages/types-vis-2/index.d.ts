@@ -1953,6 +1953,8 @@ export interface VisContext {
     setSelectedGroup: null | ((groupId: GroupWidgetId) => void);
     /** Select a section of the grid layout, to edit it in the attributes; only the editor passes it */
     setSelectedSection?: null | ((sectionId: string | null) => void);
+    /** Put a copy of a section of the grid layout, with copies of its widgets, right after it; only the editor passes it */
+    duplicateSection?: null | ((sectionId: string) => void | Promise<void>);
     setSelectedWidgets: null | ((widgets: AnyWidgetId[], view?: string, cb?: () => void) => void);
     setTimeInterval: (timeInterval: string) => void;
     setTimeStart: (timeStart: string) => void;

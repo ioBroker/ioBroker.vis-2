@@ -332,7 +332,8 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                           leftIcon: <BiPaste />,
                           label: 'Paste',
                           onClick: () => props.pasteWidgets(),
-                          disabled: !Object.keys(props.widgetsClipboard.widgets).length,
+                          disabled:
+                              !Object.keys(props.widgetsClipboard.widgets).length && !props.widgetsClipboard.section,
                       },
                       {
                           leftIcon: <IconTrash fontSize="small" />,

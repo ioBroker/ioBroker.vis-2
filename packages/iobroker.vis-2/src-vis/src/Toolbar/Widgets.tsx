@@ -340,7 +340,8 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             Icon: BiPaste,
                             name: 'Paste',
                             size: 'normal',
-                            disabled: !Object.keys(props.widgetsClipboard.widgets).length,
+                            disabled:
+                                !Object.keys(props.widgetsClipboard.widgets).length && !props.widgetsClipboard.section,
                             onAction: () => props.pasteWidgets(),
                         },
                     ],

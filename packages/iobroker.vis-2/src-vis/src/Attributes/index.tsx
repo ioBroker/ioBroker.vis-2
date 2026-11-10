@@ -71,6 +71,10 @@ interface AttributesProps {
     selectedWidgets: string[];
     /** The section of the grid layout selected by a click on it, see Editor.setSelectedSection() */
     selectedSection: string | null;
+    /** Copy and cut a section, see Attributes/Section.tsx */
+    copySection: Editor['copySection'];
+    duplicateSection: Editor['duplicateSection'];
+    insertSectionTransfer: Editor['insertSectionTransfer'];
     widgetsLoaded: boolean;
     selectedView: string;
     changeProject: Editor['changeProject'];

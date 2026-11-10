@@ -11,11 +11,12 @@ import { Button, TextField } from '@mui/material';
 import { IconTrash, I18n } from '@iobroker/gui-components';
 
 import { store } from '@/Store';
-import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
+import { deepClone } from '@/Utilities/utils';
 import { useFocus } from '@/Utils';
 import IODialog from '@/Components/IODialog';
 import { getNewViewSettings } from '@/Vis/visGridLayout';
-import type { Project, SingleWidgetId } from '@iobroker/types-vis-2';
+import type { Project } from '@iobroker/types-vis-2';
+import { insertView } from '@/Utilities/viewTransfer';
 
 interface ViewDialogProps {
     changeProject: (project: Project) => Promise<void>;
@@ -123,28 +124,15 @@ const ViewDialog = (props: ViewDialogProps): React.JSX.Element | null => {
 
     const copyView = async (): Promise<void> => {
         const view = props.dialogView || props.selectedView;
+        const newView = props.dialogName.trim();
         const project = deepClone(store.getState().visProject);
-        project[props.dialogName] = { ...project[view], widgets: {}, activeWidgets: [] };
-        const originalWidgets = deepClone(project[view].widgets);
-
-        for (const [wid, widget] of Object.entries(originalWidgets)) {
-            if (isGroup(widget)) {
-                pasteGroup({
-                    group: widget,
-                    widgets: project[props.dialogName].widgets,
-                    groupMembers: originalWidgets,
-                    project,
-                });
-            } else if (!widget.groupid) {
-                const newWid = getNewWidgetId(project);
-                project[props.dialogName].widgets[newWid] = originalWidgets[wid as SingleWidgetId];
-            }
-        }
+        // the copy gets widgets of its own, and stays in the folder of the view
+        insertView(project, newView, project[view], project[view].parentId);
 
         await props.changeProject(project);
-        await props.changeView(props.dialogName);
+        await props.changeView(newView);
         props.closeDialog();
-        props.dialogCallback?.cb(props.dialogName);
+        props.dialogCallback?.cb(newView);
     };
 
     const dialogTitles: Record<string, string> = {

@@ -159,6 +159,7 @@ interface VisEngineProps {
     onFontsUpdate?: Editor['onFontsUpdate'];
     setSelectedGroup?: Editor['setSelectedGroup'];
     setSelectedSection?: Editor['setSelectedSection'];
+    duplicateSection?: Editor['duplicateSection'];
     onConfirmDialog: (
         message: string,
         title: string,
@@ -2612,6 +2613,7 @@ ${this.scripts}
             runtime: this.props.runtime,
             setSelectedGroup: this.props.runtime ? null : (this.props.setSelectedGroup ?? null),
             setSelectedSection: this.props.runtime ? null : (this.props.setSelectedSection ?? null),
+            duplicateSection: this.props.runtime ? null : (this.props.duplicateSection ?? null),
             setSelectedWidgets: this.props.runtime ? null : this.props.setSelectedWidgets,
             setTimeInterval: this.setTimeInterval,
             setTimeStart: this.setTimeStart,

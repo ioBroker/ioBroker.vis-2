@@ -14,7 +14,7 @@ import {
 import { IconUpload, I18n, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
-import type { View as ViewType, AnyWidgetId, VisTheme } from '@iobroker/types-vis-2';
+import type { VisTheme } from '@iobroker/types-vis-2';
 import IODialog from '../../Components/IODialog';
 import Folder from './Folder';
 import Root from './Root';
@@ -25,7 +25,7 @@ import FolderDialog from './FolderDialog';
 import { DndPreview } from '../../Utils';
 import { store } from '../../Store';
 import type { ViewsDragData, ViewsDropData } from './viewsDnd';
-import { deepClone, getNewWidgetId, hasViewAccess, isGroup, pasteGroup, safeParseLS } from '../../Utilities/utils';
+import { deepClone, hasViewAccess, safeParseLS } from '../../Utilities/utils';
 
 const styles: Record<string, any> = {
     dialog: {
@@ -59,6 +59,7 @@ const styles: Record<string, any> = {
 
 interface ViewsManagerProps {
     changeProject: Editor['changeProject'];
+    changeView: Editor['changeView'];
     name?: string;
     onClose: () => void;
     showDialog: (
@@ -139,43 +140,6 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
         } else {
             moveFolder(item.folder.id, parentId);
         }
-    };
-
-    const importViewAction = (view: string, data: string): void => {
-        const project = deepClone(visProject);
-        const viewObject: ViewType = JSON.parse(data);
-
-        if (viewObject.parentId !== undefined) {
-            delete viewObject.parentId;
-        }
-
-        if (!viewObject?.settings || !viewObject.widgets) {
-            console.warn(
-                'Cannot import view: view is non-existing or missing one of the required properties "settings, widgets"',
-            );
-            return;
-        }
-
-        const originalWidgets = deepClone(viewObject.widgets);
-
-        project[view] = { ...viewObject, widgets: {}, activeWidgets: [] };
-
-        for (const [wid, widget] of Object.entries(originalWidgets)) {
-            if (isGroup(widget)) {
-                pasteGroup({
-                    group: widget,
-                    widgets: project[view].widgets,
-                    groupMembers: originalWidgets,
-                    project,
-                });
-            } else if (!widget.groupid) {
-                const newWid = getNewWidgetId(project);
-                project[view].widgets[newWid] = originalWidgets[wid as AnyWidgetId];
-            }
-        }
-
-        viewObject.name = view;
-        void props.changeProject(project);
     };
 
     const renderViews = (parentId?: string): React.JSX.Element[] =>
@@ -386,7 +350,8 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
                 <ImportDialog
                     onClose={() => setImportDialog(false)}
                     view={importDialog || ''}
-                    importViewAction={importViewAction}
+                    changeProject={props.changeProject}
+                    changeView={props.changeView}
                     themeType={props.themeType}
                 />
             ) : null}

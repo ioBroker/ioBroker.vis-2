@@ -238,6 +238,8 @@ export default class Runtime<
 
     protected setSelectedSection?: (sectionId: string | null) => void;
 
+    protected duplicateSection?: (sectionId: string) => Promise<void>;
+
     protected onWidgetsChanged?: (
         changedData:
             | {
@@ -1575,6 +1577,7 @@ export default class Runtime<
                         : null
                 }
                 setSelectedSection={this.setSelectedSection}
+                duplicateSection={this.duplicateSection}
                 onWidgetsChanged={this.onWidgetsChanged}
                 projectName={this.state.projectName}
                 lockDragging={this.state.lockDragging}

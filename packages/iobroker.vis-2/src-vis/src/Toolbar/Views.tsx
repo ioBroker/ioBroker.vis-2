@@ -4,7 +4,9 @@ import { Tooltip } from '@mui/material';
 
 import { Add as AddIcon, Edit as EditIcon, Menu as MenuIcon, AutoFixHigh as WizardIcon } from '@mui/icons-material';
 
-import { IconTrash, I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
+import { BiExport } from 'react-icons/bi';
+
+import { IconTrash, IconUpload, I18n, type Connection, type ThemeName, type ThemeType } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import { store } from '@/Store';
@@ -13,6 +15,8 @@ import ViewsManager from './ViewsManager';
 
 import ToolbarItems, { type ToolbarGroup, type ToolbarItem } from './ToolbarItems';
 import ViewDialog from './ViewsManager/ViewDialog';
+import ExportDialog from './ViewsManager/ExportDialog';
+import ImportDialog from './ViewsManager/ImportDialog';
 
 // the wizard brings the type detector with it, and it is opened rarely, so it is loaded when it is asked for
 const WizardDialog = React.lazy(() => import('@/Wizard/WizardDialog'));
@@ -60,6 +64,8 @@ const Views = (props: ViewsProps): React.JSX.Element => {
     const [dialogName, setDialogName] = useState('');
     const [dialogView, setDialogView] = useState<string | undefined>(undefined);
     const [dialogParentId, setDialogParentId] = useState<string | undefined>(undefined);
+    const [importDialog, setImportDialog] = useState(false);
+    const [exportDialog, setExportDialog] = useState(false);
 
     const showDialog = (
         type: 'add' | 'rename' | 'delete' | 'copy',
@@ -131,6 +137,28 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                     },
                 ],
             ],
+            [
+                [
+                    {
+                        type: 'icon-button',
+                        Icon: IconUpload,
+                        name: 'Import view',
+                        size: 'inherit',
+                        onAction: () => setImportDialog(true),
+                        disabled: !!props.selectedGroup || !props.editMode,
+                    },
+                ],
+                [
+                    {
+                        type: 'icon-button',
+                        Icon: BiExport,
+                        name: 'Export view',
+                        size: 'normal',
+                        onAction: () => setExportDialog(true),
+                        disabled: !!props.selectedGroup || !store.getState().visProject[props.selectedView],
+                    },
+                ],
+            ],
             {
                 type: 'icon-button',
                 Icon: WizardIcon,
@@ -170,6 +198,7 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                     showDialog={showDialog}
                     theme={props.theme}
                     changeProject={props.changeProject}
+                    changeView={props.changeView}
                     editMode={props.editMode}
                     selectedView={props.selectedView}
                     themeName={props.themeName}
@@ -193,6 +222,22 @@ const Views = (props: ViewsProps): React.JSX.Element => {
                     changeView={props.changeView}
                     selectedView={props.selectedView}
                     onWizard={() => setWizard(true)}
+                />
+            ) : null}
+            {importDialog ? (
+                <ImportDialog
+                    onClose={() => setImportDialog(false)}
+                    view=""
+                    changeProject={props.changeProject}
+                    changeView={props.changeView}
+                    themeType={props.themeType}
+                />
+            ) : null}
+            {exportDialog ? (
+                <ExportDialog
+                    onClose={() => setExportDialog(false)}
+                    view={props.selectedView}
+                    themeType={props.themeType}
                 />
             ) : null}
             {wizard ? (

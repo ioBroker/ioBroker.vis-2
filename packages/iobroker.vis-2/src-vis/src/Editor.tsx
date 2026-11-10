@@ -64,6 +64,7 @@ import type {
     RxWidgetInfoGroup,
     SingleWidget,
     SingleWidgetId,
+    ViewSection,
     ViewSettings,
     Widget,
     WidgetData,
@@ -110,6 +111,20 @@ import VisContextMenu from './Vis/visContextMenu';
 import Runtime, { type RuntimeProps, type RuntimeState } from './Runtime';
 import ImportProjectDialog from './Toolbar/ProjectsManager/ImportProjectDialog';
 import { findWidgetUsages, syncMultipleWidgets } from './Vis/visUtils';
+import {
+    addToSection,
+    copyWidgetsInto,
+    findSectionOf,
+    findSectionPlace,
+    forgetWidgets,
+    getSectionLabel,
+    getSectionTransfer,
+    insertSection,
+    placeCopiesInSections,
+    removeSection,
+    type SectionPlace,
+    type SectionTransfer,
+} from './Utilities/viewTransfer';
 import { getAdornerLayer } from './Vis/visAdornerLayer';
 import { getDefaultGridSpan, getGridLayout } from './Vis/visGridLayout';
 import MarketplaceDialog, { type MarketplaceDialogProps } from './Marketplace/MarketplaceDialog';
@@ -460,6 +475,12 @@ export interface EditorState extends RuntimeState {
         view?: string;
         widgets: Record<string, Widget>;
         groupMembers?: Record<string, Widget>;
+        /** Where each copied widget was in the grid layout of its view - a pasted copy goes there too */
+        widgetSections?: Record<string, SectionPlace>;
+        /** A whole section of the grid layout was copied; `widgets` are the widgets that come along with it */
+        section?: ViewSection;
+        /** Where the section was in the list of the sections - a cut one goes back there */
+        sectionIndex?: number;
     };
     loadingProgress: {
         step: number;
@@ -783,6 +804,10 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             } else if (controlKey && e.key === 'y' && this.state.historyCursor !== this.state.history.length - 1) {
                 e.preventDefault();
                 await this.redo();
+            } else if (controlKey && e.key === 'v' && this.hasClipboard()) {
+                // also while widgets are selected: the copies go next to them, see placePastedWidgets()
+                e.preventDefault();
+                await this.pasteWidgets();
             } else if (this.state.selectedWidgets.length) {
                 if (controlKey && e.key === 'c') {
                     e.preventDefault();
@@ -798,9 +823,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     e.preventDefault();
                     this.deleteWidgets();
                 }
-            } else if (controlKey && e.key === 'v' && Object.keys(this.state.widgetsClipboard.widgets).length) {
+            } else if (controlKey && (e.key === 'c' || e.key === 'x') && this.getSelectedSection()) {
                 e.preventDefault();
-                await this.pasteWidgets();
+                await this.copySection(this.getSelectedSection()!, e.key === 'x');
             } else if (controlKey && e.key === 'a') {
                 e.preventDefault();
                 if (this.state.selectedGroup) {
@@ -1047,6 +1072,11 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
             delete widgets[selectedWidget];
         }
+        // the IDs are given to new widgets again, which would turn up in the section of the deleted ones
+        forgetWidgets(
+            project[this.state.selectedView],
+            this.state.selectedWidgets.filter(wid => !widgets[wid]),
+        );
         await this.setSelectedWidgets([]);
         await this.changeProject(project);
     };
@@ -1105,12 +1135,22 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             }
         });
 
+        // where the widgets are in the grid layout, see placePastedWidgets()
+        const widgetSections: Record<string, SectionPlace> = {};
+        this.state.selectedWidgets.forEach(selectedWidget => {
+            const place = findSectionPlace(visProject[this.state.selectedView], selectedWidget);
+            if (place) {
+                widgetSections[selectedWidget] = place;
+            }
+        });
+
         await this.setStateAsync({
             widgetsClipboard: {
                 type,
                 view: this.state.selectedView,
                 widgets,
                 groupMembers,
+                widgetSections,
             },
         });
 
@@ -1121,10 +1161,15 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
     };
 
     pasteWidgets = async (): Promise<void> => {
+        if (this.state.widgetsClipboard.section) {
+            await this.pasteSection();
+            return;
+        }
         const project = deepClone(store.getState().visProject);
         const widgets = project[this.state.selectedView].widgets;
 
         const newKeys: AnyWidgetId[] = [];
+        const pasted: { from: AnyWidgetId; to: AnyWidgetId }[] = [];
 
         for (const clipboardWidgetId of Object.keys(this.state.widgetsClipboard.widgets)) {
             const newWidget = deepClone(this.state.widgetsClipboard.widgets[clipboardWidgetId as AnyWidgetId]);
@@ -1158,11 +1203,187 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             }
 
             newKeys.push(newKey);
+            pasted.push({ from: clipboardWidgetId as AnyWidgetId, to: newKey });
         }
+
+        this.placePastedWidgets(project, pasted);
 
         await this.setSelectedWidgets([]);
         await this.changeProject(project);
         await this.setSelectedWidgets(newKeys);
+    };
+
+    /**
+     * Where pasted widgets go in the grid layout: into the section that is selected, after a selected widget that is
+     * in a section, or - in the view they were copied from - next to the widgets they are copies of, see
+     * placeCopiesInSections(). Otherwise they go to the widgets no section lists, as before. Only relative widgets
+     * are in sections, and the members of a group are not.
+     *
+     * @param project - the project with the pasted widgets; it is changed
+     * @param pasted - every copied widget with its copy
+     */
+    placePastedWidgets(project: Project, pasted: { from: AnyWidgetId; to: AnyWidgetId }[]): void {
+        const viewName = this.state.selectedView;
+        const view = project[viewName];
+        if (view?.settings?.layout !== 'grid' || this.state.selectedGroup) {
+            return;
+        }
+        const relative = pasted.filter(one => view.widgets[one.to]?.style?.position === 'relative');
+        if (!relative.length) {
+            return;
+        }
+
+        const selectedSection = this.getSelectedSection();
+        if (
+            selectedSection &&
+            addToSection(
+                view,
+                selectedSection,
+                relative.map(one => one.to),
+            )
+        ) {
+            return;
+        }
+
+        const clipboard = this.state.widgetsClipboard;
+        const selected = this.state.selectedWidgets;
+        // right after Ctrl+C the copied widgets are still selected - then they are not a place to paste to
+        const selectionIsCopied = clipboard.view === viewName && selected.every(wid => clipboard.widgets[wid]);
+        if (selected.length && !selectionIsCopied) {
+            const at = [...selected].reverse().find(wid => findSectionOf(view, wid));
+            if (at) {
+                addToSection(
+                    view,
+                    findSectionOf(view, at)!,
+                    relative.map(one => one.to),
+                    at,
+                );
+                return;
+            }
+        }
+
+        if (clipboard.view === viewName) {
+            const copies: { from: string; to: AnyWidgetId; place: SectionPlace }[] = [];
+            for (const one of relative) {
+                const place = clipboard.widgetSections?.[one.from];
+                if (place) {
+                    copies.push({ ...one, place });
+                }
+            }
+            placeCopiesInSections(view, copies);
+        }
+    }
+
+    /** The section of the grid layout of the selected view that is selected by a click on it */
+    getSelectedSection(): string | null {
+        return this.state.selectedSection && this.state.selectedSection.view === this.state.selectedView
+            ? this.state.selectedSection.id
+            : null;
+    }
+
+    /** Something is in the clipboard of the editor that can be pasted: widgets, or a section */
+    hasClipboard(): boolean {
+        return !!this.state.widgetsClipboard.section || !!Object.keys(this.state.widgetsClipboard.widgets).length;
+    }
+
+    /**
+     * Copy a section of the grid layout of the selected view, with its widgets, into the clipboard of the editor -
+     * or cut it out of the view.
+     *
+     * @param sectionId - the section
+     * @param cut - remove the section and its widgets from the view
+     */
+    copySection = async (sectionId: string, cut?: boolean): Promise<void> => {
+        const viewName = this.state.selectedView;
+        const view = store.getState().visProject[viewName];
+        const transfer = getSectionTransfer(view, sectionId);
+        if (!transfer) {
+            return;
+        }
+        await this.setStateAsync({
+            widgetsClipboard: {
+                type: cut ? 'cut' : 'copy',
+                view: viewName,
+                widgets: transfer.widgets,
+                section: transfer.section,
+                sectionIndex: (view.settings.sections || []).findIndex(section => section?.id === sectionId),
+            },
+        });
+        if (cut) {
+            const project = deepClone(store.getState().visProject);
+            removeSection(project, viewName, sectionId);
+            this.setSelectedSection(null);
+            await this.changeProject(project);
+        }
+    };
+
+    /**
+     * Paste the section in the clipboard: after the selected section, after the section of a selected widget, after
+     * the section it is a copy of - or, if it was cut, where it was. Otherwise at the end.
+     */
+    pasteSection = async (): Promise<void> => {
+        const clipboard = this.state.widgetsClipboard;
+        if (!clipboard.section) {
+            return;
+        }
+        const viewName = this.state.selectedView;
+        const sections = store.getState().visProject[viewName]?.settings?.sections || [];
+        const after =
+            this.getSelectedSection() ||
+            this.state.selectedWidgets
+                .map(wid => findSectionOf(store.getState().visProject[viewName], wid))
+                .find(Boolean) ||
+            (clipboard.view === viewName && clipboard.type === 'copy' ? clipboard.section.id : null);
+
+        let index: number | undefined;
+        if (after) {
+            const pos = sections.findIndex(section => section?.id === after);
+            index = pos === -1 ? undefined : pos + 1;
+        } else if (clipboard.view === viewName && clipboard.type === 'cut') {
+            index = clipboard.sectionIndex;
+        }
+        await this.insertSectionTransfer({ section: clipboard.section, widgets: clipboard.widgets }, index);
+    };
+
+    /**
+     * Put a section into the grid layout of the selected view, with new IDs for it and its widgets, and select it. A
+     * view without the grid layout gets only the widgets.
+     *
+     * @param transfer - the section and its widgets
+     * @param index - where it goes in the list of the sections; at the end if not given
+     */
+    insertSectionTransfer = async (transfer: SectionTransfer, index?: number): Promise<void> => {
+        const viewName = this.state.selectedView;
+        const project = deepClone(store.getState().visProject);
+        if (!project[viewName]) {
+            return;
+        }
+        if (project[viewName].settings?.layout !== 'grid') {
+            const ids = Array.isArray(transfer.section.widgets) ? transfer.section.widgets : [];
+            const newIds = copyWidgetsInto(project, viewName, transfer.widgets, ids);
+            await this.setSelectedWidgets([]);
+            await this.changeProject(project);
+            await this.setSelectedWidgets(ids.map(wid => newIds[wid]).filter(Boolean));
+            return;
+        }
+        const sectionId = insertSection(project, viewName, transfer, index);
+        await this.setSelectedWidgets([]);
+        await this.changeProject(project);
+        this.setSelectedSection(sectionId);
+    };
+
+    /**
+     * Put a copy of a section of the selected view, with copies of its widgets, right after it.
+     *
+     * @param sectionId - the section
+     */
+    duplicateSection = async (sectionId: string): Promise<void> => {
+        const view = store.getState().visProject[this.state.selectedView];
+        const transfer = getSectionTransfer(view, sectionId);
+        if (transfer) {
+            const pos = (view.settings.sections || []).findIndex(section => section?.id === sectionId);
+            await this.insertSectionTransfer(transfer, pos + 1);
+        }
     };
 
     cloneWidgets = async (): Promise<void> => {
@@ -1170,6 +1391,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         const widgets = project[this.state.selectedView].widgets;
 
         const newKeys: SingleWidgetId[] = [];
+        const clones: { from: string; to: AnyWidgetId; place: SectionPlace }[] = [];
         this.state.selectedWidgets.forEach(selectedWidget => {
             const newWidget = deepClone(widgets[selectedWidget]);
             const boundingRect = Editor.getWidgetRelativeRect(selectedWidget);
@@ -1179,15 +1401,16 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     top: (boundingRect?.top ?? 0) + 10,
                 }) || newWidget.style;
 
+            let newKey: AnyWidgetId;
             if (isGroup(newWidget)) {
-                pasteGroup({
+                newKey = pasteGroup({
                     group: newWidget,
                     widgets,
                     groupMembers: widgets,
                     project,
                 });
             } else {
-                const newKey = pasteSingleWidget({
+                newKey = pasteSingleWidget({
                     widget: newWidget,
                     project,
                     selectedGroup: this.state.selectedGroup || undefined,
@@ -1196,7 +1419,15 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
                 newKeys.push(newKey);
             }
+            // in the grid layout the copy goes right after its original
+            const place = this.state.selectedGroup
+                ? null
+                : findSectionPlace(project[this.state.selectedView], selectedWidget);
+            if (place && newWidget.style?.position === 'relative') {
+                clones.push({ from: selectedWidget, to: newKey, place });
+            }
         });
+        placeCopiesInSections(project[this.state.selectedView], clones);
         await this.setSelectedWidgets([]);
         await this.changeProject(project);
         await this.setSelectedWidgets(newKeys);
@@ -2676,6 +2907,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             : null
                     }
                     widgetsLoaded={this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED}
+                    copySection={this.copySection}
+                    duplicateSection={this.duplicateSection}
+                    insertSectionTransfer={this.insertSectionTransfer}
                     socket={this.socket}
                     fonts={this.state.fonts}
                     adapterName={this.adapterName}
@@ -3056,7 +3290,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         id="vis_main_popper"
                         placement="top-start"
                         anchorEl={this.mainRef?.current}
-                        open={!!Object.keys(this.state.widgetsClipboard.widgets).length}
+                        open={this.hasClipboard()}
                         style={{ width: '100%', textAlign: 'center', pointerEvents: 'none' }}
                     >
                         <Paper
@@ -3071,7 +3305,9 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                             title={I18n.t('Click to close')}
                             onClick={() => this.setState({ widgetsClipboard: { widgets: {}, type: '' } })}
                         >
-                            {Object.keys(this.state.widgetsClipboard.widgets).join(', ')}
+                            {this.state.widgetsClipboard.section
+                                ? `${I18n.t('Section')} ${getSectionLabel(this.state.widgetsClipboard.section)}`
+                                : Object.keys(this.state.widgetsClipboard.widgets).join(', ')}
                         </Paper>
                     </Popper>
                     <Box

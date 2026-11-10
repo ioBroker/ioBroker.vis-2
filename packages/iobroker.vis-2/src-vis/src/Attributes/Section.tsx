@@ -35,6 +35,8 @@ import getEditField from './View/EditField';
 import FieldHelp, { hasFieldHelp } from './FieldHelp';
 import BindingField from './BindingField';
 import { ConditionSelect, ConditionValueField, getObjectName, StateIdField } from './StateCondition';
+import SectionTransferBar from './SectionTransfer';
+import type Editor from '@/Editor';
 
 /**
  * The attributes of a section of the grid layout: its header, its look, its layout, when it is shown and whether it
@@ -51,6 +53,9 @@ interface SectionAttributesProps {
     selectedWidgets: string[];
     /** The id of the section selected by a click on it, see Editor.setSelectedSection() */
     selectedSection: string | null;
+    copySection: Editor['copySection'];
+    duplicateSection: Editor['duplicateSection'];
+    insertSectionTransfer: Editor['insertSectionTransfer'];
     editMode: boolean;
     changeProject: (project: Project) => void | Promise<void>;
     userGroups: Record<string, ioBroker.GroupObject>;
@@ -790,11 +795,26 @@ const SectionAttributes = (props: SectionAttributesProps): React.JSX.Element | n
     }
     const section = index === -1 ? null : sections[index];
 
+    const transferBar = (
+        <SectionTransferBar
+            view={props.selectedView}
+            section={section}
+            index={index}
+            themeType={props.themeType}
+            copySection={props.copySection}
+            duplicateSection={props.duplicateSection}
+            insertSectionTransfer={props.insertSectionTransfer}
+        />
+    );
+
     if (!section) {
         return (
-            <div style={styles.hint}>
-                {I18n.t(props.selectedWidgets.length === 1 ? 'section_widget_in_none' : 'section_hint')}
-            </div>
+            <>
+                {props.editMode ? <div style={{ ...styles.groupTitle, textAlign: 'right' }}>{transferBar}</div> : null}
+                <div style={styles.hint}>
+                    {I18n.t(props.selectedWidgets.length === 1 ? 'section_widget_in_none' : 'section_hint')}
+                </div>
+            </>
         );
     }
 
@@ -842,8 +862,13 @@ const SectionAttributes = (props: SectionAttributesProps): React.JSX.Element | n
 
     return (
         <div style={{ height: '100%', overflowY: 'auto' }}>
-            <div style={styles.groupTitle}>
-                {I18n.t('Section')} {section.id}
+            <div
+                style={{ ...styles.groupTitle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            >
+                <span>
+                    {I18n.t('Section')} {section.id}
+                </span>
+                {props.editMode ? transferBar : null}
             </div>
             {groups.map(group => {
                 const isOpen = opened[group.key] === 1;

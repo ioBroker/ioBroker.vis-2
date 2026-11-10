@@ -330,7 +330,12 @@ class ToolbarItems extends React.Component<ToolbarItemsProps, ToolbarItemsState>
                     disabled={item.disabled}
                     style={{
                         flexDirection: 'column',
-                        width: 60,
+                        // as wide as the longest word of the label, so that "Einstellungen" does not run into the
+                        // next button - a label of several words still breaks into lines
+                        width: 'min-content',
+                        minWidth: 60,
+                        paddingLeft: 4,
+                        paddingRight: 4,
                         borderRadius: 4,
                         height: '100%',
                         justifyContent: 'start',
