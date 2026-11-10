@@ -387,7 +387,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.20.9 (2026-11-10)
 * (@GermanBluefox) Editor: a whole view can be exported and imported with the new buttons in the toolbar of the views, not only from the views dialog. The export saves the view as a file or copies it, the import takes a file, opened or dropped on the field, or pasted JSON. It also takes any view out of a whole project (`vis-views.json`), proposes a free name and warns before a view is replaced
 * (@GermanBluefox) Editor, grid layout: a pasted widget goes into a section - into the selected one, after the selected widget, or next to the widget it is a copy of; a cut widget goes back to its place. Ctrl+V now also works while widgets are selected, and a duplicated widget follows its original
 * (@GermanBluefox) Editor, grid layout: a whole section can be copied, cut and pasted (Ctrl+C / Ctrl+X / Ctrl+V on a selected section), duplicated with a button under it, and exported and imported in the attributes of the section. The import also offers the sections of an exported view or of a whole project
@@ -457,18 +457,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) vis-1 scripts and HTML widgets can call `servConn` again, e.g. `servConn.setState()` or `servConn.getStates()` (#55)
 * (@GermanBluefox) vis-2 loads on hosts whose name contains "iobroker.in", like `iobroker.internal`. It took them for the cloud and tried to load its configuration from there (#484)
 * (@GermanBluefox) Dependabot pull requests are merged by a workflow that runs on `pull_request` instead of `pull_request_target`, which GitHub restricts from November 2, 2026 (#692)
-
-### 2.20.4 (2026-10-23)
-* (@GermanBluefox) `config.js` names the vis-1 widget sets of `widgets.html` (`visConfig.widgetsHtml`), so that the cloud can put the file together out of its own copies. `visConfig.widgetSets` lists the installed vis-1 sets again: since the adapter moved to `build/`, it named only the five sets every vis-2 has
-* (@typhosj) A widget set whose upload into the file storage was stopped by a restart is uploaded again on the next start. Before, its files stayed missing, the browser got a 404 for them and showed "Unknown widget type" until `iobroker upload vis-2` was run (#697)
-* (@GermanBluefox) vis-2 remembers the files of its last complete upload (`info.uploadedFingerprint`) and uploads again when the files on disk changed since, also when the adapter was killed after copying a widget set and before uploading it. A widget file still missing in the file storage after an upload is reported as a warning and no longer uploads everything again at every change of a widget adapter. The first start after the update uploads the files once
-* (@typhosj) After switching views, a binding of a widget no longer shows "undefined" until its state changes again. A state change that came in before the widget had applied the previous one dropped the values of that one. Unmounted widgets also stay no longer subscribed: every view switch had left their callbacks behind, so each state change ran more of them the longer the runtime was used (#565)
-* (@typhosj) The list that the jQui "States control" opens as a select takes the background and the text color of the widget. Before, it kept the colors of the theme around the entries, which with a dark system theme, as in the night mode of iOS, framed a light list in black. A transparent background of the widget leaves the theme its own, so the view does not shine through the list (#573)
-* (@typhosj) A time or a date can be typed into the jQui inputs "Input Time" and "Input Date" again. Each typed digit was written into the state at once, and the value coming back made the field start the part being typed anew: "0845" became 00:45. A date or time that is not complete yet is no longer written
-* (@typhosj) The entry of a view in the navigation menu can be shown only while a state fulfills a condition, with the same conditions as the visibility of a widget: "Entry only if state", "Condition" and "Value" in the navigation settings of the view (#592)
-* (@typhosj) A script in the HTML of the widgets "HTML", "HTML navigation" and "Link" runs again whenever the values of its bindings change, like in vis-1, and again after a view switch. Before, it ran only once, before the bindings had their values, so `var x = {state}` gave nothing, and after a view switch it did not run at all. A script that starts a timer or adds an event listener now does that again at every change, so it has to end the previous one itself, e.g. `clearInterval(window.myTimer); window.myTimer = setInterval(...)` (#514)
-* (@typhosj) The jQui input "Input Time" can take the date too, with the new option "With date". It writes the date and time as text in a format of its own, `YYYY-MM-DD HH:mm` by default, or as a date with "As date" - like the vis-1 widget "Input Datetime" did (#577)
-* (@typhosj) The height of the app bar can be set, from 24 to 120 px, per view under "App bar" or for the whole project in the project settings. Before, it was always 48 px (#569)
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
