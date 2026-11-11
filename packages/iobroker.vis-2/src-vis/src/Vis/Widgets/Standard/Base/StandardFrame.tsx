@@ -347,12 +347,19 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                     </div>
                 ) : null}
                 <div
+                    /*
+                     * Alone in its row a long word of the value is broken at a syllable: `Unterwegs` lost its end
+                     * on a tile of three columns. Not anywhere, though - `Haus|e` reads worse than a word that
+                     * reaches a little into the padding, as `Hause` does there.
+                     */
+                    lang={props.label ? undefined : I18n.getLanguage()}
                     style={{
                         fontSize: props.valueSize ?? tokens.valueSize,
                         fontWeight: 700,
                         lineHeight: 1.1,
                         minWidth: 0,
                         whiteSpace: props.label ? 'nowrap' : undefined,
+                        hyphens: props.label ? undefined : 'auto',
                         // a word in front of it means the value belongs to the right, as on a blind
                         marginLeft: props.label ? 'auto' : undefined,
                         color: props.valueColor || theme.palette.text.primary,

@@ -395,14 +395,14 @@ with the number in it, another sentence for none, a colour while some are on, an
 as small chips under it. A state counts as on when it is `true`, a number other than 0, or a text other than
 `false`, `off` or `closed` - so a window handle with 0, 1 and 2 counts tilted and open alike.
 
-| Attribute    | Takes    | What it does                                            |
-| ------------ | -------- | ------------------------------------------------------- |
-| `states`     | number   | States (default `3`)                                    |
-| `countText`  | text     | Text — `%s` stands for the number: `%s windows open`    |
-| `zeroText`   | text     | Text for none, like `All windows closed`; empty shows 0 |
-| `countColor` | color    | Colour while some are on (default yellow)               |
-| `alarm`      | checkbox | Treat as an alarm — red and filled while some are on    |
-| `showList`   | checkbox | Show the names (default `true`)                         |
+| Attribute    | Takes    | What it does                                                                           |
+| ------------ | -------- | -------------------------------------------------------------------------------------- |
+| `states`     | number   | States (default `3`)                                                                   |
+| `countText`  | text     | Text — `%s` stands for the number: `%s windows open`                                   |
+| `zeroText`   | text     | Text for none, like `All windows closed`; empty shows 0                                |
+| `countColor` | color    | Colour while some are on (default yellow)                                              |
+| `alarm`      | checkbox | Treat as an alarm — red while some are on; the `card` layout and the marker are filled |
+| `showList`   | checkbox | Show the names (default `true`)                                                        |
 
 **Counted states** — these fields exist once per row, numbered: `oidCount1`, `oidCount2`, …
 
