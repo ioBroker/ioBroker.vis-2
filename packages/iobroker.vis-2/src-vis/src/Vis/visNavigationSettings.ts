@@ -33,6 +33,19 @@ export const PROJECT_NAVIGATION_KEYS: (keyof ViewSettings)[] = [
 ];
 
 /**
+ * The settings of the menu that only the project has: they are the same on every page with a menu.
+ *
+ * The picture in front of the header text is the logo of the whole installation. A logo that is there on one
+ * page and missing on the next one looks like a fault, so a page cannot have its own: the editor stores it in
+ * the project, and a value a page still carries is not used.
+ */
+export const PROJECT_ONLY_NAVIGATION_KEYS: (keyof ViewSettings)[] = ['navigationHeaderIcon', 'navigationHeaderImage'];
+
+function isSet(value: unknown): boolean {
+    return value !== undefined && value !== null && value !== '';
+}
+
+/**
  * The settings the menu is drawn with: what the project says, and what the view says instead.
  *
  * A view wins with every value somebody actually set. Nothing, a null and an empty string - which is
@@ -44,31 +57,64 @@ export const PROJECT_NAVIGATION_KEYS: (keyof ViewSettings)[] = [
  * carries the whole look and the project carries none of it - so the view wins every time, and
  * nothing moves.
  *
+ * The settings of PROJECT_ONLY_NAVIGATION_KEYS are the exception: they are always those of the project.
+ *
  * @param project - the whole project, whose `___settings` may carry the defaults
  * @param viewSettings - the settings of the view that is shown
  */
 export function resolveNavigationSettings(project: Project, viewSettings: ViewSettings): ViewSettings {
-    const defaults = project?.___settings as unknown as ViewSettings | undefined;
-    if (!defaults) {
-        return viewSettings;
+    const defaults = (project?.___settings || {}) as unknown as ViewSettings;
+
+    // a copy only where there is something to change: this runs on every render of every view
+    let resolved: ViewSettings | null = null;
+
+    for (const key of PROJECT_ONLY_NAVIGATION_KEYS) {
+        const fromProject = isSet(defaults[key]) ? defaults[key] : undefined;
+        if (viewSettings[key] !== fromProject) {
+            resolved ||= { ...viewSettings };
+            if (fromProject === undefined) {
+                delete resolved[key];
+            } else {
+                (resolved as Record<string, unknown>)[key] = fromProject;
+            }
+        }
     }
 
-    let resolved: ViewSettings | null = null;
     for (const key of PROJECT_NAVIGATION_KEYS) {
-        const own = viewSettings[key];
-        if (own !== undefined && own !== null && own !== '') {
+        if (isSet(viewSettings[key])) {
             continue;
         }
         const fromProject = defaults[key];
-        if (fromProject === undefined || fromProject === null || fromProject === '') {
+        if (!isSet(fromProject)) {
             continue;
         }
-        // a copy only where there is something to change: this runs on every render of every view
         resolved ||= { ...viewSettings };
         (resolved as Record<string, unknown>)[key] = fromProject;
     }
 
     return resolved || viewSettings;
+}
+
+/** How many entries the menu at the bottom edge shows side by side; what is more goes behind "More" */
+export const BOTTOM_MENU_ENTRIES = 5;
+
+/**
+ * The entries of the menu at the bottom edge, and those behind its "More".
+ *
+ * About five entries fit across a phone. With more than that the bar used to scroll, and an entry that is
+ * scrolled out of sight is an entry nobody finds - so a project with nine pages had to build a page of its own
+ * with buttons to the other five. Now the bar shows four of them and a fifth button that lists the rest, which
+ * is what the apps on the same phone do. Five pages or fewer are shown as they are: a "More" with one page
+ * behind it would only be a longer way to it.
+ *
+ * @param items - the entries in the order of the menu
+ * @param max - how many fit side by side
+ */
+export function splitBottomMenu<T>(items: T[], max: number = BOTTOM_MENU_ENTRIES): { shown: T[]; more: T[] } {
+    if (items.length <= max) {
+        return { shown: items, more: [] };
+    }
+    return { shown: items.slice(0, max - 1), more: items.slice(max - 1) };
 }
 
 /** The height of the app bar if none is set, and the limits of one that is (#569) */

@@ -453,6 +453,11 @@ html {
     opacity: 0.4;
 }
 
+/* the widgets of a section that is only its header: the runtime does not show them, the editor dims them */
+.vis-grid-section-edit .vis-grid-section-header-only {
+    opacity: 0.4;
+}
+
 /* a section is selected by a click on it and moved by dragging it, where no widget is */
 .vis-grid-section-edit:not(.vis-grid-section-implicit) {
     cursor: grab;

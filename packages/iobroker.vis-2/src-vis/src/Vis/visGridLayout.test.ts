@@ -22,9 +22,20 @@ import {
     type GridSection,
     gridDropIsDone,
     IMPLICIT_SECTION_ID,
+    isHeaderOnly,
     moveSectionBeside,
     newSectionId,
 } from './visGridLayout';
+
+describe('isHeaderOnly', () => {
+    it('is on when the checkbox is, or when a binding says true', () => {
+        expect(isHeaderOnly({ id: 'a', widgets: [], headerOnly: true })).toBe(true);
+        expect(isHeaderOnly({ id: 'a', widgets: [], headerOnly: 'true' as unknown as boolean })).toBe(true);
+        expect(isHeaderOnly({ id: 'a', widgets: [] })).toBe(false);
+        expect(isHeaderOnly({ id: 'a', widgets: [], headerOnly: '{x.0.y}' as unknown as boolean })).toBe(false);
+        expect(isHeaderOnly(undefined)).toBe(false);
+    });
+});
 
 const layout = getGridLayout(undefined);
 
@@ -130,6 +141,14 @@ describe('buildGridSections', () => {
         ];
         expect(buildGridSections(sections, w('w1'), 2, false).map(s => s.id)).toEqual(['a']);
         expect(buildGridSections(sections, w('w1'), 2, true).map(s => s.id)).toEqual(['a', 'b']);
+    });
+
+    it('keeps a section that is only its header in the runtime, even without widgets', () => {
+        const sections: ViewSection[] = [
+            { id: 'heading', widgets: [], headerOnly: true, title: 'Home' },
+            { id: 'a', widgets: w('w1') },
+        ];
+        expect(buildGridSections(sections, w('w1'), 2, false).map(s => s.id)).toEqual(['heading', 'a']);
     });
 
     it('limits the span of a section to the columns there are', () => {

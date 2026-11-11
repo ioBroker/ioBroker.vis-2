@@ -370,6 +370,22 @@ export default class Runtime<
         return createTheme(Utils.getThemeName(name));
     }
 
+    /**
+     * Change the theme, and the colour of the page under the views with it.
+     *
+     * What has no background of its own - the menu of a view whose colours were left to the theme, the edges
+     * beside a view - shows the body. Only the editor used to repaint it, so a theme switch in the runtime
+     * (the theme widget) left a light page on a black body.
+     *
+     * @param newThemeName - the theme to change to; without it the next one
+     */
+    toggleTheme(newThemeName?: ThemeName): void {
+        super.toggleTheme(newThemeName);
+
+        // apply background color only if not in iframe
+        this.props.setBackground();
+    }
+
     setWidgetsLoadingProgress!: (step: number, total: number) => void;
 
     setStateAsync(newState: Partial<RuntimeState | S>): Promise<void> {
@@ -976,16 +992,23 @@ export default class Runtime<
     refreshProjects = async (reloadCurrentProject?: boolean): Promise<void> => {
         let projects: ioBroker.ReadDirResult[];
 
+        let failed = false;
         try {
             projects = await this.socket.readDir(this.adapterId, '');
-        } catch {
+        } catch (e) {
+            console.warn(`Cannot read the list of projects: ${e as Error}`);
             projects = [];
+            failed = true;
         }
 
-        await this.setStateAsync({
-            projects: projects.filter(dir => dir.isDir).map(dir => dir.file),
-            createFirstProjectDialog: !projects.length,
-        });
+        // a read that failed is no answer: a list that is there stays, instead of turning into "no projects at
+        // all", which offers to create the first one
+        if (!failed || !this.state.projects) {
+            await this.setStateAsync({
+                projects: projects.filter(dir => dir.isDir).map(dir => dir.file),
+                createFirstProjectDialog: !projects.length,
+            });
+        }
         if (reloadCurrentProject) {
             await this.loadProject(this.state.projectName);
         }

@@ -4,7 +4,9 @@ import buttonDevice from './devices/buttonDevice';
 import cameraDevice from './devices/cameraDevice';
 import chartDevice from './devices/chartDevice';
 import clockDevice from './devices/clockDevice';
+import countDevice from './devices/countDevice';
 import dimmerDevice from './devices/dimmerDevice';
+import energyFlowDevice from './devices/energyFlowDevice';
 import iframeDevice from './devices/iframeDevice';
 import inputDevice from './devices/inputDevice';
 import knobDevice from './devices/knobDevice';
@@ -48,8 +50,10 @@ const DEVICES = [
     valueDevice,
     inputDevice,
     tankDevice,
+    energyFlowDevice,
     sensorDevice,
     windowDevice,
+    countDevice,
     weatherDevice,
     securityDevice,
     blindDevice,

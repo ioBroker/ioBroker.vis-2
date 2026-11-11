@@ -973,6 +973,9 @@
   "Back": "返回",
   "Navigation menu": "导航菜单",
   "navigation_project_help": "菜单的样子，一次管所有页面。页面仍可另有说法；页面留空的部分都来自这里。哪个页面有入口、叫什么、排第几，仍归页面自己管。",
+  "navigation_pages_own": "%s 个页面在此有自己的值",
+  "navigation_pages_follow": "应用到所有页面",
+  "navigation_pages_follow_on_save": "保存时 %s 个页面将采用此值",
   "App bar color": "应用栏颜色",
   "App bar height": "应用栏高度",
   "Bar height": "栏高度",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "休眠超过此时间后重新加载（秒）",
   "reload_on_sleep_help": "仅在运行时生效，至少 30 秒，留空或 0 表示从不。例如，屏幕关闭过的平板会重新加载，而不是逐一处理错过的所有更改。",
   "section_value_false": "关",
-  "section_value_true": "开"
+  "section_value_true": "开",
+  "Menu header icon": "菜单标题图标",
+  "Menu header image": "菜单标题图像",
+  "Subtitle in italics": "副标题斜体",
+  "Space below the header": "标题下方间距",
+  "Only the header": "仅标题",
+  "help_section_header_gap": "小部件与标题之间的距离（像素）。未设置时为 8 px。",
+  "help_section_header_only": "该分区仅为其标题，可作为页面顶部或分区之间的标题。运行时不显示其中的小部件，即使没有小部件也会保留该分区；编辑器以淡化方式显示其小部件。",
+  "help_menu_header_picture": "属于项目：每个带菜单的页面的标题文字前都显示同一张图片"
 }

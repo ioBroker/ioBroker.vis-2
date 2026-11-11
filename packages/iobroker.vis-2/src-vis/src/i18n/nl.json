@@ -973,6 +973,9 @@
   "Back": "Terug",
   "Navigation menu": "Navigatiemenu",
   "navigation_project_help": "Hoe het menu eruitziet, voor alle pagina's tegelijk. Een pagina mag nog steeds iets anders zeggen; alles wat een pagina leeg laat, komt hiervandaan. Welke pagina een item heeft, hoe het heet en in welke volgorde het staat, blijft bij de pagina.",
+  "navigation_pages_own": "%s pagina's hebben hier een eigen waarde",
+  "navigation_pages_follow": "Voor alle pagina's gebruiken",
+  "navigation_pages_follow_on_save": "%s pagina's nemen deze waarde over bij opslaan",
   "App bar color": "Kleur van de applicatiebalk",
   "App bar height": "Hoogte van de app-balk",
   "Bar height": "Hoogte van de balk",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "Herladen na slaapstand langer dan (seconden)",
   "reload_on_sleep_help": "Alleen in de runtime, minstens 30 seconden, leeg of 0 voor nooit. Bijv. een tablet waarvan het scherm uit was, herlaadt in plaats van elke gemiste wijziging in te halen.",
   "section_value_false": "Uit",
-  "section_value_true": "Aan"
+  "section_value_true": "Aan",
+  "Menu header icon": "Pictogram in de menukop",
+  "Menu header image": "Afbeelding in de menukop",
+  "Subtitle in italics": "Ondertitel cursief",
+  "Space below the header": "Ruimte onder de kop",
+  "Only the header": "Alleen de kop",
+  "help_section_header_gap": "Hoe ver de widgets van de kop blijven, in px. Zonder waarde is het 8 px.",
+  "help_section_header_only": "De sectie is alleen haar kop, een kopregel boven de pagina of tussen de secties. De runtime toont geen van haar widgets en behoudt de sectie ook zonder widgets; de editor toont de widgets gedimd.",
+  "help_menu_header_picture": "Hoort bij het project: dezelfde afbeelding staat op elke pagina met menu voor de koptekst"
 }

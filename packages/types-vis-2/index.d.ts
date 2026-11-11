@@ -811,6 +811,8 @@ export type ProjectNavigationSettings = Pick<
     | 'navigationSelectedColor'
     | 'navigationHeaderText'
     | 'navigationHeaderTextColor'
+    | 'navigationHeaderIcon'
+    | 'navigationHeaderImage'
     | 'navigationChevronColor'
     | 'navigationButtonBackground'
     | 'navigationHideOnSelection'
@@ -1143,6 +1145,16 @@ export interface ViewSettings {
     navigationHideMenu?: boolean;
     navigationHideOnSelection?: boolean;
     navigationHeaderText?: string;
+    /**
+     * An icon in front of the header text of the menu, as the icon dialog stores it; one of this and the image.
+     * Only the one in `___settings` counts: it is the same on every page with a menu.
+     */
+    navigationHeaderIcon?: string;
+    /**
+     * A picture in front of the header text of the menu - a logo - as a path or URL; `_PRJ_NAME/` is the project.
+     * Only the one in `___settings` counts: it is the same on every page with a menu.
+     */
+    navigationHeaderImage?: string;
     navigationNoHide?: boolean;
     navigationButtonBackground?: string;
 
@@ -1224,10 +1236,19 @@ export interface ViewSection {
     rowHeight?: number | null;
     /** The space between the widgets in px; overrides the one of the view */
     gridGap?: number | null;
+    /**
+     * The section is its header alone: the runtime shows no widgets of it and keeps it even without any - a
+     * heading over the page, or between the sections. The editor still shows its widgets, dimmed.
+     */
+    headerOnly?: boolean;
 
     // --- header
     /** A second, smaller line below the title */
     subtitle?: string;
+    /** The subtitle is written in italics */
+    subtitleItalic?: boolean;
+    /** The space between the header and the widgets in px, 8 if not set */
+    headerGap?: number | null;
     titleColor?: string | null;
     /** in px */
     titleSize?: number | null;

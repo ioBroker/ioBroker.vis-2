@@ -51,7 +51,6 @@ import {
     Icon,
     ScrollbarStyles,
     type IobTheme,
-    type ThemeName,
 } from '@iobroker/gui-components';
 
 import type {
@@ -3196,13 +3195,6 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 {this.state.loadingText}
             </Box>
         );
-    }
-
-    toggleTheme(newThemeName?: ThemeName): void {
-        super.toggleTheme(newThemeName);
-
-        // apply background color only if not in iframe
-        this.props.setBackground();
     }
 
     render(): React.JSX.Element {

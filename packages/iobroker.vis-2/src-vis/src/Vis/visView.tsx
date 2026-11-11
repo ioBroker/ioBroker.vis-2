@@ -71,6 +71,7 @@ import {
     GRID_ROW_HEIGHT_VAR,
     type GridSection,
     gridDropIsDone,
+    isHeaderOnly,
     moveSectionBeside,
     newSectionId,
 } from './visGridLayout';
@@ -2959,6 +2960,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 this.props.editMode || !stored
                     ? true
                     : isSectionOpen(stored, this.getSectionOpenChoice(stored), this.state.sectionStates);
+            // A section that is only its header shows no widgets in the runtime. The editor shows them dimmed, so
+            // that whatever is in it can still be selected and moved out.
+            const headerOnly = !!stored && isHeaderOnly(stored);
+            const widgetsShown = open && (this.props.editMode || !headerOnly);
             // the size of the cells: the section may have its own
             const cells = getSectionGrid(stored, layout);
 
@@ -3012,10 +3017,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                             this.props.selectedSection === stored.id &&
                             'vis-grid-section-selected',
                         // the editor dims what the runtime would not show: a hidden section, and an empty one,
-                        // which the runtime leaves out, see buildGridSections()
+                        // which the runtime leaves out, see buildGridSections() - unless it is only its header
                         this.props.editMode &&
                             stored &&
-                            (!isSectionVisible(stored, visibility) || !section.widgets.length) &&
+                            (!isSectionVisible(stored, visibility) || (!section.widgets.length && !headerOnly)) &&
                             'vis-grid-section-hidden',
                         // a widget from the palette would land here, see gridDropHighlight()
                         this.props.editMode && this.state.dropSection === section.id && 'vis-grid-section-drop',
@@ -3026,21 +3031,23 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         position: 'relative',
                         boxSizing: 'border-box',
                         minWidth: 0,
-                        ...getSectionPlacementStyle(stored, section.columnSpan, open),
+                        ...getSectionPlacementStyle(stored, section.columnSpan, widgetsShown),
                         ...getSectionFrameStyle(stored, paperColor, projectPath),
                     }}
                 >
                     {this.props.editMode && stored && section.index !== undefined
                         ? this.renderGridSectionControls(section.index, layout.maxSections)
                         : null}
-                    {stored && hasSectionHeader(stored) ? this.renderGridSectionHeader(stored, open) : null}
+                    {stored && hasSectionHeader(stored)
+                        ? this.renderGridSectionHeader(stored, open, widgetsShown)
+                        : null}
                     {/* a closed section leaves out its widgets, so that they update nothing while nobody sees them */}
                     <div
                         ref={refSection}
-                        className="vis-grid-section"
-                        style={open ? gridStyle : { ...gridStyle, display: 'none' }}
+                        className={Utils.clsx('vis-grid-section', headerOnly && 'vis-grid-section-header-only')}
+                        style={widgetsShown ? gridStyle : { ...gridStyle, display: 'none' }}
                     >
-                        {(open ? section.widgets : []).map((id, index) =>
+                        {(widgetsShown ? section.widgets : []).map((id, index) =>
                             // The slot the dragged widget would drop into; the widget itself follows the cursor as a
                             // copy, see createDragGhost()
                             gridDrag && !gridDrag.dropped && id === gridDrag.wid ? (
@@ -3183,9 +3190,11 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
      * link, or else opens or closes the section; with both, the arrow opens and closes. The editor only shows it.
      *
      * @param section - the section as it is stored
-     * @param open - whether the section shows its widgets
+     * @param open - whether the section is open
+     * @param widgetsShown - whether widgets follow the header: not in a closed section, nor in one that is only its
+     *   header
      */
-    private renderGridSectionHeader(section: ViewSection, open: boolean): React.JSX.Element {
+    private renderGridSectionHeader(section: ViewSection, open: boolean, widgetsShown: boolean): React.JSX.Element {
         const runtime = !this.props.editMode;
         const toggle =
             runtime && section.collapsible
@@ -3202,7 +3211,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                   }
                 : undefined;
 
-        const headerStyle = getSectionHeaderStyle(section);
+        const headerStyle = getSectionHeaderStyle(section, widgetsShown);
         const values = this.renderGridSectionValues(section);
 
         return (
@@ -3240,7 +3249,10 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                                     </span>
                                 ) : null}
                                 {section.subtitle ? (
-                                    <span className="vis-grid-section-subtitle">
+                                    <span
+                                        className="vis-grid-section-subtitle"
+                                        style={section.subtitleItalic ? { fontStyle: 'italic' } : undefined}
+                                    >
                                         {this.formatSectionText(section, section.subtitle)}
                                     </span>
                                 ) : null}

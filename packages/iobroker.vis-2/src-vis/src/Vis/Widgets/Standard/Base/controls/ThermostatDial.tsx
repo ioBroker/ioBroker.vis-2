@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { BOX, CENTRE, SWEEP, angleOf, arcPath, point, valueAt } from './dialGeometry';
+import { CENTRE, SWEEP, THERMOSTAT_VIEW, angleOf, arcPath, point, valueAt } from './dialGeometry';
 
 export interface ThermostatDialProps {
     /** What the room is, or null while nobody has said */
@@ -70,7 +70,7 @@ export default function ThermostatDial(props: ThermostatDialProps): React.JSX.El
         if (!rect || !onChange) {
             return;
         }
-        const wanted = valueAt(event, rect, min, max);
+        const wanted = valueAt(event, rect, min, max, THERMOSTAT_VIEW);
         const step = props.step || 0.5;
 
         onChange(Math.round(wanted / step) * step, done);
@@ -79,7 +79,7 @@ export default function ThermostatDial(props: ThermostatDialProps): React.JSX.El
     return (
         <svg
             ref={svgRef}
-            viewBox={`0 0 ${BOX.width} ${BOX.height}`}
+            viewBox={`${THERMOSTAT_VIEW.x} ${THERMOSTAT_VIEW.y} ${THERMOSTAT_VIEW.width} ${THERMOSTAT_VIEW.height}`}
             preserveAspectRatio="xMidYMid meet"
             style={{
                 width: '100%',

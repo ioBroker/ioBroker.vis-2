@@ -9,6 +9,7 @@ import {
     isNavigationEntryShown,
     PROJECT_NAVIGATION_KEYS,
     resolveNavigationSettings,
+    splitBottomMenu,
 } from './visNavigationSettings';
 
 /**
@@ -78,6 +79,36 @@ describe('resolveNavigationSettings', () => {
 
         // the very same object: nothing to merge, nothing copied
         expect(resolved).toBe(settings);
+    });
+
+    it('takes the picture of the menu header from the project, on every page', () => {
+        const withProject = project({ navigationHeaderImage: '_PRJ_NAME/logo.png' });
+
+        expect(resolveNavigationSettings(withProject, { navigation: true }).navigationHeaderImage).toBe(
+            '_PRJ_NAME/logo.png',
+        );
+        expect(
+            resolveNavigationSettings(withProject, { navigation: true, navigationTitle: 'Kitchen' })
+                .navigationHeaderImage,
+        ).toBe('_PRJ_NAME/logo.png');
+    });
+
+    it('does not use a picture of the menu header that a page carries: the logo is the same on every page', () => {
+        // the project has an icon, the page an image of its own: the icon of the project is drawn, nothing else
+        const withIcon = resolveNavigationSettings(project({ navigationHeaderIcon: 'data:image/svg+xml;base64,AA' }), {
+            navigation: true,
+            navigationHeaderImage: '_PRJ_NAME/logo.png',
+        });
+        expect(withIcon.navigationHeaderIcon).toBe('data:image/svg+xml;base64,AA');
+        expect(withIcon.navigationHeaderImage).toBeUndefined();
+
+        // the project has none: the page has none either
+        const withNone = resolveNavigationSettings(project({ navigationHeaderImage: '' }), {
+            navigation: true,
+            navigationHeaderIcon: 'data:image/svg+xml;base64,AA',
+        });
+        expect(withNone.navigationHeaderIcon).toBeUndefined();
+        expect(withNone.navigationHeaderImage).toBeUndefined();
     });
 
     it('survives a project without any settings at all', () => {
@@ -193,5 +224,29 @@ describe('getMenuWidth', () => {
         expect(getMenuWidth('narrow', plain)).toBe('narrow');
         expect(getMenuWidth('full', plain)).toBe('full');
         expect(getMenuWidth('hidden', plain)).toBe('hidden');
+    });
+});
+
+describe('splitBottomMenu', () => {
+    const pages = (count: number): string[] => Array.from({ length: count }, (_, index) => `page${index + 1}`);
+
+    it('shows five pages or fewer as they are', () => {
+        expect(splitBottomMenu(pages(3))).toEqual({ shown: pages(3), more: [] });
+        expect(splitBottomMenu(pages(5))).toEqual({ shown: pages(5), more: [] });
+    });
+
+    it('shows four of more pages and puts the rest behind "More"', () => {
+        const { shown, more } = splitBottomMenu(pages(9));
+        expect(shown).toEqual(pages(4));
+        expect(more).toEqual(['page5', 'page6', 'page7', 'page8', 'page9']);
+    });
+
+    it('never hides a single page behind "More"', () => {
+        // six pages: four in the bar and two behind it, not five and one
+        expect(splitBottomMenu(pages(6)).more).toHaveLength(2);
+    });
+
+    it('takes another number of entries', () => {
+        expect(splitBottomMenu(pages(4), 3)).toEqual({ shown: pages(2), more: ['page3', 'page4'] });
     });
 });

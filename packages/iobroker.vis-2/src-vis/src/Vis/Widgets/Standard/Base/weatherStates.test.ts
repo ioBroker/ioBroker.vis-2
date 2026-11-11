@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { dayOfState, pickWeatherStates, weatherSymbolOf, type WeatherStateObject } from './weatherStates';
+import {
+    dayOfState,
+    largestWeatherImage,
+    pickWeatherStates,
+    weatherSymbolOf,
+    type WeatherStateObject,
+} from './weatherStates';
 
 /** As many states as it takes to look like the adapter in question */
 const state = (id: string, role: string): WeatherStateObject => ({ _id: id, common: { role } });
@@ -127,5 +133,28 @@ describe('pickWeatherStates', () => {
         const found = pickWeatherStates([state('a.0.Daily.Day30.Icon', 'weather.icon.forecast.30')]);
 
         expect(found.days).toHaveLength(0);
+    });
+});
+
+describe('largestWeatherImage', () => {
+    it('asks OpenWeatherMap for the version of 200 pixels', () => {
+        expect(largestWeatherImage('https://openweathermap.org/img/wn/10d@2x.png')).toBe(
+            'https://openweathermap.org/img/wn/10d@4x.png',
+        );
+        expect(largestWeatherImage('https://openweathermap.org/img/wn/01n.png')).toBe(
+            'https://openweathermap.org/img/wn/01n@4x.png',
+        );
+    });
+
+    it('moves the old address, which knows only one size, to the one that knows all three', () => {
+        expect(largestWeatherImage('http://openweathermap.org/img/w/04d.png')).toBe(
+            'http://openweathermap.org/img/wn/04d@4x.png',
+        );
+    });
+
+    it('keeps a query behind the picture and leaves every other address alone', () => {
+        expect(largestWeatherImage('/img/wn/03d.png?v=2')).toBe('/img/wn/03d@4x.png?v=2');
+        expect(largestWeatherImage('/vis-2.0/main/sun.png')).toBe('/vis-2.0/main/sun.png');
+        expect(largestWeatherImage('')).toBe('');
     });
 });

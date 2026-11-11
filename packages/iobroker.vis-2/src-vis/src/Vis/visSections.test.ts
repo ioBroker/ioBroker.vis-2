@@ -181,6 +181,20 @@ describe('getSectionHeaderStyle', () => {
         });
         expect(getSectionHeaderStyle(section({ titleAlign: 'middle' as never, titleSize: -1 }))).toEqual({});
     });
+
+    it('keeps the widgets as far from the header as the section says, also not at all', () => {
+        expect(getSectionHeaderStyle(section({ headerGap: 20 }))).toEqual({ marginBottom: 20 });
+        expect(getSectionHeaderStyle(section({ headerGap: 0 }))).toEqual({ marginBottom: 0 });
+        // a binding gives a string
+        expect(getSectionHeaderStyle(section({ headerGap: '12' as unknown as number }))).toEqual({ marginBottom: 12 });
+        // without a value or with a wrong one the CSS decides
+        expect(getSectionHeaderStyle(section({ headerGap: -4 }))).toEqual({});
+        expect(getSectionHeaderStyle(section({ headerGap: null }))).toEqual({});
+    });
+
+    it('keeps no distance where no widgets follow', () => {
+        expect(getSectionHeaderStyle(section({ headerGap: 20 }), false)).toEqual({ marginBottom: 0 });
+    });
 });
 
 describe('getSectionPlacementStyle', () => {

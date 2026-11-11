@@ -25,6 +25,11 @@ export interface Field {
     renderValue?: (value: string | number) => React.JSX.Element;
     hidden?: boolean | string | ((settings: Record<string, any>) => boolean);
     notStyle?: boolean;
+    /**
+     * The value is one of the project (`___settings`), not of the view: it is shown and changed on every view,
+     * and is the same on all of them. Such a field needs neither `notStyle` nor `applyToAll`.
+     */
+    project?: boolean;
     clearButton?: boolean;
     applyToAll?: boolean;
     groupApply?: boolean;
@@ -758,6 +763,32 @@ export function getFields(
                     notStyle: true,
                     hidden: '!data.navigation || data.navigationOrientation === "horizontal"',
                     applyToAll: true,
+                },
+                {
+                    // An icon in front of the header text, the same on every page: it is kept in the project.
+                    // It can be an icon or an image, but not both
+                    type: 'icon64',
+                    label: 'Menu header icon',
+                    title: 'help_menu_header_picture',
+                    attr: 'navigationHeaderIcon',
+                    project: true,
+                    hidden: data =>
+                        !data.navigation ||
+                        data.navigationOrientation === 'horizontal' ||
+                        !!store.getState().visProject.___settings?.navigationHeaderImage,
+                },
+                {
+                    // A picture - a logo - in front of the header text, the same on every page: it is kept in the
+                    // project. It can be an icon or an image, but not both
+                    type: 'image',
+                    label: 'Menu header image',
+                    title: 'help_menu_header_picture',
+                    attr: 'navigationHeaderImage',
+                    project: true,
+                    hidden: data =>
+                        !data.navigation ||
+                        data.navigationOrientation === 'horizontal' ||
+                        !!store.getState().visProject.___settings?.navigationHeaderIcon,
                 },
                 {
                     type: 'text',

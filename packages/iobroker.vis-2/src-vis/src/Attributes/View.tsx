@@ -26,6 +26,7 @@ import { resolution, getFields, type Field } from './View/Items';
 import getEditField from './View/EditField';
 import { renderApplyDialog, getViewsWithDifferentValues, type ApplyField } from './View/ApplyProperties';
 import showAllViewsDialog from './View/AllViewsDialog';
+import { resolveNavigationSettings } from '@/Vis/visNavigationSettings';
 import FieldHelp, { hasFieldHelp } from './FieldHelp';
 
 /**
@@ -332,7 +333,8 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
     return (
         <div style={{ height: '100%', overflowY: 'auto' }}>
             {fields.map((group, key) => {
-                if (checkFunction(group.hidden, project[props.selectedView]?.settings || {})) {
+                // the settings of the menu the project gives a page count as the page's own, see EditField
+                if (checkFunction(group.hidden, resolveNavigationSettings(project, view?.settings || ({} as any)))) {
                     return null;
                 }
                 return (
@@ -455,7 +457,8 @@ const ViewAttributes = (props: ViewProps): React.JSX.Element | null => {
                                                         ? () => setShowAllViewDialog({ ...field, group })
                                                         : undefined,
                                                 );
-                                            } else if (field.attr?.startsWith('navigation')) {
+                                            } else if (field.attr?.startsWith('navigation') && !field.project) {
+                                                // a value of the project is the same on every view: no list of views
                                                 result = addButton(result, !props.editMode || disabled, () =>
                                                     setShowViewsDialog(field),
                                                 );

@@ -8,16 +8,30 @@ import CellRulesDialog from '../Base/controls/CellRulesDialog';
 import ColumnKeyField from '../Base/controls/ColumnKeyField';
 import { cellLook, cellRules, type CellRule } from '../Base/controls/cellLook';
 import { asNumber } from '../Base/controls/stateValue';
+import {
+    filterRows,
+    formatMoment,
+    guessEndKey,
+    guessStartKey,
+    momentOf,
+    type CellFormat,
+    type RowFilter,
+} from '../Base/controls/tableFormat';
 import { tableCell, tableColumns, tableRows, type TableRow } from '../Base/controls/tableRows';
 import { cssPixels } from '../Base/widgetCss';
+import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
+
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { STANDARD_I18N_PREFIX } from '../Base/prefix';
 
-/** The most columns one card is worth describing by hand */
 /** What a column is left with when the card is too narrow for all of them, before it scrolls */
 const MIN_COLUMN_WIDTH = 72;
 
+/** The most columns one card is worth describing by hand */
 const MAX_COLUMNS = 8;
+
+/** How often a table that shows moments catches up with the clock, in ms */
+const TICK = 60_000;
 
 interface TableRxData extends StandardRxData {
     /** How many columns are described; without any, the ones the data has */
@@ -30,6 +44,12 @@ interface TableRxData extends StandardRxData {
     headBackground?: string;
     /** At most this many rows; the rest is scrolled to */
     maxRows?: number | string;
+    /** Which rows are shown, by the moment they are at */
+    rowFilter?: RowFilter;
+    /** The column the start of a row is in; without it the table looks for one */
+    filterKey?: string;
+    /** The column the end of a row is in; without it the table looks for one */
+    filterEndKey?: string;
 }
 
 interface Column {
@@ -46,6 +66,10 @@ interface Column {
     words: Record<string, string>;
     /** A colour per condition; the first that holds decides, see `cellLook.ts` */
     rules: CellRule[];
+    /** How a moment in this column is written; nothing writes the value as it is */
+    format: CellFormat;
+    /** The letters of the format `custom`, like `DD.MM. hh:mm` */
+    pattern?: string;
 }
 
 /**
@@ -103,6 +127,8 @@ function columnsOf(context: DeviceContext<TableRxData>, rows: TableRow[]): Colum
             background: context.data[`columnBackground${index}`] || undefined,
             words: wordsOf(context.data[`columnWords${index}`]),
             rules: cellRules(context.data[`columnRules${index}`]),
+            format: context.data[`columnFormat${index}`] || '',
+            pattern: context.data[`columnPattern${index}`] || undefined,
         });
     }
 
@@ -110,7 +136,228 @@ function columnsOf(context: DeviceContext<TableRxData>, rows: TableRow[]): Colum
         return described;
     }
 
-    return tableColumns(rows).map(key => ({ key, title: key, align: 'left', words: {}, rules: [] }));
+    return tableColumns(rows).map(key => ({ key, title: key, align: 'left', words: {}, rules: [], format: '' }));
+}
+
+interface TableViewProps {
+    rows: TableRow[];
+    columns: Column[];
+    withHead: boolean;
+    zebra: boolean;
+    /** At most this many rows, after the filter */
+    limit: number | null;
+    filter: RowFilter;
+    filterKey?: string;
+    filterEndKey?: string;
+    headColor?: string;
+    headBackground?: string;
+    smallSize: number;
+    isFloatComma: boolean;
+    theme: DeviceContext<TableRxData>['theme'];
+    emptyText: string;
+}
+
+/**
+ * The table itself, with the clock it needs.
+ *
+ * Which appointments are still to come, and whether one is today or tomorrow, is worked out against now - and a
+ * widget that read the clock while it renders would draw something different on every render, which is how
+ * React ends up rendering for ever. So the clock is read here, once a minute, the way the washing machine reads
+ * it for its countdown.
+ *
+ * @param props - the rows, the columns, and how they are shown
+ */
+function TableView(props: TableViewProps): React.JSX.Element {
+    const { theme, columns } = props;
+    const timed = !!props.filter || columns.some(column => column.format === 'relative');
+    const [now, setNow] = React.useState(() => Date.now());
+
+    React.useEffect(() => {
+        if (!timed) {
+            return undefined;
+        }
+        setNow(Date.now());
+        const timer = setInterval(() => setNow(Date.now()), TICK);
+        return () => clearInterval(timer);
+    }, [timed]);
+
+    const lang = I18n.getLanguage();
+    const startKey = props.filterKey || guessStartKey(props.rows, columns);
+    const endKey = props.filterEndKey || guessEndKey(props.rows);
+    const kept = filterRows(props.rows, props.filter, startKey, endKey, now);
+    const rows = props.limit && props.limit > 0 ? kept.slice(0, props.limit) : kept;
+    // a stripe out of the text colour, so it works in both themes without a colour of its own
+    const stripe = theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.035)' : 'rgba(255, 255, 255, 0.045)';
+
+    /*
+     * `table-layout: fixed` is what makes a width a width.
+     *
+     * Without it a table is as wide as its longest cell and the card scrolls sideways; with it the given
+     * widths hold and the rest share what is left. It also makes the ellipsis work on its own - a
+     * `max-width: 0` for that, which is the trick an automatic layout needs, overrules the widths here
+     * and squeezes every named column down to a letter.
+     */
+    const cell: React.CSSProperties = {
+        // a column told to be ninety pixels wide is ninety wide, padding and all - otherwise the widths
+        // and the floor below disagree by exactly the padding, and the free column pays for it
+        boxSizing: 'border-box',
+        padding: '4px 8px',
+        fontSize: props.smallSize,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    };
+
+    /*
+     * How narrow the table may become before the card scrolls sideways.
+     *
+     * `table-layout: fixed` hands every column its width and lets the ones without a width share what is
+     * left - and on a phone there is nothing left: a card of three hundred pixels with two columns of
+     * ninety swallowed the third one whole, headline and all, without so much as a scrollbar. So every
+     * column keeps a floor of its own, the table is at least as wide as those floors together, and the
+     * card around it scrolls when they no longer fit. A column told to be forty pixels wide stays forty.
+     */
+    const minWidth = columns.reduce((sum, column) => {
+        const px = /^\d+(\.\d+)?px$/.test(column.width || '') ? parseFloat(column.width as string) : null;
+        return sum + (px ?? MIN_COLUMN_WIDTH);
+    }, 0);
+
+    /**
+     * What a cell says: a moment as its column writes it, a word the column has for the value, or the value.
+     *
+     * @param column - the column of the cell
+     * @param value - what the row holds under it
+     */
+    const written = (column: Column, value: unknown): string => {
+        if (column.format) {
+            const moment = momentOf(value);
+            if (moment !== null) {
+                return formatMoment(moment, column.format, { lang, now, pattern: column.pattern });
+            }
+        }
+        const plain = tableCell(value, props.isFloatComma);
+        // a word the column was given for this value wins over the value
+        return column.words[plain] ?? plain;
+    };
+
+    return (
+        <div
+            className="vis-standard-scroll"
+            style={{ width: '100%', height: '100%', overflow: 'auto' }}
+        >
+            {rows.length && columns.length ? (
+                <table
+                    style={{
+                        width: '100%',
+                        minWidth,
+                        borderCollapse: 'collapse',
+                        tableLayout: 'fixed',
+                    }}
+                >
+                    {props.withHead ? (
+                        <thead>
+                            <tr>
+                                {columns.map(column => (
+                                    <th
+                                        key={column.key}
+                                        style={{
+                                            ...cell,
+                                            width: column.width,
+                                            textAlign: column.align,
+                                            fontWeight: 700,
+                                            color: props.headColor || theme.palette.text.secondary,
+                                            // the heading stays while the rows are scrolled past it
+                                            position: 'sticky',
+                                            top: 0,
+                                            // it must not be see-through: the rows pass underneath
+                                            background: props.headBackground || theme.palette.background.paper,
+                                            borderBottom: `1px solid ${theme.palette.divider}`,
+                                        }}
+                                    >
+                                        {column.title}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                    ) : null}
+                    <tbody>
+                        {rows.map((row, index) => (
+                            <tr
+                                key={index}
+                                style={{ background: props.zebra && index % 2 ? stripe : undefined }}
+                            >
+                                {columns.map(column => {
+                                    const value = row[column.key];
+                                    const text = written(column, value);
+                                    /*
+                                     * The rules are asked with the value, not with what is written.
+                                     * `> 25` on a column that shows `26,1 °C` has to compare numbers,
+                                     * and the text has a unit and a comma in it by then.
+                                     */
+                                    const look = cellLook(value, column.rules);
+                                    return (
+                                        <td
+                                            key={column.key}
+                                            title={text}
+                                            style={{
+                                                ...cell,
+                                                width: column.width,
+                                                textAlign: column.align,
+                                                color: look.color || column.color || theme.palette.text.primary,
+                                                background: look.background || column.background,
+                                                borderTop: index ? `1px solid ${theme.palette.divider}` : undefined,
+                                            }}
+                                        >
+                                            {text === '' ? '' : `${column.prefix || ''}${text}${column.suffix || ''}`}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            ) : (
+                <div
+                    style={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: props.smallSize,
+                        color: theme.palette.text.secondary,
+                    }}
+                >
+                    {props.emptyText}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * A field that offers the keys of the state, for a setting that names a column.
+ *
+ * @param labelKey - the word of the field
+ */
+function keyField(labelKey: string): Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] {
+    const component: Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] = (
+        field,
+        data,
+        onDataChange,
+        componentProps,
+    ) => {
+        const name = `${field.name}`;
+        return (
+            <ColumnKeyField
+                value={data[name] || ''}
+                oid={data.oid}
+                socket={componentProps.context.socket}
+                label={I18n.t(`${STANDARD_I18N_PREFIX}${labelKey}`)}
+                onChange={value => onDataChange({ ...data, [name]: value })}
+            />
+        );
+    };
+    return component;
 }
 
 /**
@@ -147,6 +394,37 @@ const tableDevice = defineDeviceWidget<TableRxData>({
         { name: 'headBackground', type: 'color', label: 'table_head_background', hidden: '!data.withHead' },
         { name: 'maxRows', type: 'number', label: 'table_max_rows', min: 0, max: 500 },
         {
+            name: 'rowFilter',
+            type: 'select',
+            label: 'table_filter',
+            tooltip: 'table_filter_tooltip',
+            default: '',
+            options: [
+                { value: '', label: 'table_filter_none' },
+                { value: 'upcoming', label: 'table_filter_upcoming' },
+                { value: 'today', label: 'table_filter_today' },
+                { value: 'todayUpcoming', label: 'table_filter_today_upcoming' },
+            ],
+        },
+        {
+            name: 'filterKey',
+            type: 'custom',
+            label: 'table_filter_key',
+            tooltip: 'table_filter_key_tooltip',
+            noBinding: true,
+            hidden: '!data.rowFilter',
+            component: keyField('table_filter_key'),
+        },
+        {
+            name: 'filterEndKey',
+            type: 'custom',
+            label: 'table_filter_end_key',
+            tooltip: 'table_filter_key_tooltip',
+            noBinding: true,
+            hidden: '!data.rowFilter',
+            component: keyField('table_filter_end_key'),
+        },
+        {
             name: 'columns',
             type: 'number',
             label: 'table_columns',
@@ -170,18 +448,7 @@ const tableDevice = defineDeviceWidget<TableRxData>({
                     tooltip: 'column_key_tooltip',
                     noBinding: true,
                     // the keys are read out of the state itself, so nobody has to look up the JSON first
-                    component: (field, data, onDataChange, componentProps) => {
-                        const name = `${field.name}`;
-                        return (
-                            <ColumnKeyField
-                                value={data[name] || ''}
-                                oid={data.oid}
-                                socket={componentProps.context.socket}
-                                label={I18n.t(`${STANDARD_I18N_PREFIX}column_key`)}
-                                onChange={value => onDataChange({ ...data, [name]: value })}
-                            />
-                        );
-                    },
+                    component: keyField('column_key'),
                 },
                 { name: 'columnTitle', label: 'column_title' },
                 {
@@ -198,6 +465,29 @@ const tableDevice = defineDeviceWidget<TableRxData>({
                 { name: 'columnWidth', label: 'column_width', tooltip: 'column_width_tooltip' },
                 { name: 'columnPrefix', label: 'column_prefix' },
                 { name: 'columnSuffix', label: 'column_suffix' },
+                {
+                    name: 'columnFormat',
+                    type: 'select',
+                    label: 'column_format',
+                    tooltip: 'column_format_tooltip',
+                    default: '',
+                    options: [
+                        { value: '', label: 'column_format_none' },
+                        { value: 'time', label: 'column_format_time' },
+                        { value: 'date', label: 'column_format_date' },
+                        { value: 'dateShort', label: 'column_format_date_short' },
+                        { value: 'datetime', label: 'column_format_datetime' },
+                        { value: 'weekdayTime', label: 'column_format_weekday_time' },
+                        { value: 'relative', label: 'column_format_relative' },
+                        { value: 'custom', label: 'column_format_custom' },
+                    ],
+                },
+                {
+                    name: 'columnPattern',
+                    label: 'column_pattern',
+                    tooltip: 'column_pattern_tooltip',
+                    hidden: 'data["columnFormat" + index] !== "custom"',
+                },
                 { name: 'columnWords', label: 'column_words', tooltip: 'input_options_tooltip' },
                 { name: 'columnColor', type: 'color', label: 'column_color' },
                 { name: 'columnBackground', type: 'color', label: 'column_background' },
@@ -231,52 +521,10 @@ const tableDevice = defineDeviceWidget<TableRxData>({
     render: context => {
         const { data, accents, theme, t } = context;
         // the rows calculate with the size of their writing, so one that was set in pixels takes its place
-        const tokens = {
-            ...context.tokens,
-            smallSize: cssPixels(context.css.text.fontSize) ?? context.tokens.smallSize,
-        };
+        const smallSize = cssPixels(context.css.text.fontSize) ?? context.tokens.smallSize;
 
         const all = tableRows(context.valueOf('oid'));
-        const limit = asNumber(data.maxRows);
-        const rows = limit && limit > 0 ? all.slice(0, limit) : all;
-        const columns = columnsOf(context, rows);
-        const withHead = data.withHead !== false && data.withHead !== 'false';
-        const zebra = data.zebra !== false && data.zebra !== 'false';
-        // a stripe out of the text colour, so it works in both themes without a colour of its own
-        const stripe = theme.palette.mode === 'light' ? 'rgba(0, 0, 0, 0.035)' : 'rgba(255, 255, 255, 0.045)';
-
-        /*
-         * `table-layout: fixed` is what makes a width a width.
-         *
-         * Without it a table is as wide as its longest cell and the card scrolls sideways; with it the given
-         * widths hold and the rest share what is left. It also makes the ellipsis work on its own - a
-         * `max-width: 0` for that, which is the trick an automatic layout needs, overrules the widths here
-         * and squeezes every named column down to a letter.
-         */
-        const cell: React.CSSProperties = {
-            // a column told to be ninety pixels wide is ninety wide, padding and all - otherwise the widths
-            // and the floor below disagree by exactly the padding, and the free column pays for it
-            boxSizing: 'border-box',
-            padding: '4px 8px',
-            fontSize: tokens.smallSize,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-        };
-
-        /*
-         * How narrow the table may become before the card scrolls sideways.
-         *
-         * `table-layout: fixed` hands every column its width and lets the ones without a width share what is
-         * left - and on a phone there is nothing left: a card of three hundred pixels with two columns of
-         * ninety swallowed the third one whole, headline and all, without so much as a scrollbar. So every
-         * column keeps a floor of its own, the table is at least as wide as those floors together, and the
-         * card around it scrolls when they no longer fit. A column told to be forty pixels wide stays forty.
-         */
-        const minWidth = columns.reduce((sum, column) => {
-            const px = /^\d+(\.\d+)?px$/.test(column.width || '') ? parseFloat(column.width as string) : null;
-            return sum + (px ?? MIN_COLUMN_WIDTH);
-        }, 0);
+        const columns = columnsOf(context, all);
 
         return {
             accent: accents.blue,
@@ -286,106 +534,22 @@ const tableDevice = defineDeviceWidget<TableRxData>({
             marker: { text: `${all.length}` },
             body:
                 context.layout === 'default' ? (
-                    <div
-                        className="vis-standard-scroll"
-                        style={{ width: '100%', height: '100%', overflow: 'auto' }}
-                    >
-                        {rows.length && columns.length ? (
-                            <table
-                                style={{
-                                    width: '100%',
-                                    minWidth,
-                                    borderCollapse: 'collapse',
-                                    tableLayout: 'fixed',
-                                }}
-                            >
-                                {withHead ? (
-                                    <thead>
-                                        <tr>
-                                            {columns.map(column => (
-                                                <th
-                                                    key={column.key}
-                                                    style={{
-                                                        ...cell,
-                                                        width: column.width,
-                                                        textAlign: column.align,
-                                                        fontWeight: 700,
-                                                        color: data.headColor || theme.palette.text.secondary,
-                                                        // the heading stays while the rows are scrolled past it
-                                                        position: 'sticky',
-                                                        top: 0,
-                                                        // it must not be see-through: the rows pass underneath
-                                                        background:
-                                                            data.headBackground || theme.palette.background.paper,
-                                                        borderBottom: `1px solid ${theme.palette.divider}`,
-                                                    }}
-                                                >
-                                                    {column.title}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                ) : null}
-                                <tbody>
-                                    {rows.map((row, index) => (
-                                        <tr
-                                            key={index}
-                                            style={{ background: zebra && index % 2 ? stripe : undefined }}
-                                        >
-                                            {columns.map(column => {
-                                                const value = row[column.key];
-                                                const plain = tableCell(value, context.isFloatComma);
-                                                // a word the column was given for this value wins over the value
-                                                const written = column.words[plain] ?? plain;
-                                                /*
-                                                 * The rules are asked with the value, not with what is written.
-                                                 * `> 25` on a column that shows `26,1 °C` has to compare numbers,
-                                                 * and the text has a unit and a comma in it by then.
-                                                 */
-                                                const look = cellLook(value, column.rules);
-                                                return (
-                                                    <td
-                                                        key={column.key}
-                                                        title={written}
-                                                        style={{
-                                                            ...cell,
-                                                            width: column.width,
-                                                            textAlign: column.align,
-                                                            color:
-                                                                look.color ||
-                                                                column.color ||
-                                                                theme.palette.text.primary,
-                                                            background: look.background || column.background,
-                                                            borderTop: index
-                                                                ? `1px solid ${theme.palette.divider}`
-                                                                : undefined,
-                                                        }}
-                                                    >
-                                                        {written === ''
-                                                            ? ''
-                                                            : `${column.prefix || ''}${written}${column.suffix || ''}`}
-                                                    </td>
-                                                );
-                                            })}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <div
-                                style={{
-                                    height: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: tokens.smallSize,
-                                    color: theme.palette.text.secondary,
-                                }}
-                            >
-                                {t('table_empty')}
-                            </div>
-                        )}
-                    </div>
+                    <TableView
+                        rows={all}
+                        columns={columns}
+                        withHead={data.withHead !== false && data.withHead !== 'false'}
+                        zebra={data.zebra !== false && data.zebra !== 'false'}
+                        limit={asNumber(data.maxRows)}
+                        filter={data.rowFilter || ''}
+                        filterKey={data.filterKey || undefined}
+                        filterEndKey={data.filterEndKey || undefined}
+                        headColor={data.headColor}
+                        headBackground={data.headBackground}
+                        smallSize={smallSize}
+                        isFloatComma={context.isFloatComma}
+                        theme={theme}
+                        emptyText={t('table_empty')}
+                    />
                 ) : null,
             // the rows are the card; a tile the size of a coin says how many there are
             value: context.layout === 'default' ? undefined : `${all.length}`,

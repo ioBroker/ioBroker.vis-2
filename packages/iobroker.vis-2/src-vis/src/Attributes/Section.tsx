@@ -370,6 +370,14 @@ function getGroups(context: GroupsContext): SectionGroup[] {
                     helpImage: 'sectionSubtitle',
                     title: 'help_section_title',
                 },
+                {
+                    type: 'checkbox',
+                    label: 'Subtitle in italics',
+                    attr: 'subtitleItalic',
+                    notStyle: true,
+                    helpImage: 'sectionSubtitle',
+                    hidden: '!data.subtitle',
+                },
                 { type: 'icon64', label: 'Icon', attr: 'icon', notStyle: true, helpImage: 'sectionIcon' },
                 {
                     type: 'color',
@@ -411,6 +419,18 @@ function getGroups(context: GroupsContext): SectionGroup[] {
                     attr: 'divider',
                     notStyle: true,
                     helpImage: 'sectionDivider',
+                },
+                {
+                    type: 'slider',
+                    label: 'Space below the header',
+                    attr: 'headerGap',
+                    notStyle: true,
+                    title: 'help_section_header_gap',
+                    min: 0,
+                    max: 50,
+                    step: 1,
+                    // what vis.css gives the header while the section does not set its own
+                    default: 8,
                 },
                 {
                     type: 'select',
@@ -568,6 +588,13 @@ function getGroups(context: GroupsContext): SectionGroup[] {
                     max: Math.max(1, layout.maxSections),
                     step: 1,
                     default: 1,
+                },
+                {
+                    type: 'checkbox',
+                    label: 'Only the header',
+                    attr: 'headerOnly',
+                    notStyle: true,
+                    title: 'help_section_header_only',
                 },
                 {
                     type: 'checkbox',

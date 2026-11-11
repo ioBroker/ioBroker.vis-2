@@ -10,6 +10,8 @@ interface ThemeRxData extends StandardRxData {
     mode?: 'toggle' | 'fixed' | 'system';
     /** The theme that is set in `fixed` */
     themeName?: ThemeName;
+    /** Without the word `Light` / `Dark`: the symbol and the switch say it already */
+    hideText?: boolean | 'true';
 }
 
 /** The themes the runtime knows, in the two families it has */
@@ -141,6 +143,7 @@ const themeDevice = defineDeviceWidget<ThemeRxData>({
                 { value: 'modernDark', label: 'theme_modern_dark' },
             ],
         },
+        { name: 'hideText', type: 'checkbox', label: 'theme_hide_text' },
     ],
     tile: { columns: 4, rows: 2, minColumns: 2 },
     markerShape: 'icon',
@@ -157,7 +160,11 @@ const themeDevice = defineDeviceWidget<ThemeRxData>({
             }
         };
 
-        const word = t(dark ? 'theme_is_dark' : 'theme_is_light');
+        // a small tile next to others may want only the symbol and the switch, which say the same
+        const word =
+            data.hideText === true || data.hideText === 'true'
+                ? undefined
+                : t(dark ? 'theme_is_dark' : 'theme_is_light');
 
         return {
             accent: dark ? accents.blue : accents.yellow,

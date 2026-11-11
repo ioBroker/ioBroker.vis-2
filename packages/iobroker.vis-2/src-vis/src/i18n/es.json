@@ -973,6 +973,9 @@
   "Back": "Atrás",
   "Navigation menu": "Menú de navegación",
   "navigation_project_help": "Cómo se ve el menú, para todas las páginas a la vez. Una página todavía puede decir otra cosa; todo lo que una página deja vacío viene de aquí. Qué página tiene entrada, cómo se llama y en qué orden está sigue siendo de la página.",
+  "navigation_pages_own": "%s páginas tienen aquí un valor propio",
+  "navigation_pages_follow": "Usar en todas las páginas",
+  "navigation_pages_follow_on_save": "%s páginas tomarán este valor al guardar",
   "App bar color": "Color de la barra de la aplicación",
   "App bar height": "Altura de la barra de la aplicación",
   "Bar height": "Altura de la barra",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "Recargar tras una suspensión de más de (segundos)",
   "reload_on_sleep_help": "Solo en el runtime, al menos 30 segundos, vacío o 0 para nunca. P. ej., una tableta con la pantalla apagada se recarga en lugar de procesar cada cambio perdido.",
   "section_value_false": "Apagado",
-  "section_value_true": "Encendido"
+  "section_value_true": "Encendido",
+  "Menu header icon": "Icono del encabezado del menú",
+  "Menu header image": "Imagen del encabezado del menú",
+  "Subtitle in italics": "Subtítulo en cursiva",
+  "Space below the header": "Espacio bajo el encabezado",
+  "Only the header": "Solo el encabezado",
+  "help_section_header_gap": "La distancia entre el encabezado y los widgets, en px. Sin valor son 8 px.",
+  "help_section_header_only": "La sección es solo su encabezado, un título sobre la página o entre las secciones. El runtime no muestra ninguno de sus widgets y conserva la sección aunque no tenga ninguno; el editor muestra sus widgets atenuados.",
+  "help_menu_header_picture": "Pertenece al proyecto: la misma imagen aparece delante del texto del encabezado en cada página con menú"
 }

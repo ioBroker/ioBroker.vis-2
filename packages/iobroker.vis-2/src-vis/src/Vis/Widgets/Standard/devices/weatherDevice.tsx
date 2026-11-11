@@ -16,7 +16,7 @@ import { Icon } from '@iobroker/gui-components';
 
 import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
 
-import { fillFromInstance, weatherDayName, weatherSymbolOf } from '../Base/weatherStates';
+import { fillFromInstance, largestWeatherImage, weatherDayName, weatherSymbolOf } from '../Base/weatherStates';
 
 import WeatherGlyph from '../Base/controls/WeatherGlyph';
 
@@ -323,31 +323,64 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
         /**
          * The picture of the sky: drawn by the widget where it knows what the adapter means by it.
          *
+         * A picture of the adapter that is shown large is never shown larger than it is: in its largest version
+         * where the service has one, and otherwise at most at its own size, in the middle of the place it was
+         * given. Blown up beyond that it was a blur in the corner of the card.
+         *
          * @param src - the address the adapter gives
          * @param style - how large it stands
-         * @param animated - it is the one picture that is looked at, so it may move
+         * @param options - how it is shown
+         * @param options.animated - it is the one picture that is looked at, so it may move
+         * @param options.large - it is shown large, so a picture of the adapter must not be blown up
          */
-        const picture = (src: string, style: React.CSSProperties, animated?: boolean): React.JSX.Element => {
+        const picture = (
+            src: string,
+            style: React.CSSProperties,
+            options: { animated?: boolean; large?: boolean } = {},
+        ): React.JSX.Element => {
             const known = data.adapterIcons === true || data.adapterIcons === 'true' ? null : weatherSymbolOf(src);
-            return known ? (
-                <WeatherGlyph
-                    symbol={known.symbol}
-                    night={known.night}
-                    sun={data.sunColor}
-                    dark={context.themeType === 'dark'}
-                    animated={animated}
-                    style={style}
-                />
-            ) : (
-                <Icon
-                    src={src}
-                    style={style}
-                />
+            if (known) {
+                return (
+                    <WeatherGlyph
+                        symbol={known.symbol}
+                        night={known.night}
+                        sun={data.sunColor}
+                        dark={context.themeType === 'dark'}
+                        animated={options.animated}
+                        style={style}
+                    />
+                );
+            }
+            if (!options.large) {
+                return (
+                    <Icon
+                        src={src}
+                        style={style}
+                    />
+                );
+            }
+            const { width, height, ...place } = style;
+            return (
+                <div
+                    style={{
+                        ...place,
+                        width,
+                        height,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Icon
+                        src={largestWeatherImage(src)}
+                        style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%' }}
+                    />
+                </div>
             );
         };
 
         const iconNode = icon ? (
-            picture(icon, { width: '100%', height: '100%' }, true)
+            picture(icon, { width: '100%', height: '100%' }, { animated: true })
         ) : (
             <WeatherIcon style={{ width: '100%', height: '100%' }} />
         );
@@ -502,8 +535,13 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
             // the width and the height of the card itself, which the frame makes a container for exactly this.
             container: true,
             valueOnTop: true,
-            // the picture of the sky, large in the right corner and fading out into the card, the way a weather app
-            // does it - large enough to read as the sky and not as a stain in the corner
+            /*
+             * The picture of the sky, large in the right corner and fading out into the card, the way a weather
+             * app does it - large enough to read as the sky and not as a stain in the corner.
+             *
+             * It stays inside the card. Pushed half over the edge it was a cloud cut off at the top with its rain
+             * falling onto the days, which read as a fault and not as a sky.
+             */
             background:
                 rich && icon ? (
                     <div
@@ -518,14 +556,18 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                             WebkitMaskImage: 'linear-gradient(to bottom left, #000 15%, transparent 62%)',
                         }}
                     >
-                        {picture(icon, {
-                            position: 'absolute',
-                            right: '-3%',
-                            top: '-22%',
-                            width: 'min(120cqh, 46cqw)',
-                            height: 'min(120cqh, 46cqw)',
-                            opacity: context.themeType === 'dark' ? 0.3 : 0.22,
-                        })}
+                        {picture(
+                            icon,
+                            {
+                                position: 'absolute',
+                                right: '2%',
+                                top: '4%',
+                                width: 'min(82cqh, 36cqw)',
+                                height: 'min(82cqh, 36cqw)',
+                                opacity: context.themeType === 'dark' ? 0.3 : 0.22,
+                            },
+                            { large: true },
+                        )}
                     </div>
                 ) : null,
             body:

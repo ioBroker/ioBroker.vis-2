@@ -37,10 +37,22 @@ export default function ModeButtons(props: ModeButtonsProps): React.JSX.Element 
         return null;
     }
 
+    /*
+     * As many buttons in a row as there is room for, and the rest in the next row.
+     *
+     * In one row that has to hold them all, four temperatures on a card half a phone wide were four buttons
+     * of thirty pixels saying `1…` and `2…`. A button that cannot say what it does is not one, so below about
+     * fifty pixels a button goes to the next row instead of getting narrower.
+     */
     return (
         <div
             className="vis-mode-buttons"
-            style={{ display: 'flex', gap: 6, width: '100%' }}
+            style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(52px, 1fr))',
+                gap: 6,
+                width: '100%',
+            }}
         >
             {props.modes.map(mode => {
                 const on = `${mode.value}` === `${props.current}`;

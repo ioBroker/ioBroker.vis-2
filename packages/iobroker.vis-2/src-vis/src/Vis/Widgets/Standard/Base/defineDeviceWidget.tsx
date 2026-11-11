@@ -45,6 +45,15 @@ const ConfirmDialog = React.lazy(() => import('./controls/ConfirmDialog'));
 /** Which of the two sets a widget belongs to */
 export type StandardSet = 'relative' | 'absolute';
 
+/** What the header of a card of the set `relative` shows */
+export type StandardHeader = 'full' | 'name' | 'icon' | 'none';
+
+/** A card of the set `relative` that shows only its icon, or nothing, in the header */
+const ICON_ONLY_OR_NONE = "data.header === 'icon' || data.header === 'none'";
+
+/** A card of the set `relative` that shows no icon in the header */
+const NO_ICON = "data.header === 'name' || data.header === 'none'";
+
 /** What a running gesture is showing, by the attribute that names the state */
 type StandardPreview = Record<string, { value: unknown; holding: boolean }>;
 
@@ -71,8 +80,15 @@ export interface StandardRxData {
     titleSize?: number | string;
     /** How large the icon is drawn, in px; without it the layout decides */
     iconSize?: number | string;
+    /** How large the value is written, in px; without it the layout decides. Only the set `relative` */
+    valueSize?: number | string;
     /** How the widget arranges what it shows: `StandardWidgetLayout` in a section, `MarkerLayout` on a plan */
     layout?: StandardWidgetLayout | MarkerLayout;
+    /**
+     * What the header of a card shows: icon and name (`full`, the default), the name alone, the icon alone, or
+     * nothing. Only the set `relative`; what is left out makes room for the content, see `StandardFrame`
+     */
+    header?: StandardHeader;
     /** Only the control, without the card around it */
     noCard?: boolean | 'true';
     /** When switching is asked about first: `on`, `off`, `both`, or nothing at all */
@@ -515,35 +531,54 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                         }
                                       : field,
                               ),
-                              which === 'relative'
-                                  ? {
-                                        name: 'layout',
-                                        type: 'select',
-                                        label: 'layout',
-                                        default: 'default',
-                                        options: [
-                                            { value: 'default', label: 'layout_default' },
-                                            { value: 'compact', label: 'layout_compact' },
-                                            { value: 'card', label: 'layout_card' },
-                                        ],
-                                    }
-                                  : {
-                                        name: 'layout',
-                                        type: 'select',
-                                        label: 'layout',
-                                        default: 'icon',
-                                        options: [
-                                            { value: 'icon', label: 'marker_icon' },
-                                            { value: 'name', label: 'marker_name' },
-                                            // A marker that carries a number says what the device is doing in the
-                                            // circle itself. A line under it that says `163,57 MB` a second time is
-                                            // not a layout anyone would pick, so it is not offered - only devices
-                                            // whose marker is an icon have something left to tell.
-                                            ...(definition.markerShape === 'value'
-                                                ? []
-                                                : [{ value: 'state', label: 'marker_state' }]),
-                                        ],
-                                    },
+                              ...(which === 'relative'
+                                  ? ([
+                                        {
+                                            name: 'layout',
+                                            type: 'select',
+                                            label: 'layout',
+                                            default: 'default',
+                                            options: [
+                                                { value: 'default', label: 'layout_default' },
+                                                { value: 'compact', label: 'layout_compact' },
+                                                { value: 'card', label: 'layout_card' },
+                                            ],
+                                        },
+                                        {
+                                            // a tile that says what it is by where it stands, or by its icon,
+                                            // gives the room of the name to its content
+                                            name: 'header',
+                                            type: 'select',
+                                            label: 'header',
+                                            tooltip: 'header_tooltip',
+                                            default: 'full',
+                                            options: [
+                                                { value: 'full', label: 'header_full' },
+                                                { value: 'name', label: 'header_name' },
+                                                { value: 'icon', label: 'header_icon' },
+                                                { value: 'none', label: 'header_none' },
+                                            ],
+                                        },
+                                    ] as RxWidgetInfoAttributesField[])
+                                  : ([
+                                        {
+                                            name: 'layout',
+                                            type: 'select',
+                                            label: 'layout',
+                                            default: 'icon',
+                                            options: [
+                                                { value: 'icon', label: 'marker_icon' },
+                                                { value: 'name', label: 'marker_name' },
+                                                // A marker that carries a number says what the device is doing in
+                                                // the circle itself. A line under it that says `163,57 MB` a second
+                                                // time is not a layout anyone would pick, so it is not offered -
+                                                // only devices whose marker is an icon have something left to tell.
+                                                ...(definition.markerShape === 'value'
+                                                    ? []
+                                                    : [{ value: 'state', label: 'marker_state' }]),
+                                            ],
+                                        },
+                                    ] as RxWidgetInfoAttributesField[])),
                               {
                                   name: 'widgetTitle',
                                   label: 'name',
@@ -560,13 +595,40 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                   label: 'title_size',
                                   min: 6,
                                   max: 200,
+                                  // the name stays to be set - the chart and the editor use it - but its size
+                                  // means nothing where the card does not write it
                                   hidden:
                                       which === 'absolute'
                                           ? "data.layout !== 'name' && data.layout !== 'state' && data.layout !== 'badge'"
-                                          : undefined,
+                                          : ICON_ONLY_OR_NONE,
                               },
-                              { name: 'icon', type: 'icon-image', label: 'icon' },
-                              { name: 'iconSize', type: 'number', label: 'icon_size', min: 6, max: 400 },
+                              ...(which === 'relative'
+                                  ? ([
+                                        {
+                                            // the reading is what a card is looked at for, and on a wall
+                                            // across the room it may want to be larger than the set has it
+                                            name: 'valueSize',
+                                            type: 'number',
+                                            label: 'value_size',
+                                            min: 6,
+                                            max: 200,
+                                        },
+                                    ] as RxWidgetInfoAttributesField[])
+                                  : []),
+                              {
+                                  name: 'icon',
+                                  type: 'icon-image',
+                                  label: 'icon',
+                                  hidden: which === 'relative' ? NO_ICON : undefined,
+                              },
+                              {
+                                  name: 'iconSize',
+                                  type: 'number',
+                                  label: 'icon_size',
+                                  min: 6,
+                                  max: 400,
+                                  hidden: which === 'relative' ? NO_ICON : undefined,
+                              },
                               ...(which === 'relative'
                                   ? ([
                                         {
@@ -758,6 +820,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 theme={context.theme}
                                 titleSize={typedSize(this.state.rxData.titleSize)}
                                 iconSize={typedSize(this.state.rxData.iconSize)}
+                                valueSize={typedSize(this.state.rxData.valueSize)}
                                 css={css}
                             />
                         </CardDialog>
@@ -994,14 +1057,24 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                     );
                 }
 
+                /*
+                 * What the header shows; what it leaves out, the content moves up into.
+                 *
+                 * The name alone has to be a setting of its own: an empty icon field means "the icon of the
+                 * device", so there was no way to say "no icon at all" while keeping the name.
+                 */
+                const header: StandardHeader = this.state.rxData.header || 'full';
+                const withName = header === 'full' || header === 'name';
+                const withIcon = header === 'full' || header === 'icon';
+
                 return (
                     <>
                         <StandardFrame
                             layout={
                                 context.layout === 'compact' || context.layout === 'card' ? context.layout : 'default'
                             }
-                            title={this.state.rxData.widgetTitle}
-                            icon={icon}
+                            title={withName ? this.state.rxData.widgetTitle : undefined}
+                            icon={withIcon ? icon : undefined}
                             accent={result.accent}
                             active={result.active}
                             value={result.value}
@@ -1020,6 +1093,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             theme={context.theme}
                             titleSize={typedSize(this.state.rxData.titleSize)}
                             iconSize={typedSize(this.state.rxData.iconSize)}
+                            valueSize={typedSize(this.state.rxData.valueSize)}
                             css={css}
                             onClick={onClick}
                         />

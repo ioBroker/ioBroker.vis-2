@@ -973,6 +973,9 @@
   "Back": "Retour",
   "Navigation menu": "Menu de navigation",
   "navigation_project_help": "L'aspect du menu, pour toutes les pages à la fois. Une page peut toujours dire autre chose ; tout ce qu'une page laisse vide vient d'ici. Quelle page a une entrée, son nom et son rang restent l'affaire de la page.",
+  "navigation_pages_own": "%s pages ont ici leur propre valeur",
+  "navigation_pages_follow": "Appliquer à toutes les pages",
+  "navigation_pages_follow_on_save": "%s pages prendront cette valeur à l'enregistrement",
   "App bar color": "Couleur de la barre d'application",
   "App bar height": "Hauteur de la barre d’application",
   "Bar height": "Hauteur de la barre",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "Recharger après une veille de plus de (secondes)",
   "reload_on_sleep_help": "Uniquement dans le runtime, au moins 30 secondes, vide ou 0 pour jamais. Par ex. une tablette dont l'écran était éteint se recharge au lieu de traiter chaque changement manqué.",
   "section_value_false": "Arrêt",
-  "section_value_true": "Marche"
+  "section_value_true": "Marche",
+  "Menu header icon": "Icône de l'en-tête du menu",
+  "Menu header image": "Image de l'en-tête du menu",
+  "Subtitle in italics": "Sous-titre en italique",
+  "Space below the header": "Espace sous l'en-tête",
+  "Only the header": "Uniquement l'en-tête",
+  "help_section_header_gap": "La distance entre l'en-tête et les widgets, en px. Sans valeur, elle est de 8 px.",
+  "help_section_header_only": "La section n'est que son en-tête, un titre au-dessus de la page ou entre les sections. Le runtime n'affiche aucun de ses widgets et garde la section même sans widget ; l'éditeur affiche ses widgets atténués.",
+  "help_menu_header_picture": "Appartient au projet : la même image précède le texte de l'en-tête sur chaque page avec menu"
 }

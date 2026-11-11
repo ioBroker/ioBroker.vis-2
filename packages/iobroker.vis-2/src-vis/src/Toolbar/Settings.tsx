@@ -35,6 +35,33 @@ import commonStyles from '@/Utilities/styles';
 import IODialog from '../Components/IODialog';
 import EditorColorPicker from '../Components/EditorColorPicker';
 import { applyTitleAndIcon } from '@/Vis/visUtils';
+import { PROJECT_NAVIGATION_KEYS } from '@/Vis/visNavigationSettings';
+
+/** A value a page carries for itself: nothing, a null and an empty string are not one */
+function isSet(value: unknown): boolean {
+    return value !== undefined && value !== null && value !== '';
+}
+
+/**
+ * The pages that say something else for a setting of the menu than the project does.
+ *
+ * A page wins with every value it carries itself, so a project setting changes nothing on a page that has its
+ * own - which is every page of a project that was set up before the project could say it. That is what made
+ * "Show app bar" look like a setting of the page only.
+ *
+ * @param key - the setting
+ * @param value - what the project says
+ */
+function pagesWithOwn(key: string, value: unknown): string[] {
+    const project = store.getState().visProject;
+    return Object.keys(project).filter(view => {
+        if (view === '___settings') {
+            return false;
+        }
+        const own = (project[view]?.settings as Record<string, unknown> | undefined)?.[key];
+        return isSet(own) && own !== value;
+    });
+}
 
 const styles: { dialog: React.CSSProperties; field: React.CSSProperties } = {
     dialog: {
@@ -124,6 +151,8 @@ export function Settings(props: SettingsProps): React.JSX.Element {
 
     const [settings, setSettings] = useState<ProjectSettings>({} as ProjectSettings);
     const [browserInstance, setBrowserInstance] = useState('');
+    /** The settings of the menu every page takes from the project once this is saved */
+    const [follow, setFollow] = useState<string[]>([]);
 
     useEffect(() => {
         const _settings = { ...store.getState().visProject.___settings };
@@ -270,7 +299,8 @@ export function Settings(props: SettingsProps): React.JSX.Element {
         { type: 'checkbox', name: 'One flat list', field: 'navigationFlat' },
         { type: 'checkbox', name: 'Only icon', field: 'navigationOnlyIcon' },
         { type: 'number', name: 'Menu width', field: 'navigationWidth' },
-        { type: 'text', name: 'Header text', field: 'navigationHeaderText' },
+        { type: 'text', name: 'Menu header text', field: 'navigationHeaderText' },
+        { type: 'image', name: 'Menu header image', field: 'navigationHeaderImage' },
         { type: 'color', name: 'Background color', field: 'navigationBackground' },
         { type: 'color', name: 'Text color', field: 'navigationColor' },
         { type: 'color', name: 'Background color if selected', field: 'navigationSelectedBackground' },
@@ -286,6 +316,14 @@ export function Settings(props: SettingsProps): React.JSX.Element {
     const save = (): void => {
         const project = deepClone(store.getState().visProject);
         project.___settings = settings;
+        // a setting of the menu that was set here is meant for every page: what a page said instead goes
+        follow.forEach(key => {
+            Object.keys(project).forEach(view => {
+                if (view !== '___settings' && project[view]?.settings) {
+                    delete (project[view].settings as Record<string, unknown>)[key];
+                }
+            });
+        });
         void props.changeProject(project);
         props.onClose();
     };
@@ -297,7 +335,9 @@ export function Settings(props: SettingsProps): React.JSX.Element {
             ActionIcon={SaveIcon}
             action={save}
             actionTitle="Save"
-            actionDisabled={JSON.stringify(store.getState().visProject.___settings) === JSON.stringify(settings)}
+            actionDisabled={
+                !follow.length && JSON.stringify(store.getState().visProject.___settings) === JSON.stringify(settings)
+            }
         >
             <div style={styles.dialog}>
                 {fields.map((field, index) => {
@@ -385,10 +425,19 @@ export function Settings(props: SettingsProps): React.JSX.Element {
 
                     const value = field.field ? settings[field.field] : undefined;
 
+                    const navigationKey =
+                        field.field && (PROJECT_NAVIGATION_KEYS as string[]).includes(field.field)
+                            ? (field.field as string)
+                            : null;
+
                     const change = (changeValue: any): void => {
                         const newSettings = deepClone(settings);
                         field.field && ((newSettings as Record<string, any>)[field.field] = changeValue);
                         setSettings(newSettings);
+                        // what is set here for the menu is set for every page, see save()
+                        if (navigationKey && !follow.includes(navigationKey)) {
+                            setFollow([...follow, navigationKey]);
+                        }
                         applyTitleAndIcon(newSettings.title, newSettings.favicon, {
                             themeType: props.theme.palette.mode,
                             adapterName: props.adapterName,
@@ -532,12 +581,41 @@ export function Settings(props: SettingsProps): React.JSX.Element {
                         );
                     }
 
+                    // the pages that would keep their own value, and a way to make them follow the project
+                    const own = navigationKey ? pagesWithOwn(navigationKey, value) : [];
+                    const following = !!navigationKey && follow.includes(navigationKey);
+
                     return (
                         <div
                             key={field.field || index.toString()}
-                            style={styles.field}
+                            style={
+                                own.length
+                                    ? { ...styles.field, flexDirection: 'column', alignItems: 'stretch' }
+                                    : styles.field
+                            }
                         >
                             {result}
+                            {own.length ? (
+                                <div
+                                    title={own.join(', ')}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}
+                                >
+                                    <span style={{ flex: 1, opacity: 0.7 }}>
+                                        {I18n.t(
+                                            following ? 'navigation_pages_follow_on_save' : 'navigation_pages_own',
+                                            own.length,
+                                        )}
+                                    </span>
+                                    {following ? null : (
+                                        <Button
+                                            size="small"
+                                            onClick={() => setFollow([...follow, navigationKey as string])}
+                                        >
+                                            {I18n.t('navigation_pages_follow')}
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : null}
                         </div>
                     );
                 })}

@@ -1048,6 +1048,9 @@
   "Back": "Back",
   "Navigation menu": "Navigation menu",
   "navigation_project_help": "How the menu looks, for every page at once. A page may still say something else; everything a page leaves empty comes from here. Which page carries an entry, what it is called and in which order it stands stays with the page.",
+  "navigation_pages_own": "%s pages keep a value of their own here",
+  "navigation_pages_follow": "Use for all pages",
+  "navigation_pages_follow_on_save": "%s pages take this value when saved",
   "App bar color": "App bar color",
   "App bar height": "App bar height",
   "Bar height": "Bar height",
@@ -1104,5 +1107,13 @@
   "Reload if sleep longer than (seconds)": "Reload if sleep longer than (seconds)",
   "reload_on_sleep_help": "Only in the runtime, at least 30 seconds, empty or 0 for never. E.g. a tablet whose screen was off reloads instead of working off every missed change.",
   "section_value_false": "Off",
-  "section_value_true": "On"
+  "section_value_true": "On",
+  "Menu header icon": "Menu header icon",
+  "Menu header image": "Menu header image",
+  "Subtitle in italics": "Subtitle in italics",
+  "Space below the header": "Space below the header",
+  "Only the header": "Only the header",
+  "help_section_header_gap": "How far the widgets keep from the header, in px. Without a value it is 8 px.",
+  "help_section_header_only": "The section is its header alone, a heading over the page or between the sections. The runtime shows none of its widgets and keeps the section even without any; the editor shows its widgets dimmed.",
+  "help_menu_header_picture": "Belongs to the project: the same picture stands in front of the header text on every page with a menu"
 }

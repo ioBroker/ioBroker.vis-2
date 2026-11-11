@@ -1048,6 +1048,9 @@
   "Back": "Zurück",
   "Navigation menu": "Navigationsmenü",
   "navigation_project_help": "Wie das Menü aussieht, für alle Seiten auf einmal. Eine Seite darf weiterhin etwas anderes sagen; alles, was eine Seite leer lässt, kommt von hier. Welche Seite einen Eintrag hat, wie er heißt und an welcher Stelle er steht, bleibt bei der Seite.",
+  "navigation_pages_own": "%s Seiten haben hier einen eigenen Wert",
+  "navigation_pages_follow": "Für alle Seiten übernehmen",
+  "navigation_pages_follow_on_save": "%s Seiten übernehmen diesen Wert beim Speichern",
   "App bar color": "Farbe der Anwendungsleiste",
   "App bar height": "Höhe der App-Leiste",
   "Bar height": "Höhe der Leiste",
@@ -1104,5 +1107,13 @@
   "Reload if sleep longer than (seconds)": "Neu laden nach Ruhezustand länger als (Sekunden)",
   "reload_on_sleep_help": "Nur in der Runtime, mindestens 30 Sekunden, leer oder 0 für nie. Z. B. lädt ein Tablet, dessen Bildschirm aus war, neu, statt jede verpasste Änderung nachzuholen.",
   "section_value_false": "Aus",
-  "section_value_true": "An"
+  "section_value_true": "An",
+  "Menu header icon": "Symbol im Menükopf",
+  "Menu header image": "Bild im Menükopf",
+  "Subtitle in italics": "Untertitel kursiv",
+  "Space below the header": "Abstand unter der Kopfzeile",
+  "Only the header": "Nur die Kopfzeile",
+  "help_section_header_gap": "Wie weit die Widgets von der Kopfzeile entfernt bleiben, in px. Ohne Wert sind es 8 px.",
+  "help_section_header_only": "Der Abschnitt ist nur seine Kopfzeile – eine Überschrift über der Seite oder zwischen den Abschnitten. Die Runtime zeigt keines seiner Widgets und behält den Abschnitt auch ganz ohne Widgets; der Editor zeigt seine Widgets abgeblendet.",
+  "help_menu_header_picture": "Gehört zum Projekt: dasselbe Bild steht auf jeder Seite mit Menü vor dem Kopftext"
 }

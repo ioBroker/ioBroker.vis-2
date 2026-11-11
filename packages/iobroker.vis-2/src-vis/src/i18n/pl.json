@@ -973,6 +973,9 @@
   "Back": "Wstecz",
   "Navigation menu": "Menu nawigacji",
   "navigation_project_help": "Jak wygląda menu — dla wszystkich stron naraz. Strona nadal może powiedzieć co innego; wszystko, co strona zostawia puste, pochodzi stąd. Która strona ma wpis, jak się nazywa i w jakiej kolejności stoi, zostaje przy stronie.",
+  "navigation_pages_own": "%s stron ma tu własną wartość",
+  "navigation_pages_follow": "Użyj dla wszystkich stron",
+  "navigation_pages_follow_on_save": "%s stron przejmie tę wartość przy zapisie",
   "App bar color": "Kolor paska aplikacji",
   "App bar height": "Wysokość paska aplikacji",
   "Bar height": "Wysokość paska",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "Przeładuj po uśpieniu dłuższym niż (sekundy)",
   "reload_on_sleep_help": "Tylko w runtime, co najmniej 30 sekund, puste lub 0 oznacza nigdy. Np. tablet z wyłączonym ekranem przeładowuje się zamiast nadrabiać każdą pominiętą zmianę.",
   "section_value_false": "Wył.",
-  "section_value_true": "Wł."
+  "section_value_true": "Wł.",
+  "Menu header icon": "Ikona w nagłówku menu",
+  "Menu header image": "Obraz w nagłówku menu",
+  "Subtitle in italics": "Podtytuł kursywą",
+  "Space below the header": "Odstęp pod nagłówkiem",
+  "Only the header": "Tylko nagłówek",
+  "help_section_header_gap": "Odległość widżetów od nagłówka w px. Bez wartości wynosi 8 px.",
+  "help_section_header_only": "Sekcja to tylko jej nagłówek – tytuł nad stroną lub między sekcjami. Runtime nie pokazuje żadnych jej widżetów i zachowuje sekcję nawet bez nich; edytor pokazuje widżety przyciemnione.",
+  "help_menu_header_picture": "Należy do projektu: ten sam obraz stoi przed tekstem nagłówka na każdej stronie z menu"
 }

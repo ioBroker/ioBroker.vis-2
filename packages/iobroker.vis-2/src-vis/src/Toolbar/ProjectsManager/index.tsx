@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     AppBar,
     Button,
@@ -93,6 +93,13 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
     const [working, setWorking] = useState<string | boolean>(false);
 
     const [importDialog, setImportDialog] = useState(false);
+
+    // The list the editor holds was read when it started. Since then a project may have been added, renamed or
+    // deleted in another browser, by another user or by a script, so the dialog reads it again every time it opens
+    const { refreshProjects } = props;
+    useEffect(() => {
+        void refreshProjects();
+    }, [refreshProjects]);
 
     if (!props.projects) {
         return null;

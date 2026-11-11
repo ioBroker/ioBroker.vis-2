@@ -154,6 +154,17 @@ export function getGridMaxWidth(columnCount: number, layout: GridLayout): number
 }
 
 /**
+ * Whether the section is its header alone (`headerOnly`). The runtime then shows none of its widgets and keeps
+ * it even when it has none - which is what a heading over a page is.
+ *
+ * @param section - the section as it is stored, or with its bindings applied
+ */
+export function isHeaderOnly(section: ViewSection | undefined | null): boolean {
+    const value = section && typeof section === 'object' ? (section.headerOnly as unknown) : undefined;
+    return value === true || value === 'true';
+}
+
+/**
  * Distribute the relative widgets over the sections.
  *
  * `widgets` are the relative widgets the view shows, in their order. A section keeps the ones it lists, in its
@@ -165,7 +176,8 @@ export function getGridMaxWidth(columnCount: number, layout: GridLayout): number
  * @param sections - the sections of the view settings
  * @param widgets - the relative widgets the view shows, in their order
  * @param columnCount - the section columns there are
- * @param keepEmpty - keep the sections that end up without widgets; the editor shows them so they can be filled
+ * @param keepEmpty - keep the sections that end up without widgets; the editor shows them so they can be filled.
+ *   A section that is only its header is kept anyway: it needs no widgets to be shown.
  */
 export function buildGridSections(
     sections: ViewSection[] | undefined | null,
@@ -197,7 +209,7 @@ export function buildGridSections(
             return true;
         });
 
-        if (sectionWidgets.length || keepEmpty) {
+        if (sectionWidgets.length || keepEmpty || isHeaderOnly(section)) {
             result.push({
                 id,
                 columnSpan: Math.min(columnCount, Math.floor(toNumber(section.columnSpan, 1) ?? 1)),

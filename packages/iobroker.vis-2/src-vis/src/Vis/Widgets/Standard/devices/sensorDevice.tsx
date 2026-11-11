@@ -4,6 +4,7 @@ import {
     DirectionsRun as MotionIcon,
     DoorFront as DoorIcon,
     LocalFireDepartment as SmokeIcon,
+    Person as PersonIcon,
     Sensors as GenericIcon,
     Water as WaterIcon,
     WbSunny as BrightIcon,
@@ -15,9 +16,10 @@ import { Types } from '../Base/deviceTypes';
 import { IconBell, Icon } from '@iobroker/gui-components';
 
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
+import { initialsOf } from '../Base/controls/countStates';
 
 /** What kind of thing the sensor watches, which decides its symbol and its two words */
-type SensorKind = 'contact' | 'window' | 'door' | 'motion' | 'smoke' | 'water' | 'light' | 'generic';
+type SensorKind = 'contact' | 'window' | 'door' | 'motion' | 'smoke' | 'water' | 'light' | 'person' | 'generic';
 
 /**
  * The bell of an alarm. It stands there only for as long as the alarm does, and a bell rings on a change and not
@@ -54,6 +56,108 @@ interface SensorRxData extends StandardRxData {
     colorOff?: string;
     /** This is something to be alarmed about, not something to know */
     alarm?: boolean | 'true';
+    /**
+     * The photo of the person, for the kind `person`.
+     *
+     * The name has `icon` in it for a reason: an image of the project is stored as `_PRJ_NAME/...`, and the
+     * base widget turns that into a path only for an attribute whose name says it is a picture.
+     */
+    iconPhoto?: string;
+}
+
+interface PersonPictureProps {
+    photo?: string;
+    name?: string;
+    /** At home: in colour */
+    present: boolean;
+    /** The colour of the ring */
+    ring: string;
+    /** How wide the ring is, in px */
+    ringWidth: number;
+    /** What the circle is filled with behind initials */
+    background: string;
+}
+
+/**
+ * A person in a circle: the photo, in colour while they are at home and grey while they are away.
+ *
+ * Grey rather than gone: a row of faces is read at a glance as who is there, and that only works while
+ * everyone keeps their place. Without a photo the initials of the name stand in the circle, and without a
+ * name the outline of a person. A photo that cannot be loaded is treated as none, not as a broken image.
+ *
+ * @param props - what to draw
+ */
+function PersonPicture(props: PersonPictureProps): React.JSX.Element {
+    const [failed, setFailed] = React.useState(false);
+
+    React.useEffect(() => setFailed(false), [props.photo]);
+
+    const initials = initialsOf(props.name);
+    let inside: React.ReactNode;
+    if (props.photo && !failed) {
+        inside = (
+            <img
+                src={props.photo}
+                alt={props.name || ''}
+                draggable={false}
+                onError={() => setFailed(true)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+        );
+    } else if (initials) {
+        inside = <span style={{ fontSize: '42cqmin', fontWeight: 600, lineHeight: 1 }}>{initials}</span>;
+    } else {
+        inside = <PersonIcon style={{ width: '72%', height: '72%' }} />;
+    }
+
+    return (
+        <div
+            style={{
+                width: '100%',
+                height: '100%',
+                boxSizing: 'border-box',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: props.ringWidth ? `${props.ringWidth}px solid ${props.ring}` : undefined,
+                background: props.background,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                // the initials are sized by the circle they stand in
+                containerType: 'size',
+                filter: props.present ? undefined : 'grayscale(1)',
+                opacity: props.present ? 1 : 0.55,
+                transition: 'filter 0.4s, opacity 0.4s, border-color 0.4s',
+            }}
+        >
+            {inside}
+        </div>
+    );
+}
+
+/**
+ * The big circle of a person: as large as the card leaves room for, and always a circle.
+ *
+ * @param props - what to draw
+ * @param props.children - the circle
+ */
+function LargestCircle(props: { children: React.ReactNode }): React.JSX.Element {
+    return (
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    containerType: 'size',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <div style={{ width: 'min(100cqw, 100cqh)', height: 'min(100cqw, 100cqh)' }}>{props.children}</div>
+            </div>
+        </div>
+    );
 }
 
 /** The two words of each kind, as they stand in the i18n of these sets */
@@ -65,6 +169,7 @@ const WORDS: Record<SensorKind, { on: string; off: string }> = {
     smoke: { on: 'smoke', off: 'sensor_quiet' },
     water: { on: 'water', off: 'sensor_dry' },
     light: { on: 'bright', off: 'dark' },
+    person: { on: 'person_home', off: 'person_away' },
     generic: { on: 'on', off: 'off' },
 };
 
@@ -77,6 +182,7 @@ const ICONS: Record<SensorKind, React.ReactNode> = {
     smoke: <SmokeIcon style={{ width: '100%', height: '100%' }} />,
     water: <WaterIcon style={{ width: '100%', height: '100%' }} />,
     light: <BrightIcon style={{ width: '100%', height: '100%' }} />,
+    person: <PersonIcon style={{ width: '100%', height: '100%' }} />,
     generic: <GenericIcon style={{ width: '100%', height: '100%' }} />,
 };
 
@@ -91,6 +197,10 @@ const ICONS: Record<SensorKind, React.ReactNode> = {
  *
  * Where the state is logged, a click opens its history - drawn as a step curve, which is how a thing that
  * jumps between two values actually behaves.
+ *
+ * The kind `person` is the presence of somebody: their photo in a big circle, grey while they are away. The
+ * card shows it as its body; a row and a coloured card, which have no body, show it in place of the icon, and
+ * a marker is the face itself.
  */
 const sensorDevice = defineDeviceWidget<SensorRxData>({
     name: 'Sensor',
@@ -145,8 +255,16 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
                 { value: 'smoke', label: 'sensor_smoke' },
                 { value: 'water', label: 'sensor_water' },
                 { value: 'light', label: 'sensor_light' },
+                { value: 'person', label: 'sensor_person' },
                 { value: 'generic', label: 'sensor_generic' },
             ],
+        },
+        {
+            name: 'iconPhoto',
+            type: 'image',
+            label: 'person_photo',
+            tooltip: 'person_photo_tooltip',
+            hidden: 'data.kind !== "person"',
         },
         { name: 'alarm', type: 'checkbox', label: 'sensor_alarm', tooltip: 'sensor_alarm_tooltip' },
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
@@ -160,7 +278,7 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
     tile: { columns: 6, rows: 2, minColumns: 3 },
     markerShape: 'icon',
     render: context => {
-        const { data, accents, t } = context;
+        const { data, accents, t, theme } = context;
         const kind: SensorKind = data.kind || 'contact';
         const raw = context.valueOf('oid');
         const known = raw !== undefined && raw !== null;
@@ -175,9 +293,43 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
 
         // what the widget was told to use for this state, and otherwise the colours of the set
         const ownColour = active ? data.colorOn : data.colorOff;
+        const person = kind === 'person';
+        // somebody at home is good news, not a warning
+        const activeColour = person ? accents.green : accents.yellow;
         const accent =
-            ownColour || (!known ? accents.off : alarming ? accents.red : active ? accents.yellow : accents.off);
+            ownColour || (!known ? accents.off : alarming ? accents.red : active ? activeColour : accents.off);
         const ownIcon = active ? data.iconOn : data.iconOff;
+        const chart = { attrs: ['oid'] };
+
+        if (person) {
+            const picture = (ringWidth: number): React.JSX.Element => (
+                <PersonPicture
+                    photo={data.iconPhoto}
+                    name={data.widgetTitle}
+                    present={active}
+                    ring={accent}
+                    ringWidth={ringWidth}
+                    background={theme.palette.action.selected}
+                />
+            );
+            const value = known ? word : '--';
+            // the card has room for the big circle; a row and a coloured card have only the place of the icon
+            const big = context.layout === 'default';
+
+            return {
+                accent,
+                active: alarming,
+                icon: big ? null : picture(2),
+                // the photo is the more exact answer than any icon chosen for the widget
+                ownIcon: true,
+                body: big ? <LargestCircle>{picture(3)}</LargestCircle> : undefined,
+                face: picture(0),
+                value,
+                valueColor: accent,
+                stateText: value,
+                chart,
+            };
+        }
 
         return {
             accent,
@@ -199,7 +351,7 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
             valueColor: accent,
             stateText: known ? word : '--',
             // a state that jumps between two values is worth looking at over time: when did the window open
-            chart: { attrs: ['oid'] },
+            chart,
         };
     },
 });

@@ -12,6 +12,8 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
+    Menu,
+    MenuItem as MuiMenuItem,
     Tooltip,
     Tabs,
     Tab,
@@ -24,6 +26,8 @@ import {
     Dashboard as DashboardIcon,
     ExpandLess as CollapseIcon,
     ExpandMore as ExpandIcon,
+    Menu as MenuIcon,
+    MoreHoriz as MoreIcon,
 } from '@mui/icons-material';
 
 import { IconFolder, I18n, Utils, Icon } from '@iobroker/gui-components';
@@ -37,6 +41,7 @@ import {
     type MenuWidth,
     NAVIGATION_BAR_HEIGHT,
     resolveNavigationSettings,
+    splitBottomMenu,
 } from './visNavigationSettings';
 
 const MENU_WIDTH_FULL = 200;
@@ -255,6 +260,15 @@ const styles: Record<string, any> = {
         whiteSpace: 'nowrap',
         transition: 'opacity 0.3s ease-in-out',
     },
+    menuToolbarIcon: {
+        height: 32,
+        width: 'auto',
+        maxWidth: '100%',
+        // the toolbar is a row whose text is centred by its line height, so the picture is centred by itself
+        alignSelf: 'center',
+        marginRight: 10,
+        flexShrink: 0,
+    },
     menuToolbarFull: {
         opacity: 1,
     },
@@ -307,6 +321,8 @@ interface VisNavigationState {
     openFolders: Record<string, boolean>;
     /** The values of the states the entries are shown by, by `<id>.val`, see getNavigationEntryStateIds() */
     entryStates: Record<string, unknown>;
+    /** The button "More" of the menu at the bottom edge, while the list of the other pages is open */
+    moreAnchor: HTMLElement | null;
 }
 
 class VisNavigation extends React.Component<VisNavigationProps, VisNavigationState> {
@@ -318,7 +334,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
         } catch {
             // a broken entry is no reason to show no menu
         }
-        this.state = { openFolders, entryStates: {} };
+        this.state = { openFolders, entryStates: {}, moreAnchor: null };
     }
 
     /** The states this menu listens to, see subscribeEntryStates() */
@@ -429,7 +445,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                             ? ''
                             : viewSettings.navigationTitle || view,
                     color: viewSettings.navigationColor,
-                    icon: viewSettings.navigationIcon || viewSettings.navigationImage,
+                    icon: this.getImageSrc(viewSettings.navigationIcon || viewSettings.navigationImage),
                     noText: viewSettings.navigationOnlyIcon,
                     order: parseInt((viewSettings.navigationOrder as any as string) || '0'),
                     view,
@@ -437,10 +453,6 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                 };
 
                 items.push(item);
-
-                if (item.icon?.startsWith('_PRJ_NAME/')) {
-                    item.icon = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${item.icon.substring(9)}`; // "_PRJ_NAME".length = 9
-                }
             }
         });
 
@@ -663,59 +675,116 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
      * A drawer that has to be pulled out is the wrong shape for a device held in one hand: the thumb
      * reaches the bottom of the screen and nothing else.
      *
-     * About five entries fit across a phone. More than that do not get smaller - a label squeezed into
-     * forty pixels is a label nobody reads - the bar scrolls instead, and everything keeps its width.
+     * About five entries fit across a phone. With more than that, four stay in the bar and the fifth button,
+     * "More", lists the others - see splitBottomMenu(). While one of those is open, "More" is the selected one:
+     * the bar has to say where one is, and the page one is on is behind it.
      *
      * @param settings - the colours of the menu
      */
     renderBottomMenu(settings: ViewSettings): React.JSX.Element {
-        const items = this.buildItems(settings);
+        const { shown, more } = splitBottomMenu(this.buildItems(settings));
+        const MORE = '___more';
+        const inMore = more.some(item => item.view === this.props.activeView);
+        const colorOf = (selected: boolean): string | undefined =>
+            selected ? settings.navigationSelectedColor : settings.navigationColor;
+
+        const icon = (item: MenuItem): React.JSX.Element =>
+            item.icon ? (
+                <Icon
+                    src={item.icon}
+                    style={{ width: 24, height: 24, backgroundColor: 'rgba(1,1,1,0)' }}
+                />
+            ) : (
+                <DashboardIcon />
+            );
 
         return (
-            <BottomNavigation
-                showLabels
-                value={items.find(item => item.view === this.props.activeView)?.view || false}
-                onChange={(_event, view: string) => this.props.context.changeView(view)}
-                style={{
-                    position: this.props.context.runtime ? 'fixed' : 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    zIndex: 450,
-                    backgroundColor: settings.navigationBackground || undefined,
-                    opacity: this.props.editMode ? 0.4 : 1,
-                    // what does not fit is scrolled to, rather than squeezed until nothing can be read
-                    overflowX: 'auto',
-                    justifyContent: 'flex-start',
-                }}
-            >
-                {items.map(item => (
-                    <BottomNavigationAction
-                        key={item.view}
-                        value={item.view}
-                        label={item.noText ? '' : item.text}
-                        style={{
-                            color:
-                                this.props.activeView === item.view
-                                    ? settings.navigationSelectedColor
-                                    : settings.navigationColor,
-                            minWidth: 72,
-                            maxWidth: 168,
-                            flexShrink: 0,
-                        }}
-                        icon={
-                            item.icon ? (
-                                <Icon
-                                    src={item.icon}
-                                    style={{ width: 24, height: 24, backgroundColor: 'rgba(1,1,1,0)' }}
-                                />
-                            ) : (
-                                <DashboardIcon />
-                            )
+            <>
+                <BottomNavigation
+                    showLabels
+                    value={inMore ? MORE : shown.find(item => item.view === this.props.activeView)?.view || false}
+                    onChange={(event: React.SyntheticEvent, view: string) => {
+                        if (view === MORE) {
+                            this.setState({ moreAnchor: event.currentTarget as HTMLElement });
+                        } else {
+                            this.props.context.changeView(view);
                         }
-                    />
-                ))}
-            </BottomNavigation>
+                    }}
+                    style={{
+                        position: this.props.context.runtime ? 'fixed' : 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        width: '100%',
+                        zIndex: 450,
+                        backgroundColor: settings.navigationBackground || undefined,
+                        opacity: this.props.editMode ? 0.4 : 1,
+                        // five entries fit; should they not, they are scrolled to rather than squeezed
+                        overflowX: 'auto',
+                        justifyContent: 'flex-start',
+                    }}
+                >
+                    {shown.map(item => (
+                        <BottomNavigationAction
+                            key={item.view}
+                            value={item.view}
+                            label={item.noText ? '' : item.text}
+                            style={{
+                                color: colorOf(this.props.activeView === item.view),
+                                minWidth: 64,
+                                maxWidth: 168,
+                                flex: 1,
+                            }}
+                            icon={icon(item)}
+                        />
+                    ))}
+                    {more.length ? (
+                        <BottomNavigationAction
+                            key={MORE}
+                            value={MORE}
+                            label={I18n.t('More')}
+                            style={{ color: colorOf(inMore), minWidth: 64, maxWidth: 168, flex: 1 }}
+                            icon={<MoreIcon />}
+                        />
+                    ) : null}
+                </BottomNavigation>
+                {more.length ? (
+                    <Menu
+                        anchorEl={this.state.moreAnchor}
+                        open={!!this.state.moreAnchor}
+                        onClose={() => this.setState({ moreAnchor: null })}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        slotProps={{
+                            paper: {
+                                style: {
+                                    backgroundColor: settings.navigationBackground || undefined,
+                                    minWidth: 200,
+                                },
+                            },
+                        }}
+                    >
+                        {more.map(item => {
+                            const selected = this.props.activeView === item.view;
+                            return (
+                                <MuiMenuItem
+                                    key={item.view}
+                                    selected={selected}
+                                    onClick={() => {
+                                        this.setState({ moreAnchor: null });
+                                        this.props.context.changeView(item.view);
+                                    }}
+                                    style={{ color: colorOf(selected), minHeight: 48 }}
+                                >
+                                    <ListItemIcon style={{ color: colorOf(selected), minWidth: 40 }}>
+                                        {icon(item)}
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.text || item.view} />
+                                </MuiMenuItem>
+                            );
+                        })}
+                    </Menu>
+                ) : null}
+            </>
         );
     }
 
@@ -810,9 +879,21 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             color: settings.navigationHeaderTextColor || undefined,
         };
 
+        // a logo in front of the header text, as the app bar has one in front of its text
+        const headerIcon = this.getImageSrc(settings.navigationHeaderIcon || settings.navigationHeaderImage);
+
         return (
             <div style={menuStyle}>
-                <div style={menuToolbarStyle}>{settings.navigationHeaderText || ''}</div>
+                <div style={menuToolbarStyle}>
+                    {headerIcon ? (
+                        <Icon
+                            src={headerIcon}
+                            className="vis-navigation-header-icon"
+                            style={styles.menuToolbarIcon}
+                        />
+                    ) : null}
+                    {settings.navigationHeaderText || ''}
+                </div>
                 <Divider />
                 <div style={styles.menuList}>
                     <List>{this.renderEntries(items, settings)}</List>
@@ -848,10 +929,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             }
         }
 
-        let icon: string | undefined = settings.navigationBarIcon || settings.navigationBarImage;
-        if (icon?.startsWith('_PRJ_NAME/')) {
-            icon = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}${icon.substring(9)}`; // "_PRJ_NAME".length = 9
-        }
+        const icon = this.getImageSrc(settings.navigationBarIcon || settings.navigationBarImage);
 
         return (
             <Box
@@ -890,6 +968,19 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
     }
 
     /**
+     * A picture of the menu settings as the browser can load it: `_PRJ_NAME/` stands for the folder of the project.
+     *
+     * @param src - an icon as the icon dialog stores it, or the path or URL of an image
+     */
+    getImageSrc(src: string | undefined | null): string | undefined {
+        if (src?.startsWith('_PRJ_NAME/')) {
+            const { adapterName, instance, projectName } = this.props.context;
+            return `../${adapterName}.${instance}/${projectName}${src.substring('_PRJ_NAME'.length)}`;
+        }
+        return src || undefined;
+    }
+
+    /**
      * Hide the navigation menu
      */
     hideNavigationMenu(): void {
@@ -906,14 +997,28 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                 : undefined;
         let backgroundColor: string | undefined;
         let color: string | undefined;
-        if (this.getMenuWidth(settings) === 'hidden') {
-            if (settings.navigationButtonBackground) {
+        let boxShadow: string | undefined;
+        const hidden = this.getMenuWidth(settings) === 'hidden';
+        /*
+         * Without an app bar the button that opens a hidden menu stands on the page itself, and on a dark page a
+         * grey chevron at half its strength is not found. There it is a button of its own: on the paper of the
+         * theme, with a shadow, in the colour of the text - unless somebody chose a colour or switched the
+         * background of the button off on purpose.
+         */
+        const floating = hidden && !settings.navigationBar;
+        if (hidden) {
+            if (floating && (settings.navigationButtonBackground as unknown) !== false) {
+                backgroundColor = this.props.context.theme.palette.background.paper;
+                boxShadow = '0 1px 4px rgba(0, 0, 0, 0.35)';
+            } else if (settings.navigationButtonBackground) {
                 backgroundColor = this.props.context.themeType === 'dark' ? '#FFFFFF40' : '#00000040';
             } else {
                 backgroundColor = 'transparent';
             }
 
-            if (settings.navigationBar && !settings.navigationChevronColor) {
+            if (floating && !settings.navigationChevronColor) {
+                color = this.props.context.theme.palette.text.primary;
+            } else if (settings.navigationBar && !settings.navigationChevronColor) {
                 if (settings.navigationBarColor) {
                     color = Utils.getInvertedColor(settings.navigationBarColor, this.props.context.themeType, true);
                 } else {
@@ -951,17 +1056,22 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                         this.props.setMenuWidth('full');
                     }
                 }}
-                style={{ backgroundColor, padding }}
+                style={{ backgroundColor, padding, boxShadow }}
+                aria-label={I18n.t(hidden ? 'Open menu' : 'Close menu')}
             >
-                <ChevronLeftIcon
-                    style={{
-                        ...(this.getMenuWidth(settings) === 'hidden' ||
-                        (this.getMenuWidth(settings) === 'narrow' && settings.navigationNoHide)
-                            ? styles.openMenuButtonIconHidden
-                            : undefined),
-                        color,
-                    }}
-                />
+                {floating ? (
+                    // the sign everybody knows for a menu, where nothing around the button says what it opens
+                    <MenuIcon style={{ color }} />
+                ) : (
+                    <ChevronLeftIcon
+                        style={{
+                            ...(hidden || (this.getMenuWidth(settings) === 'narrow' && settings.navigationNoHide)
+                                ? styles.openMenuButtonIconHidden
+                                : undefined),
+                            color,
+                        }}
+                    />
+                )}
             </IconButton>
         );
     }
@@ -1065,6 +1175,10 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             Object.assign(styleMenu, styles.openMenuButtonNarrow);
         } else {
             Object.assign(styleMenu, styles.openMenuButtonHidden);
+            if (!settings.navigationBar && (settings.navigationButtonBackground as unknown) !== false) {
+                // a button on a background of its own is meant to be seen, see renderOpenMenuButton()
+                styleMenu.opacity = 1;
+            }
             if (settings.navigationBar) {
                 styleMenu.opacity = 1;
                 if (barHeight !== NAVIGATION_BAR_HEIGHT.default) {

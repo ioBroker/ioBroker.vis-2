@@ -100,6 +100,24 @@ export function weatherSymbolOf(src: string): { symbol: WeatherSymbol; night: bo
 }
 
 /**
+ * The largest version of a picture of OpenWeatherMap, for where it is shown large.
+ *
+ * The service keeps every picture in three sizes - 50, 100 and 200 pixels - and an adapter usually writes the
+ * smallest or the middle one. Shown as the sky behind a card, that is blown up to four times its size and
+ * turns to mush; the version of 200 pixels is sharp at that size. Any other address stays what it is.
+ *
+ * @param src - the address of the picture
+ */
+export function largestWeatherImage(src: string): string {
+    return src.replace(
+        /(\/img\/wn?\/\d{2}[dn])(?:@\dx)?\.png((?:[?#].*)?)$/i,
+        (_all, path: string, rest: string) =>
+            // the old address without the `n` knows only one size; the one with it knows all three
+            `${path.replace(/\/img\/w\//i, '/img/wn/')}@4x.png${rest}`,
+    );
+}
+
+/**
  * Which day of the forecast a state belongs to, and its role without that day.
  *
  * The day stands in the role where the adapter followed the convention - `value.temperature.max.forecast.2` -

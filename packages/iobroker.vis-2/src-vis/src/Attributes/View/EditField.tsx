@@ -22,6 +22,7 @@ import commonStyles from '@/Utilities/styles';
 import type { Field } from '@/Attributes/View/Items';
 import type { AdditionalIconSet, Project, ViewSettings, VisTheme } from '@iobroker/types-vis-2';
 
+import { resolveNavigationSettings } from '@/Vis/visNavigationSettings';
 import EditFieldImage from './EditFieldImage';
 import EditFieldIcon64 from './EditFieldIcon64';
 
@@ -65,16 +66,27 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
         additionalSets,
     } = gProps;
     const viewSettings = project[view].settings;
+    /*
+     * What the page is drawn with: its own settings, and those of the menu the project gives it where it says
+     * nothing itself. A page without its own "Show app bar" shows the bar of the project - and its field has to
+     * say so, or it shows an empty box for a bar that is there, and hides the colour of a bar it thinks is off.
+     */
+    const resolved: Record<string, any> = resolveNavigationSettings(project, viewSettings || {});
 
     // if hidden
-    if (checkFunction(field.hidden, viewSettings || {})) {
+    if (checkFunction(field.hidden, resolved)) {
         return null;
     }
-    const error = checkFunction(field.error, viewSettings || {});
+    const error = checkFunction(field.error, resolved);
 
-    const rawValue: any = field.notStyle
-        ? (viewSettings as Record<string, any>)?.[field.attr]
-        : (viewSettings as Record<string, any>)?.style[field.attr];
+    let rawValue: any;
+    if (field.project) {
+        rawValue = (project.___settings as Record<string, any>)?.[field.attr];
+    } else if (field.notStyle) {
+        rawValue = resolved[field.attr];
+    } else {
+        rawValue = (viewSettings as Record<string, any>)?.style[field.attr];
+    }
     let value: any = rawValue;
     if (value == null) {
         value = '';
@@ -82,7 +94,20 @@ export default function getEditField(gProps: EditFieldProps): React.JSX.Element 
 
     const change = (changeValue: boolean | number | string | null): void => {
         const newProject = deepClone(project);
-        if (newProject[view].settings) {
+        if (field.project) {
+            const settings = newProject.___settings as Record<string, any>;
+            if (changeValue === null || changeValue === '') {
+                delete settings[field.attr];
+            } else {
+                settings[field.attr] = changeValue;
+            }
+            // a value a view still carries from before is not used; it would only confuse whoever reads the file
+            Object.keys(newProject).forEach(name => {
+                if (name !== '___settings' && newProject[name]?.settings) {
+                    delete (newProject[name].settings as Record<string, any>)[field.attr];
+                }
+            });
+        } else if (newProject[view].settings) {
             if (field.notStyle) {
                 (newProject[view].settings as Record<string, any>)[field.attr] = changeValue;
             } else {

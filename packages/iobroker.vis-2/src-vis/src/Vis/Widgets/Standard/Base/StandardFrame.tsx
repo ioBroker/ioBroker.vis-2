@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 import { cardFill, type StandardTokens } from './tokens';
@@ -21,7 +22,10 @@ export type StandardWidgetLayout =
 
 export interface StandardFrameProps {
     layout: StandardWidgetLayout;
-    /** The name of the device */
+    /**
+     * The name of the device. Without one the content moves up into its place: the icon goes in front of the row
+     * of the value, and without an icon as well there is no header at all
+     */
     title?: string;
     /** The icon of the device, drawn in `currentColor` */
     icon?: React.ReactNode;
@@ -72,6 +76,8 @@ export interface StandardFrameProps {
     titleSize?: number;
     /** The size of the icon in px, where one was set; otherwise the layout decides */
     iconSize?: number;
+    /** The size of the value in px, where one was set; otherwise the layout decides */
+    valueSize?: number;
     /** What was set in the CSS attributes of the widget, which wins over what is drawn here by default */
     css?: WidgetCss;
     onClick?: () => void;
@@ -128,18 +134,41 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
             </div>
         ) : null;
 
-    const name = (size: number, color: string, weight?: number): React.JSX.Element | null =>
+    /*
+     * The name of a card may take two lines.
+     *
+     * On one line `Waschmaschine` and `Speicher oben` lost their ends on a tile of half a phone, and a card
+     * whose name cannot be read cannot be found. A second line costs the drawing a little height, which it
+     * gives back without a word; a long single word is broken at a syllable where the browser knows the
+     * language, and anywhere where it does not. The one-row layout stays on one line: it has no second one.
+     */
+    const twoLines: React.CSSProperties = {
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+        lineHeight: 1.2,
+        hyphens: 'auto',
+        overflowWrap: 'anywhere',
+    };
+    const oneLine: React.CSSProperties = {
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    };
+
+    const name = (size: number, color: string, wrap: boolean, weight?: number): React.JSX.Element | null =>
         props.title ? (
             <div
+                lang={wrap ? I18n.getLanguage() : undefined}
+                title={props.title}
                 style={{
                     fontSize: props.titleSize ?? size,
                     fontWeight: css.text.fontWeight ?? weight,
                     color: css.text.color ?? color,
                     flex: 1,
                     minWidth: 0,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
+                    ...(wrap ? twoLines : oneLine),
                 }}
             >
                 {props.title}
@@ -183,13 +212,14 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 ) : null}
                 {props.title ? (
                     <div
+                        lang={I18n.getLanguage()}
+                        title={props.title}
                         style={{
                             fontSize: props.titleSize ?? tokens.smallSize,
                             fontWeight: css.text.fontWeight ?? 700,
                             maxWidth: '100%',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
+                            textAlign: 'center',
+                            ...twoLines,
                         }}
                     >
                         {props.title}
@@ -198,7 +228,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 {props.value !== undefined && props.value !== null ? (
                     <div
                         style={{
-                            fontSize: tokens.titleSize,
+                            fontSize: props.valueSize ?? tokens.titleSize,
                             opacity: 0.85,
                             display: 'flex',
                             alignItems: 'center',
@@ -225,12 +255,13 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 }}
             >
                 {iconBox(accent)}
-                {name(tokens.smallSize, theme.palette.text.primary)}
+                {/* without a name something else has to keep the value and the control at the right edge */}
+                {props.title ? name(tokens.smallSize, theme.palette.text.primary, false) : <div style={{ flex: 1 }} />}
                 {props.value !== undefined && props.value !== null ? (
                     <div
                         style={{
                             flexShrink: 0,
-                            fontSize: tokens.smallSize,
+                            fontSize: props.valueSize ?? tokens.smallSize,
                             fontWeight: 600,
                             color: props.valueColor || accent,
                             transition: 'color 0.3s',
@@ -261,20 +292,40 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
          *
          * Where the value row sits follows from what else there is: with a drawing it comes under it, with a
          * slider but no drawing it comes right under the name, and with neither it drops to the bottom edge.
+         *
+         * Without a name the content moves up into its place. A row of the value with its control that has no
+         * drawing to stand under goes to the top, and the icon goes in front of the first row, so a tile one row
+         * high still shows the icon, the value and the switch. Above a drawing the icon keeps a row of its own -
+         * there is no row there to join. Without a name and an icon there is no header at all, and nothing is
+         * left of it, not even its gap.
          */
         const hasValue = props.value !== undefined && props.value !== null;
+        const named = !!props.title;
         const valueUnderName = hasValue && (props.valueOnTop || (!props.body && !!props.footer));
         const valueUnderBody = hasValue && !!props.body && !props.valueOnTop;
         const valueAtBottom = hasValue && !props.body && !props.footer && !props.valueOnTop;
+        const controlAtBottom = !hasValue && !!props.control;
+        const rowUp = !named && !props.body && (valueAtBottom || controlAtBottom);
+        const rowOnTop = valueUnderName || rowUp;
+        const iconInRow = !named && rowOnTop && !!props.icon;
 
-        const valueRow = (
+        /*
+         * The value with what belongs to it.
+         *
+         * A word and a value that do not fit beside each other are not squeezed: the value goes under the word,
+         * still on the right. Squeezed, the word broke in the middle - `Noch 1:28` over a lonely `h` on a
+         * washing machine half a phone wide - and a value cut off is a wrong value.
+         */
+        const valueRow = (withIcon: boolean): React.JSX.Element => (
             <div
                 style={{
                     display: 'flex',
                     alignItems: 'center',
                     // with a word or a control in the row the value has its place already
                     justifyContent: (!props.label && !props.control && css.align) || 'space-between',
-                    gap: tokens.gap,
+                    flexWrap: props.label ? 'wrap' : undefined,
+                    columnGap: tokens.gap,
+                    rowGap: 2,
                     flexShrink: 0,
                 }}
             >
@@ -284,17 +335,24 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                             fontSize: tokens.smallSize,
                             color: css.text.color ?? theme.palette.text.secondary,
                             minWidth: 0,
+                            whiteSpace: 'nowrap',
+                            // the icon stands in front of the word, the value keeps its place on the right
+                            display: withIcon ? 'flex' : undefined,
+                            alignItems: withIcon ? 'center' : undefined,
+                            gap: withIcon ? tokens.gap : undefined,
                         }}
                     >
+                        {withIcon ? iconBox(accent) : null}
                         {props.label}
                     </div>
                 ) : null}
                 <div
                     style={{
-                        fontSize: tokens.valueSize,
+                        fontSize: props.valueSize ?? tokens.valueSize,
                         fontWeight: 700,
                         lineHeight: 1.1,
                         minWidth: 0,
+                        whiteSpace: props.label ? 'nowrap' : undefined,
                         // a word in front of it means the value belongs to the right, as on a blind
                         marginLeft: props.label ? 'auto' : undefined,
                         color: props.valueColor || theme.palette.text.primary,
@@ -305,12 +363,23 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                         ...css.text,
                     }}
                 >
+                    {/* the icon belongs to the value it stands in front of, not to the far end of the row */}
+                    {withIcon && !props.label ? iconBox(accent) : null}
                     {props.value}
                     {trendBox('0.85em')}
                 </div>
                 {props.control ? <div style={{ flexShrink: 0 }}>{props.control}</div> : null}
             </div>
         );
+
+        const headerRow = named ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>
+                {iconBox(accent)}
+                {name(tokens.titleSize, theme.palette.text.secondary, true)}
+            </div>
+        ) : props.icon && !iconInRow ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>{iconBox(accent)}</div>
+        ) : null;
 
         content = (
             <div
@@ -324,24 +393,21 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                     minHeight: 0,
                 }}
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.gap, flexShrink: 0 }}>
-                    {props.title || props.icon ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>
-                            {iconBox(accent)}
-                            {name(tokens.titleSize, theme.palette.text.secondary)}
-                        </div>
-                    ) : null}
-                    {valueUnderName ? valueRow : null}
-                </div>
+                {headerRow || rowOnTop ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.gap, flexShrink: 0 }}>
+                        {headerRow}
+                        {rowOnTop ? valueRow(iconInRow) : null}
+                    </div>
+                ) : null}
                 {props.body ? (
                     <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: tokens.gap }}>
                         <div style={{ flex: 1, minWidth: 0 }}>{props.body}</div>
                         {props.aside ? <div style={{ flexShrink: 0 }}>{props.aside}</div> : null}
                     </div>
                 ) : null}
-                {valueUnderBody ? valueRow : null}
+                {valueUnderBody ? valueRow(false) : null}
                 {props.footer ? <div style={{ flexShrink: 0, width: '100%' }}>{props.footer}</div> : null}
-                {valueAtBottom || (!hasValue && props.control) ? valueRow : null}
+                {!rowUp && (valueAtBottom || controlAtBottom) ? valueRow(false) : null}
             </div>
         );
     }

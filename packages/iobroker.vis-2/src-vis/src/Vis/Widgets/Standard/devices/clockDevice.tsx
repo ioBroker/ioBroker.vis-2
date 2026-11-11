@@ -203,10 +203,12 @@ const clockDevice = defineDeviceWidget<ClockRxData>({
             };
         }
 
+        // A card that shows a clock needs no symbol of a clock in its corner: the face says what it is. So
+        // there is none, unless one was set by hand - that one the frame still draws.
         return {
             accent: data.color || accents.blue,
             active: false,
-            icon: <ClockIcon style={{ width: '100%', height: '100%' }} />,
+            icon: undefined,
             body:
                 context.layout === 'default' ? (
                     <LiveClock

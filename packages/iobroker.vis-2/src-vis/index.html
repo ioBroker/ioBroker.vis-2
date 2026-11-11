@@ -84,13 +84,23 @@
         }
 
         function setBackgroundColor() {
-            let themeType = window.localStorage.getItem('Editor.themeType');
-            themeType ||= (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-            if (themeType === 'dark' || window.vendorPrefix === 'HA') {
-                window.document.body.className = 'body-dark';
+            // The same answer as Utils.getThemeType() gives the app later: the theme chosen in this browser
+            // (`App.themeName`), else the one of the system. `Editor.themeType` was read here, which nothing
+            // writes any more, so the page took the colour of the system and a light theme sat on a black body.
+            const vendor = window.vendorPrefix;
+            let dark;
+            if (vendor === 'HA' || vendor === 'NW') {
+                dark = true;
+            } else if (vendor && vendor !== '@@vendorPrefix@@') {
+                dark = false;
             } else {
-                window.document.body.className = 'body-light';
+                const themeName = window.localStorage.getItem('App.themeName');
+                dark = themeName && themeName !== 'auto'
+                    ? ['dark', 'blue', 'modernDark'].includes(themeName)
+                    : window.matchMedia('(prefers-color-scheme: dark)').matches;
             }
+            window.document.body.classList.toggle('body-dark', dark);
+            window.document.body.classList.toggle('body-light', !dark);
             // the configured color must be visible before the loader is rendered
             if (window.loadingBackgroundColor) {
                 window.document.body.style.backgroundColor = window.loadingBackgroundColor;

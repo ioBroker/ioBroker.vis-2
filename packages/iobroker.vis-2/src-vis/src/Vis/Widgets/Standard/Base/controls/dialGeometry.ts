@@ -58,6 +58,55 @@ export function angleOf(value: number, min: number, max: number): number {
     return -SWEEP + share * SWEEP * 2;
 }
 
+/** The part of the drawing an SVG shows, as its `viewBox` says it */
+export interface DialView {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** The whole box */
+export const FULL_VIEW: DialView = { x: 0, y: 0, width: BOX.width, height: BOX.height };
+
+/**
+ * Only what the thermostat draws, without the margin around it.
+ *
+ * The arc with its knob reaches from 14 to 186 across and from 10 to 130 down, the line under the reading ends
+ * at 134. The rest of the box is air, and a drawing scaled to fit its card scales the air with it: the ring of a
+ * thermostat stayed a size smaller than its card, however large the card was made.
+ */
+export const THERMOSTAT_VIEW: DialView = { x: 12, y: 8, width: 176, height: 128 };
+
+/**
+ * Where the pointer is in the coordinates of the drawing.
+ *
+ * The SVG keeps its proportions (`xMidYMid meet`): in a box of other proportions it is as large as the shorter
+ * side allows and stands in the middle of the longer one. The pointer has to be read against that, not against
+ * the box - reading it against the box bent the angle wherever the box was wider than the drawing.
+ *
+ * @param event - where the pointer is
+ * @param event.clientX - its distance from the left edge of the window
+ * @param event.clientY - its distance from the top
+ * @param rect - the box the SVG ended up in
+ * @param rect.left - its left edge
+ * @param rect.top - its top edge
+ * @param rect.width - how wide it ended up
+ * @param rect.height - how high
+ * @param view - the `viewBox` of the drawing
+ */
+export function pointerInView(
+    event: { clientX: number; clientY: number },
+    rect: { left: number; top: number; width: number; height: number },
+    view: DialView,
+): { x: number; y: number } {
+    const scale = Math.min(rect.width / view.width, rect.height / view.height) || 1;
+    const left = rect.left + (rect.width - view.width * scale) / 2;
+    const top = rect.top + (rect.height - view.height * scale) / 2;
+
+    return { x: view.x + (event.clientX - left) / scale, y: view.y + (event.clientY - top) / scale };
+}
+
 /**
  * Which value the pointer is over, out of where it is in the drawing.
  *
@@ -74,16 +123,17 @@ export function angleOf(value: number, min: number, max: number): number {
  * @param rect.height - how high
  * @param min - the left end of the scale
  * @param max - the right end
+ * @param view - the `viewBox` the drawing was given; the whole box if nothing else
  */
 export function valueAt(
     event: { clientX: number; clientY: number },
     rect: { left: number; top: number; width: number; height: number },
     min: number,
     max: number,
+    view: DialView = FULL_VIEW,
 ): number {
-    const x = ((event.clientX - rect.left) / rect.width) * BOX.width - CENTRE.x;
-    const y = ((event.clientY - rect.top) / rect.height) * BOX.height - CENTRE.y;
-    const degrees = (Math.atan2(y, x) * 180) / Math.PI + 90;
+    const { x, y } = pointerInView(event, rect, view);
+    const degrees = (Math.atan2(y - CENTRE.y, x - CENTRE.x) * 180) / Math.PI + 90;
     const turned = degrees > 180 ? degrees - 360 : degrees;
 
     return min + ((Math.max(-SWEEP, Math.min(SWEEP, turned)) + SWEEP) / (SWEEP * 2)) * (max - min || 1);

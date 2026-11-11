@@ -973,6 +973,9 @@
   "Back": "Indietro",
   "Navigation menu": "Menu di navigazione",
   "navigation_project_help": "Come appare il menu, per tutte le pagine insieme. Una pagina può ancora dire altro; tutto ciò che una pagina lascia vuoto viene da qui. Quale pagina ha una voce, come si chiama e in che ordine sta resta alla pagina.",
+  "navigation_pages_own": "%s pagine hanno qui un valore proprio",
+  "navigation_pages_follow": "Usa per tutte le pagine",
+  "navigation_pages_follow_on_save": "%s pagine prenderanno questo valore al salvataggio",
   "App bar color": "Colore della barra dell’applicazione",
   "App bar height": "Altezza della barra dell’app",
   "Bar height": "Altezza della barra",
@@ -1029,5 +1032,13 @@
   "Reload if sleep longer than (seconds)": "Ricarica dopo una sospensione più lunga di (secondi)",
   "reload_on_sleep_help": "Solo nel runtime, almeno 30 secondi, vuoto o 0 per mai. Ad es. un tablet con lo schermo spento si ricarica invece di elaborare ogni modifica persa.",
   "section_value_false": "Spento",
-  "section_value_true": "Acceso"
+  "section_value_true": "Acceso",
+  "Menu header icon": "Icona dell'intestazione del menu",
+  "Menu header image": "Immagine dell'intestazione del menu",
+  "Subtitle in italics": "Sottotitolo in corsivo",
+  "Space below the header": "Spazio sotto l'intestazione",
+  "Only the header": "Solo l'intestazione",
+  "help_section_header_gap": "La distanza tra l'intestazione e i widget, in px. Senza valore è 8 px.",
+  "help_section_header_only": "La sezione è solo la sua intestazione, un titolo sopra la pagina o tra le sezioni. Il runtime non mostra nessuno dei suoi widget e mantiene la sezione anche senza widget; l'editor mostra i widget attenuati.",
+  "help_menu_header_picture": "Appartiene al progetto: la stessa immagine precede il testo dell'intestazione in ogni pagina con menu"
 }

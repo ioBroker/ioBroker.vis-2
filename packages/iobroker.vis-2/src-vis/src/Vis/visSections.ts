@@ -66,6 +66,7 @@ const NUMBER_ATTRIBUTES = [
     'minHeight',
     'rowHeight',
     'gridGap',
+    'headerGap',
     'visibilityMinWidth',
     'visibilityMaxWidth',
 ];
@@ -77,6 +78,8 @@ const BOOLEAN_ATTRIBUTES = [
     'collapsed',
     'newRow',
     'stretch',
+    'headerOnly',
+    'subtitleItalic',
     'value1IconOnly',
     'value2IconOnly',
 ];
@@ -323,11 +326,32 @@ function toPositiveNumber(value: unknown): number | null {
     return typeof number === 'number' && Number.isFinite(number) && number > 0 ? number : null;
 }
 
-/** The CSS of the header of a section: where its title stands, how big and in which color */
-export function getSectionHeaderStyle(section: ViewSection | undefined | null): CSSProperties {
+/** A size in px that may be 0, or null if the value is none */
+function toNonNegativeNumber(value: unknown): number | null {
+    const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+    return typeof number === 'number' && Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+/**
+ * The CSS of the header of a section: where its title stands, how big and in which color, and how far the
+ * widgets keep from it.
+ *
+ * @param section - the section, with its bindings applied
+ * @param widgetsShown - whether widgets follow the header; a closed section and one that is only its header have
+ *   none, and then there is nothing to keep a distance from
+ */
+export function getSectionHeaderStyle(section: ViewSection | undefined | null, widgetsShown = true): CSSProperties {
     const style: CSSProperties = {};
     if (!section || typeof section !== 'object') {
         return style;
+    }
+    if (!widgetsShown) {
+        style.marginBottom = 0;
+    } else {
+        const gap = toNonNegativeNumber(section.headerGap);
+        if (gap !== null) {
+            style.marginBottom = gap;
+        }
     }
     if (section.titleAlign && TITLE_ALIGN[section.titleAlign]) {
         style.justifyContent = TITLE_ALIGN[section.titleAlign];

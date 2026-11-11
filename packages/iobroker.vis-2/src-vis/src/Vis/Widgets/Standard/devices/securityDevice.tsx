@@ -10,7 +10,7 @@ import {
     Shield as DisarmedIcon,
 } from '@mui/icons-material';
 
-import { Utils } from '@iobroker/gui-components';
+import { I18n, Utils } from '@iobroker/gui-components';
 
 import { asText } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
@@ -30,6 +30,12 @@ interface SecurityRxData extends StandardRxData {
     inverted?: boolean | 'true';
     /** How many zones the system has */
     zones?: number | string;
+    /** A zone that is on is open - a window, a door - rather than watching, so it is shown as a warning */
+    zoneOpen?: boolean | 'true';
+    /** What a zone that is on says, like `open`; without it the state's own word, or `on` */
+    zoneOnText?: string;
+    /** What a zone that is off says, like `closed` */
+    zoneOffText?: string;
     /** The numbered zone fields, `oidZone1` and `zoneName1` */
     [key: string]: any;
 }
@@ -75,7 +81,7 @@ function modesOf(context: DeviceContext<SecurityRxData>): Mode[] {
 interface Zone {
     attr: string;
     name: string;
-    /** It is watching */
+    /** Its state is on: watching, or open where the widget was told that on means open */
     on: boolean;
     /** What the state says about itself, in its own words where it has any */
     word: string;
@@ -90,6 +96,7 @@ interface Zone {
  */
 function zonesOf(context: DeviceContext<SecurityRxData>): Zone[] {
     const count = Math.max(0, Math.min(parseInt(`${context.data.zones || 0}`, 10) || 0, 8));
+    const open = context.data.zoneOpen === true || context.data.zoneOpen === 'true';
     const zones: Zone[] = [];
 
     for (let index = 1; index <= count; index++) {
@@ -106,12 +113,15 @@ function zonesOf(context: DeviceContext<SecurityRxData>): Zone[] {
         const named = states
             ? `${(Array.isArray(states) ? states[Number(text)] : (states as Record<string, string>)[text]) ?? ''}`
             : '';
+        // what the widget was told to say wins, then the state's own word, then what a contact or a zone says
+        const told = on ? context.data.zoneOnText : context.data.zoneOffText;
+        const fallback = open ? context.t(on ? 'open' : 'closed') : context.t(on ? 'on' : 'off');
 
         zones.push({
             attr,
             name: context.data[`zoneName${index}`] || `${index}`,
             on,
-            word: named || context.t(on ? 'on' : 'off'),
+            word: told || named || fallback,
             writable: common?.write !== false,
         });
     }
@@ -160,6 +170,9 @@ const securityDevice = defineDeviceWidget<SecurityRxData>({
         { name: 'oidDelay', type: 'id', label: 'oid_delay', tooltip: 'oid_delay_tooltip' },
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
         { name: 'zones', type: 'number', label: 'zones_count', min: 0, max: 8, default: 0 },
+        { name: 'zoneOpen', type: 'checkbox', label: 'zone_open', tooltip: 'zone_open_tooltip', hidden: '!data.zones' },
+        { name: 'zoneOnText', label: 'zone_on_text', tooltip: 'zone_text_tooltip', hidden: '!data.zones' },
+        { name: 'zoneOffText', label: 'zone_off_text', tooltip: 'zone_text_tooltip', hidden: '!data.zones' },
     ],
     groups: [
         {
@@ -332,12 +345,22 @@ const securityDevice = defineDeviceWidget<SecurityRxData>({
             : [];
 
         const zones = zonesOf(context);
+        // a contact that is open is something to look at; a zone that is watching is how it should be
+        const zoneOpen = data.zoneOpen === true || data.zoneOpen === 'true';
+        const zoneColour = zoneOpen ? accents.yellow : accents.green;
 
-        /** The parts of the house, each saying whether it is watching */
+        /*
+         * The parts of the house, each saying what it is doing.
+         *
+         * The name gets the whole width of its tile and may take two lines: with the point in front of it,
+         * `Wohnzimmer` lost its last letter on a phone, and a zone that cannot be named cannot be found. The
+         * point goes in front of the word instead, which is what it describes.
+         */
         const zoneTiles = zones.map(zone => (
             <button
                 key={zone.attr}
                 type="button"
+                title={`${zone.name}: ${zone.word}`}
                 disabled={context.editMode || !zone.writable}
                 onClick={
                     zone.writable
@@ -348,11 +371,12 @@ const securityDevice = defineDeviceWidget<SecurityRxData>({
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: 2,
                     minWidth: 0,
                     padding: '6px 4px',
                     borderRadius: 10,
-                    border: `1px solid ${zone.on ? accents.green : theme.palette.divider}`,
+                    border: `1px solid ${zone.on ? zoneColour : theme.palette.divider}`,
                     background: 'transparent',
                     font: 'inherit',
                     color: theme.palette.text.primary,
@@ -360,30 +384,47 @@ const securityDevice = defineDeviceWidget<SecurityRxData>({
                 }}
             >
                 <span
+                    lang={I18n.getLanguage()}
                     style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
                         maxWidth: '100%',
                         fontSize: 12,
                         fontWeight: 600,
+                        lineHeight: 1.2,
+                        textAlign: 'center',
+                        // two lines, broken at a syllable where the browser knows the language
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        hyphens: 'auto',
+                        overflowWrap: 'anywhere',
+                    }}
+                >
+                    {zone.name}
+                </span>
+                <span
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        maxWidth: '100%',
+                        fontSize: 11,
+                        color: zone.on ? zoneColour : theme.palette.text.secondary,
                         whiteSpace: 'nowrap',
+                        overflow: 'hidden',
                     }}
                 >
                     <span
                         style={{
-                            width: 8,
-                            height: 8,
+                            width: 7,
+                            height: 7,
                             flexShrink: 0,
                             borderRadius: '50%',
-                            background: zone.on ? accents.green : theme.palette.text.disabled,
+                            background: zone.on ? zoneColour : theme.palette.text.disabled,
                         }}
                     />
-                    {zone.name}
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{zone.word}</span>
                 </span>
-                <span style={{ fontSize: 11, color: theme.palette.text.secondary }}>{zone.word}</span>
             </button>
         ));
 
@@ -424,7 +465,7 @@ const securityDevice = defineDeviceWidget<SecurityRxData>({
                 <div
                     key="zones"
                     className="vis-security-zones"
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(84px, 1fr))', gap: 6 }}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(76px, 1fr))', gap: 6 }}
                 >
                     {zoneTiles}
                 </div>
