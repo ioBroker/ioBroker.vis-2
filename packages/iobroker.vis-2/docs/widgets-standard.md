@@ -66,14 +66,15 @@ level stand as full as the device does.
 
 Besides its own states, every widget of both sets carries these:
 
-| Attribute     | Takes    | What it does                                                                                                                  |
-| ------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `layout`      | select   | Layout — `default` Name above, value below, `compact` One row, `card` Coloured tile (default `default`)                       |
-| `widgetTitle` | text     | Name                                                                                                                          |
-| `icon`        | icon     | Icon                                                                                                                          |
-| `noCard`      | checkbox | Without frame                                                                                                                 |
-| `header`      | select   | Header — `full` Icon and name, `name` Only the name, `icon` Only the icon, `none` Nothing (default `full`; set relative only) |
-| `valueSize`   | number   | Size of the value in px; empty takes the size of the set (set relative only)                                                  |
+| Attribute     | Takes    | What it does                                                                                                                                                   |
+| ------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout`      | select   | Layout — `default` Name above, value below, `compact` One row, `card` Coloured tile (default `default`)                                                        |
+| `widgetTitle` | text     | Name                                                                                                                                                           |
+| `icon`        | icon     | Icon                                                                                                                                                           |
+| `iconSize`    | text     | Size of the icon: a number is px, `60%` a share - of the shorter side of the card, of the marker, for the photo of a person of the room between name and value |
+| `noCard`      | checkbox | Without frame                                                                                                                                                  |
+| `header`      | select   | Header — `full` Icon and name, `name` Only the name, `icon` Only the icon, `none` Nothing (default `full`; set relative only)                                  |
+| `valueSize`   | number   | Size of the value in px; empty takes the size of the set (set relative only)                                                                                   |
 
 What the header leaves out makes room for the content: without the name the icon moves in front of the value and
 that row moves up, so a tile one row high still shows the icon, the value and the switch; without the name and the

@@ -17,6 +17,7 @@ import { IconBell, Icon } from '@iobroker/gui-components';
 
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
 import { initialsOf } from '../Base/controls/countStates';
+import { shareOf, typedLength, type TypedLength } from '../Base/widgetCss';
 
 /** What kind of thing the sensor watches, which decides its symbol and its two words */
 type SensorKind = 'contact' | 'window' | 'door' | 'motion' | 'smoke' | 'water' | 'light' | 'person' | 'generic';
@@ -148,10 +149,23 @@ function PersonPicture(props: PersonPictureProps): React.JSX.Element {
 /**
  * The big circle of a person: as large as the card leaves room for, and always a circle.
  *
+ * A size of the icon makes it smaller: in px up to the room there is, as a share a share of that room - `100%`
+ * is the largest circle, which is also what it is without one.
+ *
  * @param props - what to draw
  * @param props.children - the circle
+ * @param props.size - the size of the icon set for the widget
  */
-function LargestCircle(props: { children: React.ReactNode }): React.JSX.Element {
+function LargestCircle(props: { children: React.ReactNode; size?: TypedLength }): React.JSX.Element {
+    const share = shareOf(props.size);
+    const room = 'min(100cqw, 100cqh)';
+    const diameter =
+        share !== undefined
+            ? `calc(${room} * ${Math.min(share, 1)})`
+            : props.size
+              ? `min(${props.size}px, 100cqw, 100cqh)`
+              : room;
+
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%' }}>
             <div
@@ -164,7 +178,7 @@ function LargestCircle(props: { children: React.ReactNode }): React.JSX.Element 
                     justifyContent: 'center',
                 }}
             >
-                <div style={{ width: 'min(100cqw, 100cqh)', height: 'min(100cqw, 100cqh)' }}>{props.children}</div>
+                <div style={{ width: diameter, height: diameter }}>{props.children}</div>
             </div>
         </div>
     );
@@ -338,7 +352,7 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
                 icon: big ? null : picture(2),
                 // the photo is the more exact answer than any icon chosen for the widget
                 ownIcon: true,
-                body: big ? <LargestCircle>{picture(3)}</LargestCircle> : undefined,
+                body: big ? <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle> : undefined,
                 face: picture(0),
                 value,
                 valueColor: accent,

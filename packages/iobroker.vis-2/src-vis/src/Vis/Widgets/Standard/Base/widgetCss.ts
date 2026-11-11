@@ -161,6 +161,41 @@ export function typedSize(value: unknown): number | undefined {
     return typeof size === 'number' && isFinite(size) && size > 0 ? size : undefined;
 }
 
+/** A size in px, or a share of the room the thing has, as `60%` */
+export type TypedLength = number | `${number}%`;
+
+/**
+ * A size that may also be a share: `128` and `128px` are pixels, `60%` stays a share, to be resolved by the place
+ * that knows what it is a share of.
+ *
+ * @param value - what the widget carries
+ */
+export function typedLength(value: unknown): TypedLength | undefined {
+    if (typeof value === 'string' && value.trim().endsWith('%')) {
+        const share = parseFloat(value);
+        return isFinite(share) && share > 0 ? `${share}%` : undefined;
+    }
+    return typedSize(value);
+}
+
+/**
+ * The share of a length as a fraction - `60%` is 0.6 - or nothing for a length in pixels.
+ *
+ * @param length - the length
+ */
+export function shareOf(length: TypedLength | undefined): number | undefined {
+    return typeof length === 'string' ? parseFloat(length) / 100 : undefined;
+}
+
+/**
+ * Only the pixels of a length: for a place where a share would be a share of nothing known.
+ *
+ * @param length - the length
+ */
+export function pixelsOf(length: TypedLength | undefined): number | undefined {
+    return typeof length === 'number' ? length : undefined;
+}
+
 /**
  * A length of a style in pixels, for what has to calculate with it; nothing for a length like `2em`.
  *

@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { cssPixels, mergeFrame, NO_CSS, readWidgetCss, typedSize, withoutPadding } from './widgetCss';
+import {
+    cssPixels,
+    mergeFrame,
+    NO_CSS,
+    pixelsOf,
+    readWidgetCss,
+    shareOf,
+    typedLength,
+    typedSize,
+    withoutPadding,
+} from './widgetCss';
 
 describe('readWidgetCss', () => {
     it('leaves a widget without settings as it is', () => {
@@ -98,6 +108,25 @@ describe('the small helpers', () => {
         expect(typedSize('')).toBeUndefined();
         expect(typedSize(0)).toBeUndefined();
         expect(typedSize(undefined)).toBeUndefined();
+    });
+
+    it('typedLength keeps a share and reads everything else as pixels', () => {
+        expect(typedLength('60%')).toBe('60%');
+        expect(typedLength(' 12.5 % ')).toBe('12.5%');
+        expect(typedLength('128')).toBe(128);
+        expect(typedLength('128px')).toBe(128);
+        expect(typedLength(128)).toBe(128);
+        expect(typedLength('0%')).toBeUndefined();
+        expect(typedLength('%')).toBeUndefined();
+        expect(typedLength('')).toBeUndefined();
+    });
+
+    it('shareOf and pixelsOf split a length into what it is', () => {
+        expect(shareOf('60%')).toBeCloseTo(0.6);
+        expect(shareOf(128)).toBeUndefined();
+        expect(pixelsOf(128)).toBe(128);
+        expect(pixelsOf('60%')).toBeUndefined();
+        expect(shareOf(undefined)).toBeUndefined();
     });
 
     it('cssPixels only answers for pixels', () => {

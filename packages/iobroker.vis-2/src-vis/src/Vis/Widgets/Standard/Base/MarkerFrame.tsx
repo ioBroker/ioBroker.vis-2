@@ -4,7 +4,7 @@ import type { VisTheme } from '@iobroker/types-vis-2';
 
 import LiquidFill from './controls/LiquidFill';
 import type { Liquid } from './controls/liquid';
-import { mergeFrame, NO_CSS, withoutPadding, type WidgetCss } from './widgetCss';
+import { mergeFrame, NO_CSS, shareOf, withoutPadding, type TypedLength, type WidgetCss } from './widgetCss';
 
 /**
  * How much a marker of the set `absolute` says about itself.
@@ -57,8 +57,8 @@ export interface MarkerFrameProps {
     theme: VisTheme;
     /** The size of the name in px, where one was set; otherwise it follows the box */
     titleSize?: number;
-    /** The size of the icon in px, where one was set; otherwise it follows the marker */
-    iconSize?: number;
+    /** The size of the icon in px or as a share of the marker like `60%`; otherwise it follows the marker */
+    iconSize?: TypedLength;
     /** What was set in the CSS attributes of the widget, which wins over what is drawn here by default */
     css?: WidgetCss;
     onClick?: () => void;
@@ -126,6 +126,9 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
     const size = MARKER_SIZE[withCaption ? props.layout : 'icon'];
     const caption = CAPTION_SIZE[props.layout === 'state' ? 'state' : 'name'];
     const times = (factor: number): string => `calc(${size} * ${factor})`;
+    // a share of its own is a share of the marker, as the default share is
+    const ownShare = shareOf(props.iconSize);
+    const ownIcon = ownShare !== undefined ? times(ownShare) : props.iconSize;
     const iconShare = withValue ? 0.5 : 0.52;
 
     // a marker sits on a picture, so it brings its own contrast instead of taking it from the theme
@@ -187,10 +190,10 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 <div
                     className="vis-marker-icon"
                     style={{
-                        width: props.iconSize ?? times(iconShare),
-                        height: props.iconSize ?? times(iconShare),
+                        width: ownIcon ?? times(iconShare),
+                        height: ownIcon ?? times(iconShare),
                         // an MUI icon takes its size from the font, so it is told one that is not `1em`
-                        fontSize: props.iconSize ?? times(iconShare),
+                        fontSize: ownIcon ?? times(iconShare),
                         // over the level, which is drawn into the same box
                         position: 'relative',
                         zIndex: 1,

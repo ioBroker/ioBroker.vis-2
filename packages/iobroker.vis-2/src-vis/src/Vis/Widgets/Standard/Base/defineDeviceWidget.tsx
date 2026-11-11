@@ -26,7 +26,7 @@ import { absolutePicture, relativePicture, type DevicePicture } from './pictures
 import { historyInstanceIn } from './controls/history';
 import { STANDARD_I18N_PREFIX } from './prefix';
 import { TOKENS, accents, scaleTokens, type StandardTokens } from './tokens';
-import { readWidgetCss, typedSize, withoutPadding, type WidgetCss } from './widgetCss';
+import { pixelsOf, readWidgetCss, typedLength, typedSize, withoutPadding, type WidgetCss } from './widgetCss';
 
 /**
  * The chart behind a click on a widget.
@@ -78,7 +78,7 @@ export interface StandardRxData {
     widgetTitle?: string;
     /** How large the name is written, in px; without it the layout decides */
     titleSize?: number | string;
-    /** How large the icon is drawn, in px; without it the layout decides */
+    /** How large the icon is drawn: px, or a share of the card or marker like `60%`; else the layout decides */
     iconSize?: number | string;
     /** How large the value is written, in px; without it the layout decides. Only the set `relative` */
     valueSize?: number | string;
@@ -622,11 +622,11 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                   hidden: which === 'relative' ? NO_ICON : undefined,
                               },
                               {
+                                  // a text and not a number: `60%` is a share of the card, `128` pixels
                                   name: 'iconSize',
-                                  type: 'number',
+                                  type: 'text',
                                   label: 'icon_size',
-                                  min: 6,
-                                  max: 400,
+                                  tooltip: 'icon_size_tooltip',
                                   hidden: which === 'relative' ? NO_ICON : undefined,
                               },
                               ...(which === 'relative'
@@ -819,7 +819,8 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 tokens={TOKENS}
                                 theme={context.theme}
                                 titleSize={typedSize(this.state.rxData.titleSize)}
-                                iconSize={typedSize(this.state.rxData.iconSize)}
+                                // the dialog grows with the card, so there is no card size to take a share of
+                                iconSize={pixelsOf(typedLength(this.state.rxData.iconSize))}
                                 valueSize={typedSize(this.state.rxData.valueSize)}
                                 css={css}
                             />
@@ -1045,7 +1046,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                                 active={result.active}
                                 theme={context.theme}
                                 titleSize={typedSize(this.state.rxData.titleSize)}
-                                iconSize={typedSize(this.state.rxData.iconSize)}
+                                iconSize={typedLength(this.state.rxData.iconSize)}
                                 css={css}
                                 onClick={onClick}
                             />
@@ -1092,7 +1093,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             tokens={context.tokens}
                             theme={context.theme}
                             titleSize={typedSize(this.state.rxData.titleSize)}
-                            iconSize={typedSize(this.state.rxData.iconSize)}
+                            iconSize={typedLength(this.state.rxData.iconSize)}
                             valueSize={typedSize(this.state.rxData.valueSize)}
                             css={css}
                             onClick={onClick}

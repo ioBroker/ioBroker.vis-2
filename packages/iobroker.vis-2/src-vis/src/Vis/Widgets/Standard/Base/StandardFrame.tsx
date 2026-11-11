@@ -4,7 +4,7 @@ import { I18n } from '@iobroker/gui-components';
 import type { VisTheme } from '@iobroker/types-vis-2';
 
 import { cardFill, type StandardTokens } from './tokens';
-import { mergeFrame, NO_CSS, type WidgetCss } from './widgetCss';
+import { mergeFrame, NO_CSS, shareOf, type TypedLength, type WidgetCss } from './widgetCss';
 
 /**
  * How a widget arranges what it shows.
@@ -74,8 +74,11 @@ export interface StandardFrameProps {
     theme: VisTheme;
     /** The size of the name in px, where one was set; otherwise the layout decides */
     titleSize?: number;
-    /** The size of the icon in px, where one was set; otherwise the layout decides */
-    iconSize?: number;
+    /**
+     * The size of the icon, where one was set: px, or a share of the shorter side of the card like `60%`;
+     * otherwise the layout decides
+     */
+    iconSize?: TypedLength;
     /** The size of the value in px, where one was set; otherwise the layout decides */
     valueSize?: number;
     /** What was set in the CSS attributes of the widget, which wins over what is drawn here by default */
@@ -97,13 +100,19 @@ export interface StandardFrameProps {
 export default function StandardFrame(props: StandardFrameProps): React.JSX.Element {
     const { tokens, theme, accent, layout } = props;
     const css = props.css || NO_CSS;
+    /*
+     * A share is a share of the card, so the card has to be a container to say how large it is - only then:
+     * a box of the type `size` collapses a card that grows with its content (see `.vis-card-container`).
+     */
+    const iconShare = shareOf(props.iconSize);
+    const iconLength = iconShare !== undefined ? `${iconShare * 100}cqmin` : props.iconSize;
 
     const iconBox = (color: string, glow?: boolean): React.JSX.Element | null =>
         props.icon ? (
             <div
                 style={{
-                    width: props.iconSize ?? tokens.iconSize,
-                    height: props.iconSize ?? tokens.iconSize,
+                    width: iconLength ?? tokens.iconSize,
+                    height: iconLength ?? tokens.iconSize,
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
@@ -199,8 +208,8 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 {props.icon ? (
                     <div
                         style={{
-                            width: props.iconSize ?? tokens.iconSize * 1.6,
-                            height: props.iconSize ?? tokens.iconSize * 1.6,
+                            width: iconLength ?? tokens.iconSize * 1.6,
+                            height: iconLength ?? tokens.iconSize * 1.6,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -422,7 +431,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
     return (
         <div
             onClick={props.onClick}
-            className={props.container ? 'vis-card-container' : undefined}
+            className={props.container || iconShare !== undefined ? 'vis-card-container' : undefined}
             style={{
                 width: '100%',
                 height: '100%',
