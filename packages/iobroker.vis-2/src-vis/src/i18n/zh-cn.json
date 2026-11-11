@@ -1040,5 +1040,7 @@
   "Only the header": "仅标题",
   "help_section_header_gap": "小部件与标题之间的距离（像素）。未设置时为 8 px。",
   "help_section_header_only": "该分区仅为其标题，可作为页面顶部或分区之间的标题。运行时不显示其中的小部件，即使没有小部件也会保留该分区；编辑器以淡化方式显示其小部件。",
-  "help_menu_header_picture": "属于项目：每个带菜单的页面的标题文字前都显示同一张图片"
+  "help_menu_header_picture": "属于项目：每个带菜单的页面的标题文字前都显示同一张图片",
+  "Close menu": "关闭菜单",
+  "Open menu": "打开菜单"
 }

@@ -1040,5 +1040,7 @@
   "Only the header": "Tylko nagłówek",
   "help_section_header_gap": "Odległość widżetów od nagłówka w px. Bez wartości wynosi 8 px.",
   "help_section_header_only": "Sekcja to tylko jej nagłówek – tytuł nad stroną lub między sekcjami. Runtime nie pokazuje żadnych jej widżetów i zachowuje sekcję nawet bez nich; edytor pokazuje widżety przyciemnione.",
-  "help_menu_header_picture": "Należy do projektu: ten sam obraz stoi przed tekstem nagłówka na każdej stronie z menu"
+  "help_menu_header_picture": "Należy do projektu: ten sam obraz stoi przed tekstem nagłówka na każdej stronie z menu",
+  "Close menu": "Zamknij menu",
+  "Open menu": "Otwórz menu"
 }

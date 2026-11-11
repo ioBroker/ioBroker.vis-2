@@ -1040,5 +1040,7 @@
   "Only the header": "Apenas o cabeçalho",
   "help_section_header_gap": "A distância entre o cabeçalho e os widgets, em px. Sem valor, são 8 px.",
   "help_section_header_only": "A secção é apenas o seu cabeçalho, um título sobre a página ou entre as secções. O runtime não mostra nenhum dos seus widgets e mantém a secção mesmo sem nenhum; o editor mostra os widgets esbatidos.",
-  "help_menu_header_picture": "Pertence ao projeto: a mesma imagem aparece antes do texto do cabeçalho em todas as páginas com menu"
+  "help_menu_header_picture": "Pertence ao projeto: a mesma imagem aparece antes do texto do cabeçalho em todas as páginas com menu",
+  "Close menu": "Fechar menu",
+  "Open menu": "Abrir menu"
 }

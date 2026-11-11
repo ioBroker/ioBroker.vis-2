@@ -1115,5 +1115,7 @@
   "Only the header": "Only the header",
   "help_section_header_gap": "How far the widgets keep from the header, in px. Without a value it is 8 px.",
   "help_section_header_only": "The section is its header alone, a heading over the page or between the sections. The runtime shows none of its widgets and keeps the section even without any; the editor shows its widgets dimmed.",
-  "help_menu_header_picture": "Belongs to the project: the same picture stands in front of the header text on every page with a menu"
+  "help_menu_header_picture": "Belongs to the project: the same picture stands in front of the header text on every page with a menu",
+  "Close menu": "Close menu",
+  "Open menu": "Open menu"
 }

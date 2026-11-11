@@ -1115,5 +1115,7 @@
   "Only the header": "Nur die Kopfzeile",
   "help_section_header_gap": "Wie weit die Widgets von der Kopfzeile entfernt bleiben, in px. Ohne Wert sind es 8 px.",
   "help_section_header_only": "Der Abschnitt ist nur seine Kopfzeile – eine Überschrift über der Seite oder zwischen den Abschnitten. Die Runtime zeigt keines seiner Widgets und behält den Abschnitt auch ganz ohne Widgets; der Editor zeigt seine Widgets abgeblendet.",
-  "help_menu_header_picture": "Gehört zum Projekt: dasselbe Bild steht auf jeder Seite mit Menü vor dem Kopftext"
+  "help_menu_header_picture": "Gehört zum Projekt: dasselbe Bild steht auf jeder Seite mit Menü vor dem Kopftext",
+  "Close menu": "Menü schließen",
+  "Open menu": "Menü öffnen"
 }

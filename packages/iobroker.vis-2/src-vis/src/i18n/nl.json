@@ -1040,5 +1040,7 @@
   "Only the header": "Alleen de kop",
   "help_section_header_gap": "Hoe ver de widgets van de kop blijven, in px. Zonder waarde is het 8 px.",
   "help_section_header_only": "De sectie is alleen haar kop, een kopregel boven de pagina of tussen de secties. De runtime toont geen van haar widgets en behoudt de sectie ook zonder widgets; de editor toont de widgets gedimd.",
-  "help_menu_header_picture": "Hoort bij het project: dezelfde afbeelding staat op elke pagina met menu voor de koptekst"
+  "help_menu_header_picture": "Hoort bij het project: dezelfde afbeelding staat op elke pagina met menu voor de koptekst",
+  "Close menu": "Menu sluiten",
+  "Open menu": "Menu openen"
 }

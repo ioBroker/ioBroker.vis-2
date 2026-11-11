@@ -1040,5 +1040,7 @@
   "Only the header": "Solo l'intestazione",
   "help_section_header_gap": "La distanza tra l'intestazione e i widget, in px. Senza valore è 8 px.",
   "help_section_header_only": "La sezione è solo la sua intestazione, un titolo sopra la pagina o tra le sezioni. Il runtime non mostra nessuno dei suoi widget e mantiene la sezione anche senza widget; l'editor mostra i widget attenuati.",
-  "help_menu_header_picture": "Appartiene al progetto: la stessa immagine precede il testo dell'intestazione in ogni pagina con menu"
+  "help_menu_header_picture": "Appartiene al progetto: la stessa immagine precede il testo dell'intestazione in ogni pagina con menu",
+  "Close menu": "Chiudi menu",
+  "Open menu": "Apri menu"
 }
