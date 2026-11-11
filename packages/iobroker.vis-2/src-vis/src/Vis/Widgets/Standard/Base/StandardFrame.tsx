@@ -47,6 +47,15 @@ export interface StandardFrameProps {
     body?: React.ReactNode;
     /** What stands beside that drawing: the up, stop and down buttons of a blind */
     aside?: React.ReactNode;
+    /**
+     * A picture beside everything else, over the whole height of a wide card: the photo of a person.
+     *
+     * A wide, flat card leaves the body a strip between the name and the value - 31px of a tile two rows high -
+     * while the room on the right stays empty. Where the card is at least half again as wide as it is high, the
+     * side takes that room and the body steps back; a narrow card keeps the body. Which of the two is decided by
+     * the size of the card (`.vis-card-side` in `vis.css`), so the card becomes a container of the type `size`.
+     */
+    side?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
     /**
@@ -397,7 +406,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>{iconBox(accent)}</div>
         ) : null;
 
-        content = (
+        const column = (
             <div
                 style={{
                     width: '100%',
@@ -407,6 +416,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                     justifyContent: 'space-between',
                     gap: tokens.gap,
                     minHeight: 0,
+                    minWidth: 0,
                 }}
             >
                 {headerRow || rowOnTop ? (
@@ -417,7 +427,12 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 ) : null}
                 {props.body ? (
                     <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: tokens.gap }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>{props.body}</div>
+                        <div
+                            className={props.side ? 'vis-card-narrow' : undefined}
+                            style={{ flex: 1, minWidth: 0 }}
+                        >
+                            {props.body}
+                        </div>
                         {props.aside ? <div style={{ flexShrink: 0 }}>{props.aside}</div> : null}
                     </div>
                 ) : null}
@@ -426,12 +441,31 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 {!rowUp && (valueAtBottom || controlAtBottom) ? valueRow(false) : null}
             </div>
         );
+
+        content = props.side ? (
+            <div style={{ width: '100%', height: '100%', display: 'flex', gap: tokens.gap }}>
+                {column}
+                {/* square as the card is high, but never more than half of it: the text keeps its room */}
+                <div
+                    className="vis-card-side"
+                    style={{ height: '100%', aspectRatio: '1', maxWidth: '50%', flexShrink: 0 }}
+                >
+                    {props.side}
+                </div>
+            </div>
+        ) : (
+            column
+        );
     }
 
     return (
         <div
             onClick={props.onClick}
-            className={props.container || iconShare !== undefined ? 'vis-card-container' : undefined}
+            className={
+                props.container || iconShare !== undefined || (layout === 'default' && props.side)
+                    ? 'vis-card-container'
+                    : undefined
+            }
             style={{
                 width: '100%',
                 height: '100%',

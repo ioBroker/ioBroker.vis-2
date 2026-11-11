@@ -178,7 +178,7 @@
   "icon_off": "Icono cuando inactivo",
   "icon_on": "Icono cuando activo",
   "icon_size": "Tamaño del icono (px o %)",
-  "icon_size_tooltip": "Un número son píxeles. Con % una proporción: del lado más corto de la tarjeta, del marcador o, para la foto de una persona, del espacio entre nombre y valor - 100% es lo más grande posible.",
+  "icon_size_tooltip": "Un número son píxeles. Con % una proporción: del lado más corto de la tarjeta, del marcador o, para la foto de una persona, del espacio que tiene la foto - 100% es lo más grande posible.",
   "iframe_oid": "Dirección desde un estado",
   "iframe_oid_tooltip": "Para una página cuya dirección cambia, por ejemplo una imagen de cámara con token. Tiene prioridad sobre la dirección fija.",
   "iframe_radius": "Esquinas redondeadas",

@@ -178,7 +178,7 @@
   "icon_off": "Ikona przy nieaktywnym",
   "icon_on": "Ikona przy aktywnym",
   "icon_size": "Rozmiar ikony (px lub %)",
-  "icon_size_tooltip": "Liczba to piksele. Z % udział: w krótszym boku karty, w znaczniku, przy zdjęciu osoby w miejscu między nazwą a wartością - 100% to tyle, ile się da.",
+  "icon_size_tooltip": "Liczba to piksele. Z % udział: w krótszym boku karty, w znaczniku, przy zdjęciu osoby w miejscu, które ma zdjęcie - 100% to tyle, ile się da.",
   "iframe_oid": "Adres ze stanu",
   "iframe_oid_tooltip": "Dla strony, której adres się zmienia — na przykład obrazu z kamery z tokenem. Ma pierwszeństwo przed adresem stałym.",
   "iframe_radius": "Zaokrąglone rogi",

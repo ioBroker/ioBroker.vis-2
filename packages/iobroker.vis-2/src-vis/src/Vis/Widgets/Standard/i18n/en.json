@@ -178,7 +178,7 @@
   "icon_off": "Icon when inactive",
   "icon_on": "Icon when active",
   "icon_size": "Icon size (px or %)",
-  "icon_size_tooltip": "A number is pixels. With % a share: of the shorter side of the card, of the marker, for the photo of a person of the room between name and value - 100% is as large as it gets.",
+  "icon_size_tooltip": "A number is pixels. With % a share: of the shorter side of the card, of the marker, for the photo of a person of the room the photo has - 100% is as large as it gets.",
   "iframe_oid": "Address from a state",
   "iframe_oid_tooltip": "For a page whose address changes — a camera snapshot with a token, for instance. It wins over the fixed address.",
   "iframe_radius": "Rounded corners",

@@ -874,6 +874,24 @@ html {
 }
 
 /*
+ * A picture beside the text of a card - the photo of a person - or in its body, by the shape of the card.
+ *
+ * Wide, the body is a strip between the name and the value and the room on the right is empty: the picture
+ * takes the whole height there. Narrow, there is no room beside the text, and the body has it.
+ */
+.vis-card-side {
+    display: none;
+}
+@container vis-card (aspect-ratio >= 3/2) {
+    .vis-card-side {
+        display: block;
+    }
+    .vis-card-narrow {
+        display: none;
+    }
+}
+
+/*
  * The blocks of the alarm system, in the order they are given up when the card is short.
  *
  * The modes are what the card is for and stay; the zones are the furthest from switching the system, so they

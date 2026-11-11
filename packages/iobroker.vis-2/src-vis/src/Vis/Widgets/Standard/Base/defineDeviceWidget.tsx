@@ -228,6 +228,8 @@ export interface DeviceResult {
     body?: React.ReactNode;
     /** What stands beside that drawing: the up, stop and down buttons of a blind */
     aside?: React.ReactNode;
+    /** A picture beside everything else on a wide card, in place of the body; see `StandardFrame` */
+    side?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
     /** The value stands under the name rather than under the body, see `StandardFrame` */
@@ -1085,6 +1087,7 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             control={result.control}
                             body={result.body}
                             aside={result.aside}
+                            side={result.side}
                             footer={result.footer}
                             valueOnTop={result.valueOnTop}
                             background={result.background}

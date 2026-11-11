@@ -352,7 +352,9 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
                 icon: big ? null : picture(2),
                 // the photo is the more exact answer than any icon chosen for the widget
                 ownIcon: true,
+                // a narrow card has the circle between name and value, a wide one beside them over its height
                 body: big ? <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle> : undefined,
+                side: big ? <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle> : undefined,
                 face: picture(0),
                 value,
                 valueColor: accent,

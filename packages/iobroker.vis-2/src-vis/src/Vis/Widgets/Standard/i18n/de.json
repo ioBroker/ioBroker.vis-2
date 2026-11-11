@@ -178,7 +178,7 @@
   "icon_off": "Symbol bei inaktiv",
   "icon_on": "Symbol bei aktiv",
   "icon_size": "Größe des Symbols (px oder %)",
-  "icon_size_tooltip": "Eine Zahl sind Pixel. Mit % ein Anteil: an der kürzeren Seite der Karte, am Marker, beim Foto einer Person am Platz zwischen Name und Wert - 100% ist so groß wie möglich.",
+  "icon_size_tooltip": "Eine Zahl sind Pixel. Mit % ein Anteil: an der kürzeren Seite der Karte, am Marker, beim Foto einer Person am Platz, den das Foto hat - 100% ist so groß wie möglich.",
   "iframe_oid": "Adresse aus einem Datenpunkt",
   "iframe_oid_tooltip": "Für eine Seite, deren Adresse sich ändert — etwa ein Kamerabild mit Token. Sie gewinnt gegen die feste Adresse.",
   "iframe_radius": "Abgerundete Ecken",

@@ -66,15 +66,15 @@ level stand as full as the device does.
 
 Besides its own states, every widget of both sets carries these:
 
-| Attribute     | Takes    | What it does                                                                                                                                                   |
-| ------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layout`      | select   | Layout — `default` Name above, value below, `compact` One row, `card` Coloured tile (default `default`)                                                        |
-| `widgetTitle` | text     | Name                                                                                                                                                           |
-| `icon`        | icon     | Icon                                                                                                                                                           |
-| `iconSize`    | text     | Size of the icon: a number is px, `60%` a share - of the shorter side of the card, of the marker, for the photo of a person of the room between name and value |
-| `noCard`      | checkbox | Without frame                                                                                                                                                  |
-| `header`      | select   | Header — `full` Icon and name, `name` Only the name, `icon` Only the icon, `none` Nothing (default `full`; set relative only)                                  |
-| `valueSize`   | number   | Size of the value in px; empty takes the size of the set (set relative only)                                                                                   |
+| Attribute     | Takes    | What it does                                                                                                                                          |
+| ------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout`      | select   | Layout — `default` Name above, value below, `compact` One row, `card` Coloured tile (default `default`)                                               |
+| `widgetTitle` | text     | Name                                                                                                                                                  |
+| `icon`        | icon     | Icon                                                                                                                                                  |
+| `iconSize`    | text     | Size of the icon: a number is px, `60%` a share - of the shorter side of the card, of the marker, for the photo of a person of the room the photo has |
+| `noCard`      | checkbox | Without frame                                                                                                                                         |
+| `header`      | select   | Header — `full` Icon and name, `name` Only the name, `icon` Only the icon, `none` Nothing (default `full`; set relative only)                         |
+| `valueSize`   | number   | Size of the value in px; empty takes the size of the set (set relative only)                                                                          |
 
 What the header leaves out makes room for the content: without the name the icon moves in front of the value and
 that row moves up, so a tile one row high still shows the icon, the value and the switch; without the name and the
@@ -364,9 +364,11 @@ A state that is only ever one of two things: a window, a door, motion, smoke, wa
 
 With `kind` = `person` the sensor is the presence of somebody: their photo in a big circle, in colour while
 they are at home and grey while they are away. Without a photo the own symbol of the widget (`iconOn` /
-`iconOff`) stands in the circle, and without that the initials of the name. The card shows the circle as its
-body; `compact` and `card`, which have no body, show it in place of the icon, and a marker of the set _absolute_
-is the face itself.
+`iconOff`) stands in the circle, and without that the initials of the name. A narrow card shows the circle
+between the name and the value; a card at least half again as wide as it is high shows it beside them, over its
+whole height. `compact` and `card`, which have no body, show it in place of the icon, and a marker of the set
+_absolute_ is the face itself. `iconSize` makes the circle smaller: in px up to the room it has, with % a share
+of that room.
 
 The assistant picks this widget for the device types `window`, `windowTilt`, `door`, `motion`, `fireAlarm`, `floodAlarm`, `coAlarm`, `contact`, `buttonSensor`.
 
