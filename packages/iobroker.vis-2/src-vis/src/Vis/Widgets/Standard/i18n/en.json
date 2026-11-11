@@ -307,7 +307,7 @@
   "person_away": "Away",
   "person_home": "Home",
   "person_photo": "Photo",
-  "person_photo_tooltip": "Shown in a big circle - in colour while the person is at home, grey while away. Without a photo the initials of the name stand in the circle.",
+  "person_photo_tooltip": "Shown in a big circle - in colour while the person is at home, grey while away. Without a photo the own symbol of the widget stands in the circle, without that the initials of the name.",
   "pin": "PIN",
   "pin_tooltip": "With a PIN the question is answered by typing it. It is kept in the project, so it keeps the wrong hand away, not the wrong person.",
   "pin_wrong": "Wrong PIN",

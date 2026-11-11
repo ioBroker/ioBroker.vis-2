@@ -307,7 +307,7 @@
   "person_away": "Fuera",
   "person_home": "En casa",
   "person_photo": "Foto",
-  "person_photo_tooltip": "Se muestra en un círculo grande - en color mientras la persona está en casa, en gris cuando está fuera. Sin foto, las iniciales del nombre aparecen en el círculo.",
+  "person_photo_tooltip": "Se muestra en un círculo grande - en color mientras la persona está en casa, en gris cuando está fuera. Sin foto aparece en el círculo el símbolo propio del widget y, sin este, las iniciales del nombre.",
   "pin": "PIN",
   "pin_tooltip": "Con un PIN la pregunta se responde escribiéndolo. Se guarda en el proyecto, así que detiene la mano equivocada, no a la persona equivocada.",
   "pin_wrong": "PIN incorrecto",

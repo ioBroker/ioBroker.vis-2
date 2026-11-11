@@ -307,7 +307,7 @@
   "person_away": "Unterwegs",
   "person_home": "Zu Hause",
   "person_photo": "Foto",
-  "person_photo_tooltip": "Wird in einem großen Kreis gezeigt - farbig, solange die Person zu Hause ist, grau, wenn sie weg ist. Ohne Foto stehen die Initialen des Namens im Kreis.",
+  "person_photo_tooltip": "Wird in einem großen Kreis gezeigt - farbig, solange die Person zu Hause ist, grau, wenn sie weg ist. Ohne Foto steht das eigene Symbol des Widgets im Kreis, ohne dieses die Initialen des Namens.",
   "pin": "PIN",
   "pin_tooltip": "Mit einer PIN wird die Frage durch Eingeben beantwortet. Sie steht im Projekt und hält damit die falsche Hand ab, nicht die falsche Person.",
   "pin_wrong": "Falsche PIN",

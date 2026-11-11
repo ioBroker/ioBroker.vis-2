@@ -307,7 +307,7 @@
   "person_away": "外出",
   "person_home": "在家",
   "person_photo": "照片",
-  "person_photo_tooltip": "显示在一个大圆中——人在家时为彩色，不在家时变灰。没有照片时，圆中显示名称的首字母。",
+  "person_photo_tooltip": "显示在一个大圆中——人在家时为彩色，不在家时变灰。没有照片时，圆中显示小部件自己的图标；没有图标时显示名称的首字母。",
   "pin": "PIN 码",
   "pin_tooltip": "设置 PIN 后，需输入它来确认。它保存在项目中，能挡住误触，挡不住有心人。",
   "pin_wrong": "PIN 码错误",

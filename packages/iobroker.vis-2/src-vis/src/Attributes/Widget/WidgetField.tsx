@@ -1819,6 +1819,11 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
         } else if (selectedFile.startsWith('_PRJ_NAME/')) {
             selectedFile = selectedFile.replace('_PRJ_NAME/', `../${projectPrefix}`);
         }
+        // `_PRJ_NAME/` is resolved by the widget, not by the browser: the preview has to do it itself
+        const preview =
+            typeof value === 'string' && value.startsWith('_PRJ_NAME/')
+                ? value.replace('_PRJ_NAME/', `../${projectPrefix}`)
+                : (value as string);
 
         return (
             <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
@@ -1849,7 +1854,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                 />
                 {value ? (
                     <Icon
-                        src={value as string}
+                        src={preview}
                         style={{ width: 28, height: 28, marginLeft: 4, flexShrink: 0 }}
                     />
                 ) : null}

@@ -362,9 +362,10 @@ A state that is only ever one of two things: a window, a door, motion, smoke, wa
 | `colorOff`  | color    | Colour when inactive                                                                                                                                                                                             |
 
 With `kind` = `person` the sensor is the presence of somebody: their photo in a big circle, in colour while
-they are at home and grey while they are away. Without a photo the initials of the name stand in the circle. The
-card shows the circle as its body; `compact` and `card`, which have no body, show it in place of the icon, and a
-marker of the set _absolute_ is the face itself.
+they are at home and grey while they are away. Without a photo the own symbol of the widget (`iconOn` /
+`iconOff`) stands in the circle, and without that the initials of the name. The card shows the circle as its
+body; `compact` and `card`, which have no body, show it in place of the icon, and a marker of the set _absolute_
+is the face itself.
 
 The assistant picks this widget for the device types `window`, `windowTilt`, `door`, `motion`, `fireAlarm`, `floodAlarm`, `coAlarm`, `contact`, `buttonSensor`.
 

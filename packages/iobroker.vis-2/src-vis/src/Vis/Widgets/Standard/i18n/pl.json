@@ -307,7 +307,7 @@
   "person_away": "Poza domem",
   "person_home": "W domu",
   "person_photo": "Zdjęcie",
-  "person_photo_tooltip": "Pokazywane w dużym kole - w kolorze, gdy osoba jest w domu, szare, gdy jej nie ma. Bez zdjęcia w kole stoją inicjały nazwy.",
+  "person_photo_tooltip": "Pokazywane w dużym kole - w kolorze, gdy osoba jest w domu, szare, gdy jej nie ma. Bez zdjęcia w kole stoi własny symbol widżetu, a bez niego inicjały nazwy.",
   "pin": "PIN",
   "pin_tooltip": "Z PIN-em odpowiedzią na pytanie jest jego wpisanie. Jest zapisany w projekcie, więc powstrzymuje niewłaściwą rękę, a nie niewłaściwą osobę.",
   "pin_wrong": "Błędny PIN",

@@ -85,6 +85,9 @@ interface PersonPictureProps {
  * everyone keeps their place. Without a photo the initials of the name stand in the circle, and without a
  * name the outline of a person. A photo that cannot be loaded is treated as none, not as a broken image.
  *
+ * A symbol from the icon picker is an SVG written into the value; it is drawn smaller and in the colour of
+ * the text, the way the outline is - filling the circle edge to edge, a glyph looks like a mistake.
+ *
  * @param props - what to draw
  */
 function PersonPicture(props: PersonPictureProps): React.JSX.Element {
@@ -94,7 +97,14 @@ function PersonPicture(props: PersonPictureProps): React.JSX.Element {
 
     const initials = initialsOf(props.name);
     let inside: React.ReactNode;
-    if (props.photo && !failed) {
+    if (props.photo?.startsWith('data:image/svg')) {
+        inside = (
+            <Icon
+                src={props.photo}
+                style={{ width: '72%', height: '72%' }}
+            />
+        );
+    } else if (props.photo && !failed) {
         inside = (
             <img
                 src={props.photo}
@@ -302,9 +312,15 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
         const chart = { attrs: ['oid'] };
 
         if (person) {
+            /*
+             * Without a photo the own symbol of the widget: a tile that showed `laura.svg` before it was made a
+             * person keeps it, and does not drop to an `L`. The symbol of the other state stands in for a
+             * missing one - away, the circle is grey anyway.
+             */
+            const photo = data.iconPhoto || ownIcon || data.iconOn || data.iconOff;
             const picture = (ringWidth: number): React.JSX.Element => (
                 <PersonPicture
-                    photo={data.iconPhoto}
+                    photo={photo}
                     name={data.widgetTitle}
                     present={active}
                     ring={accent}
