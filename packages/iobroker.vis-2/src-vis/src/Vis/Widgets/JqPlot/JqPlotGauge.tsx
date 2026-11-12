@@ -117,6 +117,28 @@ function numberList(value: string | undefined): number[] {
 }
 
 /**
+ * The ticks jqPlot put on the scale by itself when none were given: a round step of 1, 2, 2.5 or 5 times a power
+ * of ten that cuts the range into about five pieces, starting at the first multiple of it from `min` on.
+ *
+ * @param min - the lower end of the scale
+ * @param max - the upper end of the scale
+ */
+function autoTicks(min: number, max: number): number[] {
+    if (!(max > min)) {
+        return [];
+    }
+    const rough = (max - min) / 5;
+    const magnitude = 10 ** Math.floor(Math.log10(rough));
+    const step = ([1, 2, 2.5, 5, 10].find(factor => factor * magnitude >= rough) || 10) * magnitude;
+    const ticks: number[] = [];
+    // a little slack, so that the end of the scale is not lost to a rounding error
+    for (let tick = Math.ceil(min / step) * step; tick <= max + step / 1e6; tick += step) {
+        ticks.push(parseFloat(tick.toPrecision(12)));
+    }
+    return ticks;
+}
+
+/**
  * `jqplot - MeterGauge`: a state as a needle on a half-round scale.
  *
  * Replaces the can.js template `tplJqplotGauge`, which drew on a canvas through the jQuery plugin jqPlot. The
@@ -244,7 +266,9 @@ class JqPlotGauge extends VisRxWidget<RxData> {
         const bandOuter = num(data.intervalOuterRadius, ringInner - tickPadding - labelRoom);
         const bandInner = num(data.intervalInnerRadius, bandOuter * 0.82);
 
-        const ticks = numberList(data.ticks);
+        // without ticks of its own the scale gets round ones between min and max, as the jqPlot renderer did
+        const ownTicks = numberList(data.ticks);
+        const ticks = ownTicks.length ? ownTicks : autoTicks(min, max);
         const intervals = numberList(data.intervals);
         const intervalColors = data.intervalColors ? data.intervalColors.split(';') : [];
 
