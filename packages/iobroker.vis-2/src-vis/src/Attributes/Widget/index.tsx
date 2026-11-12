@@ -1934,7 +1934,11 @@ class Widget extends Component<WidgetProps, WidgetState> {
             labelStyle.fontStyle = 'italic';
         }
 
-        const helpText = field.tooltip ? I18n.t(field.tooltip) : undefined;
+        let helpText = field.tooltip ? I18n.t(field.tooltip) : undefined;
+        // the words of the `basic` and `jqplot` sets live only in the legacy dictionary, see `registerWords`
+        if (field.tooltip && helpText === field.tooltip) {
+            helpText = window.vis._(field.tooltip);
+        }
 
         const isBoundField = (this.state.bindFields || []).includes(
             group.isStyle ? `style_${field.name}` : `data_${field.name}`,
