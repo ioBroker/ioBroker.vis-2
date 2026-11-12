@@ -1042,5 +1042,11 @@
   "help_section_header_only": "La section n'est que son en-tête, un titre au-dessus de la page ou entre les sections. Le runtime n'affiche aucun de ses widgets et garde la section même sans widget ; l'éditeur affiche ses widgets atténués.",
   "help_menu_header_picture": "Appartient au projet : la même image précède le texte de l'en-tête sur chaque page avec menu",
   "Close menu": "Fermer le menu",
-  "Open menu": "Ouvrir le menu"
+  "Open menu": "Ouvrir le menu",
+  "wc_send_to_asking": "Demande des options à %s...",
+  "wc_send_to_cannot_ask": "Impossible de demander les options - saisissez la valeur",
+  "wc_send_to_no_answer": "Pas de réponse de %s - saisissez la valeur",
+  "wc_send_to_no_instance": "Choisissez d'abord l'instance - ou saisissez la valeur",
+  "wc_send_to_no_options": "%s ne propose aucune option - saisissez la valeur",
+  "wc_send_to_not_in_list": "Absent de la liste"
 }

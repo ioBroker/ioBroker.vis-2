@@ -1042,5 +1042,11 @@
   "help_section_header_only": "Sekcja to tylko jej nagłówek – tytuł nad stroną lub między sekcjami. Runtime nie pokazuje żadnych jej widżetów i zachowuje sekcję nawet bez nich; edytor pokazuje widżety przyciemnione.",
   "help_menu_header_picture": "Należy do projektu: ten sam obraz stoi przed tekstem nagłówka na każdej stronie z menu",
   "Close menu": "Zamknij menu",
-  "Open menu": "Otwórz menu"
+  "Open menu": "Otwórz menu",
+  "wc_send_to_asking": "Pobieranie opcji z %s...",
+  "wc_send_to_cannot_ask": "Nie można pobrać opcji - wpisz wartość",
+  "wc_send_to_no_answer": "Brak odpowiedzi od %s - wpisz wartość",
+  "wc_send_to_no_instance": "Najpierw wybierz instancję - lub wpisz wartość",
+  "wc_send_to_no_options": "%s nie oferuje opcji - wpisz wartość",
+  "wc_send_to_not_in_list": "Brak na liście"
 }

@@ -27,7 +27,7 @@ import type { VisRxWidgetWithInfo } from '@/Vis/visLoadWidgets';
 import {
     getWebComponentSettingTypes,
     manifestToWidgetInfo,
-    toSettingValue,
+    toWebComponentSettings,
     type WebComponentAdapterInfo,
 } from './webComponentSettings';
 import type { OpenWebComponentDialog } from './WebComponentDialogs';
@@ -222,13 +222,7 @@ export function createWebComponentWidget(
 
         /** The settings of the element out of the widget data, in which the bindings are already resolved */
         private getSettings(): WebComponentSettings {
-            const settings: WebComponentSettings = {};
-            for (const [name, type] of Object.entries(settingTypes)) {
-                const value = toSettingValue(type, this.state.rxData[name]);
-                if (value !== undefined) {
-                    settings[name] = value;
-                }
-            }
+            const settings: WebComponentSettings = toWebComponentSettings(settingTypes, this.state.rxData);
             const json = JSON.stringify(settings);
             if (json !== this.settingsJson) {
                 this.settingsJson = json;
@@ -256,6 +250,7 @@ export function createWebComponentWidget(
                         <React.Suspense fallback={null}>
                             <WebComponentDialogs
                                 dialogs={dialogs}
+                                adapter={component.adapter || ''}
                                 socket={this.props.context.socket}
                                 theme={this.props.context.theme}
                             />

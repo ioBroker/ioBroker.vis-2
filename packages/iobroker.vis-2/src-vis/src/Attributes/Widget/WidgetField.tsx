@@ -1725,6 +1725,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
                             additionalSets: props.additionalSets,
                         },
                         Editor,
+                        disabled: !!props.disabled,
                         selectedView: props.selectedView,
                         selectedWidgets: props.selectedWidgets,
                         selectedWidget:

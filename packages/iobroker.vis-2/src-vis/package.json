@@ -20,7 +20,7 @@
         "@iobroker/gui-components": "^10.4.6",
         "@iobroker/type-detector": "^6.2.0",
         "@iobroker/vis-2-widgets-testing": "^2.0.1",
-        "@iobroker/web-components": "^0.7.0",
+        "@iobroker/web-components": "^0.8.0",
         "@module-federation/runtime": "2.9.3",
         "@module-federation/vite": "1.23.11",
         "@monaco-editor/react": "^4.7.0",

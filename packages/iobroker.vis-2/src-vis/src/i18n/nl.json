@@ -1042,5 +1042,11 @@
   "help_section_header_only": "De sectie is alleen haar kop, een kopregel boven de pagina of tussen de secties. De runtime toont geen van haar widgets en behoudt de sectie ook zonder widgets; de editor toont de widgets gedimd.",
   "help_menu_header_picture": "Hoort bij het project: dezelfde afbeelding staat op elke pagina met menu voor de koptekst",
   "Close menu": "Menu sluiten",
-  "Open menu": "Menu openen"
+  "Open menu": "Menu openen",
+  "wc_send_to_asking": "Opties worden opgevraagd bij %s...",
+  "wc_send_to_cannot_ask": "Opties kunnen niet worden opgevraagd - typ de waarde",
+  "wc_send_to_no_answer": "Geen antwoord van %s - typ de waarde",
+  "wc_send_to_no_instance": "Kies eerst de instantie - of typ de waarde",
+  "wc_send_to_no_options": "%s biedt geen opties - typ de waarde",
+  "wc_send_to_not_in_list": "Niet in de lijst"
 }

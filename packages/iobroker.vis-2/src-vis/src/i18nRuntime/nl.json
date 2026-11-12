@@ -76,6 +76,12 @@
   "vis_2_widgets_basic_contains_view": "Gebruik weergave",
   "vis_2_widgets_basic_view_in_widget": "Bekijk in widget",
   "vis_2_widgets_basic_view_not_defined": "Uitzicht niet gedefinieerd",
+  "wc_send_to_asking": "Opties worden opgevraagd bij %s...",
+  "wc_send_to_cannot_ask": "Opties kunnen niet worden opgevraagd - typ de waarde",
+  "wc_send_to_no_answer": "Geen antwoord van %s - typ de waarde",
+  "wc_send_to_no_instance": "Kies eerst de instantie - of typ de waarde",
+  "wc_send_to_no_options": "%s biedt geen opties - typ de waarde",
+  "wc_send_to_not_in_list": "Niet in de lijst",
   "welcome_message": "Er is nog geen enkel project.",
   "widget_sets_incompatible_react": "De volgende widgetsets zijn gebouwd voor een oudere versie van React en kunnen niet worden geladen. Werk de bijbehorende adapters bij.",
   "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars."

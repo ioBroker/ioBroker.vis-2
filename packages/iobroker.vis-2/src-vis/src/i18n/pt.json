@@ -1042,5 +1042,11 @@
   "help_section_header_only": "A secção é apenas o seu cabeçalho, um título sobre a página ou entre as secções. O runtime não mostra nenhum dos seus widgets e mantém a secção mesmo sem nenhum; o editor mostra os widgets esbatidos.",
   "help_menu_header_picture": "Pertence ao projeto: a mesma imagem aparece antes do texto do cabeçalho em todas as páginas com menu",
   "Close menu": "Fechar menu",
-  "Open menu": "Abrir menu"
+  "Open menu": "Abrir menu",
+  "wc_send_to_asking": "A pedir as opções a %s...",
+  "wc_send_to_cannot_ask": "Não é possível pedir as opções - escreva o valor",
+  "wc_send_to_no_answer": "Sem resposta de %s - escreva o valor",
+  "wc_send_to_no_instance": "Escolha primeiro a instância - ou escreva o valor",
+  "wc_send_to_no_options": "%s não oferece opções - escreva o valor",
+  "wc_send_to_not_in_list": "Não está na lista"
 }

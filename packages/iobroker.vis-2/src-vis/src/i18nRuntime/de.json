@@ -76,6 +76,12 @@
   "vis_2_widgets_basic_contains_view": "Ansicht verwenden",
   "vis_2_widgets_basic_view_in_widget": "Im Widget anzeigen",
   "vis_2_widgets_basic_view_not_defined": "Ansicht nicht definiert",
+  "wc_send_to_asking": "Frage %s nach den Optionen...",
+  "wc_send_to_cannot_ask": "Optionen können nicht abgefragt werden - Wert eingeben",
+  "wc_send_to_no_answer": "Keine Antwort von %s - Wert eingeben",
+  "wc_send_to_no_instance": "Zuerst die Instanz wählen - oder Wert eingeben",
+  "wc_send_to_no_options": "%s bietet keine Optionen an - Wert eingeben",
+  "wc_send_to_not_in_list": "Nicht in der Liste",
   "welcome_message": "Es existiert noch kein Projekt.",
   "widget_sets_incompatible_react": "Die folgenden Widget-Sets wurden für eine ältere React-Version gebaut und können nicht geladen werden. Bitte aktualisiere die zugehörigen Adapter.",
   "widget_sets_load_failed": "Die folgenden Widget-Sets sind beim Laden fehlgeschlagen, ihre Widgets fehlen deshalb. Bitte aktualisiere die zugehörigen Adapter oder melde den Fehler den Entwicklern."

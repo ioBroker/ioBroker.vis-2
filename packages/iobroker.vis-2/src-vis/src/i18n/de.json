@@ -1117,5 +1117,11 @@
   "help_section_header_only": "Der Abschnitt ist nur seine Kopfzeile – eine Überschrift über der Seite oder zwischen den Abschnitten. Die Runtime zeigt keines seiner Widgets und behält den Abschnitt auch ganz ohne Widgets; der Editor zeigt seine Widgets abgeblendet.",
   "help_menu_header_picture": "Gehört zum Projekt: dasselbe Bild steht auf jeder Seite mit Menü vor dem Kopftext",
   "Close menu": "Menü schließen",
-  "Open menu": "Menü öffnen"
+  "Open menu": "Menü öffnen",
+  "wc_send_to_asking": "Frage %s nach den Optionen...",
+  "wc_send_to_cannot_ask": "Optionen können nicht abgefragt werden - Wert eingeben",
+  "wc_send_to_no_answer": "Keine Antwort von %s - Wert eingeben",
+  "wc_send_to_no_instance": "Zuerst die Instanz wählen - oder Wert eingeben",
+  "wc_send_to_no_options": "%s bietet keine Optionen an - Wert eingeben",
+  "wc_send_to_not_in_list": "Nicht in der Liste"
 }

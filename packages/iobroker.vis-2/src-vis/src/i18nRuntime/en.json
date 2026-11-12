@@ -76,6 +76,12 @@
   "vis_2_widgets_basic_contains_view": "Use view",
   "vis_2_widgets_basic_view_in_widget": "View in widget",
   "vis_2_widgets_basic_view_not_defined": "View not defined",
+  "wc_send_to_asking": "Asking %s for the options...",
+  "wc_send_to_cannot_ask": "Cannot ask for the options - type the value",
+  "wc_send_to_no_answer": "No answer from %s - type the value",
+  "wc_send_to_no_instance": "Choose the instance first - or type the value",
+  "wc_send_to_no_options": "%s offers no options - type the value",
+  "wc_send_to_not_in_list": "Not in the list",
   "welcome_message": "No one project yet exists.",
   "widget_sets_incompatible_react": "The following widget sets were built for an older version of react and cannot be loaded. Please update these adapters.",
   "widget_sets_load_failed": "The following widget sets failed while they were loaded, so their widgets are missing. Please update these adapters or report the error to their developers."

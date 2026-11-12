@@ -76,6 +76,12 @@
   "vis_2_widgets_basic_contains_view": "Utiliser la vue",
   "vis_2_widgets_basic_view_in_widget": "Afficher dans le widget",
   "vis_2_widgets_basic_view_not_defined": "Vue non définie",
+  "wc_send_to_asking": "Demande des options à %s...",
+  "wc_send_to_cannot_ask": "Impossible de demander les options - saisissez la valeur",
+  "wc_send_to_no_answer": "Pas de réponse de %s - saisissez la valeur",
+  "wc_send_to_no_instance": "Choisissez d'abord l'instance - ou saisissez la valeur",
+  "wc_send_to_no_options": "%s ne propose aucune option - saisissez la valeur",
+  "wc_send_to_not_in_list": "Absent de la liste",
   "welcome_message": "Aucun projet n'existe encore.",
   "widget_sets_incompatible_react": "Les ensembles de widgets suivants ont été compilés pour une version plus ancienne de React et ne peuvent pas être chargés. Veuillez mettre à jour les adaptateurs correspondants.",
   "widget_sets_load_failed": "Le chargement des ensembles de widgets suivants a échoué, leurs widgets sont donc absents. Veuillez mettre à jour les adaptateurs correspondants ou signaler l'erreur à leurs développeurs."

@@ -1042,5 +1042,11 @@
   "help_section_header_only": "该分区仅为其标题，可作为页面顶部或分区之间的标题。运行时不显示其中的小部件，即使没有小部件也会保留该分区；编辑器以淡化方式显示其小部件。",
   "help_menu_header_picture": "属于项目：每个带菜单的页面的标题文字前都显示同一张图片",
   "Close menu": "关闭菜单",
-  "Open menu": "打开菜单"
+  "Open menu": "打开菜单",
+  "wc_send_to_asking": "正在向 %s 请求选项...",
+  "wc_send_to_cannot_ask": "无法请求选项 - 请输入值",
+  "wc_send_to_no_answer": "%s 没有响应 - 请输入值",
+  "wc_send_to_no_instance": "请先选择实例 - 或输入值",
+  "wc_send_to_no_options": "%s 没有提供选项 - 请输入值",
+  "wc_send_to_not_in_list": "不在列表中"
 }

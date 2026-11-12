@@ -36,6 +36,8 @@ import {
     type WebComponentText,
 } from '@iobroker/web-components';
 
+import WebComponentSendToField from './WebComponentSendToField';
+
 /** One open dialog and how it ends */
 export interface OpenWebComponentDialog {
     id: number;
@@ -47,6 +49,8 @@ interface WebComponentDialogsProps {
     dialogs: OpenWebComponentDialog[];
     socket: Connection;
     theme: IobTheme;
+    /** The adapter that brings the component: a `selectSendTo` without `instance` asks `<adapter>.0` */
+    adapter: string;
 }
 
 function text(value: WebComponentText | undefined): string {
@@ -154,6 +158,9 @@ interface FieldProps {
     onChange: (value: unknown) => void;
     socket: Connection;
     theme: IobTheme;
+    /** The values of all fields of the form */
+    data: Record<string, unknown>;
+    adapter: string;
 }
 
 /** One field of a form: the types every host of the contract can show */
@@ -242,6 +249,21 @@ function FormField(props: FieldProps): React.JSX.Element | null {
                 </TextField>
             );
         }
+        case 'selectSendTo':
+        case 'autocompleteSendTo':
+            return (
+                <WebComponentSendToField
+                    setting={setting}
+                    value={value}
+                    data={props.data}
+                    adapter={props.adapter}
+                    socket={props.socket}
+                    label={label}
+                    help={help}
+                    disabled={disabled}
+                    onChange={onChange}
+                />
+            );
         case 'objectId':
             return (
                 <>
@@ -327,6 +349,7 @@ function FormDialog(props: {
     resolve: (result: unknown) => void;
     socket: Connection;
     theme: IobTheme;
+    adapter: string;
 }): React.JSX.Element {
     const { request, resolve } = props;
     const items = request.form.items || {};
@@ -370,6 +393,8 @@ function FormDialog(props: {
                                 onChange={value => setData({ ...data, [name]: value })}
                                 socket={props.socket}
                                 theme={props.theme}
+                                data={data}
+                                adapter={props.adapter}
                             />
                         ),
                     )}
@@ -406,6 +431,7 @@ export default function WebComponentDialogs(props: WebComponentDialogsProps): Re
                         resolve={dialog.resolve}
                         socket={props.socket}
                         theme={props.theme}
+                        adapter={props.adapter}
                     />
                 ) : (
                     <ElementDialog

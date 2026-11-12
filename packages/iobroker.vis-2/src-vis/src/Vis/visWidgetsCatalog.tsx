@@ -144,6 +144,8 @@ export type RxWidgetInfoAttributesFieldAll = {
             selectedView: string;
             selectedWidgets: AnyWidgetId[];
             selectedWidget: `w${string}` | `g${string}`;
+            /** The field is disabled (`disabled` of the field) */
+            disabled?: boolean;
         },
     ) => React.JSX.Element | React.JSX.Element[];
 

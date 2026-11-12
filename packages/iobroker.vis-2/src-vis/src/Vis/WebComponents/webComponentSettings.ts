@@ -2,9 +2,18 @@
  * Turns the manifest of a web component into what the palette and the attributes panel of vis-2 render from.
  *
  * Pure functions only, so the mapping can be tested without a browser. What every host needs - reading and
- * checking a manifest, the types of the settings - comes from `@iobroker/web-components`.
+ * checking a manifest, the types of the settings - comes from `@iobroker/web-components`. The one field vis-2 has
+ * no type of its own for - the options of `selectSendTo` and `autocompleteSendTo` come from an instance - is a
+ * `custom` field whose component is loaded when the editor shows it.
  */
-import type { RxWidgetInfo, RxWidgetInfoAttributesField, RxWidgetInfoGroup } from '@iobroker/types-vis-2';
+import React from 'react';
+
+import type {
+    RxWidgetInfo,
+    RxWidgetInfoAttributesField,
+    RxWidgetInfoAttributesFieldCustom,
+    RxWidgetInfoGroup,
+} from '@iobroker/types-vis-2';
 import {
     DECORATION_TYPES,
     getSettingsGroups,
@@ -42,6 +51,9 @@ const LANGUAGES: ioBroker.Languages[] = ['en', 'de', 'ru', 'pt', 'nl', 'fr', 'it
  */
 const RESERVED_NAMES = ['name', 'comment', 'class', 'filterkey', 'multi-views', 'locked'];
 const RESERVED_PREFIXES = ['visibility', 'signals-', 'lc-', 'g_'];
+
+/** The field of a `selectSendTo` or `autocompleteSendTo` setting: MUI and a socket, so only when the editor shows one */
+const WebComponentSendToField = React.lazy(() => import('./WebComponentSendToField'));
 
 /** Translations for `I18n.extendTranslations`: key -> language -> text */
 export type WebComponentTranslations = Record<string, Record<ioBroker.Languages, string>>;
@@ -123,18 +135,76 @@ export function toSettingValue(type: WebComponentSettingType, value: unknown): s
 }
 
 /**
+ * The settings of the element out of the values vis-2 holds: each in the type the manifest declares, a setting
+ * without a value left out
+ *
+ * @param types the settings and their types, see {@link getWebComponentSettingTypes}
+ * @param values the widget data
+ */
+export function toWebComponentSettings(
+    types: Record<string, WebComponentSettingType>,
+    values: Record<string, unknown> | null | undefined,
+): Record<string, string | number | boolean> {
+    const settings: Record<string, string | number | boolean> = {};
+    for (const [name, type] of Object.entries(types)) {
+        const value = toSettingValue(type, values?.[name]);
+        if (value !== undefined) {
+            settings[name] = value;
+        }
+    }
+    return settings;
+}
+
+/**
+ * The `custom` field of a `selectSendTo` or `autocompleteSendTo` setting: it asks the instance for the options with
+ * the socket of the editor. The patterns of `instance` and `jsonData` read the values of all settings in their types.
+ *
+ * @param name name of the setting
+ * @param setting the setting as the manifest describes it
+ * @param types the settings of the component and their types
+ * @param adapter the adapter that brings the component
+ */
+function sendToFieldComponent(
+    name: string,
+    setting: WebComponentSetting,
+    types: Record<string, WebComponentSettingType>,
+    adapter: string,
+): RxWidgetInfoAttributesFieldCustom['component'] {
+    return function renderSendToField(_field, data, onDataChange, props) {
+        return React.createElement(
+            React.Suspense,
+            { fallback: null },
+            React.createElement(WebComponentSendToField, {
+                setting,
+                value: data?.[name],
+                data: toWebComponentSettings(types, data),
+                adapter,
+                socket: props.context.socket,
+                disabled: props.disabled,
+                // only this attribute: the panel writes every key it gets into every selected widget
+                onChange: (value: string) => onDataChange({ [name]: value }),
+            }),
+        );
+    };
+}
+
+/**
  * One field of the attributes panel for one setting
  *
  * @param name name of the setting
  * @param setting the setting as the manifest describes it
  * @param keyPrefix prefix of the translation keys of this component
  * @param translations collects the texts the field refers to
+ * @param component the component, for the fields that ask its adapter
+ * @param component.types the settings of the component and their types
+ * @param component.adapter the adapter that brings the component
  */
 function toField(
     name: string,
     setting: WebComponentSetting,
     keyPrefix: string,
     translations: WebComponentTranslations,
+    component: { types: Record<string, WebComponentSettingType>; adapter: string },
 ): RxWidgetInfoAttributesField | null {
     const translate = (text: WebComponentText | undefined, suffix: string): string | undefined => {
         if (text === undefined || text === '') {
@@ -205,6 +275,14 @@ function toField(
                     label: translate(option.label, `${name}_${String(option.value)}`) || String(option.value),
                 })),
             } as RxWidgetInfoAttributesField;
+        case 'selectSendTo':
+        case 'autocompleteSendTo':
+            // the options come from the instance, so vis-2 has no field type for them
+            return {
+                ...common,
+                type: 'custom',
+                component: sendToFieldComponent(name, setting, component.types, component.adapter),
+            };
         default:
             // a type this host cannot show yet: the value can at least be typed in
             console.warn(`Web component setting "${name}" has the unknown type "${(setting as any)?.type}"`);
@@ -227,6 +305,7 @@ export function manifestToWidgetInfo(
 } {
     const { manifest } = component;
     const keyPrefix = `wc_${manifest.tag}`;
+    const fieldContext = { types: getWebComponentSettingTypes(manifest), adapter: component.adapter || '' };
     const visSet = getWebComponentSet(component);
     const setLabel = component.adapter ? `wc_set_${component.adapter}` : 'wc_set_label';
     const translations: WebComponentTranslations = {
@@ -246,7 +325,7 @@ export function manifestToWidgetInfo(
                 console.warn(`Web component <${manifest.tag}>: the setting "${fieldName}" is reserved by vis-2`);
                 continue;
             }
-            const field = toField(fieldName, setting, keyPrefix, translations);
+            const field = toField(fieldName, setting, keyPrefix, translations, fieldContext);
             if (field) {
                 fields.push(field);
             }

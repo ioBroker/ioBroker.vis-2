@@ -219,6 +219,8 @@ export interface RxWidgetInfoCustomComponentProperties {
     readonly selectedView: string;
     readonly selectedWidgets: AnyWidgetId[];
     readonly selectedWidget: AnyWidgetId;
+    /** The field is disabled (`disabled` of the field) */
+    readonly disabled?: boolean;
 }
 
 /**

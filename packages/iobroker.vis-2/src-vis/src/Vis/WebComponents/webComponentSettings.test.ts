@@ -9,6 +9,7 @@ import {
     manifestToWidgetInfo,
     toAllLanguages,
     toSettingValue,
+    toWebComponentSettings,
     WEB_COMPONENT_ICON,
     WEB_COMPONENT_SET,
 } from './webComponentSettings';
@@ -162,6 +163,98 @@ describe('manifestToWidgetInfo', () => {
         expect(tabsInfo.visAttrs.map(group => group.name)).toEqual(['main', 'look']);
         expect(tabsTranslations[tabsInfo.visAttrs[0].label!].de).toBe('Haupt');
         expect(tabsInfo.visAttrs[1].label).toBeUndefined();
+    });
+});
+
+describe('selectSendTo and autocompleteSendTo', () => {
+    const SEND_TO_MANIFEST: WebComponentManifest = {
+        ...MANIFEST,
+        settings: {
+            type: 'panel',
+            items: {
+                instance: { type: 'instance', adapter: 'demo' },
+                days: { type: 'number' },
+                location: {
+                    type: 'selectSendTo',
+                    label: { en: 'Location', de: 'Ort' },
+                    command: 'getLocations',
+                    instance: '${data.instance}',
+                    jsonData: '{ "days": ${data.days} }',
+                },
+                city: {
+                    type: 'autocompleteSendTo',
+                    command: 'getCities',
+                    freeSolo: true,
+                    maxLength: 20,
+                    disabled: '!data.instance',
+                },
+            },
+        },
+    };
+    const SEND_TO_COMPONENT: LoadedWebComponent = { ...COMPONENT, manifest: SEND_TO_MANIFEST };
+    const { info, translations } = manifestToWidgetInfo(SEND_TO_COMPONENT);
+    const fields = info.visAttrs[0].fields as any[];
+    const props = (disabled?: boolean): any => ({ context: { socket: { sendTo: vi.fn() } }, disabled });
+
+    it('makes a custom field of each, with the label and the conditions of the setting', () => {
+        expect(fields.map(field => [field.name, field.type])).toEqual([
+            ['instance', 'instance'],
+            ['days', 'number'],
+            ['location', 'custom'],
+            ['city', 'custom'],
+        ]);
+        expect(translations[fields[2].label].de).toBe('Ort');
+        expect(fields[3].disabled).toBe('!data.instance');
+        expect(typeof fields[2].component).toBe('function');
+    });
+
+    it('hands the field the setting, the typed values of all settings and the adapter of the component', () => {
+        const onDataChange = vi.fn();
+        const data = { instance: 'demo.1', days: '3', location: 'berlin', name: 'w1' };
+        const suspense = fields[2].component(fields[2], data, onDataChange, props(true));
+        const field = suspense.props.children;
+        expect(field.props).toMatchObject({
+            setting: (SEND_TO_MANIFEST.settings.items as Record<string, unknown>).location,
+            value: 'berlin',
+            // the pattern ${data.days} needs the number the component gets, not the text vis-2 holds
+            data: { instance: 'demo.1', days: 3, location: 'berlin' },
+            adapter: 'demo',
+            disabled: true,
+        });
+        // only the attribute of the field: the panel writes every key it gets into every selected widget
+        field.props.onChange('paris');
+        expect(onDataChange).toHaveBeenCalledWith({ location: 'paris' });
+    });
+
+    it('names no adapter for a component that no adapter brings', () => {
+        const demo = manifestToWidgetInfo({ ...SEND_TO_COMPONENT, adapter: '', version: '' });
+        const city = (demo.info.visAttrs[0].fields as any[])[3];
+        const field = city.component(city, {}, vi.fn(), props()).props.children;
+        expect(field.props.adapter).toBe('');
+    });
+
+    it('hands the values of these settings over as text', () => {
+        expect(getWebComponentSettingTypes(SEND_TO_MANIFEST)).toMatchObject({
+            location: 'selectSendTo',
+            city: 'autocompleteSendTo',
+        });
+        expect(toSettingValue('selectSendTo', 5)).toBe('5');
+        expect(toSettingValue('autocompleteSendTo', 'x')).toBe('x');
+    });
+});
+
+describe('toWebComponentSettings', () => {
+    it('types each setting of the manifest and leaves out the others and the empty ones', () => {
+        expect(
+            toWebComponentSettings(getWebComponentSettingTypes(MANIFEST), {
+                oid: 'nothing_selected',
+                decimals: '2',
+                toggle: 'false',
+                textTrue: undefined,
+                name: 'w1',
+            }),
+        ).toEqual({ oid: '', decimals: 2, toggle: false });
+        expect(toWebComponentSettings({ a: 'text' }, null)).toEqual({});
     });
 });
 

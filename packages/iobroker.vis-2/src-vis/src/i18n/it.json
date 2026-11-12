@@ -1042,5 +1042,11 @@
   "help_section_header_only": "La sezione è solo la sua intestazione, un titolo sopra la pagina o tra le sezioni. Il runtime non mostra nessuno dei suoi widget e mantiene la sezione anche senza widget; l'editor mostra i widget attenuati.",
   "help_menu_header_picture": "Appartiene al progetto: la stessa immagine precede il testo dell'intestazione in ogni pagina con menu",
   "Close menu": "Chiudi menu",
-  "Open menu": "Apri menu"
+  "Open menu": "Apri menu",
+  "wc_send_to_asking": "Richiesta delle opzioni a %s...",
+  "wc_send_to_cannot_ask": "Impossibile richiedere le opzioni - digita il valore",
+  "wc_send_to_no_answer": "Nessuna risposta da %s - digita il valore",
+  "wc_send_to_no_instance": "Scegli prima l'istanza - o digita il valore",
+  "wc_send_to_no_options": "%s non offre opzioni - digita il valore",
+  "wc_send_to_not_in_list": "Non presente nell'elenco"
 }

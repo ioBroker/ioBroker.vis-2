@@ -1117,5 +1117,11 @@
   "help_section_header_only": "The section is its header alone, a heading over the page or between the sections. The runtime shows none of its widgets and keeps the section even without any; the editor shows its widgets dimmed.",
   "help_menu_header_picture": "Belongs to the project: the same picture stands in front of the header text on every page with a menu",
   "Close menu": "Close menu",
-  "Open menu": "Open menu"
+  "Open menu": "Open menu",
+  "wc_send_to_asking": "Asking %s for the options...",
+  "wc_send_to_cannot_ask": "Cannot ask for the options - type the value",
+  "wc_send_to_no_answer": "No answer from %s - type the value",
+  "wc_send_to_no_instance": "Choose the instance first - or type the value",
+  "wc_send_to_no_options": "%s offers no options - type the value",
+  "wc_send_to_not_in_list": "Not in the list"
 }
