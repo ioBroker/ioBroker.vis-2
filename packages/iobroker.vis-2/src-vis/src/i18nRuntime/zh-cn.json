@@ -44,7 +44,6 @@
   "Toggle relative position": "切换相对定位",
   "Unknown widget type \"%s\"": "未知的小部件类型“%s”",
   "Value": "价值",
-  "Widget sets could not be loaded": "无法加载小部件集",
   "Width": "宽度",
   "Wrong password": "密码错误",
   "You can open dialog with following script:": "您可以使用以下脚本打开对话框：",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "请先选择实例 - 或输入值",
   "wc_send_to_no_options": "%s 没有提供选项 - 请输入值",
   "wc_send_to_not_in_list": "不在列表中",
-  "welcome_message": "目前还没有一个项目存在。",
-  "widget_sets_incompatible_react": "以下小部件集是为较旧版本的 React 构建的，无法加载。请更新相应的适配器。",
-  "widget_sets_load_failed": "以下小部件集加载失败，因此缺少其小部件。请更新相应的适配器或向其开发者报告该错误。"
+  "welcome_message": "目前还没有一个项目存在。"
 }

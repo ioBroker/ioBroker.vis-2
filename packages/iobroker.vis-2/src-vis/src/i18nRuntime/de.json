@@ -44,7 +44,6 @@
   "Toggle relative position": "Relative Position umschalten",
   "Unknown widget type \"%s\"": "Unbekannter Widget-Typ „%s“",
   "Value": "Wert",
-  "Widget sets could not be loaded": "Widget-Sets konnten nicht geladen werden",
   "Width": "Breite",
   "Wrong password": "Falsches Passwort",
   "You can open dialog with following script:": "Sie können den Dialog mit dem folgenden Skript öffnen:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Zuerst die Instanz wählen - oder Wert eingeben",
   "wc_send_to_no_options": "%s bietet keine Optionen an - Wert eingeben",
   "wc_send_to_not_in_list": "Nicht in der Liste",
-  "welcome_message": "Es existiert noch kein Projekt.",
-  "widget_sets_incompatible_react": "Die folgenden Widget-Sets wurden für eine ältere React-Version gebaut und können nicht geladen werden. Bitte aktualisiere die zugehörigen Adapter.",
-  "widget_sets_load_failed": "Die folgenden Widget-Sets sind beim Laden fehlgeschlagen, ihre Widgets fehlen deshalb. Bitte aktualisiere die zugehörigen Adapter oder melde den Fehler den Entwicklern."
+  "welcome_message": "Es existiert noch kein Projekt."
 }

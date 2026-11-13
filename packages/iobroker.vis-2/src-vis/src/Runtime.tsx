@@ -1272,74 +1272,6 @@ export default class Runtime<
         this.setState({ widgetsLoaded, incompatibleSets: Runtime.getUnacknowledgedSets() });
     }
 
-    /**
-     * Tells that widget sets were skipped because they were built for an older react, or failed while they were
-     * loaded
-     *
-     * Without it the widgets of such a set are simply absent - the views render with holes and nothing says why.
-     */
-    renderIncompatibleWidgetSetsDialog(): React.JSX.Element | null {
-        // the whole RuntimeState is only filled in componentDidMount, so on the first render it is not there yet
-        if (!this.state.incompatibleSets?.length) {
-            return null;
-        }
-
-        const outdated = this.state.incompatibleSets.filter(set => set.problem !== 'load');
-        const failed = this.state.incompatibleSets.filter(set => set.problem === 'load');
-
-        return (
-            <Dialog
-                open={!0}
-                maxWidth="sm"
-                fullWidth
-                onClose={() => this.acknowledgeIncompatibleSets()}
-            >
-                <DialogTitle>{I18n.t('Widget sets could not be loaded')}</DialogTitle>
-                <DialogContent>
-                    {outdated.length ? (
-                        <>
-                            <div style={{ marginBottom: 12 }}>{I18n.t('widget_sets_incompatible_react')}</div>
-                            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
-                                {outdated.map(set => (
-                                    <li key={`${set.adapter}/${set.name}`}>{set.adapter}</li>
-                                ))}
-                            </ul>
-                        </>
-                    ) : null}
-                    {failed.length ? (
-                        <>
-                            <div style={{ marginBottom: 12, marginTop: outdated.length ? 16 : 0 }}>
-                                {I18n.t('widget_sets_load_failed')}
-                            </div>
-                            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
-                                {failed.map(set => (
-                                    <li key={`${set.adapter}/${set.name}`}>
-                                        {set.adapter}
-                                        {set.error ? (
-                                            <div style={{ fontSize: 'smaller', opacity: 0.7, wordBreak: 'break-word' }}>
-                                                {set.error}
-                                            </div>
-                                        ) : null}
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    ) : null}
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<IconClose />}
-                        onClick={() => this.acknowledgeIncompatibleSets()}
-                    >
-                        {I18n.t('Ok')}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        );
-    }
-
     acknowledgeIncompatibleSets(): void {
         window.localStorage.setItem(
             Runtime.INCOMPATIBLE_SETS_ACK,
@@ -1663,7 +1595,6 @@ export default class Runtime<
                         : this.getVisEngine()}
                     {this.state.projectDoesNotExist ? this.renderProjectDoesNotExist() : null}
                     {this.state.showProjectsDialog ? this.showSmallProjectsDialog() : null}
-                    {this.renderIncompatibleWidgetSetsDialog()}
                 </ThemeProvider>
             </StyledEngineProvider>
         );

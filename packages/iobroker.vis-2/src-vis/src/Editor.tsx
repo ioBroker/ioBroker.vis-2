@@ -143,6 +143,8 @@ import plLang from './i18n/pl.json';
 import ukLang from './i18n/uk.json';
 import zhLang from './i18n/zh-cn.json';
 import { isDevServer } from '@/Utilities/devServer';
+import MissingWidgetsDialog from '@/Components/MissingWidgetsDialog';
+import { isWebComponentType } from '@/Vis/WebComponents/webComponentSettings';
 import { canAutoScrollDuringDrop, pointerInViewPane, type ViewDropData } from '@/Utilities/viewDrop';
 
 /**
@@ -692,6 +694,20 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             this.layoutObserver.observe(el);
         }
     };
+
+    /**
+     * Whether a widget type can be drawn: a React widget, a web component, or the template of a vis-1 widget in the
+     * document. What is none of them is drawn as "Unknown widget type", see MissingWidgetsDialog.
+     *
+     * @param tpl - the widget type
+     */
+    static isWidgetTypeKnown(tpl: string): boolean {
+        if (VisWidgetsCatalog.rxWidgets?.[tpl] || isWebComponentType(tpl)) {
+            return true;
+        }
+        const template = document.getElementById(tpl);
+        return template?.tagName === 'SCRIPT' && template.getAttribute('type') === 'text/ejs';
+    }
 
     static getToolbarAuto(): EditorState['toolbarAuto'] {
         if (window.innerHeight < TOOLBAR_VERY_NARROW_HEIGHT) {
@@ -3479,7 +3495,20 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                     {this.renderMessageDialog()}
                     {this.renderLegacyFileSelectorDialog()}
                     {this.renderAskAboutIncludeDialog()}
-                    {this.renderIncompatibleWidgetSetsDialog()}
+                    {this.state.widgetsLoaded === Runtime.WIDGETS_LOADING_STEP_ALL_LOADED &&
+                    store.getState().visProject?.___settings ? (
+                        <MissingWidgetsDialog
+                            // what is missing is worked out once per project, when its widget sets are loaded
+                            key={this.state.projectName}
+                            socket={this.socket}
+                            project={store.getState().visProject}
+                            isKnown={Editor.isWidgetTypeKnown}
+                            incompatibleSets={this.state.incompatibleSets || []}
+                            adapterName={this.adapterName}
+                            instance={this.instance}
+                            onClose={() => this.acknowledgeIncompatibleSets()}
+                        />
+                    ) : null}
                     {this.state.marketplaceDialog ? (
                         <MarketplaceDialog
                             onClose={() => this.setState({ marketplaceDialog: false })}

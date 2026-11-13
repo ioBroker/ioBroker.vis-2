@@ -44,7 +44,6 @@
   "Toggle relative position": "Relatieve positie omschakelen",
   "Unknown widget type \"%s\"": "Onbekend widgettype \"%s\"",
   "Value": "Waarde",
-  "Widget sets could not be loaded": "Widgetsets konden niet worden geladen",
   "Width": "Breedte",
   "Wrong password": "Verkeerd wachtwoord",
   "You can open dialog with following script:": "U kunt een dialoogvenster openen met het volgende script:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Kies eerst de instantie - of typ de waarde",
   "wc_send_to_no_options": "%s biedt geen opties - typ de waarde",
   "wc_send_to_not_in_list": "Niet in de lijst",
-  "welcome_message": "Er is nog geen enkel project.",
-  "widget_sets_incompatible_react": "De volgende widgetsets zijn gebouwd voor een oudere versie van React en kunnen niet worden geladen. Werk de bijbehorende adapters bij.",
-  "widget_sets_load_failed": "De volgende widgetsets zijn bij het laden mislukt, daarom ontbreken hun widgets. Werk de bijbehorende adapters bij of meld de fout aan de ontwikkelaars."
+  "welcome_message": "Er is nog geen enkel project."
 }

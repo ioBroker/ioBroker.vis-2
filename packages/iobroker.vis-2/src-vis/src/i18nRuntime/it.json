@@ -44,7 +44,6 @@
   "Toggle relative position": "Attiva/disattiva posizione relativa",
   "Unknown widget type \"%s\"": "Tipo di widget sconosciuto \"%s\"",
   "Value": "Valore",
-  "Widget sets could not be loaded": "Non è stato possibile caricare i set di widget",
   "Width": "Larghezza",
   "Wrong password": "Password errata",
   "You can open dialog with following script:": "È possibile aprire la finestra di dialogo con il seguente script:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Scegli prima l'istanza - o digita il valore",
   "wc_send_to_no_options": "%s non offre opzioni - digita il valore",
   "wc_send_to_not_in_list": "Non presente nell'elenco",
-  "welcome_message": "Non esiste ancora un progetto.",
-  "widget_sets_incompatible_react": "I seguenti set di widget sono stati compilati per una versione precedente di React e non possono essere caricati. Aggiorna i relativi adattatori.",
-  "widget_sets_load_failed": "Il caricamento dei seguenti set di widget non è riuscito, quindi i loro widget mancano. Aggiorna i relativi adattatori o segnala l'errore ai loro sviluppatori."
+  "welcome_message": "Non esiste ancora un progetto."
 }

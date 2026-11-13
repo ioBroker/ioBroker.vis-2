@@ -44,7 +44,6 @@
   "Toggle relative position": "Toggle relative position",
   "Unknown widget type \"%s\"": "Unknown widget type \"%s\"",
   "Value": "Value",
-  "Widget sets could not be loaded": "Widget sets could not be loaded",
   "Width": "Width",
   "Wrong password": "Wrong password",
   "You can open dialog with following script:": "You can open dialog with following script:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Choose the instance first - or type the value",
   "wc_send_to_no_options": "%s offers no options - type the value",
   "wc_send_to_not_in_list": "Not in the list",
-  "welcome_message": "No one project yet exists.",
-  "widget_sets_incompatible_react": "The following widget sets were built for an older version of react and cannot be loaded. Please update these adapters.",
-  "widget_sets_load_failed": "The following widget sets failed while they were loaded, so their widgets are missing. Please update these adapters or report the error to their developers."
+  "welcome_message": "No one project yet exists."
 }

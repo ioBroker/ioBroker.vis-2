@@ -44,7 +44,6 @@
   "Toggle relative position": "Alternar posición relativa",
   "Unknown widget type \"%s\"": "Tipo de widget desconocido \"%s\"",
   "Value": "Valor",
-  "Widget sets could not be loaded": "No se pudieron cargar los conjuntos de widgets",
   "Width": "Ancho",
   "Wrong password": "Contraseña incorrecta",
   "You can open dialog with following script:": "Puede abrir el diálogo con el siguiente script:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Elija primero la instancia - o escriba el valor",
   "wc_send_to_no_options": "%s no ofrece opciones - escriba el valor",
   "wc_send_to_not_in_list": "No está en la lista",
-  "welcome_message": "Aún no existe ningún proyecto.",
-  "widget_sets_incompatible_react": "Los siguientes conjuntos de widgets se compilaron para una versión anterior de React y no se pueden cargar. Actualice los adaptadores correspondientes.",
-  "widget_sets_load_failed": "Los siguientes conjuntos de widgets fallaron al cargarse, por lo que faltan sus widgets. Actualice los adaptadores correspondientes o informe del error a sus desarrolladores."
+  "welcome_message": "Aún no existe ningún proyecto."
 }

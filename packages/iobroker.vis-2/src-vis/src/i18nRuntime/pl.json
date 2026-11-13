@@ -44,7 +44,6 @@
   "Toggle relative position": "Przełącz pozycję względną",
   "Unknown widget type \"%s\"": "Nieznany typ widżetu „%s”",
   "Value": "Wartość",
-  "Widget sets could not be loaded": "Nie można załadować zestawów widżetów",
   "Width": "Szerokość",
   "Wrong password": "Złe hasło",
   "You can open dialog with following script:": "Możesz otworzyć okno dialogowe za pomocą następującego skryptu:",
@@ -82,7 +81,5 @@
   "wc_send_to_no_instance": "Najpierw wybierz instancję - lub wpisz wartość",
   "wc_send_to_no_options": "%s nie oferuje opcji - wpisz wartość",
   "wc_send_to_not_in_list": "Brak na liście",
-  "welcome_message": "Żaden projekt jeszcze nie istnieje.",
-  "widget_sets_incompatible_react": "Poniższe zestawy widżetów zostały zbudowane dla starszej wersji React i nie mogą zostać załadowane. Zaktualizuj odpowiednie adaptery.",
-  "widget_sets_load_failed": "Nie udało się załadować poniższych zestawów widżetów, dlatego brakuje ich widżetów. Zaktualizuj odpowiednie adaptery lub zgłoś błąd ich twórcom."
+  "welcome_message": "Żaden projekt jeszcze nie istnieje."
 }
