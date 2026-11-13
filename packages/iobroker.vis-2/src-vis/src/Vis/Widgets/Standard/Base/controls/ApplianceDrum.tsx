@@ -40,7 +40,8 @@ export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Elem
     /*
      * A share of nothing is drawn as a dot: an arc of no length with round ends. On a programme that runs, that
      * read as a drum that was broken - and it is what a ring that fills shows as long as it has learned nothing
-     * yet, see `longestRun`. So a programme at 0 % is drawn like one that says nothing about how far it is: it turns while it runs.
+     * yet, see `longestRun`. So a programme at 0 % is drawn like one that says nothing about how far it is: it
+     * turns while it runs.
      */
     const share = props.share !== null && props.share > 0 ? props.share : null;
 
