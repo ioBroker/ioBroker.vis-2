@@ -27,7 +27,9 @@ interface ApplianceRxData extends StandardRxData {
     oidProgram?: string;
     /** How much longer it has */
     oidRemaining?: string;
-    /** What the number of `oidRemaining` counts in */
+    /** How long it has been running, in the unit of `oidRemaining` */
+    oidElapsed?: string;
+    /** What the numbers of `oidRemaining` and `oidElapsed` count in */
     remainingUnit?: RemainingUnit;
     /** When it was started */
     oidStart?: string;
@@ -77,6 +79,8 @@ interface LiveDrumProps {
     end: number | null;
     /** How long it has left, where that is all there is */
     remaining: number | null;
+    /** How long it has been running, where the machine says so */
+    elapsed: number | null;
     /** How far it has got, 0..1, where the machine says so itself */
     progress: number | null;
     /** The ring fills where only the time left is known, instead of a mark that turns */
@@ -157,16 +161,25 @@ function LiveDrum(props: LiveDrumProps): React.JSX.Element {
         setTotal(next.total);
     }, [key, props.running, props.settled, left]);
 
+    /*
+     * The time run and the time left are the whole programme: the ring is right from its start on and on every
+     * device, also one that opened the page in the middle of it. The time left as the machine wrote it, not as
+     * counted down here - the time run is not counted up either, and the two have to be of the same moment.
+     */
+    const written = props.remaining ?? left;
+
     const share =
         props.start !== null && props.end !== null && props.end > props.start && now
             ? Math.max(0, Math.min(1, (now - props.start) / (props.end - props.start)))
             : props.progress !== null
               ? props.progress
-              : props.fill && props.running
-                ? total !== null && left !== null
-                    ? runShare(total, left)
-                    : 0
-                : null;
+              : props.running && props.elapsed !== null && written !== null
+                ? runShare(props.elapsed + written, written)
+                : props.fill && props.running
+                  ? total !== null && left !== null
+                      ? runShare(total, left)
+                      : 0
+                  : null;
 
     const clock = props.running && left !== null ? asClock(left) : null;
 
@@ -226,12 +239,13 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
         { name: 'oidRunning', type: 'id', label: 'oid_running' },
         { name: 'oidProgram', type: 'id', label: 'oid_program' },
         { name: 'oidRemaining', type: 'id', label: 'oid_remaining' },
+        { name: 'oidElapsed', type: 'id', label: 'oid_run_time', tooltip: 'oid_run_time_tooltip' },
         {
             name: 'remainingUnit',
             type: 'select',
             label: 'remaining_unit',
             default: 'minutes',
-            hidden: '!data.oidRemaining',
+            hidden: '!data.oidRemaining && !data.oidElapsed',
             options: [
                 { value: 'minutes', label: 'unit_minutes' },
                 { value: 'seconds', label: 'unit_seconds' },
@@ -268,6 +282,7 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
         const plain = word.toLowerCase();
 
         const remaining = asDuration(context.valueOf('oidRemaining'), data.remainingUnit);
+        const elapsed = data.oidElapsed ? asDuration(context.valueOf('oidElapsed'), data.remainingUnit) : null;
         const start = asTime(context.valueOf('oidStart'));
         const end = asTime(context.valueOf('oidEnd'));
         // in % of whatever the object says is all of it, which is 100 where it says nothing
@@ -325,6 +340,7 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
                         start={start}
                         end={end}
                         remaining={remaining}
+                        elapsed={elapsed}
                         progress={progress}
                         fill={!!data.fill}
                         memory={data.fill ? data.oidRemaining || data.oidEnd || data.oid : undefined}

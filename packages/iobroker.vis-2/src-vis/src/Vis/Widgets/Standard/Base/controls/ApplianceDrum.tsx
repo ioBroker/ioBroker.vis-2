@@ -84,7 +84,8 @@ export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Elem
                 />
             ) : props.running ? (
                 // nothing says how far it has got, so the drum simply turns
-                <g style={{ animation: 'vis-standard-spin 2.6s linear infinite', transformOrigin: '60px 60px' }}>
+                // slowly, as a drum turns: a mark that raced round the ring looked busier than any machine is
+                <g style={{ animation: 'vis-standard-spin 8s linear infinite', transformOrigin: '60px 60px' }}>
                     <circle
                         cx="60"
                         cy="60"
