@@ -693,6 +693,27 @@ html {
     filter: brightness(0.92);
 }
 
+/*
+ * A card or a marker of the standard widgets that does something on a click, see Base/StandardFrame.tsx and
+ * Base/MarkerFrame.tsx.
+ *
+ * Without it a press on a button that has no state to show - a scene, a doorbell - left the card exactly as it
+ * was, and nobody could tell whether it had been hit. It gives a little under the finger instead. The blue
+ * flash a touch screen paints over anything clickable is taken away, because this says it better.
+ */
+.vis-pressable {
+    transition:
+        transform 0.08s ease-out,
+        filter 0.08s ease-out;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+.vis-pressable:active {
+    transform: scale(0.96);
+    filter: brightness(0.92);
+}
+
 /* The dot in the middle of a blind that is moving, see Widgets/Standard/Base/controls/BlindWindow.tsx */
 @keyframes vis-standard-pulse {
     0%,

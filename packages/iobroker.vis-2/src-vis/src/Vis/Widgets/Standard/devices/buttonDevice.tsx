@@ -93,6 +93,90 @@ const sectionField: Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['co
     );
 };
 
+/** How long the button stays lit after it was pressed, in milliseconds */
+const FLASH_MS = 400;
+
+/**
+ * The button on the card, and what it shows of a press.
+ *
+ * A button has no state to show afterwards, so before this a press left it exactly as it was and nobody could
+ * tell whether it had been hit. Now it fills with its colour while the finger is on it, gives a little under
+ * it, and stays lit a moment after it was let go - long enough to be seen also after a short tap, which is
+ * over before a frame with `:active` would have been painted. It is a component of its own for that state.
+ *
+ * @param props - the colour, the word and what a press does
+ * @param props.accent - the colour of the button
+ * @param props.word - the word on it
+ * @param props.fontSize - how large the word is
+ * @param props.disabled - in the editor, or with nothing to do
+ * @param props.onPress - what a press does
+ */
+function PressButton(props: {
+    accent: string;
+    word: string;
+    fontSize: number;
+    disabled: boolean;
+    onPress: () => void;
+}): React.JSX.Element {
+    const [held, setHeld] = React.useState(false);
+    const [flash, setFlash] = React.useState(false);
+    const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    React.useEffect(
+        () => () => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+            }
+        },
+        [],
+    );
+
+    const { accent } = props;
+    const lit = !props.disabled && (held || flash);
+    const letGo = (): void => setHeld(false);
+
+    return (
+        <button
+            type="button"
+            disabled={props.disabled}
+            onPointerDown={() => setHeld(true)}
+            onPointerUp={letGo}
+            onPointerLeave={letGo}
+            onPointerCancel={letGo}
+            onClick={() => {
+                setFlash(true);
+                if (timer.current) {
+                    clearTimeout(timer.current);
+                }
+                timer.current = setTimeout(() => setFlash(false), FLASH_MS);
+                props.onPress();
+            }}
+            style={{
+                width: '100%',
+                height: '100%',
+                minHeight: 36,
+                borderRadius: 10,
+                border: `1px solid ${accent}`,
+                background: lit ? accent : `${accent}22`,
+                color: lit ? '#fff' : accent,
+                boxShadow: lit ? `0 0 10px ${accent}88` : 'none',
+                transform: held && !props.disabled ? 'scale(0.96)' : undefined,
+                // in quickly, out slowly: the press is felt at once, and the light fades rather than blinks
+                transition: lit
+                    ? 'background 0.05s, color 0.05s, box-shadow 0.05s, transform 0.08s'
+                    : 'background 0.35s, color 0.35s, box-shadow 0.35s, transform 0.08s',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                font: 'inherit',
+                fontSize: props.fontSize,
+                fontWeight: 600,
+                cursor: props.disabled ? undefined : 'pointer',
+            }}
+        >
+            {props.word}
+        </button>
+    );
+}
+
 /** How wide the dialog is, by what it was set to */
 const DIALOG_WIDTH: Record<string, string> = {
     small: 'min(420px, 96vw)',
@@ -288,29 +372,16 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
 
         /** The button itself, whatever it ends up doing */
         const button = (onClick: () => void): React.JSX.Element => (
-            <button
-                type="button"
+            <PressButton
+                accent={accent}
+                word={word}
+                fontSize={context.tokens.smallSize + 1}
                 disabled={
                     context.editMode ||
                     (action === 'value' ? !data.oid : action === 'section' ? !data.section : !data.view)
                 }
-                onClick={onClick}
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    minHeight: 36,
-                    borderRadius: 10,
-                    border: `1px solid ${accent}`,
-                    background: `${accent}22`,
-                    color: accent,
-                    font: 'inherit',
-                    fontSize: context.tokens.smallSize + 1,
-                    fontWeight: 600,
-                    cursor: context.editMode ? undefined : 'pointer',
-                }}
-            >
-                {word}
-            </button>
+                onPress={onClick}
+            />
         );
 
         const act =
@@ -326,7 +397,12 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
             icon: <ButtonIcon style={{ width: '100%', height: '100%' }} />,
             // a marker on a plan is the button itself: one press and it has done its work. A page over the
             // plan is not something a coin can hold, so that one opens the card instead.
-            onClick: context.editMode || action === 'dialog' ? undefined : act,
+            // The card of a section with the button in its body leaves the click to the button: the press
+            // came up to the card as well, and the value was written twice.
+            onClick:
+                context.editMode || action === 'dialog' || (context.set !== 'absolute' && context.layout === 'default')
+                    ? undefined
+                    : act,
             stateText: word,
             body:
                 context.layout === 'default' ? (

@@ -487,9 +487,15 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
         <div
             onClick={props.onClick}
             className={
-                props.container || iconShare !== undefined || (layout === 'default' && props.side)
-                    ? 'vis-card-container'
-                    : undefined
+                [
+                    props.container || iconShare !== undefined || (layout === 'default' && props.side)
+                        ? 'vis-card-container'
+                        : '',
+                    // a card that does something on a click gives a little under the finger, see vis.css
+                    props.onClick ? 'vis-pressable' : '',
+                ]
+                    .filter(Boolean)
+                    .join(' ') || undefined
             }
             style={{
                 width: '100%',

@@ -137,7 +137,7 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
 
     const marker = (
         <div
-            className={`vis-marker-body${withValue ? ' vis-marker-has-value' : ''}`}
+            className={`vis-marker-body${withValue ? ' vis-marker-has-value' : ''}${props.onClick ? ' vis-pressable' : ''}`}
             onClick={props.onClick}
             style={{
                 // as variables, so the rules of `vis.css` can stretch the marker where the shape asks for it
@@ -148,7 +148,9 @@ export default function MarkerFrame(props: MarkerFrameProps): React.JSX.Element 
                 // the padding only keeps the contents off the ring; what is in it stands in the middle
                 padding: withValue ? `0 ${times(0.14)}` : 0,
                 color: solid ? '#fff' : accent,
-                transition: 'background 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s',
+                // the transform is the press, see `.vis-pressable` in vis.css: it has to be quick to be felt
+                transition:
+                    'background 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s, transform 0.08s, filter 0.08s',
                 cursor: props.onClick ? 'pointer' : undefined,
                 ...mergeFrame(
                     {
