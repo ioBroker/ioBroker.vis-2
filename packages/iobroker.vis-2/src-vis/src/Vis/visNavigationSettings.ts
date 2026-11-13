@@ -200,3 +200,19 @@ export function isNavigationEntryShown(
         view,
     );
 }
+
+/** How high the menu at the bottom edge is, in px: the height of the bottom navigation of MUI */
+export const BOTTOM_MENU_HEIGHT = 56;
+
+/**
+ * How much of the bottom of the page the menu at the bottom edge covers, in px.
+ *
+ * That menu lies over the page - it is fixed to the bottom of the window - so a page that is scrolled to its end
+ * still had its last 56 px behind it: the buttons of the last card on a phone could not be reached. The page
+ * keeps that much room free at its bottom instead, see `VisView.render()`.
+ *
+ * @param settings - the resolved settings of the menu
+ */
+export function getBottomMenuInset(settings: ViewSettings | null | undefined): number {
+    return settings?.navigation && settings.navigationOrientation === 'bottom' ? BOTTOM_MENU_HEIGHT : 0;
+}

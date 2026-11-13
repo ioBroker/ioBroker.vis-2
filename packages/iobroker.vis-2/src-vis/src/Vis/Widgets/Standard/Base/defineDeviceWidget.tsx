@@ -17,6 +17,7 @@ import type {
 } from '@iobroker/types-vis-2';
 
 import VisRxWidget from '@/Vis/visRxWidget';
+import { getSectionOfWidget, getSectionTargets, scrollToSection, type SectionTarget } from '@/Vis/visSectionJump';
 
 import MarkerFrame, { type MarkerLayout } from './MarkerFrame';
 import StandardFrame, { type StandardWidgetLayout } from './StandardFrame';
@@ -184,6 +185,17 @@ export interface DeviceContext<RxData extends StandardRxData> {
     layout: StandardWidgetLayout | MarkerLayout;
     /** Open another page of the project */
     navigate: (view: string) => void;
+    /**
+     * The sections of the page this widget stands on that can be jumped to: those with a title, without the
+     * one this widget stands in.
+     */
+    sectionTargets: () => SectionTarget[];
+    /**
+     * Scroll the page this widget stands on to one of its sections.
+     *
+     * @param section - the id of the section
+     */
+    scrollToSection: (section: string) => void;
     /**
      * Another page of the project, drawn inside this widget.
      *
@@ -941,6 +953,13 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                     },
                     layout: this.state.rxData.layout || (which === 'absolute' ? 'icon' : 'default'),
                     navigate: view => this.props.context.changeView(view),
+                    sectionTargets: () =>
+                        getSectionTargets(
+                            this.props.context.views,
+                            this.props.view,
+                            getSectionOfWidget(this.props.context.views, this.props.view, this.props.id),
+                        ),
+                    scrollToSection: section => scrollToSection(this.props.view, section),
                     getView: view => this.getWidgetView(view),
                     setTheme: themeName => this.props.context.toggleTheme(themeName),
                     t: (word, ...args) => I18n.t(STANDARD_I18N_PREFIX + word, ...args),

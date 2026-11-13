@@ -1,22 +1,30 @@
 import React from 'react';
 
-import { Dialog, DialogContent, IconButton } from '@mui/material';
+import { Dialog, DialogContent, IconButton, MenuItem, TextField } from '@mui/material';
 
 import { Close as CloseIcon, PlayArrow as ButtonIcon } from '@mui/icons-material';
 
+import { I18n } from '@iobroker/gui-components';
+import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
+
+import { getSectionTargets } from '@/Vis/visSectionJump';
+
 import { Types } from '../Base/deviceTypes';
+import { STANDARD_I18N_PREFIX } from '../Base/prefix';
 
 import { asNumber } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 
 /** What pressing the button does */
-type ButtonAction = 'value' | 'navigate' | 'dialog';
+type ButtonAction = 'value' | 'navigate' | 'dialog' | 'section';
 
 interface ButtonRxData extends StandardRxData {
     /** Write a value, go to a page, or show a page over this one */
     action?: ButtonAction;
     /** The page that is gone to or shown */
     view?: string;
+    /** The section of this page that is scrolled to */
+    section?: string;
     /** How large the page is shown, as a share of the window */
     dialogSize?: 'small' | 'medium' | 'large' | 'full';
     /** What is written when it is pressed; `true` where nothing is said */
@@ -42,6 +50,48 @@ function asValue(value: string | undefined, fallback: boolean): string | number 
     const number = asNumber(value);
     return number === null ? value : number;
 }
+
+/**
+ * The field that picks a section of the page the button stands on.
+ *
+ * A section is known to the project by an id nobody has seen, so the field offers the sections by their titles.
+ * One that is gone since - deleted, or its title taken away - still stands in the list under its id, so the
+ * button does not lose its setting without a word.
+ */
+const sectionField: Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] = (
+    field,
+    data,
+    onDataChange,
+    props,
+) => {
+    const targets = getSectionTargets(props.context.views, props.selectedView);
+    const value = typeof data.section === 'string' ? data.section : '';
+    if (value && !targets.find(target => target.id === value)) {
+        targets.push({ id: value, label: value });
+    }
+    return (
+        <TextField
+            select
+            fullWidth
+            size="small"
+            variant="standard"
+            label={I18n.t(`${STANDARD_I18N_PREFIX}button_section`)}
+            value={value}
+            disabled={props.disabled}
+            helperText={targets.length ? undefined : I18n.t(`${STANDARD_I18N_PREFIX}button_section_none`)}
+            onChange={e => onDataChange({ ...data, section: e.target.value })}
+        >
+            {targets.map(target => (
+                <MenuItem
+                    key={target.id}
+                    value={target.id}
+                >
+                    {target.label}
+                </MenuItem>
+            ))}
+        </TextField>
+    );
+};
 
 /** How wide the dialog is, by what it was set to */
 const DIALOG_WIDTH: Record<string, string> = {
@@ -153,14 +203,22 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
                 { value: 'value', label: 'button_action_value' },
                 { value: 'navigate', label: 'button_action_navigate' },
                 { value: 'dialog', label: 'button_action_dialog' },
+                { value: 'section', label: 'button_action_section' },
             ],
         },
-        { name: 'oid', type: 'id', label: 'oid', hidden: "data.action === 'navigate' || data.action === 'dialog'" },
+        { name: 'oid', type: 'id', label: 'oid', hidden: "!!data.action && data.action !== 'value'" },
         {
             name: 'view',
             type: 'views',
             label: 'button_view',
             hidden: "data.action !== 'navigate' && data.action !== 'dialog'",
+        },
+        {
+            name: 'section',
+            type: 'custom',
+            label: 'button_section',
+            component: sectionField,
+            hidden: "data.action !== 'section'",
         },
         {
             name: 'dialogSize',
@@ -180,13 +238,13 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
             name: 'value',
             label: 'button_value',
             tooltip: 'button_value_tooltip',
-            hidden: "data.action === 'navigate' || data.action === 'dialog'",
+            hidden: "!!data.action && data.action !== 'value'",
         },
         {
             name: 'releaseValue',
             label: 'button_release',
             tooltip: 'button_release_tooltip',
-            hidden: "data.action === 'navigate' || data.action === 'dialog'",
+            hidden: "!!data.action && data.action !== 'value'",
         },
         { name: 'releaseAfter', type: 'number', label: 'button_release_after', hidden: '!data.releaseValue' },
         { name: 'color', type: 'color', label: 'button_color' },
@@ -204,7 +262,14 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
         const { data, accents, t } = context;
         const accent = data.color || accents.blue;
         const action = data.action || 'value';
-        const word = data.text || (action === 'value' ? t('button_press') : data.view || t('button_press'));
+        const target = action === 'section' ? context.sectionTargets().find(one => one.id === data.section) : undefined;
+        const word =
+            data.text ||
+            (action === 'section'
+                ? target?.label || t('button_press')
+                : action === 'value'
+                  ? t('button_press')
+                  : data.view || t('button_press'));
 
         const press = (): void =>
             context.act('on', () => {
@@ -225,7 +290,10 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
         const button = (onClick: () => void): React.JSX.Element => (
             <button
                 type="button"
-                disabled={context.editMode || (action === 'value' ? !data.oid : !data.view)}
+                disabled={
+                    context.editMode ||
+                    (action === 'value' ? !data.oid : action === 'section' ? !data.section : !data.view)
+                }
                 onClick={onClick}
                 style={{
                     width: '100%',
@@ -245,7 +313,12 @@ const buttonDevice = defineDeviceWidget<ButtonRxData>({
             </button>
         );
 
-        const act = action === 'navigate' ? () => data.view && context.navigate(data.view) : press;
+        const act =
+            action === 'navigate'
+                ? () => data.view && context.navigate(data.view)
+                : action === 'section'
+                  ? () => data.section && context.scrollToSection(data.section)
+                  : press;
 
         return {
             accent,

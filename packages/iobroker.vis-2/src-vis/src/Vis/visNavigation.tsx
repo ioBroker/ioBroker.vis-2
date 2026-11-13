@@ -34,6 +34,7 @@ import { IconFolder, I18n, Utils, Icon } from '@iobroker/gui-components';
 import type { ViewSettings, VisContext, VisTheme } from '@iobroker/types-vis-2';
 
 import {
+    BOTTOM_MENU_HEIGHT,
     getMenuWidth,
     getNavigationBarHeight,
     getNavigationEntryStateIds,
@@ -860,6 +861,13 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             ...(this.getMenuWidth(settings) === 'hidden' ? styles.menuHidden : undefined),
             opacity: this.props.editMode ? 0.4 : 1,
             backgroundColor: settings.navigationBackground || undefined,
+            /*
+             * The menu stands beside the page and not in it, so it does not get the colour of the text the page
+             * takes from the theme: it inherited the one of the document, which is black. On a dark theme the
+             * header and every entry but the selected one were black on black. An entry with a colour of its own
+             * still sets it on itself.
+             */
+            color: this.props.context.theme.palette.text.primary,
         };
 
         if (settings.navigationHideOnSelection) {
@@ -876,7 +884,7 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
             ...(this.getMenuWidth(settings) === 'full' ? styles.menuToolbarFull : undefined),
             ...(this.getMenuWidth(settings) === 'narrow' ? styles.menuToolbarNarrow : undefined),
             ...(this.getMenuWidth(settings) === 'hidden' ? styles.menuToolbarNarrow : undefined),
-            color: settings.navigationHeaderTextColor || undefined,
+            color: settings.navigationHeaderTextColor || this.props.context.theme.palette.text.primary,
         };
 
         // a logo in front of the header text, as the app bar has one in front of its text
@@ -1120,8 +1128,9 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                     <div
                         style={{
                             ...styles.viewContentWithToolbar,
-                            // the bar takes its height from the bottom of the page, not from the top
-                            height: `calc(100% - ${TOOLBAR_SIZE + (settings.navigationBar ? barHeight : 0)}px)`,
+                            // the bar takes its height from the bottom of the page, not from the top; a page that is
+                            // higher than this keeps the room for the bar free itself, see getBottomMenuInset()
+                            height: `calc(100% - ${BOTTOM_MENU_HEIGHT + (settings.navigationBar ? barHeight : 0)}px)`,
                         }}
                     >
                         {this.props.children}
@@ -1145,6 +1154,11 @@ class VisNavigation extends React.Component<VisNavigationProps, VisNavigationSta
                         style={{
                             ...styles.viewContentWithToolbar,
                             marginTop: this.props.context.runtime ? TOOLBAR_SIZE : undefined,
+                            // the menu is fixed over the top of the page, so a section that is jumped to stops
+                            // below it, see visSectionJump.ts
+                            ...(this.props.context.runtime
+                                ? ({ '--vis-scroll-top': `${TOOLBAR_SIZE + 8}px` } as React.CSSProperties)
+                                : undefined),
                         }}
                     >
                         {this.props.children}

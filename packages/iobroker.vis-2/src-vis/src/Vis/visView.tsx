@@ -91,7 +91,7 @@ import {
 import { applyViewStyleBindings, defaultViewBackgroundColor, getViewStyleStateIds } from './visViewStyle';
 import { hasWidthVisibility, isShownAtWidth } from './visWidthVisibility';
 import VisNavigation from './visNavigation';
-import { resolveNavigationSettings } from './visNavigationSettings';
+import { getBottomMenuInset, resolveNavigationSettings } from './visNavigationSettings';
 import VisWidgetsCatalog from './visWidgetsCatalog';
 import VisWidgetErrorBoundary from './visWidgetErrorBoundary';
 
@@ -3772,6 +3772,29 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                     widgetsExtent(Object.values(contextView.widgets || {})),
                 ),
             );
+        }
+
+        /*
+         * The menu at the bottom edge lies over the page, so the page keeps that much room free at its end - or the
+         * last card of a phone page could never be scrolled out from behind the menu. A grid grows with its
+         * sections and gets the room as padding, counted into its least height so a short page does not scroll
+         * for nothing. A page with fixed positions is as high as its window; there the room goes below the
+         * widget that reaches farthest down.
+         */
+        const bottomInset =
+            this.props.visInWidget || this.props.view !== this.props.activeView || VisView.isScreenLimited(settings)
+                ? 0
+                : getBottomMenuInset(settings ? resolveNavigationSettings(this.props.context.views, settings) : null);
+        if (bottomInset) {
+            if (this.isGridLayout()) {
+                style.paddingBottom = bottomInset;
+                style.boxSizing = 'border-box';
+            } else if (!this.props.editMode) {
+                const extent = widgetsExtent(Object.values(contextView.widgets || {}));
+                if (extent.bottom) {
+                    style.minHeight = `max(100%, ${extent.bottom + bottomInset}px)`;
+                }
+            }
         }
 
         if (this.state.loadedjQueryTheme !== this.getJQueryThemeName() && this.props.view) {

@@ -335,6 +335,14 @@ html {
     box-sizing: border-box;
 }
 
+/*
+ * A section that is jumped to stops a little below the top of the window - and below a menu that is fixed over the
+ * top of the page, which sets --vis-scroll-top, see visSectionJump.ts
+ */
+.vis-grid-section-frame {
+    scroll-margin-top: var(--vis-scroll-top, 8px);
+}
+
 /* An outline and not a border: a border would take from the width of the cells */
 .vis-grid-section-edit {
     outline: 1px dashed #888888;
@@ -525,7 +533,9 @@ html {
     border-radius: 3px;
     background: #ffffff;
     color: #333333;
-    font: 12px/1 Arial, sans-serif;
+    font:
+        12px/1 Arial,
+        sans-serif;
     cursor: pointer;
     opacity: 0.7;
 }
@@ -549,7 +559,9 @@ html {
     border: 1px dashed #888888;
     border-radius: 4px;
     color: #888888;
-    font: 14px Arial, sans-serif;
+    font:
+        14px Arial,
+        sans-serif;
     cursor: pointer;
     user-select: none;
 }

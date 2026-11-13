@@ -8,6 +8,7 @@ import countDevice from './devices/countDevice';
 import dimmerDevice from './devices/dimmerDevice';
 import energyFlowDevice from './devices/energyFlowDevice';
 import iframeDevice from './devices/iframeDevice';
+import jumpsDevice from './devices/jumpsDevice';
 import inputDevice from './devices/inputDevice';
 import knobDevice from './devices/knobDevice';
 import linkDevice from './devices/linkDevice';
@@ -69,6 +70,7 @@ const DEVICES = [
     clockDevice,
     linkDevice,
     textDevice,
+    jumpsDevice,
     iframeDevice,
     themeDevice,
 ];

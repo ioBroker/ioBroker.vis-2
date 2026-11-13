@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { Project, ViewSettings } from '@iobroker/types-vis-2';
 
 import {
+    BOTTOM_MENU_HEIGHT,
+    getBottomMenuInset,
     getMenuWidth,
     getNavigationBarHeight,
     getNavigationEntryStateIds,
@@ -248,5 +250,18 @@ describe('splitBottomMenu', () => {
 
     it('takes another number of entries', () => {
         expect(splitBottomMenu(pages(4), 3)).toEqual({ shown: pages(2), more: ['page3', 'page4'] });
+    });
+});
+
+describe('getBottomMenuInset', () => {
+    it('keeps the height of the menu at the bottom edge free, so the end of the page is not behind it', () => {
+        expect(getBottomMenuInset({ navigation: true, navigationOrientation: 'bottom' })).toBe(BOTTOM_MENU_HEIGHT);
+    });
+
+    it('keeps nothing free for a menu at the side or at the top, or for no menu at all', () => {
+        expect(getBottomMenuInset({ navigation: true, navigationOrientation: 'horizontal' })).toBe(0);
+        expect(getBottomMenuInset({ navigation: true })).toBe(0);
+        expect(getBottomMenuInset({ navigation: false, navigationOrientation: 'bottom' })).toBe(0);
+        expect(getBottomMenuInset(null)).toBe(0);
     });
 });
