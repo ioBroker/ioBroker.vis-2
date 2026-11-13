@@ -86,3 +86,42 @@ export function asClock(ms: number): { text: string; unit: 'h' | 'min' } {
 export function asClockTime(ts: number): string {
     return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
+
+/** What is remembered of a programme that only says how much longer it has */
+export interface RunRecord {
+    /** The longest time left seen of it, which is as near to its whole length as one gets */
+    total: number;
+    /** When it was expected to be done the last time it was looked at */
+    until: number;
+}
+
+/** How long after it should have been done a remembered programme still counts as the one running */
+const STALE = 3_600_000;
+
+/**
+ * The whole length of a programme out of what is left of it now.
+ *
+ * A machine that only says how much longer it has never says how long it was, so the ring cannot be filled
+ * from that alone. What can be done is to remember the longest time left that was seen since it started: seen
+ * from the start, that is the whole programme. A record from a programme that should have been done long ago is
+ * one of yesterday, and starts over.
+ *
+ * @param record - what was remembered of it, if anything
+ * @param left - how much longer it has, in ms
+ * @param now - what counts as now
+ */
+export function longestRun(record: RunRecord | null, left: number, now: number): RunRecord {
+    const fresh = record && now < record.until + STALE ? record : null;
+
+    return { total: fresh ? Math.max(fresh.total, left) : left, until: now + left };
+}
+
+/**
+ * How far a programme has got, 0..1, out of its whole length and what is left of it.
+ *
+ * @param total - how long it is
+ * @param left - how much longer it has
+ */
+export function runShare(total: number, left: number): number {
+    return total > 0 ? Math.max(0, Math.min(1, 1 - left / total)) : 0;
+}

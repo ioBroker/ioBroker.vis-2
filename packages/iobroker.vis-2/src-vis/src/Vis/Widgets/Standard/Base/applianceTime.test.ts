@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { asClock, asDuration, asTime } from './applianceTime';
+import { asClock, asDuration, asTime, longestRun, runShare } from './applianceTime';
 
 /**
  * A washing machine says when it will be done in whatever way its adapter felt like, and the widget has to
@@ -80,5 +80,46 @@ describe('asClock', () => {
 
     it('never counts backwards, however late the machine is', () => {
         expect(asClock(-60_000)).toEqual({ text: '0', unit: 'min' });
+    });
+});
+
+/**
+ * A machine that only says how much longer it has gets a ring that fills anyway, from the longest time left that
+ * was seen of the programme.
+ */
+describe('longestRun', () => {
+    const now = new Date('2026-03-10T12:00:00').getTime();
+    const minutes = (m: number): number => m * 60_000;
+
+    it('takes what is left as the whole programme where nothing was remembered', () => {
+        expect(longestRun(null, minutes(90), now)).toEqual({ total: minutes(90), until: now + minutes(90) });
+    });
+
+    it('keeps the longest time left of the programme that is running', () => {
+        const record = { total: minutes(90), until: now + minutes(30) };
+        expect(longestRun(record, minutes(30), now).total).toBe(minutes(90));
+    });
+
+    it('grows where the machine thinks again and needs longer', () => {
+        const record = { total: minutes(90), until: now + minutes(30) };
+        expect(longestRun(record, minutes(100), now).total).toBe(minutes(100));
+    });
+
+    it('starts over with a programme that should have been done long ago', () => {
+        const record = { total: minutes(180), until: now - minutes(24 * 60) };
+        expect(longestRun(record, minutes(60), now).total).toBe(minutes(60));
+    });
+});
+
+describe('runShare', () => {
+    it('says how much of the programme is done', () => {
+        expect(runShare(100, 25)).toBe(0.75);
+        expect(runShare(100, 100)).toBe(0);
+    });
+
+    it('stays between nothing and all of it', () => {
+        expect(runShare(0, 10)).toBe(0);
+        expect(runShare(100, -5)).toBe(1);
+        expect(runShare(100, 150)).toBe(0);
     });
 });

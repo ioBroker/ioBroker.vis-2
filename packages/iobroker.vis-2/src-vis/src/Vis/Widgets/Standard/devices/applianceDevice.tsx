@@ -7,8 +7,17 @@ import {
 } from '@mui/icons-material';
 
 import ApplianceDrum from '../Base/controls/ApplianceDrum';
-import { asText } from '../Base/controls/stateValue';
-import { asClock, asClockTime, asDuration, asTime, type RemainingUnit } from '../Base/applianceTime';
+import { asNumber, asText } from '../Base/controls/stateValue';
+import {
+    asClock,
+    asClockTime,
+    asDuration,
+    asTime,
+    longestRun,
+    runShare,
+    type RemainingUnit,
+    type RunRecord,
+} from '../Base/applianceTime';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 
 interface ApplianceRxData extends StandardRxData {
@@ -26,6 +35,10 @@ interface ApplianceRxData extends StandardRxData {
     oidEnd?: string;
     /** The value of the status that means it is running */
     runValue?: string;
+    /** How far it has got, in % */
+    oidProgress?: string;
+    /** The ring fills from 0 to 100 % where only the time left is known, instead of turning */
+    fill?: boolean;
     /** Which machine it is, which is what it is drawn as */
     kind?: 'washer' | 'dryer' | 'dishwasher';
 }
@@ -38,6 +51,9 @@ const DONE_WORDS = ['end', 'ended', 'done', 'finish', 'finished', 'complete', 'c
 
 /** How often the countdown catches up with the clock, in ms; a countdown in minutes needs no more */
 const TICK = 15_000;
+
+/** Where the whole length of a running programme is remembered, so a reload does not start the ring at 0 */
+const MEMORY = 'vis-2-appliance-run-';
 
 /** The words a state carries for its values, where it carries any */
 function wordOf(context: DeviceContext<ApplianceRxData>, attr: string, value: unknown): string {
@@ -61,6 +77,14 @@ interface LiveDrumProps {
     end: number | null;
     /** How long it has left, where that is all there is */
     remaining: number | null;
+    /** How far it has got, 0..1, where the machine says so itself */
+    progress: number | null;
+    /** The ring fills where only the time left is known, instead of a mark that turns */
+    fill: boolean;
+    /** What the whole length of the programme is remembered under, where the ring fills */
+    memory?: string;
+    /** The status was read, so a machine that is not running really is not */
+    settled: boolean;
     /** What stands in the middle while nothing runs */
     idle: string;
     /** What stands under it: the programme, or the time of day it will be done at */
@@ -94,10 +118,55 @@ function LiveDrum(props: LiveDrumProps): React.JSX.Element {
     }, []);
 
     const left = props.end !== null && now ? props.end - now : props.remaining;
+
+    // the whole length of a programme that only says how much longer it has, for a ring that fills
+    const [total, setTotal] = React.useState<number | null>(null);
+    const key = props.memory ? `${MEMORY}${props.memory}` : '';
+
+    React.useEffect(() => {
+        if (!key) {
+            return;
+        }
+        if (!props.running) {
+            // only a status that was read says the programme is over; one that has not arrived yet says nothing
+            if (props.settled) {
+                setTotal(null);
+                try {
+                    window.localStorage.removeItem(key);
+                } catch {
+                    // a browser without storage forgets it anyway
+                }
+            }
+            return;
+        }
+        if (left === null) {
+            return;
+        }
+        let record: RunRecord | null = null;
+        try {
+            record = JSON.parse(window.localStorage.getItem(key) || 'null') as RunRecord | null;
+        } catch {
+            // nothing remembered, or nothing that can be read
+        }
+        const next = longestRun(record, left, Date.now());
+        try {
+            window.localStorage.setItem(key, JSON.stringify(next));
+        } catch {
+            // remembered for as long as the page is open
+        }
+        setTotal(next.total);
+    }, [key, props.running, props.settled, left]);
+
     const share =
         props.start !== null && props.end !== null && props.end > props.start && now
             ? Math.max(0, Math.min(1, (now - props.start) / (props.end - props.start)))
-            : null;
+            : props.progress !== null
+              ? props.progress
+              : props.fill && props.running
+                ? total !== null && left !== null
+                    ? runShare(total, left)
+                    : 0
+                : null;
 
     const clock = props.running && left !== null ? asClock(left) : null;
 
@@ -170,6 +239,8 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
                 { value: 'clock', label: 'unit_clock' },
             ],
         },
+        { name: 'fill', type: 'checkbox', label: 'appliance_fill', tooltip: 'appliance_fill_tooltip' },
+        { name: 'oidProgress', type: 'id', label: 'oid_progress' },
         { name: 'oidStart', type: 'id', label: 'oid_start_time', tooltip: 'oid_start_time_tooltip' },
         { name: 'oidEnd', type: 'id', label: 'oid_end_time', tooltip: 'oid_end_time_tooltip' },
         {
@@ -199,6 +270,10 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
         const remaining = asDuration(context.valueOf('oidRemaining'), data.remainingUnit);
         const start = asTime(context.valueOf('oidStart'));
         const end = asTime(context.valueOf('oidEnd'));
+        // in % of whatever the object says is all of it, which is 100 where it says nothing
+        const percent = data.oidProgress ? asNumber(context.valueOf('oidProgress')) : null;
+        const progress =
+            percent !== null ? Math.max(0, Math.min(1, percent / (context.commonOf('oidProgress')?.max || 100))) : null;
 
         /**
          * Whether something is running.
@@ -250,6 +325,10 @@ const applianceDevice = defineDeviceWidget<ApplianceRxData>({
                         start={start}
                         end={end}
                         remaining={remaining}
+                        progress={progress}
+                        fill={!!data.fill}
+                        memory={data.fill ? data.oidRemaining || data.oidEnd || data.oid : undefined}
+                        settled={known || remaining !== null}
                         idle={idle}
                         // the programme where there is one, and otherwise the time it will be done at
                         note={program || note}
