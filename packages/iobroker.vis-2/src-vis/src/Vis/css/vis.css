@@ -26,6 +26,7 @@ html {
     word-spacing: normal;
     text-indent: 0;
     display: inline-block;
+    vertical-align: top;
     text-align: start;
     font: 1em Arial;
 }
