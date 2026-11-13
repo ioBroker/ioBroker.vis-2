@@ -69,6 +69,7 @@ import WidgetJS from './WidgetJS';
 import WidgetBindingField from './WidgetBindingField';
 import FieldHelp, { hasFieldHelp } from '../FieldHelp';
 import { isDevServer } from '@/Utilities/devServer';
+import { hasOwnNameAttribute, widgetNameAttr } from '@/Vis/visWidgetName';
 
 /**
  * The mark in front of the name of a group, so that a group is found by its shape and not by reading every
@@ -1180,7 +1181,24 @@ class Widget extends Component<WidgetProps, WidgetState> {
                 singleName: group.singleName,
             }));
 
-            newState.fields = [...this.fieldsBefore, ...customGroups, ...fieldsAfter, ...[fieldsSignals]];
+            // a widget with an attribute `name` of its own keeps the name it has in the editor elsewhere, see
+            // visWidgetName.ts - otherwise the two fields would write one value
+            const fieldsBefore = hasOwnNameAttribute(customGroups)
+                ? this.fieldsBefore.map(group =>
+                      group.name === 'fixed'
+                          ? {
+                                ...group,
+                                fields: group.fields.map(field =>
+                                    field.name === 'name'
+                                        ? { ...field, name: widgetNameAttr(true), singleName: 'name' }
+                                        : field,
+                                ),
+                            }
+                          : group,
+                  )
+                : this.fieldsBefore;
+
+            newState.fields = [...fieldsBefore, ...customGroups, ...fieldsAfter, ...[fieldsSignals]];
         }
 
         widgets &&

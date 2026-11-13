@@ -19,6 +19,7 @@ import WidgetImportDialog from '../Toolbar/WidgetImportDialog';
 import { type WidgetType, getWidgetTypes } from './visWidgetsCatalog';
 import { getAdornerLayer } from './visAdornerLayer';
 import { WIDGETERIA_DISABLED } from '../Marketplace/constants';
+import { getWidgetName } from './visWidgetName';
 
 interface VisContextMenuProps {
     changeProject: (project: Project) => void;
@@ -134,8 +135,8 @@ const VisContextMenu = (props: VisContextMenuProps): React.JSX.Element | null =>
                           showSelect = true;
                       }
                       widgetName = coordinatesWidgets[0];
-                      if (view.widgets[coordinatesWidgets[0]].data?.name) {
-                          widgetName = view.widgets[coordinatesWidgets[0]].data.name || '';
+                      if (getWidgetName(view.widgets[coordinatesWidgets[0]].data)) {
+                          widgetName = getWidgetName(view.widgets[coordinatesWidgets[0]].data);
                           widgetType = coordinatesWidgets[0];
                       } else {
                           const tpl = view.widgets[coordinatesWidgets[0]].tpl;

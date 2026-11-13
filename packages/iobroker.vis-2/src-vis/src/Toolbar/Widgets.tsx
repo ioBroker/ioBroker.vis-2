@@ -32,6 +32,7 @@ import { getWidgetTypes } from '../Vis/visWidgetsCatalog';
 import WidgetImportDialog from './WidgetImportDialog';
 import WidgetExportDialog from './WidgetExportDialog';
 import WidgetFilterDialog from './WidgetFilterDialog';
+import { getWidgetName } from '@/Vis/visWidgetName';
 
 interface WidgetsProps {
     openedViews: string[];
@@ -244,10 +245,11 @@ const Widgets: React.FC<WidgetsProps> = props => {
                             }
                         }
                         let name;
-                        if (widgets[widgetId]?.data?.name) {
+                        const widgetName = getWidgetName(widgets[widgetId]?.data);
+                        if (widgetName) {
                             name = (
                                 <span>
-                                    <span>{widgets[widgetId].data?.name}</span>
+                                    <span>{widgetName}</span>
                                     <span
                                         style={{
                                             marginLeft: 4,

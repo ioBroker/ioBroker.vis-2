@@ -80,6 +80,7 @@ import commonStyles from '@/Utilities/styles';
 import TextDialog from './TextDialog';
 import MaterialIconSelector from '../../Components/MaterialIconSelector';
 import EditorColorPicker from '../../Components/EditorColorPicker';
+import { getWidgetName as widgetNameOf } from '@/Vis/visWidgetName';
 
 const POSSIBLE_UNITS = ['px', '%', 'em', 'rem', 'vh', 'vw', 'vmin', 'vmax', 'ex', 'ch', 'cm', 'mm', 'in', 'pt', 'pc'];
 
@@ -1214,7 +1215,7 @@ const WidgetField = (props: WidgetFieldProps): string | React.JSX.Element | Reac
             // The name entered in the "General" group is stored in data.name
             const getWidgetName = (view: string, wid: AnyWidgetId): string => {
                 const widget = store.getState().visProject[view].widgets[wid];
-                return widget.data?.name || widget.name || '';
+                return widgetNameOf(widget.data) || widget.name || '';
             };
             if (field.all) {
                 Object.keys(store.getState().visProject).forEach(

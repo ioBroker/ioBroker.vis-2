@@ -54,6 +54,7 @@ import {
     type GridCellSpan,
     type GridMetrics,
 } from './visGridLayout';
+import { getWidgetName } from './visWidgetName';
 
 interface HTMLDivElementResizers extends HTMLDivElement {
     _storedOpacity?: string;
@@ -2221,7 +2222,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     <span>
                         {this.state.multiViewWidget
                             ? I18n.t('%s from %s', multiId, multiView)
-                            : widget.data?.name || this.props.id}
+                            : getWidgetName(widget.data) || this.props.id}
                     </span>
                     {this.state.multiViewWidget || widget.usedInWidget ? null : (
                         <AnchorIcon

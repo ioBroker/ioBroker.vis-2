@@ -14,6 +14,7 @@ import type { AnyWidgetId, Permissions, Project, Widget } from '@iobroker/types-
 import { store } from '@/Store';
 import { deepClone, DEFAULT_PERMISSIONS } from '@/Utilities/utils';
 import IODialog from '../../Components/IODialog';
+import { getWidgetName } from '@/Vis/visWidgetName';
 
 interface PermissionsDialogProps {
     /** Function called when dialog is closed */
@@ -218,7 +219,7 @@ export default class PermissionsDialog extends React.Component<PermissionsDialog
             >
                 <p
                     style={{ margin: 'auto', fontSize: 12 }}
-                >{`${widget.data.name ? `${widget.data.name} (${wid})` : wid}:`}</p>
+                >{`${getWidgetName(widget.data) ? `${getWidgetName(widget.data)} (${wid})` : wid}:`}</p>
                 <div
                     style={{
                         width: '100%',
