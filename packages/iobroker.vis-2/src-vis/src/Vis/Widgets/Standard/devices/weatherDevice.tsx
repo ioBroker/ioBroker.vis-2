@@ -263,7 +263,12 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
         const unit = data.unit || context.commonOf('oid')?.unit || '°C';
         const text = asText(context.valueOf('oidText'));
         const icon = asText(context.valueOf('oidIcon'));
-        const accent = temperature === null ? accents.off : data.accentColor || accents.blue;
+        /*
+         * A card without a state for the temperature now - a forecast, or the sky and the wind alone - shows no
+         * reading at all. `--°C` belongs to a reading that is expected and has not arrived, and that card is not grey.
+         */
+        const withReading = !!data.oid;
+        const accent = withReading && temperature === null ? accents.off : data.accentColor || accents.blue;
         const quiet = theme.palette.text.secondary;
 
         /*
@@ -506,18 +511,20 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
                     ) : null}
                     {factsRow}
                 </div>
-                <span
-                    style={{
-                        marginLeft: 'auto',
-                        fontSize: VALUE_SIZE,
-                        fontWeight: 700,
-                        lineHeight: 1,
-                        whiteSpace: 'nowrap',
-                        ...css.text,
-                    }}
-                >
-                    {`${reading}${unit}`}
-                </span>
+                {withReading ? (
+                    <span
+                        style={{
+                            marginLeft: 'auto',
+                            fontSize: VALUE_SIZE,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            whiteSpace: 'nowrap',
+                            ...css.text,
+                        }}
+                    >
+                        {`${reading}${unit}`}
+                    </span>
+                ) : null}
             </div>
         );
 
@@ -526,11 +533,11 @@ const weatherDevice = defineDeviceWidget<WeatherRxData>({
             active: false,
             // on the rich card the picture stands in its own tile inside the card, not in the corner of it
             icon: rich ? undefined : iconNode,
-            value: rich ? undefined : `${reading}${unit}`,
+            value: rich || !withReading ? undefined : `${reading}${unit}`,
             valueColor: theme.palette.text.primary,
             label: rich ? undefined : text || undefined,
-            stateText: text ? `${reading}${unit} · ${text}` : `${reading}${unit}`,
-            marker: { text: reading, unit },
+            stateText: [withReading ? `${reading}${unit}` : '', text].filter(part => part).join(' · '),
+            marker: withReading ? { text: reading, unit } : undefined,
             // What is drawn follows the size of the card rather than a number of pixels: `cqw` and `cqh` are
             // the width and the height of the card itself, which the frame makes a container for exactly this.
             container: true,
