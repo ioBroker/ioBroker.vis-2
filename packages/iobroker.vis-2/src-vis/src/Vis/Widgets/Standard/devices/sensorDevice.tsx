@@ -64,6 +64,8 @@ interface SensorRxData extends StandardRxData {
      * base widget turns that into a path only for an attribute whose name says it is a picture.
      */
     iconPhoto?: string;
+    /** Where the photo stands on a card of the layout `default`: by the shape of the card, or always at one place */
+    photoPlace?: 'auto' | 'side' | 'center' | 'corner';
 }
 
 interface PersonPictureProps {
@@ -290,6 +292,21 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
             tooltip: 'person_photo_tooltip',
             hidden: 'data.kind !== "person"',
         },
+        {
+            name: 'photoPlace',
+            type: 'select',
+            label: 'person_photo_place',
+            tooltip: 'person_photo_place_tooltip',
+            default: 'auto',
+            options: [
+                { value: 'auto', label: 'person_photo_place_auto' },
+                { value: 'side', label: 'person_photo_place_side' },
+                { value: 'center', label: 'person_photo_place_center' },
+                { value: 'corner', label: 'person_photo_place_corner' },
+            ],
+            // only the card of the layout `default` has more than one place for it
+            hidden: 'data.kind !== "person" || (!!data.layout && data.layout !== "default")',
+        },
         { name: 'alarm', type: 'checkbox', label: 'sensor_alarm', tooltip: 'sensor_alarm_tooltip' },
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
         { name: 'textOn', label: 'text_on' },
@@ -345,6 +362,16 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
             const value = known ? word : '--';
             // the card has room for the big circle; a row and a coloured card have only the place of the icon
             const big = context.layout === 'default';
+            /*
+             * Where the photo stands on that card. By itself it follows the shape of the card: beside name and value
+             * over the whole height where the card is at least half again as wide as it is high, and between them
+             * where it is narrower - so the same tile looked different on another screen. Each of the places can be
+             * held instead, and the photo can be small at the right of the name, like the icon of any other card.
+             */
+            const place = big ? data.photoPlace || 'auto' : null;
+            const circle = (): React.JSX.Element => (
+                <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle>
+            );
 
             return {
                 accent,
@@ -352,9 +379,10 @@ const sensorDevice = defineDeviceWidget<SensorRxData>({
                 icon: big ? null : picture(2),
                 // the photo is the more exact answer than any icon chosen for the widget
                 ownIcon: true,
-                // a narrow card has the circle between name and value, a wide one beside them over its height
-                body: big ? <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle> : undefined,
-                side: big ? <LargestCircle size={typedLength(data.iconSize)}>{picture(3)}</LargestCircle> : undefined,
+                body: place === 'auto' || place === 'center' ? circle() : undefined,
+                side: place === 'auto' || place === 'side' ? circle() : undefined,
+                sideAlways: place === 'side',
+                badge: place === 'corner' ? picture(2) : undefined,
                 face: picture(0),
                 value,
                 valueColor: accent,

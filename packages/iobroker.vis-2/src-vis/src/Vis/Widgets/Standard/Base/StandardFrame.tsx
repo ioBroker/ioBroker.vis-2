@@ -56,6 +56,13 @@ export interface StandardFrameProps {
      * the size of the card (`.vis-card-side` in `vis.css`), so the card becomes a container of the type `size`.
      */
     side?: React.ReactNode;
+    /** The side is shown on every card, not only on one at least half again as wide as it is high */
+    sideAlways?: boolean;
+    /**
+     * A picture at the right end of the header, as large as the icon: the photo of a person, small, where the
+     * card is to look like any other.
+     */
+    badge?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
     /**
@@ -397,13 +404,31 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
             </div>
         );
 
+        const badge = props.badge ? (
+            <div
+                style={{
+                    width: iconLength ?? tokens.iconSize,
+                    height: iconLength ?? tokens.iconSize,
+                    flexShrink: 0,
+                    // it belongs to the right end, also where there is no name to push it there
+                    marginLeft: 'auto',
+                }}
+            >
+                {props.badge}
+            </div>
+        ) : null;
+
         const headerRow = named ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>
                 {iconBox(accent)}
                 {name(tokens.titleSize, theme.palette.text.secondary, true)}
+                {badge}
             </div>
-        ) : props.icon && !iconInRow ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>{iconBox(accent)}</div>
+        ) : (props.icon && !iconInRow) || badge ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.gap }}>
+                {iconInRow ? null : iconBox(accent)}
+                {badge}
+            </div>
         ) : null;
 
         const column = (
@@ -447,7 +472,7 @@ export default function StandardFrame(props: StandardFrameProps): React.JSX.Elem
                 {column}
                 {/* square as the card is high, but never more than half of it: the text keeps its room */}
                 <div
-                    className="vis-card-side"
+                    className={props.sideAlways ? 'vis-card-side vis-card-side-always' : 'vis-card-side'}
                     style={{ height: '100%', aspectRatio: '1', maxWidth: '50%', flexShrink: 0 }}
                 >
                     {props.side}

@@ -894,6 +894,10 @@ html {
 .vis-card-side {
     display: none;
 }
+/* a side that was asked for on every card, whatever its shape */
+.vis-card-side.vis-card-side-always {
+    display: block;
+}
 @container vis-card (aspect-ratio >= 3/2) {
     .vis-card-side {
         display: block;

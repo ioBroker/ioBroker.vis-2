@@ -242,6 +242,10 @@ export interface DeviceResult {
     aside?: React.ReactNode;
     /** A picture beside everything else on a wide card, in place of the body; see `StandardFrame` */
     side?: React.ReactNode;
+    /** The side is shown on every card, not only on a wide one */
+    sideAlways?: boolean;
+    /** A picture at the right end of the header, as large as the icon; see `StandardFrame` */
+    badge?: React.ReactNode;
     /** What gets the whole width of the bottom: a slider */
     footer?: React.ReactNode;
     /** The value stands under the name rather than under the body, see `StandardFrame` */
@@ -1107,6 +1111,8 @@ export function defineDeviceWidget<RxData extends StandardRxData>(
                             body={result.body}
                             aside={result.aside}
                             side={result.side}
+                            sideAlways={result.sideAlways}
+                            badge={result.badge}
                             footer={result.footer}
                             valueOnTop={result.valueOnTop}
                             background={result.background}
