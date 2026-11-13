@@ -37,6 +37,13 @@ const CIRCLE = 2 * Math.PI * RADIUS;
  * @param props - how far it has got, what stands in the middle, and in which colours
  */
 export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Element {
+    /*
+     * A share of nothing is drawn as a dot: an arc of no length with round ends. On a programme that runs, that
+     * read as a drum that was broken - and it is what a ring that fills shows as long as it has learned nothing
+     * yet, see `longestRun`. So a programme at 0 % is drawn like one that says nothing about how far it is: it turns while it runs.
+     */
+    const share = props.share !== null && props.share > 0 ? props.share : null;
+
     return (
         <svg
             viewBox="0 0 120 120"
@@ -61,7 +68,7 @@ export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Elem
                 opacity={props.running ? 0.14 : 0.07}
             />
 
-            {props.share !== null ? (
+            {share !== null ? (
                 <circle
                     cx="60"
                     cy="60"
@@ -70,7 +77,7 @@ export default function ApplianceDrum(props: ApplianceDrumProps): React.JSX.Elem
                     stroke={props.accent}
                     strokeWidth="9"
                     strokeLinecap="round"
-                    strokeDasharray={`${(props.share * CIRCLE).toFixed(1)} ${CIRCLE.toFixed(1)}`}
+                    strokeDasharray={`${(share * CIRCLE).toFixed(1)} ${CIRCLE.toFixed(1)}`}
                     transform="rotate(-90 60 60)"
                     style={{ transition: 'stroke-dasharray 0.6s' }}
                 />
