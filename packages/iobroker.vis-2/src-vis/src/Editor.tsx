@@ -26,7 +26,6 @@ import {
     DialogContent,
     DialogContentText,
     Box,
-    Fab,
 } from '@mui/material';
 
 import {
@@ -2549,7 +2548,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                 : this.state.selectedView
                         }
                         style={{
-                            width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette || this.state.narrowLayout ? 40 : 0) + (this.state.hideAttributes || this.state.narrowLayout ? 40 : 0)}px)`,
+                            width: `calc(100% - ${68 + (!this.state.showCode ? 40 : 0) + (this.state.hidePalette || this.state.narrowLayout ? 40 : 0) + (this.state.hideAttributes || this.state.narrowLayout ? 40 : 0) + (!this.state.aiOpen ? 40 : 0)}px)`,
                         }}
                         sx={styles.viewTabs}
                         variant="scrollable"
@@ -2654,6 +2653,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         </div>
                     </Tooltip>
                 ) : null}
+                {this.renderAiButton()}
                 {this.state.hideAttributes || this.state.narrowLayout ? (
                     <Tooltip
                         title={I18n.t('Show attributes')}
@@ -2681,7 +2681,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         );
     }
 
-    /** The handle that opens the assistant; it sits where the assistant will appear */
+    /** The handle that opens the assistant; it sits in the tabs, so it covers nothing in the attributes (#739) */
     renderAiButton(): React.JSX.Element | null {
         if (this.state.aiOpen) {
             return null;
@@ -2691,17 +2691,18 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 title={I18n.t('vis_ai_title')}
                 slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
             >
-                <Fab
-                    size="medium"
-                    color="primary"
-                    style={{ position: 'absolute', right: 16, bottom: 16, zIndex: 900 }}
-                    onClick={() => {
-                        window.localStorage.setItem('Vis.aiOpen', 'true');
-                        this.setState({ aiOpen: true });
-                    }}
-                >
-                    <AiIcon />
-                </Fab>
+                <div style={styles.tabButton}>
+                    <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => {
+                            window.localStorage.setItem('Vis.aiOpen', 'true');
+                            this.setState({ aiOpen: true });
+                        }}
+                    >
+                        <AiIcon />
+                    </IconButton>
+                </div>
             </Tooltip>
         );
     }
@@ -3479,7 +3480,6 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                                         </ReactSplit>
                                     )}
                                 </EditorDnd>
-                                {this.renderAiButton()}
                             </div>
                             {this.renderAiPanel()}
                         </div>
