@@ -11,6 +11,7 @@ import {
     getSectionHeaderValues,
     getSectionPlacementStyle,
     getSectionStateIds,
+    getSectionSubtitleStyle,
     hasSectionHeader,
     isSectionOpen,
     isSectionVisible,
@@ -287,5 +288,28 @@ describe('header values', () => {
         expect(formatSectionValue(null, '', false, words)).toBe('–');
         expect(formatSectionValue(undefined, '', false, words)).toBe('–');
         expect(formatSectionValue('auto', 'auto', false, words)).toBe('auto');
+    });
+});
+
+describe('getSectionSubtitleStyle', () => {
+    it('colors, sizes and weakens the subtitle as the section says', () => {
+        expect(
+            getSectionSubtitleStyle(
+                section({
+                    subtitleItalic: true,
+                    subtitleColor: '#fff',
+                    subtitleOpacity: 100,
+                    subtitleSize: '13' as unknown as number,
+                }),
+            ),
+        ).toEqual({ fontStyle: 'italic', color: '#fff', opacity: 1, fontSize: 13 });
+        expect(getSectionSubtitleStyle(section({ subtitleOpacity: 0 }))).toEqual({ opacity: 0 });
+        expect(getSectionSubtitleStyle(section({ subtitleOpacity: 250 }))).toEqual({ opacity: 1 });
+    });
+
+    it('leaves everything to the CSS where the section says nothing', () => {
+        expect(getSectionSubtitleStyle(section({}))).toBeUndefined();
+        expect(getSectionSubtitleStyle(section({ subtitleSize: -2, subtitleColor: '' }))).toBeUndefined();
+        expect(getSectionSubtitleStyle(null)).toBeUndefined();
     });
 });

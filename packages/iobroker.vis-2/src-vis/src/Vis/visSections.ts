@@ -62,6 +62,8 @@ const NUMBER_ATTRIBUTES = [
     'borderRadius',
     'padding',
     'titleSize',
+    'subtitleSize',
+    'subtitleOpacity',
     'glass',
     'minHeight',
     'rowHeight',
@@ -368,6 +370,38 @@ export function getSectionHeaderStyle(section: ViewSection | undefined | null, w
         style.paddingBottom = 6;
     }
     return style;
+}
+
+/**
+ * The CSS of the subtitle of a section, where the section says more than `vis.css` does.
+ *
+ * The CSS draws it at 70 % and at 0.8 of the title. A subtitle like "Ground floor" over a page of rooms is often
+ * meant to be read at a glance, and the only other way to make it stronger was the text color of the section -
+ * which its widgets take over as well.
+ *
+ * @param section - the section, with its bindings applied
+ * @returns the style, or undefined if the CSS decides everything
+ */
+export function getSectionSubtitleStyle(section: ViewSection | undefined | null): CSSProperties | undefined {
+    if (!section || typeof section !== 'object') {
+        return undefined;
+    }
+    const style: CSSProperties = {};
+    if (section.subtitleItalic) {
+        style.fontStyle = 'italic';
+    }
+    if (section.subtitleColor) {
+        style.color = section.subtitleColor;
+    }
+    const opacity = toNonNegativeNumber(section.subtitleOpacity);
+    if (opacity !== null) {
+        style.opacity = Math.min(100, opacity) / 100;
+    }
+    const size = toPositiveNumber(section.subtitleSize);
+    if (size) {
+        style.fontSize = size;
+    }
+    return Object.keys(style).length ? style : undefined;
 }
 
 /**

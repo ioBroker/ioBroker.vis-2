@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "Instalar",
   "missing_widgets_no_adapter": "No se encontró ningún adaptador para \"%s\" en el repositorio.",
   "missing_widgets_reload_hint": "Vuelve a cargar el editor para usar los nuevos widgets.",
-  "missing_widgets_reload": "Recargar editor"
+  "missing_widgets_reload": "Recargar editor",
+  "Subtitle color": "Color del subtítulo",
+  "Subtitle opacity": "Opacidad del subtítulo",
+  "Subtitle size": "Tamaño del subtítulo",
+  "help_section_subtitle_opacity": "Con qué intensidad se dibuja el subtítulo, en %; 70 % si no se indica.",
+  "help_section_subtitle_size": "En px; 0,8 del tamaño del título si no se indica."
 }

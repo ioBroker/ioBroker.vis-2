@@ -17,7 +17,7 @@ import {
     type CellFormat,
     type RowFilter,
 } from '../Base/controls/tableFormat';
-import { tableCell, tableColumns, tableRows, type TableRow } from '../Base/controls/tableRows';
+import { sortRows, tableCell, tableColumns, tableRows, type TableRow } from '../Base/controls/tableRows';
 import { cssPixels } from '../Base/widgetCss';
 import type { RxWidgetInfoAttributesField } from '@iobroker/types-vis-2';
 
@@ -50,6 +50,12 @@ interface TableRxData extends StandardRxData {
     filterKey?: string;
     /** The column the end of a row is in; without it the table looks for one */
     filterEndKey?: string;
+    /** Where in the state the list is, `articles` of `{ meta: …, articles: [ … ] }`; nothing is the whole state */
+    listPath?: string;
+    /** The column the rows are sorted by; without it they stay in the order of the adapter */
+    sortKey?: string;
+    /** The largest, the latest or the last word first */
+    sortDescending?: boolean | 'true' | 'false';
 }
 
 interface Column {
@@ -338,8 +344,12 @@ function TableView(props: TableViewProps): React.JSX.Element {
  * A field that offers the keys of the state, for a setting that names a column.
  *
  * @param labelKey - the word of the field
+ * @param lists - offer the lists inside the state, for the field that names the path to one
  */
-function keyField(labelKey: string): Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] {
+function keyField(
+    labelKey: string,
+    lists?: boolean,
+): Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] {
     const component: Extract<RxWidgetInfoAttributesField, { type: 'custom' }>['component'] = (
         field,
         data,
@@ -351,6 +361,8 @@ function keyField(labelKey: string): Extract<RxWidgetInfoAttributesField, { type
             <ColumnKeyField
                 value={data[name] || ''}
                 oid={data.oid}
+                path={lists ? undefined : data.listPath}
+                lists={lists}
                 socket={componentProps.context.socket}
                 label={I18n.t(`${STANDARD_I18N_PREFIX}${labelKey}`)}
                 onChange={value => onDataChange({ ...data, [name]: value })}
@@ -388,6 +400,23 @@ const tableDevice = defineDeviceWidget<TableRxData>({
     deviceTypes: [],
     fields: [
         { name: 'oid', type: 'id', label: 'oid_table', tooltip: 'oid_table_tooltip' },
+        {
+            name: 'listPath',
+            type: 'custom',
+            label: 'table_list_path',
+            tooltip: 'table_list_path_tooltip',
+            noBinding: true,
+            component: keyField('table_list_path', true),
+        },
+        {
+            name: 'sortKey',
+            type: 'custom',
+            label: 'table_sort_key',
+            tooltip: 'table_sort_key_tooltip',
+            noBinding: true,
+            component: keyField('table_sort_key'),
+        },
+        { name: 'sortDescending', type: 'checkbox', label: 'table_sort_descending', hidden: '!data.sortKey' },
         { name: 'withHead', type: 'checkbox', label: 'table_head', default: true },
         { name: 'zebra', type: 'checkbox', label: 'table_zebra', default: true },
         { name: 'headColor', type: 'color', label: 'table_head_color', hidden: '!data.withHead' },
@@ -523,7 +552,11 @@ const tableDevice = defineDeviceWidget<TableRxData>({
         // the rows calculate with the size of their writing, so one that was set in pixels takes its place
         const smallSize = cssPixels(context.css.text.fontSize) ?? context.tokens.smallSize;
 
-        const all = tableRows(context.valueOf('oid'));
+        const all = sortRows(
+            tableRows(context.valueOf('oid'), data.listPath),
+            data.sortKey || undefined,
+            data.sortDescending === true || data.sortDescending === 'true',
+        );
         const columns = columnsOf(context, all);
 
         return {

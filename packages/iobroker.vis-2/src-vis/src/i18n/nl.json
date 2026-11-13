@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "Installeren",
   "missing_widgets_no_adapter": "In de repository is geen adapter voor \"%s\" gevonden.",
   "missing_widgets_reload_hint": "Laad de editor opnieuw om de nieuwe widgets te gebruiken.",
-  "missing_widgets_reload": "Editor opnieuw laden"
+  "missing_widgets_reload": "Editor opnieuw laden",
+  "Subtitle color": "Kleur ondertitel",
+  "Subtitle opacity": "Dekking ondertitel",
+  "Subtitle size": "Grootte ondertitel",
+  "help_section_subtitle_opacity": "Hoe sterk de ondertitel getekend wordt, in %; zonder waarde 70 %.",
+  "help_section_subtitle_size": "In px; zonder waarde 0,8 van de titelgrootte."
 }

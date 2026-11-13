@@ -1131,5 +1131,10 @@
   "missing_widgets_install": "Install",
   "missing_widgets_no_adapter": "No adapter for \"%s\" was found in the repository.",
   "missing_widgets_reload_hint": "Load the editor again to use the new widgets.",
-  "missing_widgets_reload": "Reload editor"
+  "missing_widgets_reload": "Reload editor",
+  "Subtitle color": "Subtitle color",
+  "Subtitle opacity": "Subtitle opacity",
+  "Subtitle size": "Subtitle size",
+  "help_section_subtitle_opacity": "How strong the subtitle is drawn, in %; 70 % if not set.",
+  "help_section_subtitle_size": "In px; 0.8 of the title size if not set."
 }

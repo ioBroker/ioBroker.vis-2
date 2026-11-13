@@ -4,7 +4,9 @@ import { Autocomplete, TextField, Typography } from '@mui/material';
 
 import { I18n, type Connection } from '@iobroker/gui-components';
 
-import { tableCell, tableColumns, tableRows } from './tableRows';
+import { STANDARD_I18N_PREFIX } from '../prefix';
+
+import { tableCell, tableColumns, tableListPaths, tableRows } from './tableRows';
 
 export interface ColumnKeyFieldProps {
     /** The key that is set at the moment */
@@ -12,6 +14,10 @@ export interface ColumnKeyFieldProps {
     /** The state the table reads its rows from; without it there is nothing to offer */
     oid: string | undefined;
     socket: Connection;
+    /** Where in the state the list is, see `tableRows()`; the keys are those of the rows of that list */
+    path?: string;
+    /** Offer the lists inside the state rather than the keys of the rows: the field that picks the path */
+    lists?: boolean;
     label: string;
     onChange: (value: string) => void;
 }
@@ -37,7 +43,7 @@ interface Suggestion {
  */
 export default function ColumnKeyField(props: ColumnKeyFieldProps): React.JSX.Element {
     const [suggestions, setSuggestions] = React.useState<Suggestion[]>([]);
-    const { oid, socket } = props;
+    const { oid, socket, path, lists } = props;
 
     React.useEffect(() => {
         let dropped = false;
@@ -52,7 +58,16 @@ export default function ColumnKeyField(props: ColumnKeyFieldProps): React.JSX.El
                 if (dropped) {
                     return;
                 }
-                const rows = tableRows(state?.val);
+                if (lists) {
+                    setSuggestions(
+                        tableListPaths(state?.val).map(one => ({
+                            key: one.path,
+                            sample: I18n.t(`${STANDARD_I18N_PREFIX}table_rows`, one.count),
+                        })),
+                    );
+                    return;
+                }
+                const rows = tableRows(state?.val, path);
                 setSuggestions(
                     tableColumns(rows).map(key => ({
                         key,
@@ -69,7 +84,7 @@ export default function ColumnKeyField(props: ColumnKeyFieldProps): React.JSX.El
         return () => {
             dropped = true;
         };
-    }, [oid, socket]);
+    }, [oid, socket, path, lists]);
 
     return (
         <Autocomplete

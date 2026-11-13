@@ -5,7 +5,7 @@ import { DoorFront as DoorIcon, Window as WindowIcon } from '@mui/icons-material
 import { Types } from '../Base/deviceTypes';
 
 import WindowGlass, { type WindowState } from '../Base/controls/WindowGlass';
-import { asText } from '../Base/controls/stateValue';
+import { asNumber, asText } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 
 interface WindowRxData extends StandardRxData {
@@ -17,6 +17,8 @@ interface WindowRxData extends StandardRxData {
     inverted?: boolean | 'true';
     /** The value that means tilted, where the state knows three positions */
     tiltValue?: string;
+    /** How large the drawing is, in % of the room the card has for it */
+    drawingSize?: number | string;
 }
 
 /**
@@ -118,6 +120,16 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
         },
         { name: 'tiltValue', label: 'tilt_value', tooltip: 'tilt_value_tooltip' },
         { name: 'inverted', type: 'checkbox', label: 'inverted' },
+        {
+            name: 'drawingSize',
+            type: 'slider',
+            label: 'window_drawing_size',
+            tooltip: 'window_drawing_size_tooltip',
+            min: 20,
+            max: 100,
+            step: 5,
+            default: 100,
+        },
     ],
     tile: { columns: 6, rows: 4, minColumns: 3, minRows: 3 },
     markerShape: 'icon',
@@ -129,6 +141,7 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
         const tilted = state === 'tilted';
         const accent = !known ? accents.off : open ? accents.yellow : tilted ? accents.blue : accents.green;
         const word = !known ? '--' : t(open ? 'open' : tilted ? 'tilted' : 'closed');
+        const size = Math.min(100, Math.max(20, asNumber(context.data.drawingSize) ?? 100));
 
         return {
             accent,
@@ -140,14 +153,30 @@ const windowDevice = defineDeviceWidget<WindowRxData>({
                     <WindowIcon style={{ width: '100%', height: '100%' }} />
                 ),
             body: (
-                <WindowGlass
-                    state={state || 'closed'}
-                    kind={context.data.kind === 'door' ? 'door' : 'window'}
-                    handle={context.data.handle === 'left' ? 'left' : 'right'}
-                    accent={accent}
-                    outline={theme.palette.text.disabled}
-                    background={theme.palette.background.default}
-                />
+                /*
+                 * The drawing fills what the card has room for. A card beside a blind has to be as high as that one,
+                 * and a window as high as a blind is a large window - so it can be drawn smaller in the same card.
+                 */
+                <div
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <div style={{ width: `${size}%`, height: `${size}%` }}>
+                        <WindowGlass
+                            state={state || 'closed'}
+                            kind={context.data.kind === 'door' ? 'door' : 'window'}
+                            handle={context.data.handle === 'left' ? 'left' : 'right'}
+                            accent={accent}
+                            outline={theme.palette.text.disabled}
+                            background={theme.palette.background.default}
+                        />
+                    </div>
+                </div>
             ),
             value: word,
             valueColor: accent,

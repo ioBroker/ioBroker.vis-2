@@ -1131,5 +1131,10 @@
   "missing_widgets_install": "Installieren",
   "missing_widgets_no_adapter": "Im Repository wurde kein Adapter für „%s“ gefunden.",
   "missing_widgets_reload_hint": "Lade den Editor neu, um die neuen Widgets zu verwenden.",
-  "missing_widgets_reload": "Editor neu laden"
+  "missing_widgets_reload": "Editor neu laden",
+  "Subtitle color": "Farbe Untertitel",
+  "Subtitle opacity": "Deckkraft Untertitel",
+  "Subtitle size": "Größe Untertitel",
+  "help_section_subtitle_opacity": "Wie kräftig der Untertitel gezeichnet wird, in %; ohne Angabe 70 %.",
+  "help_section_subtitle_size": "In px; ohne Angabe 0,8 der Titelgröße."
 }

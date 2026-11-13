@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "Installer",
   "missing_widgets_no_adapter": "Aucun adaptateur pour « %s » n'a été trouvé dans le dépôt.",
   "missing_widgets_reload_hint": "Rechargez l'éditeur pour utiliser les nouveaux widgets.",
-  "missing_widgets_reload": "Recharger l'éditeur"
+  "missing_widgets_reload": "Recharger l'éditeur",
+  "Subtitle color": "Couleur du sous-titre",
+  "Subtitle opacity": "Opacité du sous-titre",
+  "Subtitle size": "Taille du sous-titre",
+  "help_section_subtitle_opacity": "Intensité du sous-titre, en % ; 70 % par défaut.",
+  "help_section_subtitle_size": "En px ; 0,8 de la taille du titre par défaut."
 }

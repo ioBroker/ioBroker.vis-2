@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "安装",
   "missing_widgets_no_adapter": "在存储库中没有找到“%s”的适配器。",
   "missing_widgets_reload_hint": "重新加载编辑器以使用新的小部件。",
-  "missing_widgets_reload": "重新加载编辑器"
+  "missing_widgets_reload": "重新加载编辑器",
+  "Subtitle color": "副标题颜色",
+  "Subtitle opacity": "副标题不透明度",
+  "Subtitle size": "副标题大小",
+  "help_section_subtitle_opacity": "副标题的显示强度，单位 %；未设置时为 70 %。",
+  "help_section_subtitle_size": "单位 px；未设置时为标题大小的 0.8 倍。"
 }

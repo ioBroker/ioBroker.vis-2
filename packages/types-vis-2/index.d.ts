@@ -1249,6 +1249,12 @@ export interface ViewSection {
     subtitle?: string;
     /** The subtitle is written in italics */
     subtitleItalic?: boolean;
+    /** The color of the subtitle; without one it is the color of the title */
+    subtitleColor?: string | null;
+    /** How strong the subtitle is drawn, 0..100 %; 70 if not set */
+    subtitleOpacity?: number | null;
+    /** in px; 0.8 of the title if not set */
+    subtitleSize?: number | null;
     /** The space between the header and the widgets in px, 8 if not set */
     headerGap?: number | null;
     titleColor?: string | null;

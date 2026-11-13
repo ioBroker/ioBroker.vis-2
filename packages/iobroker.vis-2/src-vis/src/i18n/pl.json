@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "Zainstaluj",
   "missing_widgets_no_adapter": "W repozytorium nie znaleziono adaptera dla „%s”.",
   "missing_widgets_reload_hint": "Przeładuj edytor, aby używać nowych widżetów.",
-  "missing_widgets_reload": "Przeładuj edytor"
+  "missing_widgets_reload": "Przeładuj edytor",
+  "Subtitle color": "Kolor podtytułu",
+  "Subtitle opacity": "Krycie podtytułu",
+  "Subtitle size": "Rozmiar podtytułu",
+  "help_section_subtitle_opacity": "Jak mocno rysowany jest podtytuł, w %; bez wartości 70 %.",
+  "help_section_subtitle_size": "W px; bez wartości 0,8 rozmiaru tytułu."
 }

@@ -81,6 +81,7 @@ import {
     getSectionGrid,
     getSectionHeaderStyle,
     getSectionHeaderValues,
+    getSectionSubtitleStyle,
     getSectionOpenStorageKey,
     getSectionPlacementStyle,
     getSectionStateIds,
@@ -3251,7 +3252,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                                 {section.subtitle ? (
                                     <span
                                         className="vis-grid-section-subtitle"
-                                        style={section.subtitleItalic ? { fontStyle: 'italic' } : undefined}
+                                        style={getSectionSubtitleStyle(section)}
                                     >
                                         {this.formatSectionText(section, section.subtitle)}
                                     </span>

@@ -1056,5 +1056,10 @@
   "missing_widgets_install": "Установить",
   "missing_widgets_no_adapter": "В репозитории не найден адаптер для «%s».",
   "missing_widgets_reload_hint": "Перезагрузите редактор, чтобы использовать новые виджеты.",
-  "missing_widgets_reload": "Перезагрузить редактор"
+  "missing_widgets_reload": "Перезагрузить редактор",
+  "Subtitle color": "Цвет подзаголовка",
+  "Subtitle opacity": "Непрозрачность подзаголовка",
+  "Subtitle size": "Размер подзаголовка",
+  "help_section_subtitle_opacity": "Насколько ярко рисуется подзаголовок, в %; без значения 70 %.",
+  "help_section_subtitle_size": "В px; без значения 0,8 от размера заголовка."
 }
