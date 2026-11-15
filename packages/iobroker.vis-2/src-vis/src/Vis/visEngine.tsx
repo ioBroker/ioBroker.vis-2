@@ -2004,6 +2004,9 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
      * the moment their `<link>` is in the document - only the scripts of the unused sets were skipped. A file
      * without these marks stays as it is.
      *
+     * A set without any widget template (like google-fonts, which brings only fonts as CSS) cannot be found in the
+     * project, but its styles are used through the attributes of the widgets, so it is always kept.
+     *
      * @param html - the content of widgets.html
      * @param widgetSets - names of the sets to keep, as `data-widgetset` names them
      * @returns The part of the file the sets need
@@ -2011,7 +2014,8 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
     static filterWidgetSets(html: string, widgetSets: string[]): string {
         return html.replace(
             /<!-- --------------(.+?)\.html--- START -->[\s\S]*?<!-- --------------\1\.html--- END -->\n?/g,
-            (section: string, name: string) => (widgetSets.includes(name) ? section : ''),
+            (section: string, name: string) =>
+                widgetSets.includes(name) || !/<script[^>]*type=["']?text\/ejs/i.test(section) ? section : '',
         );
     }
 
