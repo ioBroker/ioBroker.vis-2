@@ -74,6 +74,7 @@ import VisServices from './visServices';
 import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded, withoutAmd } from './visLoadLegacy';
 import { createStateValues, upgradeStateValues } from './visCanStates';
 import { VisControlStates } from './visControlState';
+import { takeOverLegacyBinds, takeOverLegacyProperties } from './visLegacyObject';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
     if (!text) {
@@ -656,7 +657,10 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             });
         }
 
-        return {
+        // the vis-1 widget sets registered themselves in the `vis` of an engine before, this one takes it over (#741)
+        const oldVis = window.vis as VisLegacy | undefined;
+
+        const vis: VisLegacy = {
             version: 2,
             states: this.canStates,
             objects: {},
@@ -664,13 +668,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             activeWidgets: [],
             navChangeCallbacks: [],
             editMode: !!this.props.editMode,
-            binds: {
-                basic: null,
-                table: null,
-                jqplot: null,
-                jqueryui: null,
-                swipe: null,
-            },
+            binds: takeOverLegacyBinds(oldVis),
             views: store.getState().visProject,
             activeView: this.props.selectedView || '',
             language: this.props.lang,
@@ -1234,6 +1232,8 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             },
             getUserGroups: () => this.props.userGroups,
         };
+
+        return takeOverLegacyProperties(vis, oldVis);
     }
 
     changeFilter(
