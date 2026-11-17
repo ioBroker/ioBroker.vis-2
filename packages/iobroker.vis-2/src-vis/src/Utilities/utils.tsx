@@ -146,6 +146,8 @@ export function pasteSingleWidget(options: CopySingleWidgetOptions): SingleWidge
     const { widgets, project, widget, selectedGroup } = options;
 
     const newKey = getNewWidgetId(project);
+    // the widget is a widget of this view now, even if it was taken from a copy of a shared one
+    delete widget.multiViewOrigin;
 
     if (selectedGroup && isGroup(widgets[selectedGroup])) {
         widget.grouped = true;
@@ -175,10 +177,13 @@ export function pasteGroup(options: CopyGroupOptions): GroupWidgetId {
         const newMemberId = getNewWidgetId(project);
 
         newMember.groupid = newGroupId;
+        // the widgets are widgets of this view now, even if they were taken from a copy of a shared group
+        delete newMember.multiViewOrigin;
         group.data.members[i] = newMemberId;
         widgets[newMemberId] = newMember;
     }
 
+    delete group.multiViewOrigin;
     widgets[newGroupId] = group;
 
     return newGroupId;
@@ -188,13 +193,28 @@ export function pasteGroup(options: CopyGroupOptions): GroupWidgetId {
  * Build the ID of a widget, that is shown in another view too (multi-views)
  *
  * The ID is used as HTML element ID, so it must start with a letter, even if the view name starts with a digit.
- * The parsing of this ID (see `visBaseWidget`) expects exactly one character before the view name.
+ * Nothing may be read out of this ID - the view name and the widget ID may contain "_" too. Where the copy comes
+ * from is in `multiViewOrigin` of the copy, see `isMultiViewCopy`.
  *
  * @param view the view where the widget is defined
  * @param widgetId the ID of the widget in this view
  */
 export function getMultiViewWidgetId(view: string, widgetId: AnyWidgetId): AnyWidgetId {
     return `v${view}_${widgetId}` as AnyWidgetId;
+}
+
+/**
+ * True if the widget is a copy of a widget of another view, which `syncMultipleWidgets` put into this view because
+ * that widget is shown here too ("multi-views"). Such a copy exists only while the project is shown, it is never
+ * saved or exported.
+ *
+ * Its ID says nothing about it: the ID of a widget of a generated project may contain "_", and the runtime puts "_"
+ * in place of every space of a widget ID (#744).
+ *
+ * @param widget the widget
+ */
+export function isMultiViewCopy(widget: Widget | null | undefined): boolean {
+    return !!widget?.multiViewOrigin;
 }
 
 /**
@@ -209,8 +229,8 @@ export function unsyncMultipleWidgets(project: Project): Project {
             continue;
         }
 
-        for (const widgetId of Object.keys(view.widgets)) {
-            if (widgetId.includes('_')) {
+        for (const [widgetId, widget] of Object.entries(view.widgets)) {
+            if (isMultiViewCopy(widget)) {
                 delete view.widgets[widgetId as AnyWidgetId];
             }
         }

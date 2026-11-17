@@ -28,7 +28,7 @@ import type {
     RxWidgetInfoAttributesFieldID,
     RxWidgetInfoAttributesField,
 } from '@iobroker/types-vis-2';
-import { deepClone, getMultiViewWidgetId } from '@/Utilities/utils';
+import { deepClone, getMultiViewWidgetId, isMultiViewCopy } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
 import { applyManifest } from './visManifest';
 
@@ -998,12 +998,12 @@ export function syncMultipleWidgets(project: Project): void {
 
     // The editor syncs the project it has just changed, which still holds the copies of the last sync. Drop them
     // all, or a copy stays in a view that was taken out of "multi-views" or whose widget was deleted (#417).
-    // Only a copy has "_" in its ID, see `getMultiViewWidgetId` and `unsyncMultipleWidgets`.
+    // A copy is known by its mark, not by its ID (#744), see `isMultiViewCopy`.
     Object.keys(project).forEach(view => {
         if (view !== '___settings') {
-            for (const widgetId of Object.keys(project[view].widgets) as AnyWidgetId[]) {
-                if (widgetId.includes('_')) {
-                    delete project[view].widgets[widgetId];
+            for (const [widgetId, widget] of Object.entries(project[view].widgets)) {
+                if (isMultiViewCopy(widget)) {
+                    delete project[view].widgets[widgetId as AnyWidgetId];
                 }
             }
         }
@@ -1027,6 +1027,7 @@ export function syncMultipleWidgets(project: Project): void {
                         // copy all widgets, that must be shown in this view too
                         project[viewId].widgets[multiViewId] = JSON.parse(JSON.stringify(oWidget));
                         delete project[viewId].widgets[multiViewId].data['multi-views'];
+                        project[viewId].widgets[multiViewId].multiViewOrigin = { view, wid: widgetId };
                         if (oWidget.tpl === '_tplGroup' && oWidget.data.members?.length) {
                             // copy all group widgets too
                             const newWidget = project[viewId].widgets[multiViewId];
@@ -1034,6 +1035,7 @@ export function syncMultipleWidgets(project: Project): void {
                                 const newId: AnyWidgetId = getMultiViewWidgetId(view, memberId);
                                 project[viewId].widgets[newId] = JSON.parse(JSON.stringify(oView.widgets[memberId]));
                                 delete project[viewId].widgets[newId].data['multi-views']; // do not allow multi-multi-views
+                                project[viewId].widgets[newId].multiViewOrigin = { view, wid: memberId };
                                 // the member belongs to the copy of the group, the original is not in this view
                                 project[viewId].widgets[newId].groupid = multiViewId as GroupWidgetId;
                                 newWidget.data.members![i] = newId;

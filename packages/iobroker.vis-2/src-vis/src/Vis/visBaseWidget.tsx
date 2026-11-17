@@ -20,7 +20,7 @@ import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui
 
 import { I18n, Utils } from '@iobroker/gui-components';
 
-import { deepClone, isVarFinite } from '@/Utilities/utils';
+import { deepClone, isMultiViewCopy, isVarFinite } from '@/Utilities/utils';
 
 import { cancelMarksUpdate, getAdornerLayer, scheduleMarksUpdate, type MarksRect } from './visAdornerLayer';
 import type {
@@ -259,7 +259,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         super(props);
 
         const widget = props.context.views[props.view].widgets[props.id];
-        const multiViewWidget = props.id.includes('_');
+        const multiViewWidget = isMultiViewCopy(widget);
 
         const selected = !multiViewWidget && props.editMode && props.selectedWidgets?.includes(props.id);
 
@@ -764,12 +764,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         // detect double click for multi-view widgets
         if (this.lastClick) {
             if (this.state.multiViewWidget) {
-                if (Date.now() - this.lastClick < 250) {
+                const origin = this.props.context.views[this.props.view]?.widgets[this.props.id]?.multiViewOrigin;
+                if (origin && Date.now() - this.lastClick < 250) {
                     // change view
-                    const lastUnderscore = this.props.id.lastIndexOf('_');
-                    const multiView: string = this.props.id.substring(1, lastUnderscore);
-                    const multiId: AnyWidgetId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
-                    this.props.context.setSelectedWidgets?.([multiId], multiView);
+                    this.props.context.setSelectedWidgets?.([origin.wid], origin.view);
                 }
 
                 this.lastClick = Date.now();
@@ -2184,13 +2182,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                 setTimeout(() => this.forceUpdate(), 50);
             }
 
-            let multiView: string | null = null;
-            let multiId: AnyWidgetId | null = null;
-            if (this.state.multiViewWidget) {
-                const lastUnderscore = this.props.id.lastIndexOf('_');
-                multiView = this.props.id.substring(1, lastUnderscore);
-                multiId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
-            }
+            const origin = this.state.multiViewWidget ? widget.multiViewOrigin : undefined;
 
             const resizable = !widget.usedInWidget && this.isResizable();
 
@@ -2220,8 +2212,8 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
                     }}
                 >
                     <span>
-                        {this.state.multiViewWidget
-                            ? I18n.t('%s from %s', multiId, multiView)
+                        {origin
+                            ? I18n.t('%s from %s', origin.wid, origin.view)
                             : getWidgetName(widget.data) || this.props.id}
                     </span>
                     {this.state.multiViewWidget || widget.usedInWidget ? null : (

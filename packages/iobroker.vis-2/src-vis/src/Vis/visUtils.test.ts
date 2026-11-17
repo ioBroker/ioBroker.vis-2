@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Project, Widget } from '@iobroker/types-vis-2';
+import type { GroupWidget, Project, Widget } from '@iobroker/types-vis-2';
 
 import {
     addClass,
@@ -12,6 +12,7 @@ import {
     removeClass,
     syncMultipleWidgets,
 } from './visUtils';
+import { deepClone, pasteGroup, pasteSingleWidget, unsyncMultipleWidgets } from '@/Utilities/utils';
 
 describe('addClass', () => {
     it('appends a class and keeps the order', () => {
@@ -187,38 +188,38 @@ describe('extractBinding', () => {
     });
 });
 
-describe('syncMultipleWidgets', () => {
-    /** A group and a single widget in the view "source", both shown in the view "target" too */
-    const multiViewProject = (): Project =>
-        ({
-            ___settings: {},
-            source: {
-                widgets: {
-                    g000001: {
-                        tpl: '_tplGroup',
-                        data: { members: ['w000001', 'w000002'], 'multi-views': 'target' },
-                        style: {},
-                    },
-                    w000001: {
-                        tpl: 'tplValueString',
-                        data: { oid: 'a.b.c' },
-                        style: {},
-                        grouped: true,
-                        groupid: 'g000001',
-                    },
-                    w000002: {
-                        tpl: 'tplValueString',
-                        data: { oid: 'd.e.f' },
-                        style: {},
-                        grouped: true,
-                        groupid: 'g000001',
-                    },
-                    w000003: { tpl: 'tplHtml', data: { html: 'x', 'multi-views': 'target' }, style: {} },
+/** A group and a single widget in the view "source", both shown in the view "target" too */
+const multiViewProject = (): Project =>
+    ({
+        ___settings: {},
+        source: {
+            widgets: {
+                g000001: {
+                    tpl: '_tplGroup',
+                    data: { members: ['w000001', 'w000002'], 'multi-views': 'target' },
+                    style: {},
                 },
+                w000001: {
+                    tpl: 'tplValueString',
+                    data: { oid: 'a.b.c' },
+                    style: {},
+                    grouped: true,
+                    groupid: 'g000001',
+                },
+                w000002: {
+                    tpl: 'tplValueString',
+                    data: { oid: 'd.e.f' },
+                    style: {},
+                    grouped: true,
+                    groupid: 'g000001',
+                },
+                w000003: { tpl: 'tplHtml', data: { html: 'x', 'multi-views': 'target' }, style: {} },
             },
-            target: { widgets: {} },
-        }) as unknown as Project;
+        },
+        target: { widgets: {} },
+    }) as unknown as Project;
 
+describe('syncMultipleWidgets', () => {
     it('points the members of a copied group at the copy of the group', () => {
         const project = multiViewProject();
         syncMultipleWidgets(project);
@@ -290,5 +291,98 @@ describe('syncMultipleWidgets', () => {
 
         expect(project.target.widgets.w000010.data.html).toBe('own');
         expect(Object.keys(project.target.widgets)).toHaveLength(5);
+    });
+
+    it('keeps the widgets with "_" in their own ID (#744)', () => {
+        const project = multiViewProject();
+        const widgets = project.target.widgets as Record<string, Widget>;
+        // a generated project, and the runtime puts "_" in place of every space of a widget ID
+        widgets.pool_status = { tpl: 'tplHtml', data: { html: 'pool' }, style: {} } as unknown as Widget;
+        widgets.vsource_w000099 = {
+            tpl: 'tplHtml',
+            data: { html: 'looks like a copy' },
+            style: {},
+        } as unknown as Widget;
+        syncMultipleWidgets(project);
+        syncMultipleWidgets(project);
+
+        expect(widgets.pool_status.data.html).toBe('pool');
+        expect(widgets.vsource_w000099.data.html).toBe('looks like a copy');
+        expect(Object.keys(widgets)).toHaveLength(6);
+    });
+
+    it('marks every copy with the view and the widget it comes from', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+
+        const widgets = project.target.widgets as Record<string, Widget>;
+        expect(widgets.vsource_g000001.multiViewOrigin).toEqual({ view: 'source', wid: 'g000001' });
+        expect(widgets.vsource_w000001.multiViewOrigin).toEqual({ view: 'source', wid: 'w000001' });
+        expect(widgets.vsource_w000003.multiViewOrigin).toEqual({ view: 'source', wid: 'w000003' });
+        // the originals stay unmarked
+        expect(Object.values(project.source.widgets).some(widget => widget.multiViewOrigin)).toBe(false);
+    });
+
+    it('marks the copy of a widget whose own ID has "_" with the whole ID', () => {
+        const project = multiViewProject();
+        const source = project.source.widgets as Record<string, Widget>;
+        source.pool_status = {
+            tpl: 'tplHtml',
+            data: { html: 'pool', 'multi-views': 'target' },
+            style: {},
+        } as unknown as Widget;
+        syncMultipleWidgets(project);
+
+        const copy = (project.target.widgets as Record<string, Widget>).vsource_pool_status;
+        expect(copy.multiViewOrigin).toEqual({ view: 'source', wid: 'pool_status' });
+        expect(copy.data['multi-views']).toBeUndefined();
+    });
+});
+
+describe('unsyncMultipleWidgets', () => {
+    it('drops the copies and keeps the widgets with "_" in their own ID (#744)', () => {
+        const project = {
+            ___settings: {},
+            source: {
+                widgets: {
+                    w000001: { tpl: 'tplHtml', data: { html: 'x', 'multi-views': 'target' }, style: {} },
+                    pool_status: { tpl: 'tplHtml', data: { html: 'pool' }, style: {} },
+                },
+            },
+            target: { widgets: {} },
+        } as unknown as Project;
+        syncMultipleWidgets(project);
+        expect(Object.keys(project.target.widgets)).toEqual(['vsource_w000001']);
+
+        const saved = unsyncMultipleWidgets(project);
+        expect(Object.keys(saved.target.widgets)).toEqual([]);
+        expect(Object.keys(saved.source.widgets)).toEqual(['w000001', 'pool_status']);
+        // the project that is shown keeps its copies
+        expect(Object.keys(project.target.widgets)).toEqual(['vsource_w000001']);
+    });
+
+    it('keeps a widget that was pasted from a copy, as a widget of its own', () => {
+        const project = multiViewProject();
+        syncMultipleWidgets(project);
+        const widgets = project.target.widgets as Record<string, Widget>;
+
+        // the toolbar lists the copies too, so a copy can be selected, copied and pasted
+        const single = pasteSingleWidget({ widget: deepClone(widgets.vsource_w000003), project, widgets });
+        const group = pasteGroup({
+            group: deepClone(widgets.vsource_g000001) as GroupWidget,
+            widgets,
+            groupMembers: widgets,
+            project,
+        });
+        const members = (widgets[group] as GroupWidget).data.members;
+        syncMultipleWidgets(project);
+
+        for (const wid of [single, group, ...members]) {
+            expect(widgets[wid]).toBeDefined();
+            expect(widgets[wid].multiViewOrigin).toBeUndefined();
+        }
+        expect(Object.keys(unsyncMultipleWidgets(project).target.widgets).sort()).toEqual(
+            [single, group, ...members].sort(),
+        );
     });
 });
