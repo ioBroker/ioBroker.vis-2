@@ -387,7 +387,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
-### **WORK IN PROGRESS**
+### 2.20.11 (2026-11-17)
 * (@GermanBluefox) Safari 27 (macOS, iOS, iPadOS) and the ioBroker app no longer load the whole page again after every change of the view when vis-2 is opened over plain HTTP: the view changes without a navigation now. Links to a view (`<a href="#view">`) in HTML widgets and link buttons to `#view` do the same (#743)
 
 ### 2.20.10 (2026-11-17)
@@ -455,24 +455,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) If an adapter brings a vis-2 widget and a web component of the same name, like the "Flow diagram" of flow, the palette offers only the vis-2 widget; widgets of the component already placed stay
 * (@GermanBluefox) Web components get the colors, the font and the corners of the theme of vis-2 (`@iobroker/web-components` 0.5.0), not only light or dark
 * (@typhosj) vis-2 takes over a widget adapter that is installed or deleted while it runs again: the widgets of a deleted adapter disappear from the editor, and a new one shows up, without a restart of vis-2. Since 2.11.0 vis-2 noticed both only at its next start (#726)
-
-### 2.20.6 (2026-11-02)
-* (@Bernd9000) Fixed: the attributes of the signal images 3 to 5 (object ID, condition, value, image, size, style, text style, classes, blinking, horizontal, vertical, hide by edit) have their names translated in the editor. Only the signals 0 to 2 had translations, so the others showed the raw key, e.g. `signals-oid-3`, once six signals became possible
-* (@typhosj) Added: a button in the header of the palette hides the vis-1 widgets, which are drawn by can.js and kept for old projects - so a palette without old projects lists only vis-2 widgets. The browser remembers the choice; widgets already placed stay as they are (#504)
-* (@typhosj) A view with a background class like "Carbon fibre" shows it in the colors of the class. The view and the page got the background color of the theme on top, white in a light theme, so the gaps of the pattern were white - on iOS devices, which mostly run in light mode, and everywhere else in light mode too (#511)
-* (@typhosj) Added: the jQui "Write value" has the option "Only icon" - the button shows its icon alone, in the size of the widget. Without it an empty text fell back to the value the button writes, so an icon always had a text next to it (#440)
-* (@typhosj) Added: the jQui "States control" (and "Select from list", "Radio list") has the option "Values from the object" - the list takes its values and texts from `common.states` of the object when the page is shown, so it follows a list that changes in the object without "Generate" in the editor. Icons, colors and tooltips set for a value stay with that value (#482)
-* (@typhosj) The jQui "Binary state" of type "html", and of type "button" with the jQuery style, puts its content to the left or the right when the widget has a `text-align` of left or right. It always stood in the middle, so such widgets one below the other could not be lined up (#512)
-* (@typhosj) The select of the jQui "States control" and "Select from list" shows the value in the font of the widget - family, size, weight, style and spacing from "CSS Font & Text". Before, only the items of the opened list took it, the closed field kept the small font of the theme (#284)
-* (@typhosj) A vis-1 widget is rendered again in the runtime when a binding in one of its attributes changes, like in vis-1. A widget that reads an attribute only once kept the first value of the binding, e.g. the color of the metro slider `{v:javascript.0.temp;v > 20 ? 'green' : 'red'}` (#301)
-* (@typhosj) A binding in the CSS of a view, e.g. `{a:javascript.0.alarm;a ? 'red' : 'green'}` as its background color, is evaluated and follows its states, in the runtime and in the editor. Before, the text of the binding went into the style as it was, the browser dropped it, and the view had no background (#19)
-* (@GermanBluefox) Added: the AI assistant uses the AI settings of the system that are set up once in admin (System settings → AI) - for new instances and for instances without own keys
-* (@GermanBluefox) Added: OpenRouter, if it is chosen in the system-wide AI settings of admin (`@iobroker/ai-core` 0.0.6)
-* (@GermanBluefox) Added: the code editors for HTML, CSS, JavaScript and JSON can format the code with prettier (button in the editor or Shift+Alt+F)
-* (@GermanBluefox) The editor shows its toolbar, the tabs and the view again when the palette and the attributes are both hidden. The work area was drawn twice then - alone and once more below it - so every widget was there twice and the editor was scrolled until its toolbar was out of sight
-* (@GermanBluefox) A page whose menu hides itself after a selection is no longer covered by the narrow menu. The menu remembers being narrow across all pages, and such a page gives itself the whole width, so the narrow menu that another page left behind lay on its left edge for good and hid the first column of widgets
-* (@GermanBluefox) Widgets that the AI assistant puts on a page with the absolute layout stay where it places them. Widgets that are relative by default, like the gauges, flowed one after the other and ignored their position
-* (@GermanBluefox) The background of a view covers its widgets in the editor, also those that lie beyond its screen size or, in a view without a screen size, below the editor area. The background stopped at the screen size or at the editor area, so a widget further down - common in views brought over from vis-1 - stood on the background of the editor
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
