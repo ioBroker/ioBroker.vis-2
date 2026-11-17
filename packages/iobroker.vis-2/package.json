@@ -36,7 +36,7 @@
         "@iobroker/db-states-redis": "^7.2.5",
         "@iobroker/vis-2-widgets-testing": "^2.0.1",
         "@material-icons/svg": "^1.0.33",
-        "@tsconfig/node22": "^22.0.6",
+        "@tsconfig/node22": "^22.0.7",
         "@types/jquery": "^4.0.1",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/mocha": "^10.0.10",
@@ -48,7 +48,7 @@
         "mocha": "^12.0.3",
         "puppeteer": "^25.17.0",
         "rimraf": "^6.1.4",
-        "sass": "^1.108.1",
+        "sass": "^1.108.2",
         "unzipper": "^0.12.5"
     },
     "bugs": {
