@@ -189,10 +189,24 @@ describe('widgets that refer to each other', () => {
     it('leaves out the widgets the editor shows only because another view shares them', () => {
         const p = project();
         p.Living = gridView();
-        (p.Living.widgets as any).vKitchen_w000005 = { tpl: 'tplValue', data: {}, style: {} };
+        (p.Living.widgets as any).vKitchen_w000005 = {
+            tpl: 'tplValue',
+            data: {},
+            style: {},
+            multiViewOrigin: { view: 'Kitchen', wid: 'w000005' },
+        };
         expect(Object.keys(getViewExport(p, 'Living').widgets)).not.toContain('vKitchen_w000005');
         insertView(p, 'Living copy', p.Living);
         expect(Object.keys(p['Living copy'].widgets)).toHaveLength(4);
+    });
+
+    it('keeps a widget with "_" in its own ID (#744)', () => {
+        const p = project();
+        p.Living = gridView();
+        (p.Living.widgets as any).pool_status = { tpl: 'tplHtml', data: { html: 'pool' }, style: {} };
+        expect(Object.keys(getViewExport(p, 'Living').widgets)).toContain('pool_status');
+        insertView(p, 'Living copy', p.Living);
+        expect(Object.keys(p['Living copy'].widgets)).toHaveLength(5);
     });
 });
 

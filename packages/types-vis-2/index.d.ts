@@ -1015,6 +1015,11 @@ export interface SingleWidget {
     marketplace?: MarketplaceWidgetRevision;
     /** Indicator that this widget is used in another widget (e.g., in panel) */
     usedInWidget?: boolean;
+    /**
+     * Only on the copy of a widget that is shown in other views too ("multi-views"): the view and the ID of the
+     * widget it is a copy of. Such a copy exists only while the project is shown, it is never saved.
+     */
+    multiViewOrigin?: { view: string; wid: AnyWidgetId };
     /** CSS for this widget */
     css?: string;
     /** JavaScript for this widget */

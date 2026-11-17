@@ -7,7 +7,7 @@
  * itself, the sections of the grid layout and the order of the relative widgets.
  */
 import type { AnyWidgetId, GroupWidget, Project, View, ViewSection, Widget } from '@iobroker/types-vis-2';
-import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
+import { deepClone, getNewWidgetId, isGroup, isMultiViewCopy, pasteGroup } from '@/Utilities/utils';
 import { newSectionId } from '@/Vis/visGridLayout';
 
 /** The views a text to import holds, by name - or why it holds none */
@@ -43,16 +43,6 @@ function isSectionTransfer(value: unknown): value is SectionTransfer {
     );
 }
 
-/**
- * A widget the editor shows in a view only because another view shares it ("multi-views"). It lives in the project
- * only while the editor shows it and is not saved, see syncMultipleWidgets() - so it is never copied.
- *
- * @param wid - the ID of the widget
- */
-function isMultiViewCopy(wid: string): boolean {
-    return wid.includes('_');
-}
-
 /** The sections of the grid layout of a view, as they are stored */
 function getSections(view: View | undefined | null): ViewSection[] {
     const sections = view?.settings?.sections;
@@ -83,7 +73,7 @@ export function collectWidgets(widgets: Record<string, Widget>, ids: string[]): 
     while (queue.length) {
         const wid = queue.shift()!;
         const widget = widgets[wid];
-        if (result.includes(wid) || !isPlainObject(widget) || isMultiViewCopy(wid)) {
+        if (result.includes(wid) || !isPlainObject(widget) || isMultiViewCopy(widget)) {
             continue;
         }
         result.push(wid);
@@ -137,7 +127,7 @@ export function copyWidgetsInto(
             const group: GroupWidget = widget;
             group.data = isPlainObject(group.data) ? group.data : ({} as GroupWidget['data']);
             const oldMembers = (Array.isArray(group.data.members) ? group.data.members : []).filter(
-                member => isPlainObject(source[member]) && !isMultiViewCopy(member),
+                member => isPlainObject(source[member]) && !isMultiViewCopy(source[member]),
             );
             // `pasteGroup` puts the new IDs into this list, in the same order
             group.data.members = [...oldMembers];
@@ -189,8 +179,9 @@ function mapIds(list: unknown, newIds: Record<string, AnyWidgetId>): AnyWidgetId
  */
 export function getViewExport(project: Project, viewName: string): View {
     const { parentId: _parentId, activeWidgets: _activeWidgets, name: _name, ...view } = deepClone(project[viewName]);
-    for (const wid of Object.keys(view.widgets || {})) {
-        if (isMultiViewCopy(wid)) {
+    for (const [wid, widget] of Object.entries(view.widgets || {})) {
+        // a widget shared from another view is there only while the project is shown, see isMultiViewCopy()
+        if (isMultiViewCopy(widget)) {
             delete view.widgets[wid as AnyWidgetId];
         }
     }
