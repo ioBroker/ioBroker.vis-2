@@ -58,6 +58,7 @@ import type { IncompatibleWidgetSet } from './Vis/visWidgetSetCompatibility';
 import { getNewViewSettings } from './Vis/visGridLayout';
 import { IdleView } from './Vis/visIdleView';
 import { getSleepReloadDelay, SleepReload } from './Vis/visSleepReload';
+import { getHashOfPageLink, isViewHash, setLocationHash } from './Vis/visLocationHash';
 
 import { store, updateActiveUser, updateProject } from './Store';
 import createTheme from './theme';
@@ -426,6 +427,7 @@ export default class Runtime<
         this.setState(newState as S);
 
         window.addEventListener('hashchange', this.onHashChange, false);
+        document.addEventListener('click', this.onViewLinkClick, false);
         this.idleView.start();
         this.sleepReload.start();
 
@@ -439,6 +441,7 @@ export default class Runtime<
     componentWillUnmount(): void {
         super.componentWillUnmount();
         window.removeEventListener('hashchange', this.onHashChange, false);
+        document.removeEventListener('click', this.onViewLinkClick, false);
         this.idleView.stop();
         this.sleepReload.stop();
         if (this.checkTimeout) {
@@ -461,6 +464,39 @@ export default class Runtime<
     onHashChange = (): void => {
         const currentPath = VisEngine.getCurrentPath();
         this.changeView(currentPath.view).catch(e => console.error(`Cannot change view: ${e}`));
+    };
+
+    /**
+     * A link to another view of the project, e.g. `<a href="#Kitchen">` in an HTML widget, changes the view without
+     * a navigation, which makes Safari load the whole page again (#743, see `setLocationHash`)
+     *
+     * @param event - the click anywhere on the page
+     */
+    onViewLinkClick = (event: MouseEvent): void => {
+        if (
+            this.state.editMode ||
+            event.defaultPrevented ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        ) {
+            return;
+        }
+        const anchor = (event.target as Element | null)?.closest?.('a[href]');
+        if (
+            !(anchor instanceof HTMLAnchorElement) ||
+            (anchor.target && anchor.target !== '_self') ||
+            anchor.hasAttribute('download')
+        ) {
+            return;
+        }
+        const hash = getHashOfPageLink(anchor.href, window.location.href);
+        if (hash && isViewHash(hash, store.getState().visProject)) {
+            event.preventDefault();
+            setLocationHash(hash);
+        }
     };
 
     onProjectChange = (_id: string, fileName: string): void => {
@@ -1184,9 +1220,8 @@ export default class Runtime<
         const currentPath = VisEngine.getCurrentPath();
         const newPath = VisEngine.buildPath(selectedView, currentPath.path);
 
-        if (window.location.hash !== newPath) {
-            window.location.hash = newPath;
-        }
+        // without a navigation: Safari would load the whole page again (#743)
+        setLocationHash(newPath);
 
         await this.setStateAsync(newState);
         // the time until going back counts from the view that is open now
