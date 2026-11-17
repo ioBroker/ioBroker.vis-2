@@ -75,6 +75,7 @@ import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded, withoutAmd } 
 import { createStateValues, upgradeStateValues } from './visCanStates';
 import { VisControlStates } from './visControlState';
 import { takeOverLegacyBinds, takeOverLegacyProperties } from './visLegacyObject';
+import { setLocationHash } from './visLocationHash';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
     if (!text) {
@@ -787,10 +788,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             },
             navigateInView(path) {
                 const currentPath = VisEngine.getCurrentPath();
-                const newHash = VisEngine.buildPath(currentPath.view, path);
-                if (window.location.hash !== newHash) {
-                    window.location.hash = newHash;
-                }
+                setLocationHash(VisEngine.buildPath(currentPath.view, path));
             },
             onWakeUp: (cb, wid?: string) => {
                 if (typeof cb === 'string' && wid === undefined) {
@@ -2545,7 +2543,8 @@ ${this.scripts}
         if (this.props.editMode) {
             window.alert(I18n.t('Ignored in edit mode'));
         } else {
-            window.location.hash = VisEngine.buildPath(view || '', subView);
+            // without a navigation: Safari would load the whole page again (#743)
+            setLocationHash(VisEngine.buildPath(view || '', subView));
         }
     };
 

@@ -43,6 +43,7 @@ import type {
 import { isVarFinite } from '@/Utilities/utils';
 import VisRxWidget, { type VisRxWidgetState } from '../../visRxWidget';
 import { ensureLegacyLibs } from '../../visLoadLegacy';
+import { isViewHash, setLocationHash } from '../../visLocationHash';
 
 export type JQuiButtonDataProps = {
     buttontext: string;
@@ -677,6 +678,9 @@ class JQuiButton<
                 (this.props.tpl === 'tplJquiButtonLinkBlank' && this.state.rxData.target === undefined)
             ) {
                 window.open(this.state.rxData.href, this.state.rxData.target);
+            } else if (isViewHash(this.state.rxData.href, this.props.context.views)) {
+                // "#view" is another view: without a navigation, Safari would load the whole page again (#743)
+                setLocationHash(this.state.rxData.href);
             } else {
                 window.location.href = this.state.rxData.href;
             }
