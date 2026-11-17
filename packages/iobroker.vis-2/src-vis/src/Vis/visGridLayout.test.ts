@@ -541,6 +541,27 @@ describe('getSectionFrameStyle', () => {
         });
     });
 
+    it('takes the background of the active theme over the one for both', () => {
+        const themed = section({
+            variant: 'panel',
+            background: 'red',
+            backgroundLight: '#F5F5F5',
+            backgroundDark: '#0B111A',
+        });
+        expect(getSectionFrameStyle(themed, paper, undefined, 'light').background).toBe('#F5F5F5');
+        expect(getSectionFrameStyle(themed, paper, undefined, 'dark').background).toBe('#0B111A');
+        // only the other theme has one: the one for both stays
+        expect(
+            getSectionFrameStyle(section({ background: 'red', backgroundDark: '#0B111A' }), paper, undefined, 'light')
+                .background,
+        ).toBe('red');
+        // only the theme has one: it wins over the paper of the panel
+        expect(
+            getSectionFrameStyle(section({ variant: 'panel', backgroundDark: '#0B111A' }), paper, undefined, 'dark')
+                .background,
+        ).toBe('#0B111A');
+    });
+
     it('draws a border only with a width', () => {
         expect(getSectionFrameStyle(section({ borderColor: 'red' }), paper).border).toBeUndefined();
         expect(

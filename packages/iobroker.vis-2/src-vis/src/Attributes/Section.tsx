@@ -504,6 +504,22 @@ function getGroups(context: GroupsContext): SectionGroup[] {
                 },
                 { type: 'color', label: 'Background', attr: 'background', notStyle: true, helpImage: 'background' },
                 {
+                    type: 'color',
+                    label: 'Background (light theme)',
+                    attr: 'backgroundLight',
+                    notStyle: true,
+                    helpImage: 'background',
+                    title: 'help_section_background_theme',
+                },
+                {
+                    type: 'color',
+                    label: 'Background (dark theme)',
+                    attr: 'backgroundDark',
+                    notStyle: true,
+                    helpImage: 'background',
+                    title: 'help_section_background_theme',
+                },
+                {
                     type: 'image',
                     label: 'Background image',
                     attr: 'backgroundImage',

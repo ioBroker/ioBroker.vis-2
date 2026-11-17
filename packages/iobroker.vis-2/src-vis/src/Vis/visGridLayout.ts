@@ -610,11 +610,13 @@ export interface SectionFrameStyle {
  * @param section - the section as it is stored in the view settings
  * @param paperColor - the color of a card in the theme of the view
  * @param projectPath - where the files of the project are, for an image given as `_PRJ_NAME/...`
+ * @param themeMode - whether the theme of the view is light or dark, for `backgroundLight` / `backgroundDark`
  */
 export function getSectionFrameStyle(
     section: ViewSection | undefined | null,
     paperColor: string,
     projectPath?: string,
+    themeMode?: 'light' | 'dark',
 ): SectionFrameStyle {
     const style: SectionFrameStyle = {};
     if (!section || typeof section !== 'object') {
@@ -630,6 +632,12 @@ export function getSectionFrameStyle(
 
     if (typeof section.background === 'string' && section.background) {
         style.background = section.background;
+    }
+
+    // the background of the theme that is active, over the one for both
+    const themeBackground = themeMode === 'dark' ? section.backgroundDark : section.backgroundLight;
+    if (typeof themeBackground === 'string' && themeBackground) {
+        style.background = themeBackground;
     }
 
     if (typeof section.backgroundImage === 'string' && section.backgroundImage) {

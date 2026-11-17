@@ -2948,6 +2948,8 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
         ]);
 
         const paperColor = this.props.context.theme?.palette?.background?.paper || '#fff';
+        // which of `backgroundLight` / `backgroundDark` of a section applies
+        const themeMode = this.props.context.theme?.palette?.mode === 'dark' ? 'dark' : 'light';
         // where an image of the project is, for a background image given as `_PRJ_NAME/...`
         const projectPath = `../${this.props.context.adapterName}.${this.props.context.instance}/${this.props.context.projectName}`;
 
@@ -3033,7 +3035,7 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                         boxSizing: 'border-box',
                         minWidth: 0,
                         ...getSectionPlacementStyle(stored, section.columnSpan, widgetsShown),
-                        ...getSectionFrameStyle(stored, paperColor, projectPath),
+                        ...getSectionFrameStyle(stored, paperColor, projectPath, themeMode),
                     }}
                 >
                     {this.props.editMode && stored && section.index !== undefined

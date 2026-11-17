@@ -1223,6 +1223,10 @@ export interface ViewSection {
     variant?: 'plain' | 'panel' | null;
     /** Any CSS background; wins over the one of the `panel` */
     background?: string | null;
+    /** The background while a light theme is active; wins over `background` */
+    backgroundLight?: string | null;
+    /** The background while a dark theme is active; wins over `background` */
+    backgroundDark?: string | null;
     /** in px; 0 or none is no border */
     borderWidth?: number | null;
     borderStyle?: 'solid' | 'dashed' | 'dotted' | 'double' | null;
