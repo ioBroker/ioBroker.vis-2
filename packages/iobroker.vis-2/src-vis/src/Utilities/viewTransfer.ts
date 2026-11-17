@@ -7,7 +7,7 @@
  * itself, the sections of the grid layout and the order of the relative widgets.
  */
 import type { AnyWidgetId, GroupWidget, Project, View, ViewSection, Widget } from '@iobroker/types-vis-2';
-import { deepClone, getNewWidgetId, isGroup, pasteGroup } from '@/Utilities/utils';
+import { deepClone, getNewWidgetId, isGroup, isMultiViewWidgetId, pasteGroup } from '@/Utilities/utils';
 import { newSectionId } from '@/Vis/visGridLayout';
 
 /** The views a text to import holds, by name - or why it holds none */
@@ -190,7 +190,7 @@ function mapIds(list: unknown, newIds: Record<string, AnyWidgetId>): AnyWidgetId
 export function getViewExport(project: Project, viewName: string): View {
     const { parentId: _parentId, activeWidgets: _activeWidgets, name: _name, ...view } = deepClone(project[viewName]);
     for (const wid of Object.keys(view.widgets || {})) {
-        if (isMultiViewCopy(wid)) {
+        if (isMultiViewWidgetId(project, wid)) {
             delete view.widgets[wid as AnyWidgetId];
         }
     }

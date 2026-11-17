@@ -198,23 +198,63 @@ export function getMultiViewWidgetId(view: string, widgetId: AnyWidgetId): AnyWi
 }
 
 /**
+ * Split the ID of a multi-view copy, see `getMultiViewWidgetId`, into the view and the ID of the widget it copies.
+ * Only an ID of the form `v<view>_<widgetId>` with an existing view and an existing widget in it is a copy,
+ * a widget of its own may have "_" in its ID too (#744).
+ *
+ * @param project the project with the views
+ * @param widgetId the ID to check
+ */
+export function parseMultiViewWidgetId(
+    project: Project,
+    widgetId: string,
+): { view: string; widgetId: AnyWidgetId } | null {
+    if (!widgetId.startsWith('v')) {
+        return null;
+    }
+    // the name of a view may have "_" in it too, so try every view
+    for (const view of Object.keys(project)) {
+        if (view !== '___settings' && widgetId.startsWith(`v${view}_`)) {
+            const sourceId = widgetId.substring(view.length + 2) as AnyWidgetId;
+            if (sourceId && project[view]?.widgets?.[sourceId]) {
+                return { view, widgetId: sourceId };
+            }
+        }
+    }
+    return null;
+}
+
+/**
+ * Check if the widget is a copy of a widget of another view (multi-views), see `parseMultiViewWidgetId`
+ *
+ * @param project the project with the views
+ * @param widgetId the ID to check
+ */
+export function isMultiViewWidgetId(project: Project, widgetId: string): boolean {
+    return !!parseMultiViewWidgetId(project, widgetId);
+}
+
+/**
  * Removes all special structures from the project
  *
  * @param project the project to remove special structures from
  */
 export function unsyncMultipleWidgets(project: Project): Project {
     project = deepClone(project || store.getState().visProject);
+    // find all copies first, so that a copy is still found after the widget it copies was removed
+    const copies: { view: string; widgetId: AnyWidgetId }[] = [];
     for (const [viewName, view] of Object.entries(project)) {
         if (viewName === '___settings') {
             continue;
         }
 
         for (const widgetId of Object.keys(view.widgets)) {
-            if (widgetId.includes('_')) {
-                delete view.widgets[widgetId as AnyWidgetId];
+            if (isMultiViewWidgetId(project, widgetId)) {
+                copies.push({ view: viewName, widgetId: widgetId as AnyWidgetId });
             }
         }
     }
+    copies.forEach(copy => delete project[copy.view].widgets[copy.widgetId]);
 
     return project;
 }

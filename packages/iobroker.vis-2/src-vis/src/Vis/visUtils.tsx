@@ -28,7 +28,7 @@ import type {
     RxWidgetInfoAttributesFieldID,
     RxWidgetInfoAttributesField,
 } from '@iobroker/types-vis-2';
-import { deepClone, getMultiViewWidgetId } from '@/Utilities/utils';
+import { deepClone, getMultiViewWidgetId, isMultiViewWidgetId } from '@/Utilities/utils';
 import { store, updateView, updateWidget } from '@/Store';
 import { applyManifest } from './visManifest';
 
@@ -998,16 +998,19 @@ export function syncMultipleWidgets(project: Project): void {
 
     // The editor syncs the project it has just changed, which still holds the copies of the last sync. Drop them
     // all, or a copy stays in a view that was taken out of "multi-views" or whose widget was deleted (#417).
-    // Only a copy has "_" in its ID, see `getMultiViewWidgetId` and `unsyncMultipleWidgets`.
+    // A copy has an ID `v<view>_<widgetId>` of an existing widget, see `isMultiViewWidgetId`; other IDs may have "_"
+    // too (#744). Find all copies first, so that a copy is still found after the widget it copies was removed.
+    const copies: { view: string; widgetId: AnyWidgetId }[] = [];
     Object.keys(project).forEach(view => {
         if (view !== '___settings') {
             for (const widgetId of Object.keys(project[view].widgets) as AnyWidgetId[]) {
-                if (widgetId.includes('_')) {
-                    delete project[view].widgets[widgetId];
+                if (isMultiViewWidgetId(project, widgetId)) {
+                    copies.push({ view, widgetId });
                 }
             }
         }
     });
+    copies.forEach(copy => delete project[copy.view].widgets[copy.widgetId]);
 
     Object.keys(project).forEach(view => {
         if (view === '___settings') {

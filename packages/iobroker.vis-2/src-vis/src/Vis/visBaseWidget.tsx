@@ -20,7 +20,7 @@ import { Anchor as AnchorIcon, Expand as ExpandIcon, KeyboardReturn } from '@mui
 
 import { I18n, Utils } from '@iobroker/gui-components';
 
-import { deepClone, isVarFinite } from '@/Utilities/utils';
+import { deepClone, isMultiViewWidgetId, isVarFinite, parseMultiViewWidgetId } from '@/Utilities/utils';
 
 import { cancelMarksUpdate, getAdornerLayer, scheduleMarksUpdate, type MarksRect } from './visAdornerLayer';
 import type {
@@ -259,7 +259,7 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
         super(props);
 
         const widget = props.context.views[props.view].widgets[props.id];
-        const multiViewWidget = props.id.includes('_');
+        const multiViewWidget = isMultiViewWidgetId(props.context.views, props.id);
 
         const selected = !multiViewWidget && props.editMode && props.selectedWidgets?.includes(props.id);
 
@@ -766,10 +766,10 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             if (this.state.multiViewWidget) {
                 if (Date.now() - this.lastClick < 250) {
                     // change view
-                    const lastUnderscore = this.props.id.lastIndexOf('_');
-                    const multiView: string = this.props.id.substring(1, lastUnderscore);
-                    const multiId: AnyWidgetId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
-                    this.props.context.setSelectedWidgets?.([multiId], multiView);
+                    const parsed = parseMultiViewWidgetId(this.props.context.views, this.props.id);
+                    if (parsed) {
+                        this.props.context.setSelectedWidgets?.([parsed.widgetId], parsed.view);
+                    }
                 }
 
                 this.lastClick = Date.now();
@@ -2187,9 +2187,9 @@ class VisBaseWidget<TState extends Partial<VisBaseWidgetState> = VisBaseWidgetSt
             let multiView: string | null = null;
             let multiId: AnyWidgetId | null = null;
             if (this.state.multiViewWidget) {
-                const lastUnderscore = this.props.id.lastIndexOf('_');
-                multiView = this.props.id.substring(1, lastUnderscore);
-                multiId = this.props.id.substring(lastUnderscore + 1) as AnyWidgetId;
+                const parsed = parseMultiViewWidgetId(this.props.context.views, this.props.id);
+                multiView = parsed?.view || null;
+                multiId = parsed?.widgetId || null;
             }
 
             const resizable = !widget.usedInWidget && this.isResizable();

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { Project, Widget } from '@iobroker/types-vis-2';
 
+import { isMultiViewWidgetId, parseMultiViewWidgetId, unsyncMultipleWidgets } from '@/Utilities/utils';
+
 import {
     addClass,
     extractBinding,
@@ -290,5 +292,53 @@ describe('syncMultipleWidgets', () => {
 
         expect(project.target.widgets.w000010.data.html).toBe('own');
         expect(Object.keys(project.target.widgets)).toHaveLength(5);
+    });
+});
+
+describe('multi-view copies and widgets with "_" in their ID (#744)', () => {
+    /** Widgets of their own with "_" in the ID, next to real copies, one of them from a view with "_" in its name */
+    const underscoreProject = (): Project =>
+        ({
+            ___settings: {},
+            main: {
+                widgets: {
+                    w000001: { tpl: 'tplHtml', data: { html: '1' }, style: {} },
+                    my_widget: { tpl: 'tplHtml', data: { html: 'mine' }, style: {} },
+                    pool_status: { tpl: 'tplHtml', data: { html: 'pool' }, style: {} },
+                    vmy_view_w000002: { tpl: 'tplHtml', data: { html: '2' }, style: {} },
+                },
+            },
+            my_view: {
+                widgets: {
+                    w000002: { tpl: 'tplHtml', data: { html: '2' }, style: {} },
+                    vmain_w000001: { tpl: 'tplHtml', data: { html: '1' }, style: {} },
+                },
+            },
+        }) as unknown as Project;
+
+    it('knows a copy only by an existing view and an existing widget', () => {
+        const project = underscoreProject();
+        expect(isMultiViewWidgetId(project, 'vmain_w000001')).toBe(true);
+        expect(isMultiViewWidgetId(project, 'vmy_view_w000002')).toBe(true);
+        expect(parseMultiViewWidgetId(project, 'vmy_view_w000002')).toEqual({ view: 'my_view', widgetId: 'w000002' });
+        expect(isMultiViewWidgetId(project, 'my_widget')).toBe(false);
+        expect(isMultiViewWidgetId(project, 'pool_status')).toBe(false);
+        expect(isMultiViewWidgetId(project, 'vmain_w999999')).toBe(false);
+        expect(isMultiViewWidgetId(project, 'vother_w000001')).toBe(false);
+    });
+
+    it('drops only the copies when syncing', () => {
+        const project = underscoreProject();
+        syncMultipleWidgets(project);
+
+        expect(Object.keys(project.main.widgets).sort()).toEqual(['my_widget', 'pool_status', 'w000001']);
+        expect(Object.keys(project.my_view.widgets)).toEqual(['w000002']);
+    });
+
+    it('drops only the copies when saving', () => {
+        const project = unsyncMultipleWidgets(underscoreProject());
+
+        expect(Object.keys(project.main.widgets).sort()).toEqual(['my_widget', 'pool_status', 'w000001']);
+        expect(Object.keys(project.my_view.widgets)).toEqual(['w000002']);
     });
 });
