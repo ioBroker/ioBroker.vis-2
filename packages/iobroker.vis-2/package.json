@@ -52,7 +52,7 @@
         "unzipper": "^0.12.5"
     },
     "bugs": {
-        "url": "https://github.com/iobroker/iobroker.vis/issues"
+        "url": "https://github.com/ioBroker/ioBroker.vis-2/issues"
     },
     "main": "build/main.js",
     "files": [
