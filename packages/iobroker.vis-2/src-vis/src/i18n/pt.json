@@ -1064,5 +1064,7 @@
   "Subtitle opacity": "Opacidade do subtítulo",
   "Subtitle size": "Tamanho do subtítulo",
   "help_section_subtitle_opacity": "Com que intensidade o subtítulo é desenhado, em %; 70 % se não definido.",
-  "help_section_subtitle_size": "Em px; 0,8 do tamanho do título se não definido."
+  "help_section_subtitle_size": "Em px; 0,8 do tamanho do título se não definido.",
+  "Pin palette and attributes as columns beside the view": "Fixar a paleta e os atributos como colunas ao lado da visualização",
+  "Let palette and attributes float over the view": "Mostrar a paleta e os atributos sobre a visualização"
 }

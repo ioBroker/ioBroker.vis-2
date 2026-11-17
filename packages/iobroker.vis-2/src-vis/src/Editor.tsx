@@ -38,6 +38,8 @@ import {
     ClearAll as ClearAllIcon,
     Layers,
     AutoAwesome as AiIcon,
+    PushPin as PinIcon,
+    PushPinOutlined as PinOutlinedIcon,
 } from '@mui/icons-material';
 
 import {
@@ -509,6 +511,13 @@ export interface EditorState extends RuntimeState {
     hideAttributes: boolean;
     /** The work area is too narrow for the columns: palette and attributes float over the view instead */
     narrowLayout: boolean;
+    /**
+     * Palette and attributes stay columns beside the view, even when its resolution does not fit between them.
+     * Chosen with the pin in the head of the panels, see `updateNarrowLayout()`.
+     */
+    pinColumns: boolean;
+    /** The view does not fit between the columns, but the window is wide enough for them: the pin is offered */
+    columnsPinnable: boolean;
     /** The panel that floats over the view in the narrow layout */
     floatingPanel: 'palette' | 'attributes' | null;
     /** A widget is dragged out of the floating palette, which steps aside so the view can be seen */
@@ -645,6 +654,8 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
             hideAttributes: window.localStorage.getItem('Vis.hideAttributes') === 'true',
             // a first guess until the work area is measured, so a small screen does not start with the columns
             narrowLayout: window.innerWidth < NARROW_LAYOUT_WIDTH,
+            pinColumns: window.localStorage.getItem('Vis.pinColumns') === 'true',
+            columnsPinnable: false,
             floatingPanel: null,
             paletteDragging: false,
             loadingProgress: { step: 0, total: 0 },
@@ -751,14 +762,19 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
      *
      * The width is that of the columns, not of the canvas now, so the decision does not undo itself: in the
      * narrow layout the canvas is as wide as the work area.
+     *
+     * Only the resolution can be overruled, with the pin in the head of the panels: whoever edits a view of
+     * 1920 pixels on a screen of 1920 would otherwise never see the attributes beside it again and has to open
+     * them over the view for every widget. A window too narrow for the columns stays one.
      */
     updateNarrowLayout(): void {
         const width = this.mainRef?.current?.clientWidth;
         if (!width) {
             return;
         }
-        let narrowLayout = width < NARROW_LAYOUT_WIDTH;
-        if (!narrowLayout) {
+        const narrowWindow = width < NARROW_LAYOUT_WIDTH;
+        let viewTooWide = false;
+        if (!narrowWindow) {
             const sizex = parseFloat(
                 store.getState().visProject[this.state.selectedView]?.settings?.sizex as unknown as string,
             );
@@ -767,12 +783,65 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                 const columns =
                     (this.state.hidePalette ? 0 : Math.max((width * paletteShare) / 100, COLUMN_MIN_WIDTH)) +
                     (this.state.hideAttributes ? 0 : Math.max((width * attributesShare) / 100, COLUMN_MIN_WIDTH));
-                narrowLayout = width - columns < sizex + CANVAS_MARGIN;
+                viewTooWide = width - columns < sizex + CANVAS_MARGIN;
             }
         }
+        const narrowLayout = narrowWindow || (viewTooWide && !this.state.pinColumns);
         if (narrowLayout !== this.state.narrowLayout) {
-            this.setState({ narrowLayout, floatingPanel: null, paletteDragging: false });
+            this.setState({ narrowLayout, columnsPinnable: viewTooWide, floatingPanel: null, paletteDragging: false });
+        } else if (viewTooWide !== this.state.columnsPinnable) {
+            this.setState({ columnsPinnable: viewTooWide });
         }
+    }
+
+    /**
+     * Pins palette and attributes as columns beside the view, or lets them float over it again. The panel the
+     * pin was clicked in becomes a column even if it was closed as one before - otherwise the click would only
+     * take it away.
+     */
+    togglePinColumns = (): void => {
+        const pinColumns = !this.state.pinColumns;
+        window.localStorage.setItem('Vis.pinColumns', pinColumns ? 'true' : 'false');
+        const showPalette = pinColumns && this.state.floatingPanel === 'palette' && this.state.hidePalette;
+        const showAttributes = pinColumns && this.state.floatingPanel === 'attributes' && this.state.hideAttributes;
+        if (showPalette) {
+            window.localStorage.removeItem('Vis.hidePalette');
+        }
+        if (showAttributes) {
+            window.localStorage.removeItem('Vis.hideAttributes');
+        }
+        // `componentDidUpdate` switches the layout
+        this.setState({
+            pinColumns,
+            hidePalette: showPalette ? false : this.state.hidePalette,
+            hideAttributes: showAttributes ? false : this.state.hideAttributes,
+        });
+    };
+
+    /** The pin in the head of palette and attributes, only where it changes something, see `updateNarrowLayout()` */
+    renderPinButton(): React.JSX.Element | null {
+        if (!this.state.columnsPinnable) {
+            return null;
+        }
+        return (
+            <Tooltip
+                title={I18n.t(
+                    this.state.pinColumns
+                        ? 'Let palette and attributes float over the view'
+                        : 'Pin palette and attributes as columns beside the view',
+                )}
+                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+            >
+                <IconButton
+                    size="small"
+                    color={this.state.pinColumns ? 'primary' : undefined}
+                    aria-pressed={this.state.pinColumns}
+                    onClick={this.togglePinColumns}
+                >
+                    {this.state.pinColumns ? <PinIcon /> : <PinOutlinedIcon />}
+                </IconButton>
+            </Tooltip>
+        );
     }
 
     toggleFloatingPanel(panel: 'palette' | 'attributes'): void {
@@ -2810,6 +2879,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         window.localStorage.setItem('Vis.hidePalette', 'true');
                         this.setState({ hidePalette: true });
                     }}
+                    pinButton={this.renderPinButton()}
                     uninstallWidget={this.uninstallWidget}
                     setMarketplaceDialog={this.setMarketplaceDialog}
                     updateWidgets={this.updateWidgets}
@@ -2943,6 +3013,7 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
                         window.localStorage.setItem('Vis.hideAttributes', 'true');
                         this.setState({ hideAttributes: true });
                     }}
+                    pinButton={this.renderPinButton()}
                     adapterId={this.adapterId}
                     additionalSets={VisWidgetsCatalog.additionalSets || {}}
                 />

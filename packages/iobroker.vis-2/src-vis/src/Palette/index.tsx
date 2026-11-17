@@ -57,6 +57,12 @@ import { isDevServer } from '@/Utilities/devServer';
 // }
 
 const styles: Record<string, any> = {
+    blockTitle: {
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+    },
     widgets: {
         textAlign: 'center',
         overflowY: 'auto',
@@ -196,6 +202,8 @@ interface WidgetSetProps {
 
 interface PaletteProps {
     onHide: (hide: boolean) => void;
+    /** The pin that keeps palette and attributes as columns, see Editor.renderPinButton() */
+    pinButton?: React.JSX.Element | null;
     changeView: Editor['changeView'];
     changeProject: Editor['changeProject'];
     uninstallWidget: Editor['uninstallWidget'];
@@ -775,7 +783,8 @@ class Palette extends Component<PaletteProps, PaletteState> {
                     style={{ display: 'flex', lineHeight: '34px' }}
                 >
                     <IconPalette style={{ marginTop: 4, marginRight: 4 }} />
-                    <span style={{ verticalAlign: 'middle' }}>{I18n.t('Palette')}</span>
+                    {/* gives way to the buttons in a narrow column instead of pushing them out of it */}
+                    <span style={{ ...styles.blockTitle, verticalAlign: 'middle' }}>{I18n.t('Palette')}</span>
                     <div style={{ flex: 1 }} />
                     <Tooltip
                         title={I18n.t(this.state.view === 'grid' ? 'Show widgets as list' : 'Show widgets as icons')}
@@ -870,6 +879,7 @@ class Palette extends Component<PaletteProps, PaletteState> {
                             <UnfoldLessIcon />
                         </IconButton>
                     )}
+                    {this.props.pinButton}
                     <Tooltip
                         title={I18n.t('Hide palette')}
                         slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}

@@ -1139,5 +1139,7 @@
   "Subtitle opacity": "Deckkraft Untertitel",
   "Subtitle size": "Größe Untertitel",
   "help_section_subtitle_opacity": "Wie kräftig der Untertitel gezeichnet wird, in %; ohne Angabe 70 %.",
-  "help_section_subtitle_size": "In px; ohne Angabe 0,8 der Titelgröße."
+  "help_section_subtitle_size": "In px; ohne Angabe 0,8 der Titelgröße.",
+  "Pin palette and attributes as columns beside the view": "Palette und Attribute als Spalten neben der Seite anheften",
+  "Let palette and attributes float over the view": "Palette und Attribute über der Seite schweben lassen"
 }

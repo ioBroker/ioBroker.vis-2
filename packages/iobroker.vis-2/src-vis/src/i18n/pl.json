@@ -1064,5 +1064,7 @@
   "Subtitle opacity": "Krycie podtytułu",
   "Subtitle size": "Rozmiar podtytułu",
   "help_section_subtitle_opacity": "Jak mocno rysowany jest podtytuł, w %; bez wartości 70 %.",
-  "help_section_subtitle_size": "W px; bez wartości 0,8 rozmiaru tytułu."
+  "help_section_subtitle_size": "W px; bez wartości 0,8 rozmiaru tytułu.",
+  "Pin palette and attributes as columns beside the view": "Przypnij paletę i atrybuty jako kolumny obok widoku",
+  "Let palette and attributes float over the view": "Wyświetlaj paletę i atrybuty nad widokiem"
 }

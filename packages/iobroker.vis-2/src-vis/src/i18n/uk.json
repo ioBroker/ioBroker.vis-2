@@ -1064,5 +1064,7 @@
   "Subtitle opacity": "Непрозорість підзаголовка",
   "Subtitle size": "Розмір підзаголовка",
   "help_section_subtitle_opacity": "Наскільки яскраво малюється підзаголовок, у %; без значення 70 %.",
-  "help_section_subtitle_size": "У px; без значення 0,8 від розміру заголовка."
+  "help_section_subtitle_size": "У px; без значення 0,8 від розміру заголовка.",
+  "Pin palette and attributes as columns beside the view": "Закріпити палітру та атрибути колонками поруч із видом",
+  "Let palette and attributes float over the view": "Показувати палітру та атрибути поверх виду"
 }

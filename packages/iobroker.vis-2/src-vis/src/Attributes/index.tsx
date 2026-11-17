@@ -30,6 +30,12 @@ import { store } from '@/Store';
 
 const styles: Record<string, any> = {
     blockHeader: (theme: VisTheme) => theme.classes.blockHeader,
+    blockTitle: {
+        minWidth: 0,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+    },
     lightedPanel: (theme: VisTheme) => theme.classes.lightedPanel,
     viewTabs: (theme: VisTheme) => theme.classes.viewTabs,
     viewTab: (theme: VisTheme) => theme.classes.viewTab,
@@ -66,6 +72,8 @@ interface AttributesProps {
     saveCssFile: Editor['saveCssFile'];
     editMode: boolean;
     onHide: (hide: boolean) => void;
+    /** The pin that keeps palette and attributes as columns, see Editor.renderPinButton() */
+    pinButton?: React.JSX.Element | null;
     adapterId: string;
     userGroups: Editor['state']['userGroups'];
     selectedWidgets: string[];
@@ -152,7 +160,8 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
                 }}
             >
                 <IconAttributes style={{ marginTop: 4, marginRight: 4 }} />
-                {I18n.t('Attributes')}
+                {/* gives way to the buttons in a narrow column instead of pushing them out of it */}
+                <span style={styles.blockTitle}>{I18n.t('Attributes')}</span>
                 <Tooltip
                     title={I18n.t(tabIcons ? 'Show tab names' : 'Show tab icons')}
                     slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
@@ -210,6 +219,7 @@ const Attributes = (props: AttributesProps): React.JSX.Element | null => {
                         )}
                     </div>
                 ) : null}
+                {props.pinButton}
                 <Tooltip
                     title={I18n.t('Hide attributes')}
                     slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}

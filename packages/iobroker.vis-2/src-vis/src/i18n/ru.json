@@ -1064,5 +1064,7 @@
   "Subtitle opacity": "Непрозрачность подзаголовка",
   "Subtitle size": "Размер подзаголовка",
   "help_section_subtitle_opacity": "Насколько ярко рисуется подзаголовок, в %; без значения 70 %.",
-  "help_section_subtitle_size": "В px; без значения 0,8 от размера заголовка."
+  "help_section_subtitle_size": "В px; без значения 0,8 от размера заголовка.",
+  "Pin palette and attributes as columns beside the view": "Закрепить палитру и атрибуты колонками рядом со страницей",
+  "Let palette and attributes float over the view": "Показывать палитру и атрибуты поверх страницы"
 }

@@ -1139,5 +1139,7 @@
   "Subtitle opacity": "Subtitle opacity",
   "Subtitle size": "Subtitle size",
   "help_section_subtitle_opacity": "How strong the subtitle is drawn, in %; 70 % if not set.",
-  "help_section_subtitle_size": "In px; 0.8 of the title size if not set."
+  "help_section_subtitle_size": "In px; 0.8 of the title size if not set.",
+  "Pin palette and attributes as columns beside the view": "Pin palette and attributes as columns beside the view",
+  "Let palette and attributes float over the view": "Let palette and attributes float over the view"
 }

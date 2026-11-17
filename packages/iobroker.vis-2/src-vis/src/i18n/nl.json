@@ -1064,5 +1064,7 @@
   "Subtitle opacity": "Dekking ondertitel",
   "Subtitle size": "Grootte ondertitel",
   "help_section_subtitle_opacity": "Hoe sterk de ondertitel getekend wordt, in %; zonder waarde 70 %.",
-  "help_section_subtitle_size": "In px; zonder waarde 0,8 van de titelgrootte."
+  "help_section_subtitle_size": "In px; zonder waarde 0,8 van de titelgrootte.",
+  "Pin palette and attributes as columns beside the view": "Palet en attributen als kolommen naast de weergave vastzetten",
+  "Let palette and attributes float over the view": "Palet en attributen boven de weergave laten zweven"
 }
