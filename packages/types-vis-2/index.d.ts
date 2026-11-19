@@ -1446,7 +1446,8 @@ export interface LegacyVisConnection {
     ) => void;
     getHttp: (url: string, callback: (data: any) => void) => boolean;
     _socket: {
-        emit: (cmd: string, data: any, cb: (arg1: any, arg2?: any) => void) => void;
+        /** getObject, getState, getStates: (cmd, data, cb); sendTo: (cmd, instance, command, message, cb). Throws on unknown commands */
+        emit: (cmd: string, ...args: any[]) => void;
     };
 }
 

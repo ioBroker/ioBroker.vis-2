@@ -75,6 +75,7 @@ import { ensureLegacyLibs, isLegacyLibsLoaded, onLegacyLibsLoaded, withoutAmd } 
 import { createStateValues, upgradeStateValues } from './visCanStates';
 import { VisControlStates } from './visControlState';
 import { takeOverLegacyBinds, takeOverLegacyProperties } from './visLegacyObject';
+import { legacySocketEmit } from './visLegacySocket';
 import { setLocationHash } from './visLocationHash';
 
 function _translateWord(text: string, lang?: string, dictionary?: Record<string, Record<string, string>>): string {
@@ -1566,21 +1567,7 @@ export default class VisEngine extends React.Component<VisEngineProps, VisEngine
             getHttp: (url: string, callback: (data: any) => void): boolean =>
                 this.props.socket.getRawSocket().emit('httpGet', url, (data: any): void => callback?.(data)),
             _socket: {
-                emit: (cmd: string, data: any, cb: (error: Error | null, arg2?: any) => void): void => {
-                    let promise;
-                    if (cmd === 'getObject') {
-                        promise = this.props.socket.getObject(data);
-                    } else if (cmd === 'getState') {
-                        promise = this.props.socket.getState(data);
-                    } else if (cmd === 'getStates') {
-                        promise = this.props.socket.getStates(data);
-                    }
-                    if (promise instanceof Promise) {
-                        promise.then(obj => cb?.(null, obj)).catch(error => cb?.(error));
-                    } else {
-                        console.warn(`Unknown command in _socket.emit: ${cmd}`);
-                    }
-                },
+                emit: (cmd: string, ...args: any[]): void => legacySocketEmit(this.props.socket, cmd, ...args),
             },
         };
     }
