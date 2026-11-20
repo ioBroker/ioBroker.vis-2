@@ -140,7 +140,7 @@ export function helpText(options: {
         '',
         `To steer: write one JSON text into ${ns}.control.command (set_state; it needs "Write allowed" for ${ns}), e.g.`,
         '  {"instance": "*", "command": "changeView", "data": "main/Energy"}',
-        '- instance: the ID of one browser (8 hex digits, see "Browsers" below), or "*" for every open browser.',
+        '- instance: the ID of one browser, exactly as listed under "Browsers" below, or "*" for every open browser.',
         '- command, and what data must be:',
         '  - changeView, data "project/view" (or "view" alone: that view of the project the browser shows): shows the',
         '    view; a view of another project loads that project. Use "project/view" when there is more than one project.',
