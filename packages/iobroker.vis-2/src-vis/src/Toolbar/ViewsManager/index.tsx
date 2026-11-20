@@ -280,11 +280,15 @@ const ViewsManager: React.FC<ViewsManagerProps> = props => {
                                         size="small"
                                         onClick={async () => {
                                             const proj = deepClone(store.getState().visProject);
+                                            const opened = proj.___settings.openedViews;
 
-                                            const views = Object.keys(proj).filter(name => !name.startsWith('___'));
-
-                                            for (const view of views) {
-                                                proj.___settings.openedViews.push(view);
+                                            for (const view of Object.keys(proj)) {
+                                                // a view that is open already keeps its one tab: listed twice
+                                                // it got two tabs with the same key, and the editor ended in
+                                                // "Maximum update depth exceeded" - on every load of the project
+                                                if (!view.startsWith('___') && !opened.includes(view)) {
+                                                    opened.push(view);
+                                                }
                                             }
 
                                             await props.changeProject(proj, false);

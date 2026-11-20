@@ -2546,7 +2546,11 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
 
     renderTabs(): React.JSX.Element {
         const { visProject } = store.getState();
-        const views = visProject.___settings.openedViews.filter(view => Object.keys(visProject).includes(view));
+        // every view once: the tabs are keyed by their view, and two with the same key end the editor in
+        // "Maximum update depth exceeded"
+        const views = visProject.___settings.openedViews.filter(
+            (view, index, list) => !!visProject[view] && list.indexOf(view) === index,
+        );
 
         return (
             <div style={styles.tabsContainer}>

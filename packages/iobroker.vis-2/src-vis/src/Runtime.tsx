@@ -898,13 +898,12 @@ export default class Runtime<
             }
         }
 
-        const len = project.___settings.openedViews.length;
-
-        for (let i = len - 1; i >= 0; i--) {
-            if (!project[project.___settings.openedViews[i]]) {
-                project.___settings.openedViews.splice(i, 1);
-            }
-        }
+        // a view that is gone has no tab, and a view has one tab: a project in which "Show all views" had listed
+        // the open views a second time (until 2.20.11) gave two tabs the same key, and the editor ended in
+        // "Maximum update depth exceeded" on every load
+        project.___settings.openedViews = project.___settings.openedViews.filter(
+            (view, index, list) => !!project[view] && list.indexOf(view) === index,
+        );
 
         if (!project.___settings.openedViews.length) {
             const view = Object.keys(project).find(_view => _view !== '___settings');
