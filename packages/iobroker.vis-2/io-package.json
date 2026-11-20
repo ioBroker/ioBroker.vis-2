@@ -135,6 +135,9 @@
       "scada"
     ],
     "messagebox": true,
+    "supportedMessages": {
+      "help": true
+    },
     "readme": "https://github.com/iobroker/iobroker.vis-2/blob/master/README.md",
     "authors": [
       "bluefox <dogafox@gmail.com>"

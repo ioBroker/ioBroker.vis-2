@@ -16,6 +16,15 @@ import { verify } from 'jsonwebtoken';
 import { filesFingerprint, syncWidgetSets, widgetFilesToCheck } from './lib/install';
 import { RemoteWidgetCache, bringsWidgets, findRemoteWidgetAdapters, type FetchAdapterDir } from './lib/remoteWidgets';
 import { VIS_AI_FIELDS, type AiConfigSlice } from './lib/ai';
+import {
+    type BrowserSeen,
+    type ProjectInfo,
+    HELP_COMMANDS,
+    MAX_PROJECTS,
+    helpText,
+    projectInfo,
+    rememberBrowser,
+} from './lib/help';
 
 function loadIoPack(): ioBroker.AdapterObject {
     const path = `${__dirname}/../io-package.json`;
@@ -134,6 +143,10 @@ class VisAdapter extends Adapter {
     private vendorPrefix = '';
     /** The copies of the widgets of adapters that are installed on other hosts only */
     private remoteWidgets: RemoteWidgetCache | null = null;
+    /** The browsers that reported the view they show (`changedView`), for `help`; the newest last */
+    private browsers = new Map<string, BrowserSeen>();
+    /** The last `control.instance` and `control.data` a browser wrote before its `changedView` */
+    private controlSeen = { instance: '', data: '' };
     /** The AI assistant of the editor: providers, keys and the pushed answers, see `@iobroker/ai-core` */
     private ai = new AiBackend(this, {
         // the own keys, or the AI settings of the system (`system.ai`) that are set up once in admin
@@ -169,6 +182,7 @@ class VisAdapter extends Adapter {
                     error: `Unknown subscription type "${(info.message?.message as { type?: string } | undefined)?.type || ''}"`,
                 },
             uiClientUnsubscribe: info => this.ai.onUiClientUnsubscribe(info),
+            stateChange: (id, state) => this.onControlChange(id, state),
         };
 
         super({
@@ -258,6 +272,11 @@ class VisAdapter extends Adapter {
         if (this.ai.handleMessage(msg)) {
             return;
         }
+        if (msg?.command === 'help' && msg.callback) {
+            const help = await this.helpAnswer().catch(e => `Cannot collect the help: ${(e as Error).message}`);
+            this.sendTo(msg.from, msg.command, { help, commands: HELP_COMMANDS }, msg.callback);
+            return;
+        }
         if (msg?.command === 'checkLicense' && msg.message && msg.callback) {
             // the socket lets this message through for users who may send nothing else, so it is not trusted
             if (typeof msg.message !== 'string' || !/^[a-z0-9_-]+$/i.test(msg.message)) {
@@ -285,6 +304,84 @@ class VisAdapter extends Adapter {
                 this.sendTo(msg.from, msg.command, { error: 'already running' }, msg.callback);
             }
         }
+    }
+
+    /**
+     * Follow the views the browsers report (`changedView`), so `help` can name them; the last report from before the
+     * start counts too
+     */
+    async watchBrowsers(): Promise<void> {
+        try {
+            await this.subscribeStatesAsync('control.*');
+            const [instance, data, command] = await Promise.all(
+                ['instance', 'data', 'command'].map(name => this.getStateAsync(`control.${name}`)),
+            );
+            if (command?.ack && command.val === 'changedView') {
+                rememberBrowser(this.browsers, {
+                    instance: String(instance?.val ?? ''),
+                    view: String(data?.val ?? ''),
+                    ts: command.ts,
+                });
+            }
+        } catch (e) {
+            this.log.warn(`Cannot follow the views of the browsers: ${(e as Error).message}`);
+        }
+    }
+
+    /**
+     * A browser writes `control.instance`, `control.data` and then `control.command` = "changedView", all with ack
+     *
+     * @param id - the state
+     * @param state - its new value
+     */
+    onControlChange(id: string, state: ioBroker.State | null | undefined): void {
+        if (!state?.ack) {
+            return;
+        }
+        const name = id.substring(this.namespace.length + 1);
+        if (name === 'control.instance') {
+            this.controlSeen.instance = String(state.val ?? '');
+        } else if (name === 'control.data') {
+            this.controlSeen.data = String(state.val ?? '');
+        } else if (name === 'control.command' && state.val === 'changedView') {
+            rememberBrowser(this.browsers, {
+                instance: this.controlSeen.instance,
+                view: this.controlSeen.data,
+                ts: state.ts,
+            });
+        }
+    }
+
+    /** The text of `help`, with the projects and views as they are now */
+    async helpAnswer(): Promise<string> {
+        const projects: ProjectInfo[] = [];
+        let moreProjects = 0;
+        let dirs: ioBroker.ReadDirResult[] = [];
+        try {
+            dirs = (await this.readDirAsync(this.namespace, '')).filter(dir => dir.isDir);
+        } catch {
+            // no files yet
+        }
+        dirs.sort((a, b) => a.file.localeCompare(b.file));
+        for (const dir of dirs) {
+            if (projects.length >= MAX_PROJECTS) {
+                moreProjects++;
+                continue;
+            }
+            try {
+                const { file } = await this.readFileAsync(this.namespace, `${dir.file}/vis-views.json`);
+                projects.push(projectInfo(dir.file, JSON.parse(file.toString())));
+            } catch {
+                // a folder without a project, e.g. of images
+            }
+        }
+        return helpText({
+            namespace: this.namespace,
+            projects,
+            moreProjects,
+            browsers: [...this.browsers.values()],
+            now: Date.now(),
+        });
     }
 
     static collectWidgetSets(
@@ -1482,6 +1579,7 @@ if (typeof exports !== 'undefined') {
         this.visConfig = this.config as VisAdapterConfig;
         // the credentials of the assistant follow the credential manager from here on
         await this.ai.start();
+        await this.watchBrowsers();
 
         const visObj = await this.getForeignObjectAsync('vis-2');
         await this.setForeignStateAsync('system.adapter.vis-2.upload', 0, true);

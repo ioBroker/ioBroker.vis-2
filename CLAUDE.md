@@ -165,6 +165,9 @@ Widget IDs are template-literal types: `SingleWidgetId` = `` `w${string}` ``, `G
   used per project. Its **compiled output `packages/iobroker.vis-2/lib/states.js` is committed** (js-controller
   loads it directly), so run `npm run copy-backend` after editing it.
 - `lib/convert.ts` — vis-1 → vis-2 project conversion.
+- `lib/help.ts` — the answer of the message `help` (`common.supportedMessages.help`) for AI agents: the control
+  interface (keep it in sync with `onUserCommand` in `visEngine.tsx`), the projects with views and dialogs, and the
+  browsers that reported their view (`main.ts` subscribes `control.*` for that).
 
 ### Generated files — never edit by hand
 

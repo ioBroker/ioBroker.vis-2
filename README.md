@@ -227,6 +227,11 @@ Pass the object as a JSON string: `setState()` of the JavaScript adapter takes a
 
 If you write the JSON as a string, ensure that it is parseable, e.g. `{"instance": "*", "command": "refresh", "data": ""}`, note the `"`. 
 
+An AI agent (e.g. pi-agent, or the MCP server with `send_to`) learns all this from vis-2 itself: the message `help`
+(`sendTo('vis-2.0', 'help', {}, answer => …)`) answers `{help, commands}` - this interface with the data of every
+command, the projects with their views and dialogs, and the browsers that reported their view since the start of the
+instance with their IDs.
+
 ## Default view
 You can define for every view the desired resolution (Menu=>Tools=>Resolution).
 This is only the visual border in edit mode to show you the screen size on some specific device. In the real-time mode, it will not be visible and all widgets outside the border will be visible.  
@@ -390,6 +395,7 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 ### **WORK IN PROGRESS**
 * (@GermanBluefox) Editor: palette and attributes can be pinned as columns beside the view. Since 2.20.3 they float over the view with a fixed width as soon as its resolution does not fit between them - with a view as wide as the screen always, so the attributes had to be opened over the view for every widget. The pin in the head of both panels keeps them as columns, and the view scrolls between them; a window narrower than 1200 pixels still lets them float
 * (@GermanBluefox) servConn._socket.emit forwards sendTo again and throws on unknown commands (#749)
+* (@GermanBluefox) vis-2 answers the message `help` (`common.supportedMessages.help`): an AI agent such as pi-agent learns how to steer the browsers through `control.command` (the data of every command), the projects with their views and dialogs, and the IDs of the browsers that reported their view
 
 ### 2.20.11 (2026-11-17)
 * (@GermanBluefox) Safari 27 (macOS, iOS, iPadOS) and the ioBroker app no longer load the whole page again after every change of the view when vis-2 is opened over plain HTTP: the view changes without a navigation now. Links to a view (`<a href="#view">`) in HTML widgets and link buttons to `#view` do the same (#743)
