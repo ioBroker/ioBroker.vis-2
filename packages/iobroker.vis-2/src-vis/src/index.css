@@ -16,6 +16,16 @@ body {
     overflow: hidden;
 }
 
+/*
+ * An iframe of a widget keeps the default scheme instead of inheriting `only light` from :root (see
+ * Utilities/colorScheme.ts): in a darkening WebView (Fully Kiosk) the page inside is darkened, an iframe element
+ * with `only light` is not, and the browser paints an opaque backdrop (#121212) behind the page instead of
+ * letting the view shine through.
+ */
+iframe {
+    color-scheme: normal;
+}
+
 .body-light {
     background-color: #fff;
     color: #000;

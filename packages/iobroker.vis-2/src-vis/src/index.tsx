@@ -6,6 +6,7 @@ import { Utils } from '@iobroker/gui-components';
 import './index.css';
 import App from './Editor';
 import VisEngine from './Vis/visEngine';
+import { preventForcedDarkening } from './Utilities/colorScheme';
 import packageJson from './version.json';
 
 window.adapterName = 'vis-2';
@@ -45,6 +46,7 @@ function inIframe(): boolean {
 // apply background color only if not in iframe
 function setBackground(): void {
     if (!inIframe()) {
+        preventForcedDarkening();
         if (Utils.getThemeType() === 'dark') {
             window.document.body.className = modifyClasses(window.document.body.className, 'body-dark', 'body-light');
         } else {
