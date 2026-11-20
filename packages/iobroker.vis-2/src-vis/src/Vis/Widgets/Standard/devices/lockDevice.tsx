@@ -6,6 +6,7 @@ import { Types } from '../Base/deviceTypes';
 
 import SlideToggle from '../Base/controls/SlideToggle';
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
+import { withAlpha } from '../Base/controls/colorUtils';
 
 interface LockRxData extends StandardRxData {
     /** What the lock reports, when that is not the state it is set by */
@@ -107,7 +108,7 @@ const lockDevice = defineDeviceWidget<LockRxData>({
                         padding: '8px 10px',
                         borderRadius: 10,
                         border: `1px solid ${accents.yellow}`,
-                        background: `${accents.yellow}22`,
+                        background: withAlpha(accents.yellow, 0.133),
                         color: accents.yellow,
                         font: 'inherit',
                         fontSize: 13,

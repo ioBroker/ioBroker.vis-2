@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { defineDeviceWidget, type StandardRxData } from '../Base/defineDeviceWidget';
+import { withAlpha } from '../Base/controls/colorUtils';
 
 interface JumpsRxData extends StandardRxData {
     /** Where the marks stand in the row */
@@ -87,7 +88,7 @@ const jumpsDevice = defineDeviceWidget<JumpsRxData>({
                                     padding: '0 14px',
                                     borderRadius: 16,
                                     border: `1px solid ${accent}`,
-                                    background: `${accent}22`,
+                                    background: withAlpha(accent, 0.133),
                                     color: accent,
                                     font: 'inherit',
                                     fontSize: tokens.smallSize + 1,

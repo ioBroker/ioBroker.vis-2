@@ -1,10 +1,21 @@
 /**
+ * A number at the start of a text, with a dot or a comma as the decimal mark, and what may follow it: nothing,
+ * or a unit - anything but a digit or a mark that would make it the first part of a time, a date or a list.
+ */
+const NUMBER_IN_TEXT = /^\s*([+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)(?:[eE][+-]?\d+)?)(?![\d.,:/-])/;
+
+/**
  * The value of a state as a number, or null if it is none.
  *
  * `common.type` may say number while the adapter writes a string or a boolean into the state. The slider of MUI
  * calls `slice()` on whatever it is handed, so anything but a number kills the widget - and with it the whole
  * editor - with "valueDerived.slice is not a function". A string that reads as a number is taken, with a comma
- * as the decimal mark as well; everything else is no number.
+ * as the decimal mark as well, and so is one with a unit behind it (`21,4 °C`, `45%`); everything else is no
+ * number.
+ *
+ * A text that only begins with a number is not one: `07:24` was 7, `17.11.2026, 09:46` was 17,11 and a date
+ * `2026-11-17` was 2026. The number must end where the text ends or where a word begins - not at another `:`,
+ * `.`, `,`, `/` or `-` that carries more digits.
  *
  * @param value - what the state holds at the moment
  */
@@ -13,7 +24,11 @@ export function asNumber(value: unknown): number | null {
         return isFinite(value) ? value : null;
     }
     if (typeof value === 'string' && value.trim()) {
-        const parsed = parseFloat(value.replace(',', '.'));
+        const match = NUMBER_IN_TEXT.exec(value);
+        if (!match) {
+            return null;
+        }
+        const parsed = parseFloat(match[1].replace(',', '.'));
         return isFinite(parsed) ? parsed : null;
     }
     return null;

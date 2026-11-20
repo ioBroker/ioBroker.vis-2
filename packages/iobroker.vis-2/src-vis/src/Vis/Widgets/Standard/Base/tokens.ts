@@ -1,5 +1,7 @@
 import type { VisTheme } from '@iobroker/types-vis-2';
 
+import { withAlpha } from './controls/colorUtils';
+
 /**
  * The sizes every widget of the sets `relative` and `absolute` is built from.
  *
@@ -138,5 +140,5 @@ export function cardFill(
  * @param color - the colour of the state
  */
 export function softChip(color: string): { background: string; border: string; color: string } {
-    return { background: `${color}22`, border: `1px solid ${color}55`, color };
+    return { background: withAlpha(color, 0.133), border: `1px solid ${withAlpha(color, 0.333)}`, color };
 }

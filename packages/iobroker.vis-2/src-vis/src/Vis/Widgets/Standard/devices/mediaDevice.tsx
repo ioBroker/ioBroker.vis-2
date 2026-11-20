@@ -16,6 +16,7 @@ import FatSlider from '../Base/controls/FatSlider';
 import { asNumber, asText } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { limitsOf } from '../Base/limits';
+import { withAlpha } from '../Base/controls/colorUtils';
 
 interface MediaRxData extends StandardRxData {
     /** What is playing */
@@ -167,7 +168,7 @@ const mediaDevice = defineDeviceWidget<MediaRxData>({
                     justifyContent: 'center',
                     borderRadius: '50%',
                     border: `1px solid ${big ? accent : theme.palette.divider}`,
-                    background: big ? `${accent}22` : 'transparent',
+                    background: big ? withAlpha(accent, 0.133) : 'transparent',
                     transition: 'background 0.3s, border-color 0.3s, color 0.3s',
                     color: big ? accent : theme.palette.text.secondary,
                     cursor: context.editMode ? undefined : 'pointer',

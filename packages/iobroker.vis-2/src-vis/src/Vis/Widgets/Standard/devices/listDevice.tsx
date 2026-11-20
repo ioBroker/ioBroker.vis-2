@@ -11,6 +11,7 @@ import { describeObject } from '../Base/adoptObject';
 import { cssPixels } from '../Base/widgetCss';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 import { limitsOf } from '../Base/limits';
+import { withAlpha } from '../Base/controls/colorUtils';
 
 /** The most rows one card is worth; past that it is a page, not a card */
 const MAX_ROWS = 12;
@@ -522,7 +523,7 @@ const listDevice = defineDeviceWidget<ListRxData>({
                             padding: '4px 12px',
                             borderRadius: 8,
                             border: `1px solid ${accents.blue}`,
-                            background: `${accents.blue}22`,
+                            background: withAlpha(accents.blue, 0.133),
                             color: accents.blue,
                             font: 'inherit',
                             fontSize: tokens.smallSize,

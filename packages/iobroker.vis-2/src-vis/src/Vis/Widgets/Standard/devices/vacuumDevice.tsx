@@ -14,6 +14,7 @@ import { Types } from '../Base/deviceTypes';
 import ModeButtons, { type Mode } from '../Base/controls/ModeButtons';
 import { asNumber, asText } from '../Base/controls/stateValue';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
+import { withAlpha } from '../Base/controls/colorUtils';
 
 interface VacuumRxData extends StandardRxData {
     /** What it is doing: cleaning, returning, charging - whatever the object calls it */
@@ -166,7 +167,7 @@ const vacuumDevice = defineDeviceWidget<VacuumRxData>({
                     padding: '8px 6px',
                     borderRadius: 10,
                     border: `1px solid ${color}`,
-                    background: `${color}22`,
+                    background: withAlpha(color, 0.133),
                     transition: 'background 0.3s, border-color 0.3s, color 0.3s',
                     color,
                     font: 'inherit',

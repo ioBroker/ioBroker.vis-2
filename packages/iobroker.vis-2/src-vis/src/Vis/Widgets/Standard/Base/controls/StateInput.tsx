@@ -2,6 +2,8 @@ import React from 'react';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 
+import { withAlpha } from './colorUtils';
+
 export interface StateInputProps {
     /** What was set in the CSS attributes of the widget for how the reading is written */
     textStyle?: React.CSSProperties;
@@ -82,7 +84,7 @@ export default function StateInput(props: StateInputProps): React.JSX.Element {
                 flexShrink: 0,
                 borderRadius: 8,
                 border: `1px solid ${props.accent}`,
-                background: `${props.accent}22`,
+                background: withAlpha(props.accent, 0.133),
                 color: props.accent,
                 font: 'inherit',
                 fontSize: 18,

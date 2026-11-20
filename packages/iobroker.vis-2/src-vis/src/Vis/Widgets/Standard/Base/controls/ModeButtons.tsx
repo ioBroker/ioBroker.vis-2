@@ -2,6 +2,8 @@ import React from 'react';
 
 import type { VisTheme } from '@iobroker/types-vis-2';
 
+import { withAlpha } from './colorUtils';
+
 /** One of the things a device can be set to */
 export interface Mode {
     /** What is written into the state */
@@ -75,7 +77,7 @@ export default function ModeButtons(props: ModeButtonsProps): React.JSX.Element 
                             cursor: props.disabled ? undefined : 'pointer',
                             // the one it is in carries the colour, the others only their outline
                             border: `1px solid ${on ? props.accent : props.theme.palette.divider}`,
-                            background: on ? `${props.accent}22` : 'transparent',
+                            background: on ? withAlpha(props.accent, 0.133) : 'transparent',
                             transition: 'background 0.2s, border-color 0.2s, color 0.2s',
                             color: on ? props.accent : props.theme.palette.text.secondary,
                             font: 'inherit',

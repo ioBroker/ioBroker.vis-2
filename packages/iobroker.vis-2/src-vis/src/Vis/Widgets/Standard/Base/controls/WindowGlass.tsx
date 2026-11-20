@@ -30,6 +30,12 @@ export const BOX = { width: 100, height: 88 };
 const LEAN_TOP = 6;
 const LEAN_BOTTOM = 6;
 
+/** The width of the frame and of the leaf, in pixels of the screen whatever the size of the drawing */
+const LINE = 1.5;
+
+/** The sill of a window or the floor of a door, a little stronger than the frame it carries */
+const SILL = 2;
+
 /** A door stands on the floor and the floor is the edge of the picture, so its leaf leans down less */
 const LEAN_BOTTOM_DOOR = 4;
 
@@ -149,7 +155,9 @@ export function leafCorners(
  * which is the side the handle is *not* on: the handle therefore stays on its own edge of the leaf and
  * travels with it, instead of jumping from one side of the frame to the other.
  *
- * It is drawn in a `viewBox` and scales with its box like everything else in these sets.
+ * It is drawn in a `viewBox` and scales with its box like everything else in these sets - but not its lines: they
+ * are as wide on a card of a whole row as on a marker (`non-scaling-stroke`), as the line of the blind beside it
+ * is. Scaled with the drawing, the frame of a large window was several pixels thick next to a blind of hairlines.
  *
  * @param props - what the window is doing, which way round it is, and in which colours
  */
@@ -183,13 +191,15 @@ export default function WindowGlass(props: WindowGlassProps): React.JSX.Element 
                 rx="3"
                 fill={props.background}
                 stroke={props.outline}
-                strokeWidth="2.5"
+                strokeWidth={LINE}
+                vectorEffect="non-scaling-stroke"
             />
             {/* the sill of a window, or the floor a door stands on */}
             <path
                 d={door ? `M${frame.x - 14} ${frame.y + frame.height} H${frame.x + frame.width + 14}` : 'M2 80 H98'}
                 stroke={props.outline}
-                strokeWidth="3"
+                strokeWidth={SILL}
+                vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
             />
 
@@ -198,7 +208,8 @@ export default function WindowGlass(props: WindowGlassProps): React.JSX.Element 
                 fill={colour}
                 fillOpacity={open ? 0.18 : 0.1}
                 stroke={colour}
-                strokeWidth="2.5"
+                strokeWidth={LINE}
+                vectorEffect="non-scaling-stroke"
                 strokeLinejoin="round"
                 style={{ transition: 'd 0.3s, fill 0.3s, stroke 0.3s' }}
             />

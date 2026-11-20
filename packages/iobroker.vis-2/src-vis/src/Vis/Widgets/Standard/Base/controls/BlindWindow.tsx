@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { withAlpha } from './colorUtils';
+
 /** How far apart the slats of a blind sit, and how thick a line they are when the blind is fully open, in px */
 const SLAT_PITCH = 8;
 const SLAT_LINE = 2;
@@ -126,7 +128,7 @@ export default function BlindWindow(props: BlindWindowProps): React.JSX.Element 
                     top: `calc(${closed}% - 1px)`,
                     height: 2,
                     background: props.accent,
-                    boxShadow: `0 0 4px ${props.accent}66`,
+                    boxShadow: `0 0 4px ${withAlpha(props.accent, 0.4)}`,
                     transition: 'top 0.4s ease, background 0.3s',
                 }}
             />

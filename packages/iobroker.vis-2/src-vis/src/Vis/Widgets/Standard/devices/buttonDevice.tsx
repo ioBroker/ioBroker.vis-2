@@ -13,6 +13,7 @@ import { Types } from '../Base/deviceTypes';
 import { STANDARD_I18N_PREFIX } from '../Base/prefix';
 
 import { asNumber } from '../Base/controls/stateValue';
+import { withAlpha } from '../Base/controls/colorUtils';
 import { defineDeviceWidget, type DeviceContext, type StandardRxData } from '../Base/defineDeviceWidget';
 
 /** What pressing the button does */
@@ -156,9 +157,9 @@ function PressButton(props: {
                 minHeight: 36,
                 borderRadius: 10,
                 border: `1px solid ${accent}`,
-                background: lit ? accent : `${accent}22`,
+                background: lit ? accent : withAlpha(accent, 0.133),
                 color: lit ? '#fff' : accent,
-                boxShadow: lit ? `0 0 10px ${accent}88` : 'none',
+                boxShadow: lit ? `0 0 10px ${withAlpha(accent, 0.533)}` : 'none',
                 transform: held && !props.disabled ? 'scale(0.96)' : undefined,
                 // in quickly, out slowly: the press is felt at once, and the light fades rather than blinks
                 transition: lit

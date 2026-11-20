@@ -202,6 +202,62 @@ export function hexToHsva(hex: string): HsvaColor {
     return rgbaToHsva({ r, g, b, a });
 }
 
+/** One channel of `rgb()`: a number 0..255, or a percentage of it */
+function rgbChannel(value: string): number {
+    return value.endsWith('%') ? (parseFloat(value) / 100) * 255 : parseFloat(value);
+}
+
+/**
+ * A colour made see-through, whatever notation it is written in.
+ *
+ * Two hex digits for the opacity behind the colour (`${color}22`) work for `#rrggbb` only. The colour picker of
+ * the editor stores `rgb(20, 123, 248)`, and `rgb(20, 123, 248)22` is no colour at all: the browser drops the
+ * whole declaration, and the buttons of the jump marks came out grey.
+ *
+ * @param color - the colour: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`, `rgb()`/`rgba()`, or anything else CSS knows
+ * @param alpha - the opacity to give it, 0..1; a colour that is see-through already keeps that share of its own
+ * @returns `rgba(r, g, b, a)`, or a `color-mix()` for a notation that is not read here (a name, `hsl()`, a variable)
+ */
+export function withAlpha(color: string | undefined | null, alpha: number): string {
+    const value = (color || '').trim();
+    if (!value) {
+        return 'transparent';
+    }
+    let rgba: RgbaColor | null = null;
+
+    const hex = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.exec(value);
+    if (hex) {
+        const digits =
+            hex[1].length <= 4
+                ? hex[1]
+                      .split('')
+                      .map(digit => digit + digit)
+                      .join('')
+                : hex[1];
+        rgba = {
+            r: parseInt(digits.substring(0, 2), 16),
+            g: parseInt(digits.substring(2, 4), 16),
+            b: parseInt(digits.substring(4, 6), 16),
+            a: digits.length === 8 ? parseInt(digits.substring(6, 8), 16) / 255 : 1,
+        };
+    } else {
+        // `rgb(1, 2, 3)`, `rgba(1, 2, 3, 0.5)` and the newer `rgb(1 2 3 / 50%)`
+        const rgb = /^rgba?\(\s*([\d.]+%?)[\s,]+([\d.]+%?)[\s,]+([\d.]+%?)(?:\s*[,/]\s*([\d.]+%?))?\s*\)$/i.exec(value);
+        if (rgb) {
+            const a = rgb[4] === undefined ? 1 : rgb[4].endsWith('%') ? parseFloat(rgb[4]) / 100 : parseFloat(rgb[4]);
+            rgba = { r: rgbChannel(rgb[1]), g: rgbChannel(rgb[2]), b: rgbChannel(rgb[3]), a };
+        }
+    }
+
+    const opacity = Math.min(Math.max(alpha, 0), 1);
+    if (!rgba) {
+        return `color-mix(in srgb, ${value} ${Math.round(opacity * 1000) / 10}%, transparent)`;
+    }
+    const channel = (part: number): number => Math.round(clamp(part, 255));
+    const a = Math.round(clamp(rgba.a, 1) * opacity * 1000) / 1000;
+    return `rgba(${channel(rgba.r)}, ${channel(rgba.g)}, ${channel(rgba.b)}, ${a})`;
+}
+
 /**
  * The colour of a white light of this temperature, as `#rrggbb`.
  *

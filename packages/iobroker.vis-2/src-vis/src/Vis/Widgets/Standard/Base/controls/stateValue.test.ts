@@ -13,6 +13,27 @@ describe('asNumber', () => {
         expect(asNumber('42')).toBe(42);
         expect(asNumber(' 42.5 ')).toBe(42.5);
         expect(asNumber('42,5')).toBe(42.5);
+        expect(asNumber('-3')).toBe(-3);
+        expect(asNumber('.5')).toBe(0.5);
+        expect(asNumber('1e3')).toBe(1000);
+    });
+
+    it('takes a number with a unit behind it', () => {
+        expect(asNumber('21,4 °C')).toBe(21.4);
+        expect(asNumber('21.4°C')).toBe(21.4);
+        expect(asNumber('45%')).toBe(45);
+        expect(asNumber('12px')).toBe(12);
+        expect(asNumber('3 Fenster offen')).toBe(3);
+    });
+
+    it('does not take a time, a date or a list for the number it begins with', () => {
+        expect(asNumber('07:24')).toBeNull();
+        expect(asNumber('17.11.2026, 09:46')).toBeNull();
+        expect(asNumber('17.11.')).toBeNull();
+        expect(asNumber('2026-11-17')).toBeNull();
+        expect(asNumber('1.234,5')).toBeNull();
+        expect(asNumber('3/4')).toBeNull();
+        expect(asNumber('Di 17.11., 10:00')).toBeNull();
     });
 
     it('says no to everything a slider would die on', () => {

@@ -3951,10 +3951,13 @@ class VisView extends React.Component<VisViewProps, VisViewState> {
                 borderWidth,
                 borderColor,
                 borderStyle,
+                // Centred by its margins, not by `align-items`/`justify-content: center` on the view: those centre a
+                // box that is larger than the window as well, and what sticks out above and on the left can never
+                // be scrolled to - a page of 1280 px in a window of 738 px lost its head. Auto margins only share
+                // space that is there: a page that fits stands in the middle, a larger one starts at the top left.
+                margin: 'auto',
             };
             style.display = 'flex';
-            style.justifyContent = 'center';
-            style.alignItems = 'center';
             style.backgroundColor = bgColor || undefined;
         }
 
