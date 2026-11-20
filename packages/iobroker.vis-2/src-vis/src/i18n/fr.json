@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s widgets",
-  "(Maximal file size is %s)": "(La taille maximale du fichier est %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Voulez-vous inclure le widget « %s » dans « %s » ?",
   "Download": "Télécharger",
   "Drag me": "Tire moi",
-  "Drop the files here ...": "Déposez les fichiers ici...",
   "Duplicate": "Dupliquer",
   "Duplicate folder": "Dupliquer le dossier",
   "Duplicate profile": "Dupliquer le profil",
@@ -250,7 +248,7 @@
   "Imported view": "Vue importée",
   "Include widget?": "Inclure le widget ?",
   "Initial filter": "Filtre initial",
-  "Invalid file type": "type de fichier invalide",
+  "Invalid file type": "Type de fichier invalide",
   "Just use without modification": "A utiliser sans modification",
   "Keep on old place": "Gardez l'ancien endroit",
   "Limit background color": "Couleur de l'arrière plan",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "Intensité du sous-titre, en % ; 70 % par défaut.",
   "help_section_subtitle_size": "En px ; 0,8 de la taille du titre par défaut.",
   "Pin palette and attributes as columns beside the view": "Épingler la palette et les attributs en colonnes à côté de la vue",
-  "Let palette and attributes float over the view": "Afficher la palette et les attributs par-dessus la vue"
+  "Let palette and attributes float over the view": "Afficher la palette et les attributs par-dessus la vue",
+  "Drop the file here or click to select it": "Déposez le fichier ici ou cliquez pour le sélectionner",
+  "Click or drop another file to replace it": "Cliquez ou déposez un autre fichier pour le remplacer",
+  "max. %s": "max. %s",
+  "Importing project ...": "Importation du projet ...",
+  "This can take a while": "Cela peut prendre un moment"
 }

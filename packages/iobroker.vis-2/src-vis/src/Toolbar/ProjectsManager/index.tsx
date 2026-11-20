@@ -353,7 +353,6 @@ const ProjectsManager: React.FC<ProjectsManagerProps> = props => {
             {importDialog ? (
                 <ImportProjectDialog
                     projects={props.projects}
-                    themeType={props.themeType}
                     onClose={(created, newProjectName) => {
                         setImportDialog(false);
                         if (created && props.projectName !== newProjectName) {

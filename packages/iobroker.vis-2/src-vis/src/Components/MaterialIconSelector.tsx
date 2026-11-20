@@ -593,7 +593,6 @@ export default class MaterialIconSelector extends Component<MaterialIconSelector
                                     </Button>
                                 </div>
                                 <UploadFile
-                                    themeType={this.props.themeType}
                                     // eslint-disable-next-line @typescript-eslint/no-base-to-string
                                     onUpload={(_name, data) => this.setState({ selectedIcon: data.toString() })}
                                     maxSize={15_000}

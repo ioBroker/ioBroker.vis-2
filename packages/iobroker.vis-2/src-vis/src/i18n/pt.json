@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s widgets",
-  "(Maximal file size is %s)": "(O tamanho máximo do arquivo é %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Deseja incluir o widget \"%s\" em \"%s\"?",
   "Download": "Baixar",
   "Drag me": "Arraste-me",
-  "Drop the files here ...": "Solte os arquivos aqui...",
   "Duplicate": "Duplicado",
   "Duplicate folder": "Duplique a pasta",
   "Duplicate profile": "Duplique o perfil",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "Com que intensidade o subtítulo é desenhado, em %; 70 % se não definido.",
   "help_section_subtitle_size": "Em px; 0,8 do tamanho do título se não definido.",
   "Pin palette and attributes as columns beside the view": "Fixar a paleta e os atributos como colunas ao lado da visualização",
-  "Let palette and attributes float over the view": "Mostrar a paleta e os atributos sobre a visualização"
+  "Let palette and attributes float over the view": "Mostrar a paleta e os atributos sobre a visualização",
+  "Drop the file here or click to select it": "Solte o arquivo aqui ou clique para selecioná-lo",
+  "Click or drop another file to replace it": "Clique ou solte outro arquivo para substituí-lo",
+  "max. %s": "máx. %s",
+  "Importing project ...": "Importando projeto ...",
+  "This can take a while": "Isso pode demorar um pouco"
 }

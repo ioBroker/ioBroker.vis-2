@@ -21,6 +21,8 @@ interface IODialogProps {
     onClose: () => void;
     title: string;
     fullScreen?: boolean;
+    /** take the whole maxWidth instead of only as much as the content needs */
+    fullWidth?: boolean;
     maxWidth?: Breakpoint;
     minWidth?: number | string;
     noTranslation?: boolean;
@@ -31,6 +33,7 @@ const IODialog = (props: IODialogProps): React.JSX.Element => (
         onClose={props.closeDisabled ? undefined : props.onClose}
         open={!0}
         fullScreen={!!props.fullScreen}
+        fullWidth={!!props.fullWidth}
         maxWidth={props.maxWidth || 'md'}
     >
         <DialogTitle>{props.noTranslation ? props.title : I18n.t(props.title)}</DialogTitle>

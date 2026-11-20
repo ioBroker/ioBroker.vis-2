@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s widgets",
-  "(Maximal file size is %s)": "(Maximale bestandsgrootte is %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Wilt u de widget \"%s\" opnemen in \"%s\"?",
   "Download": "Downloaden",
   "Drag me": "Sleep mij",
-  "Drop the files here ...": "Zet de bestanden hier neer...",
   "Duplicate": "Duplicaat",
   "Duplicate folder": "Dupliceer de map",
   "Duplicate profile": "Dupliceer het profiel",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "Hoe sterk de ondertitel getekend wordt, in %; zonder waarde 70 %.",
   "help_section_subtitle_size": "In px; zonder waarde 0,8 van de titelgrootte.",
   "Pin palette and attributes as columns beside the view": "Palet en attributen als kolommen naast de weergave vastzetten",
-  "Let palette and attributes float over the view": "Palet en attributen boven de weergave laten zweven"
+  "Let palette and attributes float over the view": "Palet en attributen boven de weergave laten zweven",
+  "Drop the file here or click to select it": "Sleep het bestand hierheen of klik om het te selecteren",
+  "Click or drop another file to replace it": "Klik of sleep een ander bestand hierheen om het te vervangen",
+  "max. %s": "max. %s",
+  "Importing project ...": "Project wordt geïmporteerd ...",
+  "This can take a while": "Dit kan even duren"
 }

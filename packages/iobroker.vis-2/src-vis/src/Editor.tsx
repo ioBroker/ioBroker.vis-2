@@ -3204,7 +3204,6 @@ export default class Editor extends Runtime<EditorProps, EditorState> {
         return (
             <ImportProjectDialog
                 projects={this.state.projects || []}
-                themeType={this.state.themeType}
                 onClose={(created, newProjectName) => {
                     this.setState({ showImportDialog: false });
                     if (newProjectName) {

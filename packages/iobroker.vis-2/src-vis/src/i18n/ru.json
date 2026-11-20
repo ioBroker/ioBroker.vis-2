@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s виджетов",
-  "(Maximal file size is %s)": "(Максимальный размер файла – %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Вы хотите включить виджет «%s» в «%s»?",
   "Download": "Скачать",
   "Drag me": "Перетащите меня",
-  "Drop the files here ...": "Закинь файлы сюда...",
   "Duplicate": "Копировать",
   "Duplicate folder": "Копировать папку",
   "Duplicate profile": "Копировать профиль",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "Насколько ярко рисуется подзаголовок, в %; без значения 70 %.",
   "help_section_subtitle_size": "В px; без значения 0,8 от размера заголовка.",
   "Pin palette and attributes as columns beside the view": "Закрепить палитру и атрибуты колонками рядом со страницей",
-  "Let palette and attributes float over the view": "Показывать палитру и атрибуты поверх страницы"
+  "Let palette and attributes float over the view": "Показывать палитру и атрибуты поверх страницы",
+  "Drop the file here or click to select it": "Перетащите файл сюда или нажмите, чтобы выбрать его",
+  "Click or drop another file to replace it": "Нажмите или перетащите другой файл, чтобы заменить его",
+  "max. %s": "макс. %s",
+  "Importing project ...": "Импорт проекта ...",
+  "This can take a while": "Это может занять некоторое время"
 }

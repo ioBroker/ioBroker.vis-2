@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { TextField } from '@mui/material';
+import { CircularProgress, TextField, Typography } from '@mui/material';
 
-import { IconUpload, I18n, Confirm as ConfirmDialog, type ThemeType, type Connection } from '@iobroker/gui-components';
+import { IconUpload, I18n, Confirm as ConfirmDialog, type Connection } from '@iobroker/gui-components';
 
 import type Editor from '@/Editor';
 import UploadFile from '../../Components/UploadFile';
@@ -28,13 +28,20 @@ interface ImportProjectDialogProps {
     projectName: string;
     refreshProjects: Editor['refreshProjects'];
     socket: Connection;
-    themeType: ThemeType;
     loadProject: Editor['loadProject'];
     adapterName: string;
     instance: number;
     openNewProjectOnCreate?: boolean;
     projects: string[];
 }
+
+/** Shown in the button "Import" while the server unpacks the project */
+const ImportProgressIcon = (): React.JSX.Element => (
+    <CircularProgress
+        size={18}
+        color="inherit"
+    />
+);
 
 const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
     const [projectName, setProjectName] = useState('');
@@ -131,16 +138,31 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
         <IODialog
             title="Import project"
             onClose={() => props.onClose()}
+            maxWidth="sm"
+            fullWidth
             actionNoClose
             action={importProject}
             actionTitle="Import"
-            ActionIcon={IconUpload}
+            ActionIcon={working ? ImportProgressIcon : IconUpload}
             actionDisabled={!projectName?.length || !projectData || working}
             closeDisabled={working}
         >
             <UploadFile
                 disabled={working}
-                themeType={props.themeType}
+                busy={
+                    working ? (
+                        <>
+                            <Typography align="center">{I18n.t('Importing project ...')}</Typography>
+                            <Typography
+                                variant="caption"
+                                sx={{ color: 'text.secondary' }}
+                                align="center"
+                            >
+                                {I18n.t('This can take a while')}
+                            </Typography>
+                        </>
+                    ) : null
+                }
                 onUpload={(name, data) => {
                     if (name.match(/^\d\d\d\d-\d\d-\d\d-/)) {
                         setProjectName(name.substring(11).replace(/\.zip$/i, ''));
@@ -153,18 +175,17 @@ const ImportProjectDialog: React.FC<ImportProjectDialogProps> = props => {
                     'application/zip': ['.zip'],
                 }}
             />
-            <div style={{ marginTop: 10 }}>
-                <TextField
-                    variant="standard"
-                    fullWidth
-                    disabled={working}
-                    label={I18n.t('Project name')}
-                    helperText={props.projects.includes(projectName) ? I18n.t('Project already exists') : ''}
-                    error={props.projects.includes(projectName)}
-                    value={projectName}
-                    onChange={e => setProjectName(e.target.value.replace(/[^\da-zA-Z\-_.]/, ''))}
-                />
-            </div>
+            <TextField
+                variant="standard"
+                fullWidth
+                sx={{ mt: 2 }}
+                disabled={working}
+                label={I18n.t('Project name')}
+                helperText={props.projects.includes(projectName) ? I18n.t('Project already exists') : ''}
+                error={props.projects.includes(projectName)}
+                value={projectName}
+                onChange={e => setProjectName(e.target.value.replace(/[^\da-zA-Z\-_.]/g, ''))}
+            />
             {confirmDialog}
             {askOpenDialog}
         </IODialog>

@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s 个小部件",
-  "(Maximal file size is %s)": "（最大文件大小为 %s）",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "您想将“%s”小部件包含到“%s”中吗？",
   "Download": "下载",
   "Drag me": "拉我一把",
-  "Drop the files here ...": "把文件放在这里...",
   "Duplicate": "复制",
   "Duplicate folder": "复制文件夹",
   "Duplicate profile": "复制配置文件",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "副标题的显示强度，单位 %；未设置时为 70 %。",
   "help_section_subtitle_size": "单位 px；未设置时为标题大小的 0.8 倍。",
   "Pin palette and attributes as columns beside the view": "将调色板和属性固定为视图旁的列",
-  "Let palette and attributes float over the view": "让调色板和属性浮动在视图上方"
+  "Let palette and attributes float over the view": "让调色板和属性浮动在视图上方",
+  "Drop the file here or click to select it": "将文件拖放到此处或点击选择",
+  "Click or drop another file to replace it": "点击或拖放其他文件以替换",
+  "max. %s": "最大 %s",
+  "Importing project ...": "正在导入项目 ...",
+  "This can take a while": "这可能需要一些时间"
 }

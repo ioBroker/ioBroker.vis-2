@@ -1,6 +1,5 @@
 {
   "%s widgets": "%s widgets",
-  "(Maximal file size is %s)": "(Maximal file size is %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Do you want to include \"%s\" widget into \"%s\"?",
   "Download": "Download",
   "Drag me": "Drag me",
-  "Drop the files here ...": "Drop the files here ...",
   "Duplicate": "Duplicate",
   "Duplicate folder": "Duplicate folder",
   "Duplicate profile": "Duplicate the profile",
@@ -1141,5 +1139,10 @@
   "help_section_subtitle_opacity": "How strong the subtitle is drawn, in %; 70 % if not set.",
   "help_section_subtitle_size": "In px; 0.8 of the title size if not set.",
   "Pin palette and attributes as columns beside the view": "Pin palette and attributes as columns beside the view",
-  "Let palette and attributes float over the view": "Let palette and attributes float over the view"
+  "Let palette and attributes float over the view": "Let palette and attributes float over the view",
+  "Drop the file here or click to select it": "Drop the file here or click to select it",
+  "Click or drop another file to replace it": "Click or drop another file to replace it",
+  "max. %s": "max. %s",
+  "Importing project ...": "Importing project ...",
+  "This can take a while": "This can take a while"
 }

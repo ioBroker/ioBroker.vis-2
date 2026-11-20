@@ -1,6 +1,5 @@
 {
   "%s widgets": "Віджети %s",
-  "(Maximal file size is %s)": "(Максимальний розмір файлу %s)",
   "-attachment": "-attachment",
   "-clip": "-clip",
   "-color": "-color",
@@ -145,7 +144,6 @@
   "Do you want to include \"%s\" widget into \"%s\"?": "Бажаєте включити віджет \"%s\" до \"%s\"?",
   "Download": "Завантажити",
   "Drag me": "Перетягни мене",
-  "Drop the files here ...": "Перекиньте файли сюди...",
   "Duplicate": "дублікат",
   "Duplicate folder": "Дубльована папка",
   "Duplicate profile": "Дублюйте профіль",
@@ -1066,5 +1064,10 @@
   "help_section_subtitle_opacity": "Наскільки яскраво малюється підзаголовок, у %; без значення 70 %.",
   "help_section_subtitle_size": "У px; без значення 0,8 від розміру заголовка.",
   "Pin palette and attributes as columns beside the view": "Закріпити палітру та атрибути колонками поруч із видом",
-  "Let palette and attributes float over the view": "Показувати палітру та атрибути поверх виду"
+  "Let palette and attributes float over the view": "Показувати палітру та атрибути поверх виду",
+  "Drop the file here or click to select it": "Перетягніть файл сюди або натисніть, щоб вибрати його",
+  "Click or drop another file to replace it": "Натисніть або перетягніть інший файл, щоб замінити його",
+  "max. %s": "макс. %s",
+  "Importing project ...": "Імпорт проєкту ...",
+  "This can take a while": "Це може зайняти деякий час"
 }
