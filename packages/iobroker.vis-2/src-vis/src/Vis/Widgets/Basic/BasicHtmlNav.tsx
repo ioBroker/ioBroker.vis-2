@@ -19,6 +19,7 @@ import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '@/Vis/visRxWidget';
 
 import DangerousHtmlWithScript from '../Utils/DangerousHtmlWithScript';
+import { getProjectPath, replaceProjectPathInHtml } from '../../visProjectPath';
 
 type RxData = {
     html?: string;
@@ -89,7 +90,10 @@ export default class BasicHtmlNav extends VisRxWidget<RxData> {
         return (
             <DangerousHtmlWithScript
                 className="vis-widget-body"
-                html={(this.state.rxData.html || '').toString()}
+                html={replaceProjectPathInHtml(
+                    (this.state.rxData.html || '').toString(),
+                    getProjectPath(this.props.context),
+                )}
                 isDiv
                 wid={this.props.id}
                 onClick={this.props.editMode ? null : this.onNavigate}

@@ -17,6 +17,7 @@ import React from 'react';
 
 import type { RxRenderWidgetProps, RxWidgetInfo } from '@iobroker/types-vis-2';
 import VisRxWidget from '../../visRxWidget';
+import { getProjectPath, replaceProjectPathInHtml } from '../../visProjectPath';
 
 type RxData = {
     oid: string;
@@ -110,7 +111,12 @@ class BasicHtmlState extends VisRxWidget<RxData> {
                 data-oid={this.state.rxData.oid}
                 style={{ cursor: this.props.editMode ? undefined : 'pointer' }}
                 onClick={this.onClick}
-                dangerouslySetInnerHTML={{ __html: this.state.rxData.html ?? '' }}
+                dangerouslySetInnerHTML={{
+                    __html: replaceProjectPathInHtml(
+                        (this.state.rxData.html ?? '').toString(),
+                        getProjectPath(this.props.context),
+                    ),
+                }}
             />
         );
     }
