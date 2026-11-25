@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconButton, Tooltip } from '@mui/material';
+import { Button, Tooltip } from '@mui/material';
 import { FormatAlignLeft as IconFormat } from '@mui/icons-material';
 import { I18n, type ThemeType } from '@iobroker/gui-components';
 import Editor, { type OnMount } from '@monaco-editor/react';
@@ -16,6 +16,8 @@ interface MonacoEditorProps {
     height?: number | string;
     width?: number | string;
     error?: boolean;
+    /** controls shown left in the row above the code, next to the format button */
+    toolbar?: React.ReactNode;
 }
 
 const PRETTIER_PARSERS: Partial<Record<EditorType, string>> = {
@@ -89,57 +91,117 @@ export function CustomEditor(props: MonacoEditorProps): React.JSX.Element {
     };
 
     return (
-        <div style={{ position: 'relative', width: props.width, height: height ?? '100%' }}>
+        <div
+            style={{
+                width: props.width,
+                height: height ?? '100%',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
             <style>
                 {`
                 .vis-monaco {
-                    boxSizing: border-box;
+                    box-sizing: border-box;
                     border: 1px solid transparent;
                 }
                 .vis-monaco-error {
-                    boxSizing: border-box;
+                    box-sizing: border-box;
                     border: 1px solid #800;
+                }
+                .vis-monaco-toolbar-end {
+                    container-type: inline-size;
+                }
+                @container (max-width: 180px) {
+                    .vis-monaco-format-label {
+                        display: none;
+                    }
+                    .vis-monaco-format {
+                        min-width: 0;
+                    }
+                    .vis-monaco-format .MuiButton-startIcon {
+                        margin: 0;
+                    }
                 }`}
             </style>
-            <Editor
-                theme={themeType === 'dark' ? 'vs-dark' : 'vs-light'}
-                height="100%"
-                language={type}
-                // value={value}
-                defaultValue={defaultValue}
-                onChange={
-                    onChange
-                        ? (value?: string): void => {
-                              setFormatError('');
-                              onChange(value || '');
-                          }
-                        : undefined
-                }
-                onMount={onMount}
-                className={props.error ? 'vis-monaco-error' : 'vis-monaco'}
-                options={{
-                    readOnly: !onChange,
-                    minimap: { enabled: false },
-                    stickyScroll: {
-                        enabled: false,
-                    },
-                }}
-            />
-            {canFormat ? (
-                <Tooltip
-                    title={formatError || `${I18n.t('Format code')} (Shift+Alt+F)`}
-                    slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+            {canFormat || props.toolbar ? (
+                // A row of its own above the code, so the button never covers the code
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        minHeight: 34,
+                        flexShrink: 0,
+                    }}
                 >
-                    <IconButton
-                        size="small"
-                        onClick={() => void format()}
-                        color={formatError ? 'error' : 'default'}
-                        style={{ position: 'absolute', top: 4, right: 20, zIndex: 1, opacity: 0.8 }}
+                    {props.toolbar}
+                    {/* takes the space the toolbar leaves; the container query hides the label when it is too narrow */}
+                    <div
+                        className="vis-monaco-toolbar-end"
+                        style={{ flexGrow: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}
                     >
-                        <IconFormat fontSize="small" />
-                    </IconButton>
-                </Tooltip>
+                        <div
+                            title={formatError}
+                            style={{
+                                flexGrow: 1,
+                                minWidth: 0,
+                                color: '#d32f2f',
+                                fontSize: 12,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textAlign: 'right',
+                            }}
+                        >
+                            {formatError}
+                        </div>
+                        {canFormat ? (
+                            <Tooltip
+                                title={`${I18n.t('Format code')} (Shift+Alt+F)`}
+                                slotProps={{ popper: { sx: { pointerEvents: 'none' } } }}
+                            >
+                                <Button
+                                    size="small"
+                                    className="vis-monaco-format"
+                                    onClick={() => void format()}
+                                    color={formatError ? 'error' : 'inherit'}
+                                    startIcon={<IconFormat />}
+                                    style={{ flexShrink: 0, textTransform: 'none' }}
+                                >
+                                    <span className="vis-monaco-format-label">{I18n.t('Format code')}</span>
+                                </Button>
+                            </Tooltip>
+                        ) : null}
+                    </div>
+                </div>
             ) : null}
+            <div style={{ flexGrow: 1, minHeight: 0 }}>
+                <Editor
+                    theme={themeType === 'dark' ? 'vs-dark' : 'vs-light'}
+                    height="100%"
+                    language={type}
+                    // value={value}
+                    defaultValue={defaultValue}
+                    onChange={
+                        onChange
+                            ? (value?: string): void => {
+                                  setFormatError('');
+                                  onChange(value || '');
+                              }
+                            : undefined
+                    }
+                    onMount={onMount}
+                    className={props.error ? 'vis-monaco-error' : 'vis-monaco'}
+                    options={{
+                        readOnly: !onChange,
+                        minimap: { enabled: false },
+                        stickyScroll: {
+                            enabled: false,
+                        },
+                    }}
+                />
+            </div>
         </div>
     );
 }

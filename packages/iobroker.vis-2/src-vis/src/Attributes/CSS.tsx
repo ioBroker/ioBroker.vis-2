@@ -119,60 +119,62 @@ export default class CSS extends Component<CSSProps, CSSState> {
     render(): React.JSX.Element {
         const value = this.state.type === 'global' ? this.state.globalCss : this.state.localCss;
 
-        return (
+        const toolbar = (
             <>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {this.state.showHelp ? (
-                        <Dialog
-                            open={!0}
-                            maxWidth={this.props.maxWidth || 'md'}
-                        >
-                            <DialogTitle>{I18n.t('Explanation')}</DialogTitle>
-                            <DialogContent>
-                                {this.state.type === 'global' ? I18n.t('help_css_global') : I18n.t('help_css_project')}
-                            </DialogContent>
-                            <DialogActions>
-                                <Button
-                                    color="grey"
-                                    variant="contained"
-                                    onClick={() => this.setState({ showHelp: false })}
-                                    startIcon={<CheckIcon />}
-                                >
-                                    {I18n.t('Ok')}
-                                </Button>
-                            </DialogActions>
-                        </Dialog>
-                    ) : null}
-                    <Select
-                        variant="standard"
-                        value={this.state.type}
-                        onChange={e => {
-                            this.setState({ type: e.target.value });
-                            window.localStorage.setItem('CSS.type', e.target.value);
-                        }}
+                {this.state.showHelp ? (
+                    <Dialog
+                        open={!0}
+                        maxWidth={this.props.maxWidth || 'md'}
                     >
-                        <MenuItem value="global">{I18n.t('Global')}</MenuItem>
-                        <MenuItem value="local">{I18n.t('css_project')}</MenuItem>
-                    </Select>
-                    <IconButton
-                        onClick={() => this.setState({ showHelp: true })}
-                        size="small"
-                    >
-                        <HelpOutline />
-                    </IconButton>
-                    {this.state.saving ? <CircularProgress size={20} /> : null}
-                </div>
-                <CustomEditor
-                    key={this.state.type}
-                    type="css"
-                    themeType={this.props.themeType}
-                    readOnly={!this.props.editMode}
-                    value={value}
-                    onChange={newValue => this.save(newValue, this.state.type)}
-                    width="100%"
-                    height="calc(100% - 34px)"
-                />
+                        <DialogTitle>{I18n.t('Explanation')}</DialogTitle>
+                        <DialogContent>
+                            {this.state.type === 'global' ? I18n.t('help_css_global') : I18n.t('help_css_project')}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button
+                                color="grey"
+                                variant="contained"
+                                onClick={() => this.setState({ showHelp: false })}
+                                startIcon={<CheckIcon />}
+                            >
+                                {I18n.t('Ok')}
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+                ) : null}
+                <Select
+                    variant="standard"
+                    value={this.state.type}
+                    onChange={e => {
+                        this.setState({ type: e.target.value });
+                        window.localStorage.setItem('CSS.type', e.target.value);
+                    }}
+                >
+                    <MenuItem value="global">{I18n.t('Global')}</MenuItem>
+                    <MenuItem value="local">{I18n.t('css_project')}</MenuItem>
+                </Select>
+                <IconButton
+                    onClick={() => this.setState({ showHelp: true })}
+                    size="small"
+                >
+                    <HelpOutline />
+                </IconButton>
+                {this.state.saving ? <CircularProgress size={20} /> : null}
             </>
+        );
+
+        return (
+            <CustomEditor
+                key={this.state.type}
+                type="css"
+                themeType={this.props.themeType}
+                readOnly={!this.props.editMode}
+                value={value}
+                onChange={newValue => this.save(newValue, this.state.type)}
+                width="100%"
+                height="100%"
+                toolbar={toolbar}
+            />
         );
     }
 }
