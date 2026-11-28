@@ -392,6 +392,9 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
     ### **WORK IN PROGRESS**
 -->
 ## Changelog
+### 2.20.13 (2026-11-28)
+* (@GermanBluefox) The version 2.20.12 was not published, because its build failed in the type check; its changes come with this version
+
 ### 2.20.12 (2026-11-26)
 * (@GermanBluefox) Editor: the code editors for HTML, CSS, JavaScript and JSON show the button "Format code" with its label in a row above the code. Until now it was a small icon in the corner that covered the code and was hardly noticed; in a narrow panel such as the CSS tab only the icon remains. A code that cannot be formatted shows its error beside the button
 * (@GermanBluefox) HTML widgets (HTML, HTML state, HTML navigation): `_PRJ_NAME/` in the HTML stands for the folder of the project, as it does in the image fields - `<img src="_PRJ_NAME/logo.jpg">` loads `../vis-2.0/<project>/logo.jpg`
@@ -460,9 +463,6 @@ IOB_URL=http://192.168.178.45:8082 npm run start  # an ioBroker on another machi
 * (@GermanBluefox) Weather widget: the accent colour and the colour of the sun can be set. The pictures of OpenWeatherMap are now drawn by the widget, with a yellow sun that has rays and a glow, and the picture behind the card is larger. A new option keeps the pictures of the adapter
 * (@GermanBluefox) Editor and widgets use the animated icons of `@iobroker/gui-components`: the lid of the trash can opens over delete buttons, what is copied to the clipboard is confirmed with a check mark, folders open and close, play and pause turn into each other, the sun and the moon of the theme widget too, and the bell of an alarm rings
 * (@GermanBluefox) Standard widgets: colours that change run into each other instead of jumping, and the sun of the weather widget turns its rays, the rain falls and the lightning flickers. All of it stops when the system is set to reduce motion
-
-### 2.20.8 (2026-11-07)
-* (@GermanBluefox) The widgets of an adapter that is installed on another host than vis-2 are shown now: vis-2 fetches its `widgets` folder from that host (js-controller 8.0 or newer on both hosts) and keeps a copy in its data directory, which is fetched again only when the version of the adapter changes and is used while that host is not running
 
 ## License
  Copyright (c) 2021-2026 Denis Haev, https://github.com/GermanBluefox <dogafox@gmail.com>,
