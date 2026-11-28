@@ -32,6 +32,7 @@
         "@reduxjs/toolkit": "^2.15.0",
         "@types/dom-speech-recognition": "^0.0.12",
         "@types/jquery": "^4.0.1",
+        "@types/react": "^19.3.3",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.3.0",
         "dayjs": "^1.11.23",
